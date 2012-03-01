@@ -5,4 +5,5 @@
   :main org.healthsciencessc.rpms2.consent-services.core
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [ring/ring-jetty-adapter "1.1.0-SNAPSHOT"]
-                 [compojure "1.0.1"]])
+                 [compojure "1.0.1"]]
+  :dev-dependencies [[lein-ring "0.5.4"]])
