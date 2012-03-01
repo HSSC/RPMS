@@ -2,5 +2,9 @@
   (:use [org.healthsciencessc.rpms2.consent-services.core])
   (:use [clojure.test]))
 
-(deftest replace-me ;; FIXME: write
-  (is false "No tests have been written."))
+(defn test-request [resource routes method & params]
+  (routes {:request-method method :uri resource :params (first params)}))
+
+(deftest test-route
+  (is (= 200 (:status (test-request "/get/foo" service-routes :get)))))
+
