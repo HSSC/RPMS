@@ -6,5 +6,5 @@
   (routes {:request-method method :uri resource :params (first params)}))
 
 (deftest test-route
-  (is (= 200 (:status (test-request "/get/foo" service-routes :get)))))
+  (is (= 404 (:status (test-request "/security/users" service-routes :get)))))
 

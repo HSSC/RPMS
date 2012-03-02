@@ -1,14 +1,24 @@
 (ns org.healthsciencessc.rpms2.consent-services.core
-  (:use compojure.core, ring.adapter.jetty)
-  (:require [compojure.route :as route]))
+  (:use compojure.core
+        ring.adapter.jetty
+        [clojure.string :only (blank? join split)])
+  (:require [compojure.handler :as handler]
+            [org.healthsciencessc.rpms2.consent-services.process-dispatcher :as dispatcher]
+            [org.healthsciencessc.rpms2.consent-services.process :as process]))
+
+(defn uri->process-name
+  [method uri]
+  (let [split-uri (filter #(not (blank? %)) (split uri #"\/"))]
+    (join "-" (conj split-uri method))))
 
 (defroutes service-routes
-  
-  (GET "/*" [_ :as request]
-       (println request)
-       {:status 200
-        :body "<h1>Hello World!</h1>"}))
+  (ANY "*" {uri :uri method :request-method params :query-params}
+       (let [process-name (uri->process-name (name method) uri)
+             result (dispatcher/dispatch process-name params)]
+         (if (nil? result)
+             {:status 404 :body "Process not found"}
+             result))))
 
-(defn -main [& args] (run-jetty service-routes {:port 3000}))
-
-
+(def ^:private app
+  (-> service-routes
+      handler/api))
