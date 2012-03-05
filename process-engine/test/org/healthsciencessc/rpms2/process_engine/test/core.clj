@@ -1,7 +1,7 @@
-(ns org.healthsciencessc.rpms2.consent-services.test.process
-  (:use [org.healthsciencessc.rpms2.consent-services.process]
+(ns org.healthsciencessc.rpms2.process-engine.test.core
+  (:use [org.healthsciencessc.rpms2.process-engine.core]
         [clojure.test])
-  (:import [org.healthsciencessc.rpms2.consent_services.process DefaultProcess CustomProcess]))
+  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess CustomProcess]))
 
 (defn reset-process-coll
   [coll]

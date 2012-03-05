@@ -1,8 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.test.core
   (:use [org.healthsciencessc.rpms2.consent-services.core]
-        [clojure.test])
-  (:require [org.healthsciencessc.rpms2.consent-services.process :as process])
-  (:import [org.healthsciencessc.rpms2.consent_services.process DefaultProcess]))
+        [clojure.test]))
 
 (defn test-request [resource routes method & params]
   (routes {:request-method method :uri resource :params (first params)}))
