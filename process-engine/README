@@ -1,13 +1,16 @@
-# process-engine
+# RPMS2 Process Engine
 
-FIXME: write description
+This is a process engine for the RPMS2 suite of applications allowing customization and overriding of default behaviors. 
 
 ## Usage
 
-FIXME: write
+### Process Instances
+
+There are two record types of processes, DefaultProcess and CustomProcess, both of which implement the IConsentProcess protocol.
+
+### Registering Processes
 
 ## License
 
 Copyright (C) 2012 FIXME
 
-Distributed under the Eclipse Public License, the same as Clojure.

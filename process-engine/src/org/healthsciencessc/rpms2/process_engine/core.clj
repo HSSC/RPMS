@@ -30,8 +30,7 @@
 (defn- append-process-coll
   "Adds the new process to the given process collection"
   [process-list new-process]
-  (reset! process-list
-          (conj @process-list new-process)))
+  (swap! process-list conj new-process))
 
 (defmulti register-process
   "Adds the process to the correct collection based on record type"
