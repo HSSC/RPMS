@@ -1,13 +1,19 @@
-(ns org.healthsciencessc.rpms2.consent-services.process
-  (:require [org.healthsciencessc.rpms2.consent-services.default-processes :as dp]
-            [org.healthsciencessc.rpms2.consent-services.custom-processes :as cp]))
+(ns org.healthsciencessc.rpms2.consent-services.process)
 
 (defprotocol IConsentProcess
   (runnable? [this arg-map])
   (run [this arg-map]))
 
-(defrecord ConsentProcess
+(defrecord CustomProcess
     [name order runnable-fn run-fn]
+  IConsentProcess
+  (runnable? [consent-process arg-map]
+    ((:runnable-fn consent-process) arg-map))
+  (run [consent-process arg-map]
+    ((:run-fn consent-process) arg-map)))
+
+(defrecord DefaultProcess
+    [name runnable-fn run-fn]
   IConsentProcess
   (runnable? [consent-process arg-map]
     ((:runnable-fn consent-process) arg-map))
@@ -20,28 +26,39 @@
 (def custom-processes
   (atom []))
 
-(defn build-default-processes
-  []
-  (reset! default-processes
-          (vec (map map->ConsentProcess dp/default-processes))))
+(defn append-process-coll
+  [process-list new-process]
+  (reset! process-list
+          (conj @process-list new-process)))
 
-(defn build-custom-processes
-  []
-  (reset! custom-processes
-          (vec (map map->ConsentProcess cp/custom-processes))))
+(defmulti register-process class)
 
-(defn build-processes
-  []
-  (do
-    (build-default-processes)
-    (build-custom-processes)))
+(defmethod register-process CustomProcess
+  [new-processes]
+  (append-process-coll custom-processes new-processes))
+
+(defmethod register-process DefaultProcess
+  [new-processes]
+  (append-process-coll default-processes new-processes))
+
+(defn register-processes
+  [processes]
+  (map register-process processes))
+
+(defn find-process
+  [type name params]
+  (filter #(and (= name (:name %)) (runnable? % params)) type))
 
 (defn find-custom-process
-  [process-name params]
-  (first (filter #(and (= process-name (:name %)) (runnable? % params))
-                 @custom-processes)))
+  [name params]
+  (first (sort-by :order (find-process @custom-processes name params))))
 
 (defn find-default-process
-  [process-name params]
-  (first (filter #(and (= process-name (:name %)) (runnable? % params))
-                 @default-processes)))
+  [name params]
+  (first (find-process @default-processes name params)))
+
+(defn run-default-process
+  [name params]
+  (let [dp (find-default-process name params)]
+    (if dp
+      (run dp params))))

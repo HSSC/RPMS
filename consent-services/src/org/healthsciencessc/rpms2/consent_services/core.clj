@@ -16,8 +16,8 @@
        (let [process-name (uri->process-name (name method) uri)
              result (dispatcher/dispatch process-name params)]
          (if (nil? result)
-             {:status 404 :body "Process not found"}
-             result))))
+           {:status 404 :body "Process not found"}
+           result))))
 
 (def ^:private app
   (-> service-routes
