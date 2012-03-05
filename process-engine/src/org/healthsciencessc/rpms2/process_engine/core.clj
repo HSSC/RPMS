@@ -82,8 +82,6 @@
 (defn- load-files
   "Loads all the clj files in dir"
   [dir]
-  (println dir)
-  (println (glob-dir dir))
   (doall (map load-file (glob-dir dir))))
 
 (defn load-processes
