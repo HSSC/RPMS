@@ -18,7 +18,7 @@
            {:status 404 :body "Process not found"}
            result))))
 
-(def ^:private app
+(def app
   (-> service-routes
       handler/api))
 
