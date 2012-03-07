@@ -1,0 +1,11 @@
+/pom.xml
+*jar
+/lib
+/classes
+/native
+/.lein-failures
+/checkouts
+/.lein-deps-sum
+
+/resources/process_definitions/*.clj
+!/resources/process_definitions/default_processes.clj

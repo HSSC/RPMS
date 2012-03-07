@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.process-engine.core
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io])
+  (:use [slingshot.slingshot :only (throw+)]))
 
 (defprotocol IConsentProcess
   (runnable? [this arg-map])
@@ -62,7 +63,8 @@
 (defn find-default-process
   "Returns the first registered default process with the given name"
   [name params]
-  (first (find-processes @default-processes name params)))
+  (or (first (find-processes @default-processes name params))
+      (throw+ {:type ::no-default-process :process-name name})))
 
 (defn run-default
   "Runs the default process with the given name"
@@ -100,5 +102,4 @@
   "Public function to find and execute the correct process based on name and context"
   [name params]
   (let [process (search-processes name params)]
-    (if process
-      (run process params))))
+    (run process params)))

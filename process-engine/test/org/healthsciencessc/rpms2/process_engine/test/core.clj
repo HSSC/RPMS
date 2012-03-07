@@ -50,10 +50,11 @@
   (is (= "get-foo-bar" (:name (find-default-process "get-foo-bar" {}))))
   (reset-processes!))
 
-(deftest no-runnable-process
-  (register-process (DefaultProcess. "get-foo-bar" (fn [args] false) (fn [args] "ran")))
-  (is (nil? (find-default-process "get-foo-bar" {})))
-  (reset-processes!))
+
+;; (deftest no-runnable-process
+;;   (register-process (DefaultProcess. "get-foo-bar" (fn [args] false) (fn [args] "ran")))
+;;   (is (nil? (find-default-process "get-foo-bar" {})))
+;;   (reset-processes!))
 
 (deftest custom-processes-found-by-order
   (register-process (CustomProcess. "get-foo-bar" 2 (fn [args] true) (fn [args] "ran")))
