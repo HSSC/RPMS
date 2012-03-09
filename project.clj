@@ -2,5 +2,6 @@
   :description "Consent Parent Builder"
   :omit-default-repositories true
   :dev-dependencies [[lein-sub "0.1.2"]]
-  :sub ["consent-services"
-        "process-engine"]) 
+  :sub ["consent-domain"
+        "process-engine"
+        "consent-services"])
