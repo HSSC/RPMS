@@ -5,6 +5,7 @@
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojure/data.json "0.1.2"]
                  [compojure "1.0.1"]
+                 [org.clojure/data.codec "0.1.0"]
                  [clojurewerkz/neocons "1.0.0-beta1"]
                  [org.healthsciencessc.rpms2/process-engine "1.0.0-SNAPSHOT"]
                  [org.healthsciencessc.rpms2/consent-domain "1.0.0-SNAPSHOT"]]

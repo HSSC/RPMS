@@ -34,6 +34,13 @@
     :run-fn (fn [params]
               (let [org (-> params :body-params :organization)]
                 (json-str (domain-api/update-organization org))))}
+
+   {:name "authenticate"
+    :runnable-fn (fn [params] true)
+    :run-fn (fn [{:keys [username password]}]
+              (println username)
+              (if (= username "colin")
+                true))}
    ])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))
