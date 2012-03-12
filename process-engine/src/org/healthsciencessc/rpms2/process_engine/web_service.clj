@@ -19,18 +19,18 @@
     (if (not (blank? body-str))
       (read-json body-str))))
 
-(defn keyify-query-params
-  [query-params]
-  (if (map? query-params)
+(defn keyify-params
+  [params]
+  (if (map? params)
     (into {} 
-          (for [[k v] query-params]
+          (for [[k v] params]
             [(keyword k) v]))))
 
 (defroutes service-routes
   (ANY "*" {:keys [uri request-method query-params form-params session body]}
        (let [process-name (uri->process-name (name request-method) uri)
-             body-params (merge (get-json-params body) form-params)
-             params {:query-params (keyify-query-params query-params) :body-params body-params :session session}]
+             body-params (merge (get-json-params body) (keyify-params form-params))
+             params {:query-params (keyify-params query-params) :body-params body-params :session session}]
          (try+
           (process/dispatch process-name params)
           (catch [:type :org.healthsciencessc.rpms2.process-engine.core/no-default-process] _
