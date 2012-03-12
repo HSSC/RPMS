@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.process-engine.web-service
   (:use compojure.core
         ring.adapter.jetty
+        ring.middleware.session
         [clojure.data.json :only (read-json)]
         [clojure.string :only (blank? join split)]
         [slingshot.slingshot :only (try+)])
@@ -12,7 +13,7 @@
   (let [split-uri (filter #(not (blank? %)) (split uri #"\/"))]
     (join "-" (conj split-uri method))))
 
-(defn get-body-params
+(defn get-json-params
   [body]
   (let [body-str (slurp body)]
     (if (not (blank? body-str))
@@ -26,9 +27,10 @@
             [(keyword k) v]))))
 
 (defroutes service-routes
-  (ANY "*" {:keys [uri request-method query-params body]}
+  (ANY "*" {:keys [uri request-method query-params form-params session body]}
        (let [process-name (uri->process-name (name request-method) uri)
-             params {:query-params (keyify-query-params query-params) :body-params (get-body-params body)}]
+             body-params (merge (get-json-params body) form-params)
+             params {:query-params (keyify-query-params query-params) :body-params body-params :session session}]
          (try+
           (process/dispatch process-name params)
           (catch [:type :org.healthsciencessc.rpms2.process-engine.core/no-default-process] _
@@ -36,4 +38,5 @@
 
 (def processes
   (-> service-routes
-      handler/api))
+      handler/api
+      wrap-session))
