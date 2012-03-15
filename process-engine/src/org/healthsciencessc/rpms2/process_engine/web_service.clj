@@ -4,7 +4,8 @@
         ring.middleware.session
         [clojure.data.json :only (read-json)]
         [clojure.string :only (blank? join split)]
-        [slingshot.slingshot :only (try+)])
+        [slingshot.slingshot :only (try+)]
+        [clojure.tools.logging :only (info error)])
   (:require [compojure.handler :as handler]
             [org.healthsciencessc.rpms2.process-engine.core :as process]))
 
@@ -22,21 +23,32 @@
 (defn keyify-params
   [params]
   (if (map? params)
-    (into {} 
+    (into {}
           (for [[k v] params]
             [(keyword k) v]))))
 
+(defn process-not-found-body
+  [req process-name]
+  (str "<h1>Process Not Found</h1>"
+       (str "<h2>Process Name: " process-name "</h2>")
+       "<h2>Request:</h2>"
+       (str "<p>" req "</p>")))
+
 (defroutes service-routes
-  (ANY "*" {:keys [uri request-method query-params form-params session body]}
+  (ANY "*" {:keys [uri request-method query-params form-params session body] :as req}
        (let [process-name (uri->process-name (name request-method) uri)
              body-params (merge (get-json-params body) (keyify-params form-params))
              params {:query-params (keyify-params query-params) :body-params body-params :session session}]
+         (info "REQUEST: " req)
+         (info "PROCESS NAME: " process-name)
          (try+
           (process/dispatch process-name params)
           (catch [:type :org.healthsciencessc.rpms2.process-engine.core/no-default-process] _
-            {:status 404 :body (str "HEY Process not found - "  process-name) })))))
+            (error (str "Could not find process " process-name))
+            {:status 404 :body (process-not-found-body req process-name)})))))
 
-(def processes
-  (-> service-routes
-      handler/api
-      wrap-session))
+(defn ws-constructor
+  [& middlewares]
+  (-> (reduce #(%2 %1) service-routes middlewares)
+      wrap-session
+      handler/api))

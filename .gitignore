@@ -1,6 +1,7 @@
 /pom.xml
 *jar
 *war
+*.props
 /lib
 /classes
 /native

@@ -222,7 +222,7 @@
 
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
-(def app (-> ws/processes
+(def app (-> (ws/ws-constructor)
              (sandbar.stateful-session/wrap-stateful-session)
              (debug-ring)
              (ring.middleware.resource/wrap-resource "public")))
