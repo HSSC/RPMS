@@ -2,15 +2,16 @@
   (:use 'clojure.core )
   (:use 'org.healthsciencessc.rpms2.consent-domain.codec )
   (:use 'org.healthsciencessc.rpms2.consent-domain.sniff )
-  (import [java.util Properties])
   )
 
 
 (defn slurp-props
   "Loads the key/values found in a properties file found on the classpath into a map"
   [url]
-  (into {} (doto (Properties.)
-             (.load (resource url)))))
+  (try
+    (into {} (doto (java.util.Properties.)(.load (resource url))))
+    (catch Exception e {})))
+
 (defn- self
   "Just a bogus function to return what is passed"
   [string]
