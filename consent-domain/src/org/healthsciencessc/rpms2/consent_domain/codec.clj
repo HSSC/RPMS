@@ -1,7 +1,4 @@
 (ns org.healthsciencessc.rpms2.consent-domain.codec
-  (:use clojure.core )
-  (:require clojure.contrib.str-utils2 :as utils)
-  (:require clojure.contrib.string :as clings)
   (:import [java.security NoSuchAlgorithmException MessageDigest]
            [java.math BigInteger]
            [javax.crypto Cipher]
@@ -119,10 +116,10 @@
   ([value] (decode value stringify))
   ([value fx]
   (cond 
-    (encoded-hex? value) (let [hex (utils/drop (utils/chop (utils/chop value)) 4)
+    (encoded-hex? value) (let [hex (apply str (butlast (butlast (drop 4 value))))
                                letters (.toCharArray hex)]
                            (stringify (fx (Hex/decodeHex letters))))
-    (encoded-base64? value) (let [base (utils/drop (utils/chop value) 4)]
+    (encoded-base64? value) (let [base (apply str (butlast (drop 4 value)))]
                            (stringify (fx (Base64/decodeBase64 base))))
     :else  value)))
 

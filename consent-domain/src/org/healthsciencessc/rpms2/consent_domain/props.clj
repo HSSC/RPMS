@@ -1,7 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-domain.props
-  (:use clojure.core )
-  (:use org.healthsciencessc.rpms2.consent-domain.codec )
-  (:use org.healthsciencessc.rpms2.consent-domain.sniff )
+  (:use [org.healthsciencessc.rpms2.consent-domain.codec :only [decrypter decode]])
+  (:use [org.healthsciencessc.rpms2.consent-domain.sniff :only [resource]])
   )
 
 

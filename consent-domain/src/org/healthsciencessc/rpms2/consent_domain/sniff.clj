@@ -1,7 +1,4 @@
-(ns org.healthsciencessc.rpms2.consent-domain.sniff
-  (:use clojure.core )
-  (:require clojure.contrib.properties :as clops)
-  (:require clojure.contrib.string :as clings))
+(ns org.healthsciencessc.rpms2.consent-domain.sniff)
 
 (defn resource
   "Gets the input stream of a file on the classpath"
@@ -13,32 +10,32 @@
 (defn sniff-env
   "Looks for a value in the environment variables."
   [k]
-  (System/getenv (clings/as-str k)))
+  (System/getenv (name k)))
 
 (defn sniff-sys
   "Looks for a value in the system properties."
   [k]
-  (System/getProperty (clings/as-str k)))
+  (System/getProperty (name k)))
 
 (defn sniff-jndi
   "Looks for a value in the JNDI Naming context"
   [k]
   (try
-    (.lookup (javax.naming.InitialContext.) (clings/as-str k))
+    (.lookup (javax.naming.InitialContext.) (name k))
     (catch Exception e nil)))
 
 (defn sniff-jndi-prefixed
   "Looks for a value in the JNDI Naming context"
   [k]
   (try
-    (.lookup (javax.naming.InitialContext.) (clings/as-str "java:comp/env/" k))
+    (.lookup (javax.naming.InitialContext.) (name "java:comp/env/" k))
     (catch Exception e nil)))
 
 (defn sniff-content
   "Looks for content in a file on the classpath."
   [k]
   (try 
-    (slurp (resource (clings/as-str k)))
+    (slurp (resource (name k)))
     (catch Exception e nil)))
 
 (defn sniff
