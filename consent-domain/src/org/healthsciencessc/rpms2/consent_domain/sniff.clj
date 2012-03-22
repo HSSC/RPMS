@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-domain.sniff
-  (:use 'clojure.core )
+  (:use clojure.core )
   (:require clojure.contrib.properties :as clops)
   (:require clojure.contrib.string :as clings))
 

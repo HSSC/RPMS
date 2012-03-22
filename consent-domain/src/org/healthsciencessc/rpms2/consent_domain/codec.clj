@@ -1,11 +1,12 @@
 (ns org.healthsciencessc.rpms2.consent-domain.codec
-  (:use 'clojure.core )
-  (:require 'clojure.contrib.str-utils2 :as utils)
+  (:use clojure.core )
+  (:require clojure.contrib.str-utils2 :as utils)
+  (:require clojure.contrib.string :as clings)
   (:import [java.security NoSuchAlgorithmException MessageDigest]
            [java.math BigInteger]
            [javax.crypto Cipher]
            [javax.crypto.spec SecretKeySpec]
-           [org.apache.commons.codec.binary Hex]))
+           [org.apache.commons.codec.binary Hex Base64]))
 
 
 (defn byte-array?
@@ -14,14 +15,14 @@
   (= (type value) (type (byte-array 0))))
 
 (defn bytify
-  "Gets the bytes from a string using the appropriate character set."
-  [string]
-  (.getBytes string Hex/DEFAULT_CHARSET_NAME))
+  "Coerces a value into a byte arry.  Specirically for getting bytes from a string using the appropriate character set."
+  [value]
+  (if (byte-array? value) value (.getBytes value Hex/DEFAULT_CHARSET_NAME)))
 
 (defn stringify
-  "Converts byte array into string using the approriate character set."
-  [bites]
-  (new String bites Hex/DEFAULT_CHARSET_NAME))
+  "Coerces a value into a string.  Specifically for use with byte arrays using the approriate character set."
+  [value]
+  (if (byte-array? value) (new String value Hex/DEFAULT_CHARSET_NAME)(.toString value)))
 
 (defn byteme
   "Takes a string and an int and returns an array of bytes the size of the int filed with bytes 
@@ -30,7 +31,7 @@
   [filler length]
   (if (> length (.length filler))
     (recur (str filler filler) length)
-    (byte-array (take length (seq (.getBytes filler))))))
+    (byte-array (take length (seq (bytify filler))))))
 
 
 (defn spec-key
@@ -56,37 +57,30 @@
 (defn encrypt
   "Encrypts a provided byte array using a given SecretKeySpec"
   [value keyspec]
-  (let [bites (if (byte-array? value) value (.getBytes value))
+  (let [bites (bytify value)
         cipher (Cipher/getInstance (.getAlgorithm keyspec))]
     (.init cipher Cipher/ENCRYPT_MODE keyspec)
-    (let [enc (.doFinal cipher bites)]
-      (if (byte-array? value) ; Return type that was provided
-        enc                   ; Provided was byte array
-        (new String enc)))))  ; Provided was string
-
+    (.doFinal cipher bites))) ; Always return bytes
 
 
 (defn decrypt
   "Encrypts a byte array using a given SecretKeySpec"
   [value keyspec]
-  (let [bites (if (byte-array? value) value (.getBytes value))
+  (let [bites (bytify value)
         cipher (Cipher/getInstance (.getAlgorithm keyspec))]
     (.init cipher Cipher/DECRYPT_MODE keyspec)
-    (let [enc (.doFinal cipher bites)]
-      (if (byte-array? value) ; Return type that was provided
-        enc                   ; Provided was byte array
-        (new String enc)))))  ; Provided was string
+    (.doFinal cipher bites))) ; Always return bytes
 
 
 (defn decrypter
   "Creates a function that wraps the keyspec and can be reused over and over."
   ([passkey] (decrypter passkey {}))
   ([passkey options]
-    (let [keyspec (spec-key passkey options)]
+    (let [keyspec (if (isa? (type passkey) SecretKeySpec) passkey (spec-key passkey options))]
       (fn [value] (decrypt value keyspec)))))
 
 
-(defn encoded-plain?
+(defn encoded-base64?
   "Tests if a value is encoded as plain encrypted text, which is indicated by
    surrounding it with 'ENC(' and ')' tokens."
   [value]
@@ -95,7 +89,7 @@
 
 (defn encoded-hex?
   "Tests if a value is encoded as plain encrypted text, which is indicated by
-   surrounding it with 'ENC(' and ')' tokens."
+   surrounding it with 'ENC(' and ')!' tokens."
   [value]
   (and (.startsWith value "ENC(") (.endsWith value ")!")))
 
@@ -103,32 +97,33 @@
 (defn encoded?
   "Tests is a value is encoded as encoded-plain? or encoded-hex?"
   [value]
-  (or (encoded-plain? value) (encoded-hex? value)))
+  (or (encoded-base64? value) (encoded-hex? value)))
 
 
-(defn encode
+(defn encode-base64
   "Encodes a string with the basic 'ENC(%)' wrapper."
   [value]
-  (let [string (if (byte-array? value) (stringify value) (.toString value))]
-    (str "ENC(" string ")")))
+  (let [bites (bytify value)]
+    (str "ENC(" (Base64/encodeBase64String bites) ")")))
 
 
 (defn encode-hex
-  "Encodes a string with the basic 'ENC-HEX(%)' wrapper."
+  "Encodes a string with the basic 'ENC(%)!' wrapper."
   [value]
-  (let [bites (if (byte-array? value) value (bytify value))]
+  (let [bites (bytify value)]
     (str "ENC(" (Hex/encodeHexString bites) ")!")))
 
 (defn decode
   "Removed any encoded tags from the value and returns the content as a decoded but 
    still encrypted byte array"
-  ([value] (decode value str))
+  ([value] (decode value stringify))
   ([value fx]
   (cond 
     (encoded-hex? value) (let [hex (utils/drop (utils/chop (utils/chop value)) 4)
                                letters (.toCharArray hex)]
-                           (fx (stringify (Hex/decodeHex letters))))
-    (encoded-plain? value) (str (utils/drop (utils/chop value) 4))
+                           (stringify (fx (Hex/decodeHex letters))))
+    (encoded-base64? value) (let [base (utils/drop (utils/chop value) 4)]
+                           (stringify (fx (Base64/decodeBase64 base))))
     :else  value)))
 
 
