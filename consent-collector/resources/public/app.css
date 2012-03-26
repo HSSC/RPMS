@@ -1,0 +1,12 @@
+#flash { font-size: 120%; background-color: #ccccff; color: red; }
+
+#search-consenter-list { background-color: #ccccff; }
+
+#header { background-color: #ccc; font-size: .8em; padding: 1em; border-bottom: thick solid navy; }
+
+#footer { background-color: #ccc; border-top: thin solid navy; }
+input:required:invalid, input:focus:invalid 
+		{ background-color: #ffccff; -maz-box-shadow: none; }
+#loginName { font-color: navy; font-size: 1em; }
+#username { font-color: navy; font-size: 1em; xborder: thick solid green; }
+.highlight { font-color: navy; font-size: 1em; background-color: yellow;}

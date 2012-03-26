@@ -34,7 +34,7 @@
          (try+
           (process/dispatch process-name params)
           (catch [:type :org.healthsciencessc.rpms2.process-engine.core/no-default-process] _
-            {:status 404 :body "Process not found"})))))
+            {:status 404 :body (str "HEY Process not found - "  process-name) })))))
 
 (def processes
   (-> service-routes

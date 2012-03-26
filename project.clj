@@ -4,4 +4,5 @@
   :dev-dependencies [[lein-sub "0.1.2"]]
   :sub ["consent-domain"
         "process-engine"
-        "consent-services"])
+        "consent-services"
+        "consent-collector"])
