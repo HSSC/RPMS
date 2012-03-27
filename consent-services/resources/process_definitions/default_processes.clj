@@ -37,8 +37,8 @@
    {:name "authenticate"
     :runnable-fn (fn [params] true)
     :run-fn (fn [{:keys [username password]}]
-              (if-let [user (first (data/find-records-by-attrs (:username username)))]
-                (when (= password (auth/hash-password (:password user) (:salt user)))
+              (if-let [user (first (data/find-records-by-attrs "user" {:username username}))]
+                (when (= (:password user) (auth/hash-password password (:salt user)))
                   user)))}
 
    {:name "put-user"

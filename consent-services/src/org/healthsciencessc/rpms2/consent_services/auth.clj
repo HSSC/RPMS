@@ -4,10 +4,6 @@
             [clojure.data.codec.base64 :as b64])
   (:import org.mindrot.jbcrypt.BCrypt))
 
-(defn authenticate?
-  [username password]
-  (process/dispatch "authenticate" {:username username :password password}))
-
 (def ^:private hash-times 3)
 
 ;; Using bcrypt for hashing
@@ -30,14 +26,18 @@
 
 (defn add-user-to-session
   [request user]
-  (assoc-in request :session :user user))
+  (assoc-in request [:session :current-user] user))
 
 (defn decode-cred
   [cred]
   (-> cred .getBytes b64/decode String.))
 
+(defn authenticate
+  [username password]
+  (process/dispatch "authenticate" {:username username :password password}))
+
 (defn wrap-authentication
-  [handler]
+  [handler authenticate]
   (fn [request]
     (let [auth ((:headers request) "authorization")
           cred (and auth
@@ -50,6 +50,6 @@
           pass (and cred
                     (last
                      (re-find #":(.*)$" cred)))]
-      (if-let [auth-user (authenticate? user pass)]
+      (if-let [auth-user (authenticate user pass)]
         (handler (add-user-to-session request auth-user))
         unauthorized-response))))

@@ -22,4 +22,5 @@
 
 (defroutes app
   development
-  (process-ws/ws-constructor))
+  (process-ws/ws-constructor (fn [handler]
+                               (auth/wrap-authentication handler auth/authenticate))))
