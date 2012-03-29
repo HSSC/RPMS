@@ -11,14 +11,14 @@
    :title {:persisted true}
    :suffix {:persisted true}})
 
-(def data-defs
+(def default-data-defs
   {"organization" {:attributes
-                  (merge base
-                         {:name {:required true :persisted true}
-                          :code {:persisted true}
-                          :location-label {:persisted true}
-                          :protocol-label {:persisted true}})}
-   
+                   (merge base
+                          {:name {:required true :persisted true}
+                           :code {:persisted true}
+                           :location-label {:persisted true}
+                           :protocol-label {:persisted true}})}
+
    "user" {:attributes (merge base
                               person
                               {:username {:persisted true :required true}
@@ -26,7 +26,7 @@
                                :salt {:persisted true :required true}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
                        {:type :has-many :related-to "role-mapping"}]}
-   
+
    "role" {:attributes (merge base
                               {:name {:persisted true :required true}
                                :code {:persisted true}})
@@ -46,12 +46,16 @@
    })
 
 (defn get-relations
-  [type]
-  (filter #(not (:omit %)) (get-in data-defs [type :relations])))
+  [type data-defs]
+  (get-in data-defs [type :relations]))
 
 (defn get-parent-relations
-  [type]
-  (filter #(= :belongs-to (:type %)) (get-relations type)))
+  [type data-defs]
+  (filter #(= :belongs-to (:type %)) (get-relations type data-defs)))
+
+(defn record-relations
+  [type data-defs]
+  (filter #(not (:omit %)) (get-relations type data-defs)))
 
 (defn attr-search
   [term]
@@ -84,17 +88,22 @@
   (into (keys attributes)
         (map relation-name->key relations)))
 
+(defn get-relationship-from-child
+  [parent-type child-type data-defs]
+  (:relationship (first (filter #(= parent-type (:related-to %))
+                                (:relations (data-defs child-type))))))
+
 (defn validate
   [record]
   record)
 
 (defn validate-record
-  [{type :type :as record}]
+  [record type data-defs]
   (->> (data-defs type)
-      all-valid-keys
-      (select-keys record)
-      validate))
+       all-valid-keys
+       (select-keys record)
+       validate))
 
 (defn validate-persistant-record
-  [record type]
+  [record type data-defs]
   (select-keys record (persisted-attrs (data-defs type))))

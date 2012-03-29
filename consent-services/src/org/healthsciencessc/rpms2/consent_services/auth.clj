@@ -15,7 +15,7 @@
 (defn hash-password
   [password salt]
   (loop [pass password count hash-times]
-    (if (= 0 count)
+    (if (zero? count)
       pass
       (recur (BCrypt/hashpw pass salt) (dec count)))))
 

@@ -1,4 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-services.data
+  (:use [clojure.set :only (difference)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [clojurewerkz.neocons.rest :as neorest]
@@ -25,11 +26,6 @@
     (nodes/add-to-index (:id obj-node) "node-index-record-types" "name" name)
     (relationships/create obj-node root-node :root)))
 
-(defn setup-schema
-  []
-  (map create-record-type-node
-       '("organization" "location" "user")))
-
 (defn find-record-type-node
   [type]
   (first (nodes/find "node-index-record-types" :name type)))
@@ -52,7 +48,8 @@
 
 (defn find-node
   [id]
-  (nodes/get id))
+  (when id
+    (nodes/get id)))
 
 (defn create-relationship
   [from to relation]
@@ -64,31 +61,39 @@
 
 (defn create-parent-relationship
   [child-node parent-id relationship]
-  (let [parent-node (find-node parent-id)]
+  (if-let [parent-node (find-node parent-id)]
     (create-relationship child-node parent-node relationship)))
 
 (defn create-parent-relationships
   [node type data]
-  (let [parent-relations (domain/get-parent-relations type)]
+  (let [parent-relations (domain/get-parent-relations type domain/default-data-defs)]
     (doall (map (fn [parent-relation]
                   (let [parent-id (get-in data [(keyword (:related-to parent-relation)) :id])
                         relation (:relationship parent-relation)]
                     (create-parent-relationship node parent-id relation)))
                 parent-relations))))
 
+(defn new-node
+  [type data]
+  (-> (clean-nils data)
+      (domain/validate-persistant-record type domain/default-data-defs)
+      nodes/create))
+
 (defn create-node
   [type data]
-  (let [new-node (-> (clean-nils data) (domain/validate-persistant-record type) nodes/create)]
+  (let [new-node (new-node type data)]
     (do
       (create-type-relationship new-node type)
       (create-parent-relationships new-node type data))
     new-node))
 
 (defn update-node
-  [type record]
-  (let [node-id (:id record)
-        update-data (domain/validate-persistant-record (clean-nils record) type)]
-    (nodes/update node-id update-data)))
+  [type id data]
+  (let [old-data (:data (find-node id))
+        merged-data (merge old-data data)
+        update-data (domain/validate-persistant-record (clean-nils merged-data) type domain/default-data-defs)]
+                                        ;;(nodes/update id update-data)
+    ))
 
 (defn find-all-instance-nodes
   [type]
@@ -112,11 +117,14 @@
 
 (defmethod get-related-obj :belongs-to
   [{id :id} {:keys [relationship related-to]}]
-  (-> (find-parent id relationship)
-      (node->record related-to)))
+  (let [parent-node (find-parent id relationship)]
+    (when parent-node
+      (node->record parent-node related-to))))
 
 (defmethod get-related-obj :has-many
-  [record relation])
+  [record relation]
+  (let [relationship (domain/get-relationship-from-child (:type record) (:related-to relation) domain/default-data-defs)]
+    (map #(node->record % (:related-to relation)) (find-all-children (:id record) relationship))))
 
 (defn find-node-by-type-id
   [type id]
@@ -126,14 +134,37 @@
   [record relations]
   (into record
         (for [relation relations]
-          [(domain/relation-name->key relation) (get-related-obj record relation)])))
+          (let [related-obj (get-related-obj record relation)]
+            (when related-obj
+              [(domain/relation-name->key relation) related-obj])))))
 
 (defn node->record
   [{:keys [id data]} type]
-  (let [relations (get-in domain/data-defs [type :relations])]
+  (let [relations (domain/record-relations type domain/default-data-defs)]
     (-> (assoc data :id id :type type)
         (add-relations relations)
-        domain/validate-record)))
+        (domain/validate-record type domain/default-data-defs))))
+
+(defn delete-node
+  [id]
+  (if-let [node (find-node id)]
+    (do
+      (relationships/purge-all node)
+      (nodes/delete id))))
+
+(defn setup-schema
+  [data-defs]
+  (let [type-nodes (set (map #(get-in % [:data :name]) (find-all-children 0 :root)))
+        data-def-types (set (keys data-defs))]
+    (do
+      (doall (map #(create-record-type-node %) (difference data-def-types type-nodes)))
+      (doall (map #(delete-node (:id (find-record-type-node %)))
+                  (difference type-nodes data-def-types)))))
+  "Done")
+
+(defn setup-default-schema
+  []
+  (setup-schema domain/default-data-defs))
 
 
 ;; Public API
@@ -161,7 +192,27 @@
       (node->record new-node type))))
 
 (defn update
-  [type {id :id :as record}]
+  [type id data]
   (do
-    (update-node type record)
+    (update-node type id data)
     (find-record type id)))
+
+(defn create-test-nodes
+  []
+  (let [org (create "organization" {:name "MUSC"})
+        user (create "user" {:username "foo" :password "$2a$10$1Qy9gB.cDZ5PWS.fWYGUcuPJ1X2V3xGYIbV/50TM6EFy7Yj2L4cjm"
+                             :salt "$2a$10$1Qy9gB.cDZ5PWS.fWYGUcu" :organization {:id (:id org)}})
+        location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
+        admin-role (create "role" {:name "Administrator" :organization {:id (:id org)}})
+        clerk-role (create "role" {:name "Clerk" :organization {:id (:id org)}})]
+    (do
+      (create "role-mapping" {:organization {:id (:id org)} :role {:id (:id admin-role)} :user {:id (:id user)} :location {:id (:id location)}})
+      (create "role-mapping" {:organization {:id (:id org)} :role {:id (:id clerk-role)} :user {:id (:id user)} :location {:id (:id location)}}))))
+
+
+(defn reset-test-db!
+  []
+  (do
+    (delete-all-nodes!)
+    (setup-default-schema)
+    (create-test-nodes)))

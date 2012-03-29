@@ -38,10 +38,16 @@
     :runnable-fn (fn [params] true)
     :run-fn (fn [{:keys [username password]}]
               (if-let [user (first (data/find-records-by-attrs "user" {:username username}))]
-                (when (= (:password user) (auth/hash-password password (:salt user)))
-                  user)))}
+                (do
+                  (when (= (:password user) (auth/hash-password password (:salt user)))
+                    user))))}
 
-   {:name "put-user"
+   {:name "get-security-authenticate"
+    :runnable-fn (fn [params] true)
+    :run-fn (fn [params]
+              (json-str (:current-user (:session params))))}
+
+   {:name "put-security-user"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (let [user-data (:body-params params)
@@ -50,24 +56,25 @@
                     user (assoc user-data :salt new-salt :password (auth/hash-password unhashed-pwd new-salt))]
                 (json-str (data/create "user" user))))}
 
-   {:name "get-users"
+   {:name "get-security-users"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (json-str (data/find-all "user")))}
-   
-   {:name "get-user"
+
+   {:name "get-security-user"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (let [user-id (Integer/parseInt (-> params :query-params :user))]
                 (json-str (data/find-record "user" user-id))))}
 
-   ;; curl -i -X POST -H "Content-type: application/json" -d "{\"id\" : <ID> \"name\" : \"MUSC FOOBAR\"}" http://localhost:3000/organization
-   {:name "post-user"
+   ;; curl -i -X POST -H "Content-type: application/json" -d "{\"username\" : \"foobar\"}" http://localhost:3000/security/user?user=<ID>
+   {:name "post-security-user"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [user (:body-params params)]
-                (json-str (data/update "user" user))))}
-   
+              (let [user-id (get-in params [:query-params :user])
+                    user-data (:body-params params)]
+                (json-str (data/update "user" user-id user-data))))}
+
    ])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))
