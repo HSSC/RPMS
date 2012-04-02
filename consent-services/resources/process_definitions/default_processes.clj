@@ -71,7 +71,7 @@
    {:name "post-security-user"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [user-id (get-in params [:query-params :user])
+              (let [user-id (Integer/parseInt (get-in params [:query-params :user]))
                     user-data (:body-params params)]
                 (json-str (data/update "user" user-id user-data))))}
 

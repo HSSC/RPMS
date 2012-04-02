@@ -92,8 +92,7 @@
   (let [old-data (:data (find-node id))
         merged-data (merge old-data data)
         update-data (domain/validate-persistant-record (clean-nils merged-data) type domain/default-data-defs)]
-                                        ;;(nodes/update id update-data)
-    ))
+    (nodes/update id update-data)))
 
 (defn find-all-instance-nodes
   [type]
