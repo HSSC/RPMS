@@ -22,7 +22,7 @@
 (def unauthorized-response
   {:status 401
    :body "Access Denied"
-   :headers {"Content-Type" "text/plain"}})
+   :headers {"Content-Type" "text/plain" "WWW-Authenticate" "Basic"}})
 
 (defn add-user-to-session
   [request user]
