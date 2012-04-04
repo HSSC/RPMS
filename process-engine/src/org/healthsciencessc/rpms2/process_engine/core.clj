@@ -2,25 +2,11 @@
   (:require [clojure.java.io :as io])
   (:use [slingshot.slingshot :only (throw+)]))
 
-(defprotocol IConsentProcess
-  (runnable? [this arg-map])
-  (run [this arg-map]))
-
 (defrecord CustomProcess
-    [name order runnable-fn run-fn]
-  IConsentProcess
-  (runnable? [consent-process arg-map]
-    ((:runnable-fn consent-process) arg-map))
-  (run [consent-process arg-map]
-    ((:run-fn consent-process) arg-map)))
+    [name order runnable-fn run-fn])
 
 (defrecord DefaultProcess
-    [name runnable-fn run-fn]
-  IConsentProcess
-  (runnable? [consent-process arg-map]
-    ((:runnable-fn consent-process) arg-map))
-  (run [consent-process arg-map]
-    ((:run-fn consent-process) arg-map)))
+    [name runnable-fn run-fn])
 
 (def default-processes
   (atom []))
@@ -28,50 +14,44 @@
 (def custom-processes
   (atom []))
 
-(defn- append-process-coll
-  "Adds the new process to the given process collection"
-  [process-list new-process]
-  (swap! process-list conj new-process))
-
 (defmulti register-process
   "Adds the process to the correct collection based on record type"
   class)
 
 (defmethod register-process CustomProcess
-  [new-processes]
-  (append-process-coll custom-processes new-processes))
+  [new-process]
+  (reset! custom-processes (sort-by :order (conj @custom-processes new-process))))
 
 (defmethod register-process DefaultProcess
-  [new-processes]
-  (append-process-coll default-processes new-processes))
+  [new-process]
+  (swap! default-processes conj new-process))
 
 (defn register-processes
   "Adds a coll of processes to the correct type collection"
   [processes]
   (doall (map register-process processes)))
 
-(defn- find-processes
-  "Searches given process type for match on name and runnable with supplied context"
-  [type name params]
-  (filter #(and (= name (:name %)) (runnable? % params)) type))
+(defn- find-process-fns
+  "Searches given process list for match on name and runnable with supplied context and returns the function to run"
+  [process-name params process-list]
+  (->> process-list
+       (filter #(= process-name (:name %)))
+       (map (fn [{:keys [runnable-fn run-fn run-if-false]}]
+              (if (runnable-fn params)
+                run-fn
+                run-if-false)))
+       (filter identity)))
 
-(defn find-custom-process
-  "Returns the first registered custom process with the given name"
-  [name params]
-  (first (sort-by :order (find-processes @custom-processes name params))))
-
-(defn find-default-process
-  "Returns the first registered default process with the given name"
-  [name params]
-  (or (first (find-processes @default-processes name params))
-      (throw+ {:type ::no-default-process :process-name name})))
+(defn find-process-fn
+  [name params process-list]
+  (if-let [process-fn (first (find-process-fns name params process-list))]
+    process-fn
+    (throw+ {:type ::no-default-process :process-name name})))
 
 (defn run-default
-  "Runs the default process with the given name"
+  "Runs the correct function of the default process with the given name"
   [name params]
-  (let [dp (find-default-process name params)]
-    (if dp
-      (run dp params))))
+  ((find-process-fn name params @default-processes) params))
 
 (defn- glob-dir
   "Returns a list of canonical file names of clj files in dir"
@@ -92,14 +72,8 @@
     (load-files path)
     (load-files (str (.getCanonicalPath (io/file ".")) "/" path))))
 
-(defn- search-processes
-  "First looks for a custom process then a default process that is runnable"
-  [name params]
-  (let [custom-process (find-custom-process name params)]
-    (or custom-process (find-default-process name params))))
-
 (defn dispatch
   "Public function to find and execute the correct process based on name and context"
   [name params]
-  (let [process (search-processes name params)]
-    (run process params)))
+  (let [process-fn (find-process-fn name params (concat @custom-processes @default-processes))]
+    (process-fn params)))
