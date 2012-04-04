@@ -38,9 +38,8 @@
     :runnable-fn (fn [params] true)
     :run-fn (fn [{:keys [username password]}]
               (if-let [user (first (data/find-records-by-attrs "user" {:username username}))]
-                (do
-                  (when (= (:password user) (auth/hash-password password (:salt user)))
-                    user))))}
+                (when (auth/good-password? password (:password user))
+                  user)))}
 
    {:name "get-security-authenticate"
     :runnable-fn (fn [params] true)
@@ -51,9 +50,7 @@
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (let [user-data (:body-params params)
-                    unhashed-pwd (:password user-data)
-                    new-salt (auth/generate-salt)
-                    user (assoc user-data :salt new-salt :password (auth/hash-password unhashed-pwd new-salt))]
+                    user (assoc user-data :password (auth/hash-password unhashed-pwd))]
                 (json-str (data/create "user" user))))}
 
    {:name "get-security-users"

@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-services.data
   (:use [clojure.set :only (difference)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
+            [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [clojurewerkz.neocons.rest :as neorest]
             [clojurewerkz.neocons.rest.nodes :as nodes]
@@ -199,8 +200,8 @@
 (defn create-test-nodes
   []
   (let [org (create "organization" {:name "MUSC"})
-        user (create "user" {:username "foo" :password "$2a$10$1Qy9gB.cDZ5PWS.fWYGUcuPJ1X2V3xGYIbV/50TM6EFy7Yj2L4cjm"
-                             :salt "$2a$10$1Qy9gB.cDZ5PWS.fWYGUcu" :organization {:id (:id org)}})
+        user (create "user" {:username "foo" :password (auth/hash-password "bar")
+                             :organization {:id (:id org)}})
         location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
         admin-role (create "role" {:name "Administrator" :organization {:id (:id org)}})
         clerk-role (create "role" {:name "Clerk" :organization {:id (:id org)}})]

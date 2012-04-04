@@ -22,8 +22,7 @@
    "user" {:attributes (merge base
                               person
                               {:username {:persisted true :required true}
-                               :password {:persisted true :required true :validation (fn [password] (< 5 (count password)))}
-                               :salt {:persisted true :required true}})
+                               :password {:omit true :persisted true :required true :validation (fn [password] (< 5 (count password)))}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
                        {:type :has-many :related-to "role-mapping"}]}
 
@@ -55,7 +54,7 @@
 
 (defn record-relations
   [type data-defs]
-  (filter #(not (:omit %)) (get-relations type data-defs)))
+  (remove :omit (get-relations type data-defs)))
 
 (defn attr-search
   [term]
@@ -85,8 +84,8 @@
 
 (defn all-valid-keys
   [{:keys [attributes relations]}]
-  (into (keys attributes)
-        (map relation-name->key relations)))
+  (concat (map first (remove #(-> % second :omit) attributes))
+          (map relation-name->key relations)))
 
 (defn get-relationship-from-child
   [parent-type child-type data-defs]

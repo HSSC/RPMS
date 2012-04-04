@@ -19,3 +19,8 @@
                    "bar" {:relations [{:type :belongs-to :related-to "foo" :relationship :foobar}]}}]
     (is (= :foobar
            (get-relationship-from-child "foo" "bar" data-defs)))))
+
+(deftest omit-attributes
+  (let [attr-map {:attributes {:foo {:persisted true}
+                                :bar {:omit true}}}]
+    (is (= '(:foo) (all-valid-keys attr-map)))))

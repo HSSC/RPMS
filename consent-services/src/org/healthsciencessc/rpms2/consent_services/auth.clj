@@ -4,20 +4,21 @@
             [clojure.data.codec.base64 :as b64])
   (:import org.mindrot.jbcrypt.BCrypt))
 
-(def ^:private hash-times 3)
+(def ^:private hash-times 11)
 
 ;; Using bcrypt for hashing
 ;; http://codahale.com/how-to-safely-store-a-password/
 (defn generate-salt 
   []
-  (BCrypt/gensalt))
+  (BCrypt/gensalt (int hash-times)))
 
 (defn hash-password
-  [password salt]
-  (loop [pass password count hash-times]
-    (if (zero? count)
-      pass
-      (recur (BCrypt/hashpw pass salt) (dec count)))))
+  [password]
+  (BCrypt/hashpw password (generate-salt)))
+
+(defn good-password?
+  [candidate hashed]
+  (BCrypt/checkpw candidate hashed))
 
 (def unauthorized-response
   {:status 401
