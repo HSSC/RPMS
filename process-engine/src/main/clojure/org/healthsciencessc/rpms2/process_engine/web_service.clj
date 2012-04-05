@@ -35,11 +35,11 @@
        (str "<p>" req "</p>")))
 
 (defroutes service-routes
-  (ANY "*" {:keys [uri request-method query-params form-params session body] :as req}
+  (ANY "*" {:keys [uri context path-info request-method query-params form-params session body] :as req}
        (info "REQUEST: " req)
-       (let [process-name (uri->process-name (name request-method) uri)
+       (let [process-name (uri->process-name (name request-method) path-info)
              body-params (merge (get-json-params body) (keyify-params form-params))
-             params {:query-params (keyify-params query-params) :body-params body-params :session session}]
+             params {:query-params (keyify-params query-params) :body-params body-params :session session :context context :path-info path-info}]
          (info "PROCESS NAME: " process-name)
          (try+
           (process/dispatch process-name params)
