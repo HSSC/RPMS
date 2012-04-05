@@ -1,13 +1,5 @@
-*jar
-*war
 */src/main/clojure/*.props
-*.class
 */target
-/lib
-/native
-/.lein-failures
-/checkouts
-/.lein-deps-sum
 \#*
 .\#*
 *~
