@@ -2,6 +2,7 @@
 *war
 *.props
 *.class
+*/target
 /lib
 /native
 /.lein-failures
