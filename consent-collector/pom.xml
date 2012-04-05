@@ -99,6 +99,19 @@
 			<scope>test</scope>
 		</dependency>
 		
+		<!-- Add Compile-Time Plugin Dependencies -->
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>swank-clojure</groupId>
+			<artifactId>swank-clojure</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		
 		<!-- Dependencies required for ClojureScript compilation. -->
 		<!-- 
 		<dependency>
