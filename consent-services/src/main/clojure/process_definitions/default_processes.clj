@@ -1,9 +1,18 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes
-  (:use [clojure.data.json :only (json-str)])
+  (:use [clojure.data.json :only (json-str pprint-json)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]
+           [java.io StringWriter PrintWriter]))
+
+
+(defn json-output [json]
+  (let [sw (StringWriter.)
+        pw (PrintWriter. sw)]
+    (binding [*out* pw]
+      (pprint-json json))
+    (.toString sw)))
 
 (def process-defns
   [
@@ -50,13 +59,14 @@
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (let [user-data (:body-params params)
+                    unhashed-pwd (:password user-data)
                     user (assoc user-data :password (auth/hash-password unhashed-pwd))]
                 (json-str (data/create "user" user))))}
 
    {:name "get-security-users"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (json-str (data/find-all "user")))}
+              (json-output (data/find-all "user")))}
 
    {:name "get-security-user"
     :runnable-fn (fn [params] true)
