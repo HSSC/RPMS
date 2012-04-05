@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>org.healthsciencessc.clj</groupId>
+		<artifactId>root</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
+	
+	<groupId>org.healthsciencessc.rpms2</groupId>
+	<artifactId>consent-collector</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	
+	<name>RPMS2 Consent Collector Application</name>
+	
+	<packaging>clojure</packaging>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.healthsciencessc.rpms2</groupId>
+			<artifactId>process-engine</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.healthsciencessc.clj</groupId>
+			<artifactId>war</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+			<type>war</type>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>compojure</groupId>
+			<artifactId>compojure</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>ring</groupId>
+			<artifactId>ring-servlet</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>tools.logging</artifactId>
+			<version>0.2.3</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>data.json</artifactId>
+			<version>0.1.2</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.16</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>j18n</groupId>
+			<artifactId>j18n</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>clj-http</groupId>
+			<artifactId>clj-http</artifactId>
+			<version>0.3.2</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>hiccup</groupId>
+			<artifactId>hiccup</artifactId>
+			<version>0.3.8</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>sandbar</groupId>
+			<artifactId>sandbar</artifactId>
+			<version>0.4.0-SNAPSHOT</version>
+		</dependency>
+		
+		<!-- Dependencies required for testing -->
+		<dependency>
+			<groupId>ring-serve</groupId>
+			<artifactId>ring-serve</artifactId>
+			<version>0.1.2</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- Dependencies required for ClojureScript compilation. -->
+		<!-- 
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojurescript</artifactId>
+			<version>0.0-993</version>
+			<scope>compile</scope>
+		</dependency>
+		 -->
+		 
+		<dependency>
+			<groupId>com.google.javascript</groupId>
+			<artifactId>closure-compiler</artifactId>
+			<version>r1810</version>
+			<scope>compile</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>
+			<version>2.0.12</version>
+			<scope>compile</scope>
+		</dependency>
+	
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>10.0.1</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.theoryinpractise</groupId>
+				<artifactId>clojure-maven-plugin</artifactId>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				
+				<!-- 
+				<executions>
+					<execution>
+						<id>compile-closurescript</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+					</execution>
+				</executions>
+				-->
+			 
+				<configuration>
+					<executable>java</executable>
+					<workingDirectory>${project.dir}</workingDirectory>
+					<arguments>
+						<argument>-classpath</argument>
+						<classpath>
+							<dependency>com.google.javascript:closure-compiler</dependency>
+							<dependency>com.google.guava:guava</dependency>
+							<dependency>args4j:args4j</dependency>
+						</classpath>
+						
+						<argument>com.google.javascript.jscomp.CommandLineRunner</argument>
+						<argument>--compilation_level</argument>
+						<argument>WHITESPACE_ONLY</argument>
+						<argument>--formatting</argument>
+						<argument>PRETTY_PRINT</argument>
+						<argument>--js</argument>
+						<argument>src/main/script/org/healthsciencessc/rpms2/core.cljs</argument>
+						<argument>--js_output_file</argument>
+						<argument>src/main/webapp/app.js</argument>
+						<argument>--use_only_custom_externs</argument>
+					</arguments>
+				</configuration>
+			</plugin>
+			 
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+			</plugin>
+	
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>make-a-war</id>
+						<phase>package</phase>
+						<goals>
+							<goal>war</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.mortbay.jetty</groupId>
+				<artifactId>maven-jetty-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

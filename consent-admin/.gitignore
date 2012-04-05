@@ -1,12 +1,8 @@
+/pom.xml
 *jar
-*war
-*.props
 /lib
 /classes
 /native
 /.lein-failures
 /checkouts
 /.lein-deps-sum
-\#*
-.\#*
-*~
