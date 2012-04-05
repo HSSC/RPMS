@@ -1,8 +1,8 @@
 *jar
 *war
 *.props
+*.class
 /lib
-/classes
 /native
 /.lein-failures
 /checkouts
