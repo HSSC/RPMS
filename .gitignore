@@ -1,6 +1,6 @@
 *jar
 *war
-*.props
+*/src/main/clojure/*.props
 *.class
 */target
 /lib
