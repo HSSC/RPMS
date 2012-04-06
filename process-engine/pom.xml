@@ -45,6 +45,12 @@
 		
 		<dependency>
 			<groupId>org.clojure</groupId>
+			<artifactId>java.classpath</artifactId>
+			<version>0.2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.clojure</groupId>
 			<artifactId>data.json</artifactId>
 			<version>0.1.2</version>
 		</dependency>
