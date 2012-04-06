@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.process-engine.core
-  (:require [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [clojure.java.classpath :as cp])
   (:use [slingshot.slingshot :only (throw+)]))
 
 (defrecord CustomProcess
@@ -53,24 +54,52 @@
   [name params]
   ((find-process-fn name params @default-processes) params))
 
-(defn- glob-dir
-  "Returns a list of canonical file names of clj files in dir"
-  [dir]
-  (map (fn [file-io] (.getCanonicalPath file-io))
-       (filter (fn [file-io] (.endsWith (.getName file-io) ".clj"))
-               (file-seq (io/file dir)))))
+(defn clj-file? [name]
+  (or (.endsWith name ".clj")
+      (.endsWith name ".CLJ")))
 
-(defn- load-files
-  "Loads all the clj files in dir"
-  [dir]
-  (doall (map load-file (glob-dir dir))))
+(defn clj-files-from-classpath [dir]
+  (->> (distinct (mapcat file-seq (cp/classpath-directories)))
+       (filter #(.isFile ^java.io.File %))
+       (filter #(clj-file? (.getName %)))
+       (filter (fn [^java.io.File f]
+                 (.endsWith (.getParent f) dir)))))
 
-(defn load-processes
-  "Loads all the proccess definitions in path. Path is assumed to be a relative path from project root unless prefixed with a slash"
-  [path]
-  (if (= \/ (first path))
-    (load-files path)
-    (load-files (str (.getCanonicalPath (io/file ".")) "/" path))))
+(defn load-from-classpath [dir]
+  (doseq [f (clj-files-from-classpath dir)]
+    (println (str "Loading from classpath: " (.getAbsolutePath f)))
+    (load-reader (io/reader f))))
+                   
+(defn clj-in-jars []
+  (let [fnames (mapcat cp/filenames-in-jar (cp/classpath-jarfiles))]
+        ;;unix-name (.replace dir \\ \/)]
+    (filter clj-file? fnames))) 
+
+(defn jar-entry-parent-dir [n]
+  (let [slash-idx (.lastIndexOf n (int \/))]
+    (cond
+      (= slash-idx -1)
+      nil
+      (= slash-idx 0)
+      (throw (Exception. "WAT"))
+      (> slash-idx 0)
+      (.substring n 0 slash-idx))))
+
+(defn matches-from-jars [dir]
+  (filter (fn [n]
+            (if-let [parent (jar-entry-parent-dir n)]
+              (.endsWith parent dir)))
+          (clj-in-jars)))
+
+(defn load-from-jars [dir]
+  (let [cl (clojure.lang.RT/baseLoader)]
+    (doseq [m (matches-from-jars dir)]
+      (println "Loading from jar: " m)
+      (load-reader (io/reader (.getResourceAsStream cl m))))))
+
+(defn load-processes [dir]
+  (load-from-jars dir)
+  (load-from-classpath dir))
 
 (defn dispatch
   "Public function to find and execute the correct process based on name and context"
