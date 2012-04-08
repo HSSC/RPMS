@@ -113,14 +113,12 @@
 		</dependency>
 		
 		<!-- Dependencies required for ClojureScript compilation. -->
-		<!-- 
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>clojurescript</artifactId>
 			<version>0.0-993</version>
 			<scope>compile</scope>
 		</dependency>
-		 -->
 		 
 		<dependency>
 			<groupId>com.google.javascript</groupId>
@@ -152,47 +150,27 @@
 			</plugin>
 			
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
-				
-				<!-- 
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
 				<executions>
 					<execution>
 						<id>compile-closurescript</id>
-						<phase>compile</phase>
 						<goals>
-							<goal>exec</goal>
+							<goal>run</goal>
 						</goals>
+						<phase>process-sources</phase>
 					</execution>
 				</executions>
-				-->
-			 
 				<configuration>
-					<executable>java</executable>
-					<workingDirectory>${project.dir}</workingDirectory>
-					<arguments>
-						<argument>-classpath</argument>
-						<classpath>
-							<dependency>com.google.javascript:closure-compiler</dependency>
-							<dependency>com.google.guava:guava</dependency>
-							<dependency>args4j:args4j</dependency>
-						</classpath>
-						
-						<argument>com.google.javascript.jscomp.CommandLineRunner</argument>
-						<argument>--compilation_level</argument>
-						<argument>WHITESPACE_ONLY</argument>
-						<argument>--formatting</argument>
-						<argument>PRETTY_PRINT</argument>
-						<argument>--js</argument>
-						<argument>src/main/script/org/healthsciencessc/rpms2/core.cljs</argument>
-						<argument>--js_output_file</argument>
-						<argument>src/main/webapp/app.js</argument>
-						<argument>--use_only_custom_externs</argument>
-					</arguments>
+					<target>
+						<property name="ccp" refid="maven.compile.classpath"/>
+						<java classname="clojure.main" classpath="${ccp}" >
+                			<arg value="compile.clj"/>
+                		</java>
+					</target>
 				</configuration>
 			</plugin>
-			 
+			
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>versions-maven-plugin</artifactId>
