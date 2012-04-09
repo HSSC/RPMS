@@ -17,7 +17,7 @@
        (do
          (reset! process/default-processes [])
          (reset! process/custom-processes [])
-         (process/load-processes "resources/process_definitions"))
+         (process/load-processes config/default-process-class-path))
        "Done"))
 
 (defroutes app

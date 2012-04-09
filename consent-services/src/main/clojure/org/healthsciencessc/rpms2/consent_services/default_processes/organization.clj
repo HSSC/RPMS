@@ -5,31 +5,33 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (def org-processes
-  [;; curl -i -X PUT -H "Content-type: application/json" -d "{\"name\" : \"MUSC FOOBAR\"}" http://localhost:3000/organization
-   {:name "put-organization"
-    :runnable-fn (fn [params] true)
-    :run-fn (fn [params]
-              (let [org (:body-params params)]
-                (json-str (data/create "organization" org))))}
-
-   ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/organizations
-   {:name "get-organizations"
+  [;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/organizations
+   {:name "get-security-organizations"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (json-str (data/find-all "organization")))}
 
    ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/organization?organization=<ID>
-   {:name "get-organization"
+   {:name "get-security-organization"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
               (let [org-id (Integer/parseInt (-> params :query-params :organization))]
                 (json-str (data/find-record "organization" org-id))))}
 
-   ;; curl -i -X POST -H "Content-type: application/json" -d "{\"id\" : <ID> \"name\" : \"MUSC FOOBAR\"}" http://localhost:3000/organization
-   {:name "post-organization"
+   ;; curl -i -X PUT -H "Content-type: application/json" -d "{\"name\" : \"MUSC FOOBAR\"}" http://localhost:3000/organization
+   {:name "put-security-organization"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [org (-> params :body-params :organization)]
-                (json-str (data/update "organization" org))))}])
+              (let [org (:body-params params)]
+                (json-str (data/create "organization" org))))}
+   
+   ;; curl -i -X POST -H "Content-type: application/json" -d "{\"name\" : \"MUSC BAZ\"}" http://localhost:3000/organization?organization=<ID>
+   {:name "post-security-organization"
+    :runnable-fn (fn [params] true)
+    :run-fn (fn [params]
+              (let [org-id (Integer/parseInt (get-in params [:query-params :organization]))
+                    org (-> params :body-params)]
+                (println org-id org)
+                (json-str (data/update "organization" org-id org))))}])
 
 (process/register-processes (map #(DefaultProcess/create %) org-processes))
