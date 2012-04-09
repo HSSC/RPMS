@@ -3,3 +3,6 @@
 
 (def conf
   (props/slurp-config "consent-services.props"))
+
+(def default-process-class-path
+  "default_processes")
