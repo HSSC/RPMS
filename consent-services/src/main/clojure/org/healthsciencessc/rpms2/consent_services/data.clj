@@ -12,8 +12,8 @@
 (declare node->record)
 
 (defn connect!
-  []
-  (neorest/connect! (config/conf "neo4j-url")))
+  [url]
+  (neorest/connect! url))
 
 (defn delete-all-nodes!
   []
