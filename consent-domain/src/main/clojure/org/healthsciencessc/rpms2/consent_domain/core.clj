@@ -31,6 +31,11 @@
                                :code {:persisted true}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
+   "language" {:attributes (merge base
+                              {:name {:persisted true :required true}
+                               :code {:persisted true}})
+               :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
+
    "location" {:attributes (merge base
                                   {:name {:persisted true}
                                    :code {:persisted true}
@@ -103,6 +108,6 @@
        (select-keys record)
        validate))
 
-(defn validate-persistant-record
+(defn validate-persistent-record
   [record type data-defs]
   (select-keys record (persisted-attrs (data-defs type))))

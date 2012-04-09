@@ -77,7 +77,7 @@
 (defn new-node
   [type data]
   (-> (clean-nils data)
-      (domain/validate-persistant-record type domain/default-data-defs)
+      (domain/validate-persistent-record type domain/default-data-defs)
       nodes/create))
 
 (defn create-node
@@ -92,7 +92,7 @@
   [type id data]
   (let [old-data (:data (find-node id))
         merged-data (merge old-data data)
-        update-data (domain/validate-persistant-record (clean-nils merged-data) type domain/default-data-defs)]
+        update-data (domain/validate-persistent-record (clean-nils merged-data) type domain/default-data-defs)]
     (nodes/update id update-data)))
 
 (defn find-all-instance-nodes
@@ -156,11 +156,10 @@
   [data-defs]
   (let [type-nodes (set (map #(get-in % [:data :name]) (find-all-children 0 :root)))
         data-def-types (set (keys data-defs))]
-    (do
-      (doall (map #(create-record-type-node %) (difference data-def-types type-nodes)))
-      (doall (map #(delete-node (:id (find-record-type-node %)))
-                  (difference type-nodes data-def-types)))))
-  "Done")
+    (doseq [node (difference data-def-types type-nodes)]
+      (create-record-type-node node))
+    (doall (map #(delete-node (:id (find-record-type-node %)))
+                (difference type-nodes data-def-types)))))
 
 (defn setup-default-schema
   []
@@ -205,9 +204,14 @@
         admin-role (create "role" {:name "Administrator" :organization {:id (:id org)}})
         clerk-role (create "role" {:name "Clerk" :organization {:id (:id org)}})]
     (do
-      (create "role-mapping" {:organization {:id (:id org)} :role {:id (:id admin-role)} :user {:id (:id user)} :location {:id (:id location)}})
-      (create "role-mapping" {:organization {:id (:id org)} :role {:id (:id clerk-role)} :user {:id (:id user)} :location {:id (:id location)}}))))
-
+      (create "role-mapping" {:organization {:id (:id org)} 
+                              :role {:id (:id admin-role)} 
+                              :user {:id (:id user)} 
+                              :location {:id (:id location)}})
+      (create "role-mapping" {:organization {:id (:id org)} 
+                              :role {:id (:id clerk-role)} 
+                              :user {:id (:id user)} 
+                              :location {:id (:id location)}}))))
 
 (defn reset-test-db!
   []
@@ -215,3 +219,4 @@
     (delete-all-nodes!)
     (setup-default-schema)
     (create-test-nodes)))
+
