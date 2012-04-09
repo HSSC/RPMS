@@ -1,7 +1,9 @@
 (ns org.healthsciencessc.rpms2.consent-collector.dsa-client
   (:require [clojure.string :as s]
             [clj-http.client :as http])
-  (:use [clojure.tools.logging :only (debug info error)]
+  (:use 
+	[org.healthsciencessc.rpms2.consent-collector.factories :as factory]
+	[clojure.tools.logging :only (debug info error)]
         [clojure.data.json :only (read-json json-str)]))
 
 (defn dsa-process-call
@@ -40,33 +42,6 @@
      ["MUSC" "musc-loc4" ]   [ "Musc-Consenter-Org4-1" "Musc-Consenter-Org5-1" ] 
     } [org loc] )
 )
-
-;;
-;;JSON for a sample location
-;;{
-;; id: 534
-;; name:"Registration",
-;; code:"reg",
-;; protocol-label:"Consent Forms",
-;; organization:{id:110, name="Med Univ", code="musc"}
-;;}
-  
-(def data-no-locations {:locations [ ] })
-
-(def data-one-location {:locations
-	[ {:id 534 :name "Registration" :code "reg" :protocol-label "Consent Forms" 
- 		:organization {:id 110 :name "Med Univ":code "musc"}  }
-	] })
-
-(def data-multiple-locations {:locations [
-	{:id 534 :name "Registration" :code "reg" :protocol-label "Consent Forms"
- 		:organization {:id 110 :name "Med Univ":code "musc"}  }
-	{:id 834 :name "Front Desk" :code "fd" :protocol-label "Agreements" 
- 		:organization {:id 111 :name "spartan ":code "srhs"}  }
-	{:id 934 :name "Bus Stop" :code "fd" :protocol-label "Insurance Waivers" 
- 		:organization {:id 113 :name "greenville":code "ghs"}  }
-	] })
-
 
 
 (def data-user-foo { :username "foo"  :title "Mr." 
@@ -124,3 +99,18 @@
          (info "(mock) authenticated as [" user-id "] returning [" retval "]")
          (info "(mock) authenticate - NOT AUTHENTICATED: [" user-id "]")) 
         retval))
+
+
+
+(defn search-consenters
+  [params]
+  (try (let [m (factory/generate-user-list params) 
+	v (into [] m )]
+	(debug "search-consenters - ==> " (count v) " " v )
+	v)
+  (catch Exception ex (error "search-consenters failed: " params " " ex))))
+
+
+(defn get-protocols
+   []
+   (factory/generate-protocol-list))

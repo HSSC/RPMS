@@ -13,6 +13,18 @@
         (info "missing resource definition: " message)
         (name message))))
 
+
+(defn- resource-existing 
+  "Returns the resource string associated with the message if 
+   found in the bundle."
+  [message bundle]
+  (j18n/resource message bundle))
+
+(defn i18n-existing
+  "Returns resource string associated with the message."
+  [message]
+  (resource-existing message my-bundle))
+
 (defn i18n
   "Returns resource string associated with the message."
   [message]

@@ -4,7 +4,7 @@
 
 (let [in "src/main/script/org/healthsciencessc/rpms2/core.cljs"
     	out "src/main/script/org/healthsciencessc/rpms2/core.js"
-      target "src/main/webapp/app.js"
+      target "src/main/resources/public/app.js"
       options []]
   (comp/compile-file in out)
   (let [source (slurp out)

@@ -1,12 +1,24 @@
 (ns org.healthsciencessc.rpms2.consent-collector.test.core
+  (:import (com.gargoylesoftware.htmlunit WebClient BrowserVersion))
   (:require [org.healthsciencessc.rpms2.process-engine.core :as pe]
             [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
-            [org.healthsciencessc.rpms2.consent-collector.test.factories :as factories])
+            [org.healthsciencessc.rpms2.consent-collector.test.factories :as factories]
+            [net.cgrand.enlive-html :as en])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]])
   (:use [sandbar.stateful-session :only (session-get)])
-  (:use org.healthsciencessc.rpms2.consent-collector.core
-        [clojure.data.json :only (read-json json-str)]
+  (:use [clojure.tools.logging :only (debug info error)])
+  (:use [clojure.data.json :only (read-json json-str)]
         org.healthsciencessc.rpms2.consent-collector.test.helpers)
+  (:require [org.healthsciencessc.rpms2.consent-collector
+             [login :as login]
+             [select-location :as select-location]
+             [select-consenter :as select-consenter]
+             [search-consenter :as search-consenter]
+             [select-protocol :as select-protocol]
+             [metadata :as metadata]
+             [create-consenter :as create-consenter]
+             [core :as core]
+             [select-lockcode :as select-lockcode]])
   (:use clojure.test))
 
 (defn redirects?
@@ -16,16 +28,16 @@
   (and
    (map? resp)
    (= (resp :status) 302)
-   (= (get-in resp [:headers "Location"] ) location )))
+   (= (get-in resp [:headers "Location"]) location)))
 
 (def-rpms-test get-login-test
   "Test that login maps to view/login, with a 302 status."
-  (is (redirects? (default-get-login {}) "/view/login")))
+  (is (redirects? (login/default-get-login {}) "/view/login")))
 
 (def-rpms-test get-view-login-test
   "Test that an HTML login page is returned."
-  (let [html (default-get-view-login {})]
-    (is (re-find #"<input[^>]*password.*>" html))))
+  (let [html (login/view {})]
+    (is (page-has? html [[:input (en/attr= :name "password")]]))))
 
 (def-rpms-test post-view-login-test
   "Test authentication."
@@ -33,31 +45,31 @@
     (testing doc
       (with-redefs [dsa/authenticate
                     (constantly {:status status})]
-        (let [resp (default-post-view-login {:userid "foobar", :password "hunter2"})]
+        (let [resp (login/perform {:userid "foobar", :password "hunter2"})]
           (is (redirects? resp location)))))
     "Authentication succeeds" 200 "/view/select/location"
     "Authentication fails" 401 "/view/login"
     "User doesn't exist" 404 "/view/login"))
 
 
-(def-rpms-test get-view-select-location-test
-  (are [doc locations path-or-regex]
+(def-rpms-test determine-users-location-test
+  (are [doc locations path text]
        (testing doc
          (with-session {:user (apply factories/user-with-locations locations)}
-           (-> (default-get-view-select-location {})
+           (-> (select-location/view {})
                ((fn [resp]
-                  (if (string? path-or-regex)
-                    (redirects? resp path-or-regex)
-                    (re-find path-or-regex resp))))
+                  (if path
+                    (redirects? resp path)
+                    (page-has-text? resp text))))
                (is))))
-       "No authorized locations" [] "/view/not-authorized"
-       "One location" ["Hardy har"] "/view/select/lock-code"
-       "Many locations" ["foo" "bar" "baz"] #"foo"))
+       "No authorized locations" [] "/view/not-authorized" nil
+       "One location" ["Hardy har"] "/view/select/lock-code" nil
+       "Many locations" ["foo" "bar" "baz"] nil "foo"))
 
 (def-rpms-test get-view-not-authorized-test
   (let [msg (i18n :not-authorized-message)]
     (is msg)
-    (->> (default-get-view-not-authorized {})
+    (->> (core/default-get-view-not-authorized {})
          (re-find (re-pattern msg))
          (is))))
 
@@ -66,7 +78,7 @@
                ["Consent Collector" "foo"
                 "Party Thrower"     "bar"
                 "Consent Collector" "baz"])
-        locs (authorized-locations user)]
+        locs (select-location/authorized-locations user)]
     (= #{"foo" "baz"} (->> locs (map :name) set))))
 
 ;;======================================
@@ -78,8 +90,8 @@
 ;; 4. the submitted html form, with no lockcode
 ;; will go to /view/select/consenter
 (def-rpms-test get-view-select-lockcode
-  "Test that get-view-select-lockcode displays a valid input form for entering lockcode."
-  (let [html (default-get-view-select-lock-code {}) ]
+  "Test that select-lockcode displays a valid input form for entering lockcode."
+  (let [html (select-lockcode/view {}) ]
     (is (re-find #"<input[^>]*lockcode.*>" html))))
 
 (def-rpms-test lockcode-tests
@@ -87,7 +99,7 @@
   (are [doc lockcode path in-session?]
        (testing doc
          (-> {:body-params (if lockcode {:lockcode lockcode} {})}
-             default-post-view-select-lock-code
+             select-lockcode/perform
              (redirects? path)
              (is))
          (is (= (if in-session? lockcode nil)
@@ -96,3 +108,27 @@
        "Non-numeric" "abba" "/view/select/lock-code" false
        "Bad length" "123" "/view/select/lock-code" false
        "No lock code" nil "/view/select/lock-code" false))
+
+(def-rpms-test view-select-consenter-test
+  (let [html (select-consenter/view {})]
+    (are [sel] (page-has? html sel)
+         [[:form (en/attr= :action "/view/search/consenters")]]
+         [[:form (en/attr= :action "/view/create/consenter")]])))
+
+(def-rpms-test view-search-consenters-test
+  (with-redefs [dsa/search-consenters (constantly [{:firstname "FOO" :lastname "BAR"}
+                                                   {:firstname "BAZ" :lastname "BAM"}])]
+    (let [html (search-consenter/get-view {})]
+      (are [text] (page-has-text? html text)
+           "FOO BAR"
+           "BAZ BAM"))))
+
+(def-rpms-test view-create-consenter-test
+  (let [html (create-consenter/view {})
+        [form] (en/select (en/html-snippet html)
+                          [[:form (en/attr= :action "/create/consenter")]])]
+    (is form)
+    (are [sel] (is (not (empty? (en/select form sel))))
+         [[:form (en/attr= :action "/create/consenter")]]
+         [[:input (en/attr= :name "firstname")]]
+         [[:input (en/attr= :name "lastname")]])))
