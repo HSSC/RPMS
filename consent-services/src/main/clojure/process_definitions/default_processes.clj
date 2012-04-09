@@ -46,9 +46,9 @@
    {:name "authenticate"
     :runnable-fn (fn [params] true)
     :run-fn (fn [{:keys [username password]}]
-              (if-let [user (first (data/find-records-by-attrs "user" {:username username}))]
-                (when (auth/good-password? password (:password user))
-                  user)))}
+              (if-let [user-node (first (filter #(= username (get-in % [:data :username])) (data/find-all-instance-nodes "user")))]
+                (if (and user-node (auth/good-password? password (get-in user-node [:data :password])))
+                  (data/node->record user-node "user"))))}
 
    {:name "get-security-authenticate"
     :runnable-fn (fn [params] true)

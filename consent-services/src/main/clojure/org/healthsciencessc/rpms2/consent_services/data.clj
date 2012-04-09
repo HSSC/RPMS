@@ -18,7 +18,7 @@
 (defn delete-all-nodes!
   []
   "For development only!"
-  (neorest/DELETE "http://localhost:7474/cleandb/foobar"))
+  (neorest/DELETE "http://localhost:7474/db/data/cleandb/foobar"))
 
 (defn create-record-type-node
   [name]
@@ -165,7 +165,6 @@
 (defn setup-default-schema
   []
   (setup-schema domain/default-data-defs))
-
 
 ;; Public API
 
