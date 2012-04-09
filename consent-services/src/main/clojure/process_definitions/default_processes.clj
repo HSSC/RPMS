@@ -1,4 +1,4 @@
-(ns org.healthsciencessc.rpms2.consent-services.default-processes
+(ns process-definitions.default-processes
   (:use [clojure.data.json :only (json-str pprint-json)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
