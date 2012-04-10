@@ -2,7 +2,8 @@
   (:use [slingshot.slingshot :only (throw+)]))
 
 (def base
-  {:id {:persisted false}})
+  {:id {:persisted false}
+   :active {:persisted true}})
 
 (def person
   {:first-name {:persisted true}
