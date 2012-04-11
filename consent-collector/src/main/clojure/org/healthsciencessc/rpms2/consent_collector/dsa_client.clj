@@ -1,10 +1,11 @@
 (ns org.healthsciencessc.rpms2.consent-collector.dsa-client
   (:require [clojure.string :as s]
             [clj-http.client :as http])
-  (:use 
-	[org.healthsciencessc.rpms2.consent-collector.factories :as factory]
-	[clojure.tools.logging :only (debug info error)]
+  (:use [org.healthsciencessc.rpms2.consent-collector.factories :as factory]
+        [clojure.tools.logging :only (debug info error)]
         [clojure.data.json :only (read-json json-str)]))
+
+(def ^:dynamic *dsa-auth* nil)
 
 (defn dsa-process-call
   [process-name arguments]
@@ -16,6 +17,7 @@
             (assoc resp :json (read-json body))
             resp))]
     (-> {:method method
+         :basic-auth *dsa-auth*
          :path path
          :body (json-str arguments)}
         http/request

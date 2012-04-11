@@ -164,9 +164,18 @@
     (binding [helper/*context* (get-context req)]
       (app req))))
 
+(defn wrap-dsa-auth
+  [app]
+  (fn [req]
+    (if-let [{:keys [username password]} (session-get :user)]
+      (binding [dsa/*dsa-auth* [username password]]
+        (app req))
+      (app req))))
+
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
 (def app (-> (ws/ws-constructor)
+             (wrap-dsa-auth)
              (sandbar.stateful-session/wrap-stateful-session)
              (wrap-context-setter)
              (wrap-resource "public")))
