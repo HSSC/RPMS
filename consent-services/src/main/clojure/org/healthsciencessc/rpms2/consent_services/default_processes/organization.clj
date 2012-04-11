@@ -31,7 +31,6 @@
     :run-fn (fn [params]
               (let [org-id (Integer/parseInt (get-in params [:query-params :organization]))
                     org (-> params :body-params)]
-                (println org-id org)
                 (json-str (data/update "organization" org-id org))))}])
 
 (process/register-processes (map #(DefaultProcess/create %) org-processes))

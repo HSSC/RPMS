@@ -77,6 +77,7 @@
 (defn new-node
   [type data]
   (-> (clean-nils data)
+      (assoc :active true)
       (domain/validate-persistent-record type domain/default-data-defs)
       nodes/create))
 
