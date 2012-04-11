@@ -1,8 +1,13 @@
-(ns org.healthsciencessc.rpms2.consent-domain.seed
+(ns org.healthsciencessc.rpms2.consent-services.seed
   (:use [org.healthsciencessc.rpms2.consent-services.data
-         :only [create find-records-by-attrs]])
-  (:require [org.healthsciencessc.rpms2.consent-services.auth :as auth])
+         :only [create find-records-by-attrs setup-schema]])
+  (:require [org.healthsciencessc.rpms2.consent-services.auth :as auth]
+            [org.healthsciencessc.rpms2.consent-domain.core :as domain])
   (:import [java.util Locale]))
+
+(defn setup-default-schema!
+  []
+  (setup-schema domain/default-data-defs))
 
 (defn- create-roles [def-org]
   (doseq [[name code] [["Super Administrator" "sadmin"]
@@ -48,4 +53,22 @@
     (create-roles def-org)
     (create-users def-org)
     (create-langs def-org)))
+
+(defn create-test-nodes
+  []
+  (let [org (create "organization" {:name "MUSC"})
+        user (create "user" {:username "foo" :password (auth/hash-password "bar")
+                             :organization {:id (:id org)}})
+        location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
+        admin-role (create "role" {:name "Administrator" :organization {:id (:id org)}})
+        clerk-role (create "role" {:name "Clerk" :organization {:id (:id org)}})]
+    (do
+      (create "role-mapping" {:organization {:id (:id org)} 
+                              :role {:id (:id admin-role)} 
+                              :user {:id (:id user)} 
+                              :location {:id (:id location)}})
+      (create "role-mapping" {:organization {:id (:id org)} 
+                              :role {:id (:id clerk-role)} 
+                              :user {:id (:id user)} 
+                              :location {:id (:id location)}}))))
 

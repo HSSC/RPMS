@@ -3,6 +3,7 @@
   (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
+            [org.healthsciencessc.rpms2.consent-services.seed :as seed]
             [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.process-engine.web-service :as process-ws]))
 

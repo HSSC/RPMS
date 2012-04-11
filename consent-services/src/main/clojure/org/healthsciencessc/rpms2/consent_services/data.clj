@@ -117,9 +117,7 @@
 
 (defmethod get-related-obj :belongs-to
   [{id :id} {:keys [relationship related-to]}]
-  (let [parent-node (find-parent id relationship)]
-    (when parent-node
-      (node->record parent-node related-to))))
+  (let [parent-node (find-parent id relationship)] (when parent-node (node->record parent-node related-to))))
 
 (defmethod get-related-obj :has-many
   [record relation]
@@ -161,10 +159,6 @@
     (doall (map #(delete-node (:id (find-record-type-node %)))
                 (difference type-nodes data-def-types)))))
 
-(defn setup-default-schema
-  []
-  (setup-schema domain/default-data-defs))
-
 ;; Public API
 
 (defn find-all
@@ -194,29 +188,4 @@
   (do
     (update-node type id data)
     (find-record type id)))
-
-(defn create-test-nodes
-  []
-  (let [org (create "organization" {:name "MUSC"})
-        user (create "user" {:username "foo" :password (auth/hash-password "bar")
-                             :organization {:id (:id org)}})
-        location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
-        admin-role (create "role" {:name "Administrator" :organization {:id (:id org)}})
-        clerk-role (create "role" {:name "Clerk" :organization {:id (:id org)}})]
-    (do
-      (create "role-mapping" {:organization {:id (:id org)} 
-                              :role {:id (:id admin-role)} 
-                              :user {:id (:id user)} 
-                              :location {:id (:id location)}})
-      (create "role-mapping" {:organization {:id (:id org)} 
-                              :role {:id (:id clerk-role)} 
-                              :user {:id (:id user)} 
-                              :location {:id (:id location)}}))))
-
-(defn reset-test-db!
-  []
-  (do
-    (delete-all-nodes!)
-    (setup-default-schema)
-    (create-test-nodes)))
 
