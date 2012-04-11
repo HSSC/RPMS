@@ -10,6 +10,7 @@
 (defn ws-init
   []
   (data/connect! (config/conf "neo4j-url"))
+  (seed/setup-default-schema!)
   (process/load-processes config/default-process-class-path))
 
 (defroutes development
