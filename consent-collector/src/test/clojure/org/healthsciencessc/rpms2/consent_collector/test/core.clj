@@ -21,6 +21,8 @@
              [select-lockcode :as select-lockcode]])
   (:use clojure.test))
 
+(use-fixtures :each setup-session-and-flash)
+
 (defn redirects?
   "Returns true if the response map is a redirect to the
   given location."
@@ -30,18 +32,18 @@
    (= (resp :status) 302)
    (= (get-in resp [:headers "Location"]) location)))
 
-(def-rpms-test get-login-test
-  "Test that login maps to view/login, with a 302 status."
-  (is (redirects? (login/default-get-login {}) "/view/login")))
+(deftest get-login-test
+  (testing "Test that login maps to view/login, with a 302 status."
+    (is (redirects? (login/default-get-login {}) "/view/login"))))
 
-(def-rpms-test get-view-login-test
+(deftest get-view-login-test
   "Test that an HTML login page is returned."
   (let [html (login/view {})]
     (is (page-has? html [[:input (en/attr= :name "password")]]))))
 
-(def-rpms-test post-view-login-test
-  "Test authentication."
-  (are [doc status location]
+(deftest post-view-login-test
+  (testing "Test authentication."
+    (are [doc status location]
     (testing doc
       (with-redefs [dsa/authenticate
                     (constantly {:status status})]
@@ -49,11 +51,11 @@
           (is (redirects? resp location)))))
     "Authentication succeeds" 200 "/view/select/location"
     "Authentication fails" 401 "/view/login"
-    "User doesn't exist" 404 "/view/login"))
+    "User doesn't exist" 404 "/view/login")))
 
 
-(def-rpms-test determine-users-location-test
-  (are [doc locations path text]
+(deftest determine-users-location-test
+    (are [doc locations path text]
        (testing doc
          (with-session {:user (apply factories/user-with-locations locations)}
            (-> (select-location/view {})
@@ -66,14 +68,14 @@
        "One location" ["Hardy har"] "/view/select/lock-code" nil
        "Many locations" ["foo" "bar" "baz"] nil "foo"))
 
-(def-rpms-test get-view-not-authorized-test
+(deftest get-view-not-authorized-test
   (let [msg (i18n :not-authorized-message)]
     (is msg)
     (->> (core/default-get-view-not-authorized {})
          (re-find (re-pattern msg))
          (is))))
 
-(def-rpms-test authorized-locations-test
+(deftest authorized-locations-test
   (let [user (factories/user-with-roles-and-locations
                ["Consent Collector" "foo"
                 "Party Thrower"     "bar"
@@ -89,13 +91,13 @@
 ;; 3. the submitted html form, with invalid lockcode
 ;; 4. the submitted html form, with no lockcode
 ;; will go to /view/select/consenter
-(def-rpms-test get-view-select-lockcode
-  "Test that select-lockcode displays a valid input form for entering lockcode."
+(deftest get-view-select-lockcode
+  (testing "Test that select-lockcode displays a valid input form for entering lockcode."
   (let [html (select-lockcode/view {}) ]
-    (is (re-find #"<input[^>]*lockcode.*>" html))))
+    (is (re-find #"<input[^>]*lockcode.*>" html)))))
 
-(def-rpms-test lockcode-tests
-  "Testing lockcode submissions"
+(deftest lockcode-tests
+  (testing "Testing lockcode submissions"
   (are [doc lockcode path in-session?]
        (testing doc
          (-> {:body-params (if lockcode {:lockcode lockcode} {})}
@@ -107,15 +109,15 @@
        "Valid lockcode" "1234" "/view/select/consenter" true
        "Non-numeric" "abba" "/view/select/lock-code" false
        "Bad length" "123" "/view/select/lock-code" false
-       "No lock code" nil "/view/select/lock-code" false))
+       "No lock code" nil "/view/select/lock-code" false)))
 
-(def-rpms-test view-select-consenter-test
+(deftest view-select-consenter-test
   (let [html (select-consenter/view {})]
     (are [sel] (page-has? html sel)
          [[:form (en/attr= :action "/view/search/consenters")]]
          [[:form (en/attr= :action "/view/create/consenter")]])))
 
-(def-rpms-test view-search-consenters-test
+(deftest view-search-consenters-test
   (with-redefs [dsa/search-consenters (constantly [{:firstname "FOO" :lastname "BAR"}
                                                    {:firstname "BAZ" :lastname "BAM"}])]
     (let [html (search-consenter/get-view {})]
@@ -123,7 +125,7 @@
            "FOO BAR"
            "BAZ BAM"))))
 
-(def-rpms-test view-create-consenter-test
+(deftest view-create-consenter-test
   (let [html (create-consenter/view {})
         [form] (en/select (en/html-snippet html)
                           [[:form (en/attr= :action "/create/consenter")]])]

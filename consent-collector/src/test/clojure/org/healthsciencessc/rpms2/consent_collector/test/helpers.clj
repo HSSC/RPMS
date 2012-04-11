@@ -20,7 +20,8 @@
 
 
 (defmacro is!
-  "Like clojure.test/is, but short-circuits the test on failure."
+  "Like clojure.test/is, but short-circuits the test on failure.
+  Works with the def-rpms-test macro."
   ([arg]
      `(let [x# ~arg]
         (is x#)
@@ -75,50 +76,14 @@
            (or v
                (start-test-server)))))
 
-(defn run-rpms-test
-  [test-fn]
-  (let [old-defaults @pe/default-processes,
-        old-customs @pe/custom-processes]
-    (ensure-server-running)
-    (try+
-      (with-session {}
-        (binding [sandbar.stateful-session/sandbar-flash (atom {:incoming {} :outgoing {}})]
-          (test-fn)))
-      (catch #{::short-circuit} _) ;; swallow short-circuit errors
-      (finally
-       (reset! pe/default-processes old-defaults)
-       (reset! pe/custom-processes old-customs)))))
+(defn setup-session-and-flash
+  [func]
+  (with-session {}
+    (binding [sandbar.stateful-session/sandbar-flash (atom {:incoming {} :outgoing {}})]
+      (func))))
 
-(defmacro def-rpms-test
-  "Sets up stuff, and also allows adding a docstring at the
-  top of the test."
-  [test-name maybe-desc & body]
-  (let [desc (if (string? maybe-desc) maybe-desc),
-        body (if desc body (cons maybe-desc body)),
-        body-form `(run-rpms-test (fn [] ~@body))]
-    (if desc
-      `(deftest ~test-name (testing ~desc ~body-form))
-      `(deftest ~test-name ~body-form))))
-
-(defn make-spy
-  [returns]
-  (let [arg-store (atom [])]
-    (with-meta
-      (fn [& args]
-        (swap! arg-store conj args)
-        returns)
-      {:args arg-store})))
-
-(defmacro with-spy
-  [var-name & body]
-  `(with-redefs [~var-name (make-spy nil)]
-     ~@body))
-
-(defmacro with-spy-and-return
-  [var-name return & body]
-  `(with-redefs [~var-name (make-spy ~return)]
-     ~@body))
-
-(defn last-call-args
-  [f]
-  (-> f meta :args deref last))
+(defn setup-scenarios
+  [func]
+  (ensure-server-running)
+  (try+ (func)
+        (catch #{::short-circut} _))) ;; swallow short-circuit errors

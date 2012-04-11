@@ -17,16 +17,17 @@
 (defn view 
   "Returns login form"
   [ctx]
+
   (helper/rpms2-page 
      [:div.standardForm
      [:form#loginForm {:action (helper/mypath "/view/login") :method "POST" :name "loginForm" :id "loginForm" } 
       (i18n :login-form-username) 
       [:input {:id "username" :name "userid" :type "text" :required "" 
-               :placeholder (i18n :login-form-username-placeholder) }]
+               :placeholder (i18n "login-form-username-placeholder") }]
 
       (i18n :login-form-password) 
       [:input {:name "password" :type "password" :required ""
-               :placeholder (i18n :login-form-password-placeholder) }] 
+               :placeholder (i18n "login-form-password-placeholder") }] 
 
       (helper/submit-button  "login-form") ]] :title (i18n :hdr-login)))
 

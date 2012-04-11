@@ -5,7 +5,10 @@
         org.healthsciencessc.rpms2.consent-collector.test.scenario-helpers)
   (:use clojure.test))
 
-(def-rpms-test use-case-consent-collector-logs-into-consent-system-login-one-site
+(use-fixtures :each setup-scenarios)
+
+(comment
+(deftest use-case-consent-collector-logs-into-consent-system-login-one-site
   "Consent Collector opens the browser to the RPMS Consent site.
    Consent Collector is redirected to SSO login page and logs in with credentials.
    [Tenancy] Consent Collector selects a ‘Location’ they had authority for which they will be at for the session.
@@ -23,10 +26,11 @@
     
   (with-client page (url "/view/login")
     (-> page
+        (spit-page "view-login.html")
         (fill-out-and-submit-first-form {"userid" "foo"
                                          "password" "bar"})
         (should-be-on-page "/view/select/location")
         (fill-out-and-submit-first-form {"location" "Registration"})
         (should-be-on-page "/view/select/lock-code")
         (fill-out-and-submit-first-form {"lockcode" "9876"})
-        (should-be-on-page "/view/select/consenter"))))
+        (should-be-on-page "/view/select/consenter")))))

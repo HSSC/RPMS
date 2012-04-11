@@ -62,3 +62,8 @@
       (.endsWith (url path))
       (is!))
   page)
+
+(defn spit-page
+  [page file]
+  (.save page (java.io.File. file))
+  page)

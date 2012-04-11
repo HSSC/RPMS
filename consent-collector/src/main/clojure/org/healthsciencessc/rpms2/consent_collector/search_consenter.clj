@@ -1,3 +1,4 @@
+
 (ns org.healthsciencessc.rpms2.consent-collector.search-consenter 
   (:require [hiccup.core :as hiccup]
             [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
@@ -8,17 +9,18 @@
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
+
 (defn consenter-details
   "This is right hand side of the search results page, showing
   the details associated with the selected consenter (e.g. patient)"
   []
+  ;; (let [i18n (partial i18n "search-consenter-results")]
   [:div
   [:div#consenter-details-section  
    [:div.areaTitle (i18n "consenter-details-verify-record-details" )]
    [:div.bordered-half 
      (for [v [ "visit-number" "medical-record-number" "encounter-date" ]]
-	(helper/name-value-bold-input "search-consenter-results-form" v (str "consenter-" v))) 
-  ]]
+	(helper/name-value-bold-input "search-consenter-results-form" v (str "consenter-" v)))]]
 
   [:div.areaTitle (i18n "consenter-details-verify-patient-details" )]
   [:div.bordered-half 
@@ -41,9 +43,7 @@
    	  [:input {:type "hidden" :name "patient-name" :id "patient-name" :value "no patient" } ]
    	  [:input {:type "hidden" :name "patient-encounter-data" :id "patient-name" :value "no patient" } ]
           (helper/submit-button "search-consenter-results-yes") 
-          (helper/submit-button "search-consenter-results-no") 
-	]
-	])
+          (helper/submit-button "search-consenter-results-no")]])
 
 
 (defn generate-consenter-results-list
@@ -58,17 +58,15 @@
     [:div.secondary (str "MRN: " (:medical-record-number user) ) ] ]))
 
 (defn page-search-consenter-results
-   [results]
-   (try
-	(helper/rpms2-page-two-column
-		      (generate-consenter-results-list results) 
-       		      (consenter-details) 
-		      :title (i18n :hdr-search-consenter-results) ) 
-   (catch Exception ex 
-        (do 
-	(error "FAILED page-search-consenter-results " (.printStackTrace ex)) 
-        (helper/rpms2-page (str "x. failed "  ex) :title (str "x. failed " (.getMessage ex))))
-   )))
+  [results]
+  (try
+    (helper/rpms2-page-two-column
+      (generate-consenter-results-list results) 
+      (consenter-details) 
+      :title (i18n :hdr-search-consenter-results) ) 
+  (catch Exception ex  
+    (error "FAILED page-search-consenter-results " (.printStackTrace ex)) 
+    (helper/rpms2-page (str "x. failed "  ex) :title (str "x. failed " (.getMessage ex))))))
 
 
 (defn process-search-consenters
@@ -76,14 +74,13 @@
   ;; query params; remove the submit button
   ;; maybe use a filter to select the correct parameters
   ;; and add in user defaults
-   [parms]
-   (let [results (dsa/search-consenters parms)]
-      (if (empty? results) 
-	(do 
-        	(flash-put! :header (i18n :flash-no-consenters-match-search))
-        	(helper/myredirect "/view/select/consenter"))
-         (do 
-    		(page-search-consenter-results results)))))
+  [parms]
+  (let [results (dsa/search-consenters parms)]
+    (if (empty? results) 
+      (do 
+       	(flash-put! :header (i18n :flash-no-consenters-match-search))
+       	(helper/myredirect "/view/select/consenter"))
+      (page-search-consenter-results results))))
 
 
 (defn get-view
@@ -108,5 +105,4 @@
   ;;dsa/post-security-authenticate
   (debug "perform-not done")
   (helper/myredirect "/view/select/location"))
-
 

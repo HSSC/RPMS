@@ -2,19 +2,16 @@
 @media only screen and (device-width: 768px) {
 	#outer { width: 720px; height; 290px; background-color: #ffcc66; border: thin solid red; }
 	#content { width: 750px; height: 300px; 
-		xbackground-color: #ccffff; border: 10px solid #66ffff; }
+		background-color: #ccffff; border: 10px solid #66ffff; }
 }
 
 
 @media only screen and (min-device-width: 481px) 
 and (max-device-width: 1024px) and (orientation:portrait) {
-	#outer { 
-			background-color: pink ; height: 490px; width: 455px; border: thin solid green; }
-	#content { 
-			xbackground-color: #ffffcc /*yellowish*/; 
-			height: 750px; width: 700px; border: thin solid #cc0099; }
-	#subouter { background-color: orange; height: 200px; width: 475px; border: thin solid #3399ff; }
-}
+	#outer { background-color: pink ; height: 490px; width: 455px; border: thin solid green; }
+	#content { background-color: #ffffcc /*yellowish*/; 
+		height: 750px; width: 700px; border: thin solid #cc0099; }
+	#subouter { background-color: orange; height: 200px; width: 475px; border: thin solid #3399ff; } }
 
 
 @media only screen and (min-device-width: 481px) 

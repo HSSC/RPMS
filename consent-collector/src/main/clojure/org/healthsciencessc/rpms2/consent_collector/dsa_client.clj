@@ -1,26 +1,56 @@
 (ns org.healthsciencessc.rpms2.consent-collector.dsa-client
   (:require [clojure.string :as s]
             [clj-http.client :as http])
-  (:use [org.healthsciencessc.rpms2.consent-collector.factories :as factory]
-        [clojure.tools.logging :only (debug info error)]
+  (:import org.apache.http.auth.MalformedChallengeException
+           org.apache.http.client.ClientProtocolException)
+  (:use [org.healthsciencessc.rpms2.consent-collector  [factories :as factory]
+                                                       [config :only (config)]
+                                                       [fake-dsa-client :as fake]
+          ]
+        [clojure.tools.logging :only (debug info error warn)]
         [clojure.data.json :only (read-json json-str)]))
 
 (def ^:dynamic *dsa-auth* nil)
 
+(defn- build-url 
+   "Builds url for DSA for the given path."
+   [path] 
+   (let [ dsa-url (config "rpms2.dsa.url")
+      no-slashes (fn [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
+      mypath  (if dsa-url 
+                  (str (no-slashes dsa-url) "/" (no-slashes path)) 
+                  (do 
+                      (println  "WARNING: No dsa-url configured" )
+                      (warn "WARNING: No dsa-url configured" )
+                      (str "http://localhost:8080" "/" "security/authenticate")))]
+      (debug "Using dsa-url: " mypath )
+      mypath))
+
+(defn- request
+  "like http/request but doesn't crash on failed auth"
+  [req]
+  (try (http/request req)
+    (catch ClientProtocolException e
+      ;; TODO -- check if the cause is a MalformedChallengeException
+      {:status 401})))
+
 (defn dsa-process-call
   [process-name arguments]
   (let [[_ method path-dashes] (re-matches #"(get|post|put|delete)-(.+)" process-name)
+        method (keyword method),
         path (s/replace path-dashes "-" "/")
         maybe-parse-json
         (fn [{:keys [status body] :as resp}]
           (if (= 200 status)
             (assoc resp :json (read-json body))
-            resp))]
-    (-> {:method method
-         :basic-auth *dsa-auth*
-         :path path
-         :body (json-str arguments)}
-        http/request
+            resp)) ]
+    (-> (if (= :get method)
+          {:query-params arguments}
+          {:body (json-str arguments)})
+        (assoc :request-method method
+               :basic-auth *dsa-auth*
+               :url (build-url path) )
+        request
         maybe-parse-json)))
 
 (defmacro def-dsa-processes
@@ -31,78 +61,15 @@
 
 (def-dsa-processes
   get-authorized-locations
-  post-security-authenticate)
-
-(defn run-dsa-process
-  [name context])
-
-(defn consenters-for-org-loc
-  [org loc]
-  ( {["MUSC" "musc-loc1" ]   [ "Musc-Consenter-1" "Musc-Consenter-2" ] 
-     ["MUSC" "musc-loc2" ]   [ "Musc-Consenter-Org2-1"  "Musc-Consenter-Org2-2" ]
-     ["MUSC" "musc-loc3" ]   [ "Musc-Consenter-Org3-1" ]
-     ["MUSC" "musc-loc4" ]   [ "Musc-Consenter-Org4-1" "Musc-Consenter-Org5-1" ] 
-    } [org loc] )
-)
-
-
-(def data-user-foo { :username "foo"  :title "Mr." 
-	:organization {:id 111 :name "spartan ":code "srhs"}  
-	:role-mappings [ 
-			{ 
-			:role { :id 4 :name "Consent Collector" :code "cc" } 
-			:organization { :id 2 :name "Med Univ" :code "musc" }
-			:location { :id 2 :name "Registration" :code "reg" }
-			}
-
-
-			{ 
-			:role { :id 4 :name "Consent Collector" :code "cc" } 
-			:organization { :id 2 :name "Med Univ" :code "musc" }
-			:location { :id 2 :name "Lunchroom" :code "reg" }
-			}
-
-		]
-	} )
-
-
-(def data-user-onesite { :username "onesite"  :title "Mr." 
-	:organization {:id 111 :name "Spartanburg" :code "srhs"}  
-	:role-mappings [ 
-			{ 
-			:role { :id 4 :name "Consent Collector" :code "cc" } 
-			:organization { :id 111 :name "Spartanburg" :code "srhs" }
-			:location { :id 2 :name "One Stop Shop" :code "reg" }
-			}
-		]
-	} )
-
-
-
-(def data-user-nosite { :username "nosites"  :title "Ms." 
-	:organization {:id 112 :name "Medical University of South Carolina" :code "musc"}  
-	:role-mappings [ 
-		]
-	} )
-
+  get-security-authenticate)
 
 (defn authenticate
-  "Built-in test accounts."
+  "Call security/authenticate userid password"
   [user-id password]
-  (let [retval ( { 
-	["foo" "bar"] {:json data-user-foo :status 200} 
-	["foobar" "hunter2"] {:status 200} 
-	["admin" "admin"] {:status 200} ;; user authorized for all sites
-	["multisite" "bar"] {:json data-user-foo :status 200} ;; user authorized for multiple sites
-	["onesite" "bar"] {:json data-user-onesite :status 200} ;; user authorized for one site
-	["nosites" "bar"] {:json data-user-nosite :status 200} ;; user authorized for no sites
-	} [user-id password]) ] 
-	(if retval 
-         (info "(mock) authenticated as [" user-id "] returning [" retval "]")
-         (info "(mock) authenticate - NOT AUTHENTICATED: [" user-id "]")) 
-        retval))
-
-
+  (binding [*dsa-auth* [user-id password]]
+    (fake/fake-authenticate user-id password)
+    ;(get-security-authenticate {})
+    ))
 
 (defn search-consenters
   [params]
@@ -111,7 +78,6 @@
 	(debug "search-consenters - ==> " (count v) " " v )
 	v)
   (catch Exception ex (error "search-consenters failed: " params " " ex))))
-
 
 (defn get-protocols
    []

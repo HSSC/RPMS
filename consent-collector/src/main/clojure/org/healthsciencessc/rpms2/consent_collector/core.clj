@@ -5,6 +5,7 @@
             [hiccup.page-helpers :as hpages]
             [hiccup.form-helpers :as hform]
             [org.healthsciencessc.rpms2.consent-collector [dsa-client :as dsa]
+                                                          [fake-dsa-client]
             						  [helpers :as helper]
             						  [login :as login]
             						  [select-location  :as select-location] 
@@ -114,9 +115,6 @@
  		])
 
 
-;;(def newprocesses (helper/add-context-to-processes processes))
-;;(println (str "*****\n\n\nNEW PROCESSES\n\n" newprocesses))
-;;(pe/register-processes (map #(DefaultProcess/create %) newprocesses))
 (pe/register-processes (map #(DefaultProcess/create %) processes))
 (debug "Processes have been registered")
 
@@ -172,10 +170,21 @@
         (app req))
       (app req))))
 
+(defn wrap-exceptions
+  [app]
+  (fn [req]
+    (try (app req)
+      (catch Throwable t
+        (.printStackTrace t)
+        (println "EXCEPTION CAUGHT" t)
+        (error "EXCEPTION CAUGHT" t)
+        {:status 500, :body (.getMessage t)}))))
+
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
 (def app (-> (ws/ws-constructor)
              (wrap-dsa-auth)
              (sandbar.stateful-session/wrap-stateful-session)
              (wrap-context-setter)
+             (wrap-exceptions)
              (wrap-resource "public")))
