@@ -1,6 +1,5 @@
 (ns org.healthsciencessc.rpms2.process-engine.web-service
   (:use compojure.core
-        ring.adapter.jetty
         ring.middleware.session
         [clojure.data.json :only (read-json)]
         [clojure.string :only (blank? join split)]

@@ -40,6 +40,13 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		<dependency>
 			<groupId>compojure</groupId>
 			<artifactId>compojure</artifactId>
 		</dependency>
@@ -47,6 +54,12 @@
 		<dependency>
 			<groupId>ring</groupId>
 			<artifactId>ring-servlet</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		
 		<dependency>
@@ -98,7 +111,7 @@
 			<version>0.1.2</version>
 			<scope>test</scope>
 		</dependency>
-
+		
 		<dependency>
 			<groupId>net.sourceforge.htmlunit</groupId>
 			<artifactId>htmlunit</artifactId>
@@ -106,53 +119,11 @@
 			<scope>test</scope>
 		</dependency>
 
-    <dependency>
-      <groupId>enlive</groupId>
-      <artifactId>enlive</artifactId>
-      <version>1.0.0</version>
-      <scope>test</scope>
-    </dependency>
-		
-		<!-- Add Compile-Time Plugin Dependencies -->
 		<dependency>
-			<groupId>jline</groupId>
-			<artifactId>jline</artifactId>
-			<scope>compile</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>swank-clojure</groupId>
-			<artifactId>swank-clojure</artifactId>
-			<scope>compile</scope>
-		</dependency>
-		
-		<!-- Dependencies required for ClojureScript compilation. -->
-		<dependency>
-			<groupId>org.clojure</groupId>
-			<artifactId>clojurescript</artifactId>
-			<version>0.0-993</version>
-			<scope>compile</scope>
-		</dependency>
-		 
-		<dependency>
-			<groupId>com.google.javascript</groupId>
-			<artifactId>closure-compiler</artifactId>
-			<version>r1810</version>
-			<scope>compile</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>args4j</groupId>
-			<artifactId>args4j</artifactId>
-			<version>2.0.12</version>
-			<scope>compile</scope>
-		</dependency>
-	
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>10.0.1</version>
-			<scope>compile</scope>
+			<groupId>enlive</groupId>
+			<artifactId>enlive</artifactId>
+			<version>1.0.0</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	
@@ -188,6 +159,31 @@
                 		</java>
 					</target>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.clojure</groupId>
+						<artifactId>clojurescript</artifactId>
+						<version>0.0-993</version>
+					</dependency>
+					 
+					<dependency>
+						<groupId>com.google.javascript</groupId>
+						<artifactId>closure-compiler</artifactId>
+						<version>r1810</version>
+					</dependency>
+					
+					<dependency>
+						<groupId>args4j</groupId>
+						<artifactId>args4j</artifactId>
+						<version>2.0.12</version>
+					</dependency>
+				
+					<dependency>
+						<groupId>com.google.guava</groupId>
+						<artifactId>guava</artifactId>
+						<version>10.0.1</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			
 			<plugin>
