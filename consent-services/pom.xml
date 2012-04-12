@@ -21,6 +21,19 @@
 	
 	<packaging>clojure</packaging>
 	
+	<repositories>
+		<repository>
+			<id>neo4j-release-repository</id>
+			<name>Neo4j Maven 2 release repository</name>
+			<url>http://m2.neo4j.org/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>	
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.healthsciencessc.rpms2</groupId>
@@ -40,7 +53,18 @@
 			<version>1.0.0-SNAPSHOT</version>
 			<type>war</type>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j</artifactId>
+			<version>1.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j.app</groupId>
+			<artifactId>neo4j-server</artifactId>
+			<classifier>static-web</classifier>
+			<version>1.6.1</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>clojure</artifactId>
@@ -56,6 +80,12 @@
 		<dependency>
 			<groupId>compojure</groupId>
 			<artifactId>compojure</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>borneo</groupId>
+			<artifactId>borneo</artifactId>
+			<version>0.3.0</version>
 		</dependency>
 		
 		<dependency>
@@ -97,7 +127,6 @@
 			<artifactId>swank-clojure</artifactId>
 		</dependency>
 	</dependencies>
-	
 	<build>
 		<plugins>
 			<plugin>

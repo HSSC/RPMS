@@ -9,9 +9,13 @@
 
 (defn ws-init
   []
-  (data/connect! (config/conf "neo4j-url"))
+  (data/connect! (config/conf "neo4j-db-path"))
   (seed/setup-default-schema!)
   (process/load-processes config/default-process-class-path))
+
+(defn ws-destroy
+  []
+  (data/shutdown!))
 
 (defroutes development
   (GET "/reset-processes"

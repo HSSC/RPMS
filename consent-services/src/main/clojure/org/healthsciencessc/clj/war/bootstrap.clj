@@ -12,4 +12,5 @@
 (defn destroy
   "Provides a function placeholder to perform destroy operations whent the servlet is shutdown."
   [event]
+  (core/ws-destroy)
   (println "Destroying the Consent Services Application."))

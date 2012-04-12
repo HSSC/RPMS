@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.seed
   (:use [org.healthsciencessc.rpms2.consent-services.data
-         :only [create find-records-by-attrs setup-schema]])
+          :only [create find-records-by-attrs setup-schema]])
   (:require [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain])
   (:import [java.util Locale]))
@@ -44,8 +44,8 @@
           {:organization {:id def-org}
            :role {:id (-> (find-records-by-attrs "role" 
                                                 {:code "sadmin"})
-                        first
-                        :id)}
+                                first
+                                :id)}
            :user {:id super-admin}})))
 
 (defn seed-graph! []
