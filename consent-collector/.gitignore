@@ -1,5 +1,5 @@
 target
 resources/public/app.js
 src/main/script/org/healthsciencessc/rpms2/*.js
-src/main/resources/public/app.js
+XXsrc/main/resources/public/app.js
 log
