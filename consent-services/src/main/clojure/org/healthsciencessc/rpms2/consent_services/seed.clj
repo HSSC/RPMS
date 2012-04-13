@@ -60,8 +60,8 @@
         user (create "user" {:username "foo" :password (auth/hash-password "bar")
                              :organization {:id (:id org)}})
         location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
-        admin-role (create "role" {:name "Administrator" :organization {:id (:id org)}})
-        clerk-role (create "role" {:name "Clerk" :organization {:id (:id org)}})]
+        admin-role (first (find-records-by-attrs "role" {:code "admin"}))
+        clerk-role (first (find-records-by-attrs "role" {:code "manage"}))]
     (do
       (create "role-mapping" {:organization {:id (:id org)} 
                               :role {:id (:id admin-role)} 
