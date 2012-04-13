@@ -86,6 +86,16 @@
 			<artifactId>jbcrypt</artifactId>
 			<version>0.3m</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>swank-clojure</groupId>
+			<artifactId>swank-clojure</artifactId>
+		</dependency>
 	</dependencies>
 	
 	<build>
@@ -93,8 +103,6 @@
 			<plugin>
 				<groupId>com.theoryinpractise</groupId>
 				<artifactId>clojure-maven-plugin</artifactId>
-				<dependencies>
-				</dependencies>
 			</plugin>
 			
 			<plugin>

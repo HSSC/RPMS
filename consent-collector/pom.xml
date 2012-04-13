@@ -131,6 +131,16 @@
 			<version>1.0.0</version>
 			<scope>test</scope>
 		</dependency>
+		
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>swank-clojure</groupId>
+			<artifactId>swank-clojure</artifactId>
+		</dependency>
 	</dependencies>
 	
 	<build>

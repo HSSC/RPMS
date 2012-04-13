@@ -38,6 +38,16 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.6</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>swank-clojure</groupId>
+			<artifactId>swank-clojure</artifactId>
+		</dependency>
 	</dependencies>
   
 	<build>
