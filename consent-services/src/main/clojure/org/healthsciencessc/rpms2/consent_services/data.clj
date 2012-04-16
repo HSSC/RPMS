@@ -139,7 +139,6 @@
   (if-let [parent-node (find-parent node relationship)] 
     (when parent-node (node->record parent-node related-to))))
 
-;; FIXME ?
 (defmethod get-related-obj :has-many
   [record node relation]
   (if-let [relationship (domain/get-relationship-from-child 
@@ -195,6 +194,9 @@
     {:from :self
      :to (get-node-by-index related-to (get-in props [(keyword related-to) :id]))
      :rel-type relationship}))
+
+(defn get-raw-nodes [type]
+  (map neo/props (find-all-instance-nodes type)))
 
 ;; Public API
 (defn find-all
