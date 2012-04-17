@@ -29,3 +29,7 @@
 (defn some-kind-of-admin?
   [user]
   (or (super-admin? user) (admin? user)))
+
+(defn forbidden-fn
+  [_]
+  {:status 403})
