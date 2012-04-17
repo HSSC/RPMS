@@ -20,7 +20,7 @@
   []
   (neo/stop!))
 
-(defn delete-all-nodes!! []
+(defn delete-all-nodes! []
   (neo/purge!))
 
 (defn ^Index neo-index [name type]

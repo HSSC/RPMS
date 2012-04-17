@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.seed
   (:use [org.healthsciencessc.rpms2.consent-services.data
-          :only [create find-records-by-attrs setup-schema]])
+         :only [create find-records-by-attrs setup-schema]])
   (:require [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain])
   (:import [java.util Locale]))
@@ -28,10 +28,17 @@
              :code (.getLanguage lc)
              :organization {:id def-org}})))
 
-(defn- create-org [] 
-  (:id (create "organization" 
+(defn- create-org []
+  (:id (create "organization"
                {:name "Default Organization"
                 :code "deforg"})))
+
+(defn- get-role-id-by-code
+  [code]
+  (-> (find-records-by-attrs "role"
+                             {:code code})
+      first
+      :id))
 
 (defn- create-users [def-org]
   (let [super-admin (:id (create "user"
@@ -41,12 +48,9 @@
                                   :password (auth/hash-password "root")
                                   :organization {:id def-org}}))]
     (create "role-mapping"
-          {:organization {:id def-org}
-           :role {:id (-> (find-records-by-attrs "role" 
-                                                {:code "sadmin"})
-                                first
-                                :id)}
-           :user {:id super-admin}})))
+            {:organization {:id def-org}
+             :role {:id (get-role-id-by-code "sadmin")}
+             :user {:id super-admin}})))
 
 (defn seed-graph! []
   (let [def-org (create-org)]
@@ -57,18 +61,16 @@
 (defn create-test-nodes
   []
   (let [org (create "organization" {:name "MUSC"})
-        user (create "user" {:username "foo" :password (auth/hash-password "bar")
-                             :organization {:id (:id org)}})
+        org-id (:id org)
         location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
-        admin-role (first (find-records-by-attrs "role" {:code "admin"}))
-        clerk-role (first (find-records-by-attrs "role" {:code "manage"}))]
-    (do
-      (create "role-mapping" {:organization {:id (:id org)} 
-                              :role {:id (:id admin-role)} 
-                              :user {:id (:id user)} 
-                              :location {:id (:id location)}})
-      (create "role-mapping" {:organization {:id (:id org)} 
-                              :role {:id (:id clerk-role)} 
-                              :user {:id (:id user)} 
-                              :location {:id (:id location)}}))))
-
+        collector (create "user" {:username "collector" :password (auth/hash-password "foobar")
+                                  :organization {:id org-id}})
+        admin (create "user" {:username "musc-admin" :password (auth/hash-password "foobar")
+                              :organization {:id org-id}})]
+    (create "role-mapping" {:organization {:id (:id org)}
+                            :role {:id (get-role-id-by-code "collect")}
+                            :user {:id (:id collector)}
+                            :location {:id (:id location)}})
+    (create "role-mapping" {:organization {:id (:id org)}
+                            :role {:id (get-role-id-by-code "admin")}
+                            :user {:id (:id admin)}})))

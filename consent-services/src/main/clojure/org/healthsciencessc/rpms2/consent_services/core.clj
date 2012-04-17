@@ -26,7 +26,14 @@
          (reset! process/default-processes [])
          (reset! process/custom-processes [])
          (process/load-processes config/default-process-class-path))
-       "Done"))
+       "Done")
+  (GET "/reseed-db"
+          []
+          (do
+            (data/delete-all-nodes!)
+            (seed/setup-default-schema!)
+            (seed/seed-graph!))
+          "Done"))
 
 (defroutes app
   (process-ws/ws-constructor (fn [handler]
