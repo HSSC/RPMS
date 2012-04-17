@@ -13,7 +13,7 @@
    {:name "get-security-location"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [location-id (Integer/parseInt (-> params :query-params :location))]
+              (let [location-id (get-in params [:query-params :location])]
                 (json-str (data/find-record "location" location-id))))}
    
    {:name "put-security-location"
@@ -25,7 +25,7 @@
    {:name "post-security-location"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [loc-id (Integer/parseInt (get-in params [:query-params :location]))
+              (let [loc-id (get-in params [:query-params :location])
                     loc-data (:body-params params)]
                 (json-str (data/update "location" loc-id loc-data))))}])
 

@@ -175,7 +175,8 @@
       (neo/delete-node! (find-record-type-node rel)))))
 
 
-(defn validate-relation [{:keys [from to rel-type] :as relation}]
+(defn validate-relation
+  [{:keys [from to rel-type] :as relation}]
   (if-let [{:keys [id type] :as node} (or from to)]
     (if (and rel-type type id)
       (let [other-node (get-node-by-index type id)]
@@ -188,7 +189,8 @@
                     :to other-node)))
       (throw (IllegalArgumentException. "Bad relation")))))
 
-(defn validate-domain-relations [type props]
+(defn validate-domain-relations
+  [type props]
   (for [{:keys [related-to relationship]} 
         (domain/get-parent-relations type domain/default-data-defs) 
         :when (get props (keyword related-to))]
@@ -196,7 +198,8 @@
      :to (get-node-by-index related-to (get-in props [(keyword related-to) :id]))
      :rel-type relationship}))
 
-(defn get-raw-nodes [type]
+(defn get-raw-nodes
+  [type]
   (map neo/props (find-all-instance-nodes type)))
 
 ;; Public API

@@ -121,7 +121,19 @@
 			<groupId>jline</groupId>
 			<artifactId>jline</artifactId>
 		</dependency>
-		
+
+                <dependency>
+                        <groupId>ring-serve</groupId>
+                        <artifactId>ring-serve</artifactId>
+                        <version>0.1.2</version>
+                </dependency>                
+
+                <dependency>
+                        <groupId>ring-reload-modified</groupId>
+                        <artifactId>ring-reload-modified</artifactId>
+                        <version>0.1.1</version>
+                </dependency>
+                
 		<dependency>
 			<groupId>swank-clojure</groupId>
 			<artifactId>swank-clojure</artifactId>

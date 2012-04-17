@@ -1,5 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-services.core
-  (:use compojure.core)
+  (:use compojure.core
+        ring.middleware.reload-modified
+        ring.util.serve)
   (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
@@ -17,7 +19,7 @@
   []
   (data/shutdown!))
 
-(defroutes development
+(defroutes static-dev-routes
   (GET "/reset-processes"
        []
        (do
@@ -27,6 +29,32 @@
        "Done"))
 
 (defroutes app
-  development
   (process-ws/ws-constructor (fn [handler]
                                (auth/wrap-authentication handler auth/authenticate))))
+
+(defn add-path-info
+  [handler]
+  (fn [req]
+    (handler (assoc req :path-info (:uri req)))))
+
+(defroutes dev-routes
+  static-dev-routes
+  (process-ws/ws-constructor (fn [handler]
+                               (-> handler
+                                   (auth/wrap-authentication auth/authenticate)
+                                   add-path-info))))
+
+(def dev-app
+  (-> dev-routes
+      (wrap-reload-modified ["src"])))
+
+(defn start-dev-server
+  []
+  (ws-init)
+  (serve-headless dev-app 8080))
+
+(defn stop-dev-server
+  []
+  (stop-server)
+  (ws-destroy))
+

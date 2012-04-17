@@ -15,7 +15,7 @@
    {:name "get-security-organization"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [org-id (Integer/parseInt (-> params :query-params :organization))]
+              (let [org-id (get-in params [:query-params :organization])]
                 (json-str (data/find-record "organization" org-id))))}
 
    ;; curl -i -X PUT -H "Content-type: application/json" -d "{\"name\" : \"MUSC FOOBAR\"}" http://localhost:3000/organization
@@ -29,7 +29,7 @@
    {:name "post-security-organization"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (let [org-id (Integer/parseInt (get-in params [:query-params :organization]))
+              (let [org-id (get-in params [:query-params :organization])
                     org (-> params :body-params)]
                 (json-str (data/update "organization" org-id org))))}])
 

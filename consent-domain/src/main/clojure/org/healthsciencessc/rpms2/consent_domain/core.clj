@@ -3,7 +3,7 @@
 
 (def base
   {:id {:persisted false}
-   :active {:persisted true}})
+   :active {:persisted true :omit true}})
 
 (def person
   {:first-name {:persisted true}
