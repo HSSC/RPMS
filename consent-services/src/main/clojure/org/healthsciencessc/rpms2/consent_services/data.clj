@@ -161,6 +161,7 @@
   (let [props (neo/props node)
         relations (domain/record-relations type domain/default-data-defs)]
     (-> props
+        (assoc :type type)
         (add-relations node relations)
         (domain/validate-record type domain/default-data-defs))))
 
@@ -205,8 +206,8 @@
 
 (defn find-record
   [type id]
-  (-> (get-node-by-index type id)
-      (node->record type)))
+  (if-let [node (get-node-by-index type id)]
+      (node->record node type)))
 
 (defn find-records-by-attrs
   [type attr-map]
