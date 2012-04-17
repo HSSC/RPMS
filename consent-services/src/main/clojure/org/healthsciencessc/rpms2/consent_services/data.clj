@@ -160,10 +160,11 @@
   [node type]
   (let [props (neo/props node)
         relations (domain/record-relations type domain/default-data-defs)]
-    (-> props
-        (assoc :type type)
-        (add-relations node relations)
-        (domain/validate-record type domain/default-data-defs))))
+    (if (:active props)
+      (-> props
+          (assoc :type type)
+          (add-relations node relations)
+          (domain/validate-record type domain/default-data-defs)))))
 
 (defn setup-schema
   [data-defs]
