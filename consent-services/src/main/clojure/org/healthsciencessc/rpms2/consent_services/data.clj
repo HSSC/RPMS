@@ -46,12 +46,6 @@
                   name
                   type-node))))
 
-(defn type-of?
-  [type node]
-  (let [type-node (find-parent node :kind-of)
-        node-type (:name (neo/props type-node))]
-    (= type node-type)))
-
 (defn ^Node find-record-type-node
   [type-name]
   "Returns a node."
@@ -67,6 +61,12 @@
   [node relation]
   (if-let [rels (neo/rels node relation :out)]
     (.getEndNode (first rels))))
+
+(defn type-of?
+  [type node]
+  (let [type-node (find-parent node :kind-of)
+        node-type (:name (neo/props type-node))]
+    (= type node-type)))
 
 (defn clean-nils
   [data]
