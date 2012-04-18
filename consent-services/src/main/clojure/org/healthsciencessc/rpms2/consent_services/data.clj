@@ -46,6 +46,12 @@
                   name
                   type-node))))
 
+(defn type-of?
+  [type node]
+  (let [type-node (find-parent node :kind-of)
+        node-type (:name (neo/props type-node))]
+    (= type node-type)))
+
 (defn ^Node find-record-type-node
   [type-name]
   "Returns a node."
@@ -175,7 +181,6 @@
     (doseq [rel (difference type-nodes data-def-types)] 
       (neo/delete-node! (find-record-type-node rel)))))
 
-
 (defn validate-relation
   [{:keys [from to rel-type] :as relation}]
   (if-let [{:keys [id type] :as node} (or from to)]
@@ -204,9 +209,16 @@
   (map neo/props (find-all-instance-nodes type)))
 
 ;; Public API
+(defn belongs-to?
+  [child-type child-id parent-type parent-id]
+  (let [parent-node (get-node-by-index parent-type parent-id)
+        child-node (get-node-by-index child-type child-id)
+        rel (domain/get-relationship-from-child parent-type child-type domain/default-data-defs)]
+    (= parent-node (find-parent child-node rel))))
+
 (defn find-all
   [type]
-  (map #(node->record % type) (find-all-instance-nodes type)))
+  (filter identity (map #(node->record % type) (find-all-instance-nodes type))))
 
 (defn find-record
   [type id]
@@ -218,6 +230,14 @@
   (filter (fn [record]
             (= attr-map (select-keys record (keys attr-map))))
           (find-all type)))
+
+(defn find-siblings
+  [id type parent-type sibling-type]
+  (let [parent-rel (domain/get-relationship-from-child parent-type type domain/default-data-defs)
+        sibling-rel (domain/get-relationship-from-child parent-type sibling-type domain/default-data-defs)
+        parent-node (find-parent (get-node-by-index type id) parent-rel)
+        sibling-nodes (neo/traverse parent-node (fn [pos] (type-of? sibling-type (:node pos))) {sibling-rel :in})]
+    (map #(node->record % sibling-type) sibling-nodes)))
 
 (defn create
   [type properties & extra-relationships]   ;; data includes default relationships.  relationships is extra relationships
