@@ -98,14 +98,6 @@
 (defn create-node
   [type props]
   (neo/with-tx 
-    (let [node (neo/create-node! (new-node type props))]
-      (index-node (neo-index type :nodes)
-                  "id" val node)
-      node)))
-
-(defn create-node
-  [type props]
-  (neo/with-tx 
     (let [node-props (new-node type props)
           node (neo/create-node! node-props)]
       (index-node (neo-index type :nodes) "id" (:id node-props) node)
