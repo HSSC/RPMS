@@ -73,4 +73,5 @@
                             :location {:id (:id location)}})
     (create "role-mapping" {:organization {:id (:id org)}
                             :role {:id (get-role-id-by-code "admin")}
-                            :user {:id (:id admin)}})))
+                            :user {:id (:id admin)}
+                            :location {:id (:id location)}})))
