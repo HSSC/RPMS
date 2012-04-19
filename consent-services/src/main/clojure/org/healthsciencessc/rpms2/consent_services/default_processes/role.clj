@@ -36,23 +36,37 @@
               (let [user (get-in params [:session :current-user])
                     user-org-id (get-in user [:organization :id])
                     role-id (get-in params [:query-params :role])]
-                ;; (cond
-                ;;  (super-admin? user)
-                ;;  (json-str (data/find-record "role" role-id))
-                ;;  (and (admin? user) (data/belongs-to? name)))
-                ))}
+                (if (or
+                     (super-admin? user)
+                     (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id)))
+                  (json-str (data/find-record "role" role-id)))))
+    :run-if-false forbidden-fn}
 
    {:role "put-security-role"
-    :runnable-fn (fn [params] true)
+    :runnable-fn (fn [params]
+                   (let [user (get-in params [:session :current-user])
+                         role (:body-params params)
+                         user-org-id (get-in user [:organization :id])
+                         role-org-id (get-in role [:organization :id])]
+                     (or (super-admin? user)
+                       (and (admin? user) (= user-org-id role-org-id)))))
     :run-fn (fn [params]
               (let [role (:body-params params)]
-                (json-str (data/create "role" role))))}
+                (json-str (data/create "role" role))))
+    :run-if-false forbidden-fn}
 
    {:name "post-security-role"
-    :runnable-fn (fn [params] true)
+    :runnable-fn (fn [params]
+                   (let [user (get-in params [:session :current-user])
+                         role (:body-params params)
+                         user-org-id (get-in user [:organization :id])
+                         role-org-id (get-in role [:organization :id])]
+                     (or (super-admin? user)
+                       (and (admin? user) (= user-org-id role-org-id)))))
     :run-fn (fn [params]
-              (let [role-id (Integer/parseInt (get-in params [:query-params :role]))
-                    role (-> params :body-params)]
-                (json-str (data/update "role" role-id role))))}])
+              (let [role-id (get-in params [:query-params :role])
+                    role (:body-params params)]
+                (json-str (data/update "role" role-id role))))
+    :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) role-processes))
