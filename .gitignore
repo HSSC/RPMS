@@ -1,6 +1,9 @@
 */src/main/clojure/*.props
 */target
+*/local
 \#*
 .\#*
 *~
 *.DS_Store
+*.swp
+.lein-failures

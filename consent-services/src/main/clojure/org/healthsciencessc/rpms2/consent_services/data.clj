@@ -72,9 +72,9 @@
   [type node]
   (= type (get-type node)))
 
-(defn chilren-nodes-by-rel
+(defn children-nodes-by-rel
   [parent-node relation]
-  () (doall (map #(.getStartNode %) (neo/rels parent-node relation :in))))
+  (doall (map #(.getStartNode %) (neo/rels parent-node relation :in))))
 
 (defn children-nodes-by-type
   [parent-node child-type]
@@ -154,7 +154,7 @@
 (defn find-all-instance-nodes
   [type]
   (if-let [type-node (find-record-type-node type)]
-    (chilren-nodes-by-rel type-node :kind-of)))
+    (children-nodes-by-rel type-node :kind-of)))
 
 (defn- create-edges [node relation-list]
   (let [real-edges (for [edge relation-list]
@@ -181,7 +181,7 @@
                          (:related-to relation)
                          domain/default-data-defs)]
     (map #(node->record % (:related-to relation))
-         (chilren-nodes-by-rel node relationship))))
+         (children-nodes-by-rel node relationship))))
 
 (defn add-relations
   [record node relations]
@@ -203,7 +203,7 @@
 
 (defn setup-schema
   [data-defs]
-  (let [type-nodes (set (map :name (map neo/props (chilren-nodes-by-rel (neo/root) :root))))
+  (let [type-nodes (set (map :name (map neo/props (children-nodes-by-rel (neo/root) :root))))
         data-def-types (set (keys data-defs))]
     (doseq [node (difference data-def-types type-nodes)]
       (create-type node))
@@ -212,7 +212,12 @@
 
 (defn validate-relation
   [{:keys [from to rel-type] :as relation}]
-  (if-let [{:keys [id type] :as node} (or from to)]
+  (let [{:keys [id type] :as node} 
+          (cond (map? from) from
+                (map? to) to
+                :else
+                (throw (IllegalArgumentException. "Bad relation")))
+         ]
     (if (and rel-type type id)
       (let [other-node (get-node-by-index type id)]
         (cond

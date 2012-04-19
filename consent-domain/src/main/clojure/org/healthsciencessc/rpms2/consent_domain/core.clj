@@ -48,6 +48,15 @@
                                {:name {:persisted true}})
             :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
    
+   "consenter" {:attributes (merge base
+                                   person
+                                  {:consenter-id {:persisted true :required true}
+                                   :gender {:persisted true :required true}
+                                   :dob {:persisted true :required true}
+                                   :zipcode {:persisted true :required true}})
+               :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                           {:type :belongs-to :related-to "location" :relationship :in-location}]}
+
    "role-mapping" {:attributes base
                    :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit true}
                                {:type :belongs-to :related-to "role" :relationship :has-role}

@@ -12,9 +12,8 @@
     :run-fn (fn [{:keys [username password]}]
               (if-let [user-node (first (filter #(= username (:username %))
                                                 (data/get-raw-nodes "user")))]
-                (if (and user-node (auth/good-password? password (:password user-node)))
-                  (first (data/find-records-by-attrs "user" {:username username})))))
-    :run-if-false forbidden-fn}
+                (if (and password user-node (auth/good-password? password (:password user-node)))
+                  (first (data/find-records-by-attrs "user" {:username username})))))}
 
    {:name "get-security-authenticate"
     :runnable-fn (fn [params] true)
