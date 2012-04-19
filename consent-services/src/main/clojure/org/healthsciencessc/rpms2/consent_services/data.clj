@@ -53,20 +53,28 @@
     (.get "name" type-name)
     .getSingle))
 
-(defn find-all-children
-  [node relation]
-  (doall (map #(.getStartNode %) (neo/rels node relation :in))))
-
 (defn find-parent
   [node relation]
   (if-let [rels (neo/rels node relation :out)]
     (.getEndNode (first rels))))
 
-(defn type-of?
+(defn- get-type
+  [node]
+  (let [type-node (find-parent node :kind-of)]
+    (:name (neo/props type-node))))
+
+(defn- type-of?
   [type node]
-  (let [type-node (find-parent node :kind-of)
-        node-type (:name (neo/props type-node))]
-    (= type node-type)))
+  (= type (get-type node)))
+
+(defn chilren-nodes-by-rel
+  [parent-node relation]
+  (doall (map #(.getStartNode %) (neo/rels parent-node relation :in))))
+
+(defn children-nodes-by-type
+  [parent-node child-type]
+  (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type)]
+    (neo/traverse parent-node (fn [pos] (type-of? child-type (:node pos))) {child-rel :in})))
 
 (defn clean-nils
   [data]
@@ -87,6 +95,14 @@
   (-> (neo-index type :nodes) 
       (.get "id" id)
       .getSingle))
+
+(defn sibling-nodes-by-type
+  [{:keys [start-type start-id parent-type parent-id sibling-type]}]
+  (let [parent-rel (domain/get-relationship-from-child parent-type start-type domain/default-data-defs)
+        parent-node (if parent-id
+                      (get-node-by-index parent-type parent-id)
+                      (find-parent (get-node-by-index start-type start-id) parent-rel))]
+    (children-nodes-by-type parent-node sibling-type)))
 
 (defn new-node
   [type data]
@@ -117,7 +133,7 @@
 (defn find-all-instance-nodes
   [type]
   (if-let [type-node (find-record-type-node type)]
-    (find-all-children type-node :kind-of)))
+    (chilren-nodes-by-rel type-node :kind-of)))
 
 (defn- create-edges [node relation-list]
   (let [real-edges (for [edge relation-list]
@@ -144,7 +160,7 @@
                        (:related-to relation)
                        domain/default-data-defs)]
     (map #(node->record % (:related-to relation))
-         (find-all-children node relationship))))
+         (chilren-nodes-by-rel node relationship))))
 
 (defn add-relations
   [record node relations]
@@ -166,7 +182,7 @@
 
 (defn setup-schema
   [data-defs]
-  (let [type-nodes (set (map :name (map neo/props (find-all-children (neo/root) :root))))
+  (let [type-nodes (set (map :name (map neo/props (chilren-nodes-by-rel (neo/root) :root))))
         data-def-types (set (keys data-defs))]
     (doseq [node (difference data-def-types type-nodes)]
       (create-type node))
@@ -223,13 +239,21 @@
             (= attr-map (select-keys record (keys attr-map))))
           (find-all type)))
 
+(defn find-children
+  [parent-type parent-id child-type]
+  (let [parent-node (get-node-by-index parent-type parent-id)]
+    (map #(node->record % child-type) (children-nodes-by-type parent-node child-type))))
+
 (defn find-siblings
-  [id type parent-type sibling-type]
-  (let [parent-rel (domain/get-relationship-from-child parent-type type domain/default-data-defs)
-        sibling-rel (domain/get-relationship-from-child parent-type sibling-type domain/default-data-defs)
-        parent-node (find-parent (get-node-by-index type id) parent-rel)
-        sibling-nodes (neo/traverse parent-node (fn [pos] (type-of? sibling-type (:node pos))) {sibling-rel :in})]
-    (map #(node->record % sibling-type) sibling-nodes)))
+  "Takes :start-type :start-id :parent-type :parent-id :sibling-type as keys"
+  [{:keys [sibling-type] :as sibling-relations}]
+  (map #(node->record % sibling-type) (sibling-nodes-by-type sibling-relations)))
+
+(defn siblings?
+  [{:keys [sibling-id] :as sibling-relations}]
+  (let [sibling-nodes (sibling-nodes-by-type sibling-relations)
+        sibling-ids (map #(:id (neo/props %)) sibling-nodes)]
+    (not (nil? (some #{sibling-id} sibling-ids)))))
 
 (defn create
   [type properties & extra-relationships]   ;; data includes default relationships.  relationships is extra relationships
