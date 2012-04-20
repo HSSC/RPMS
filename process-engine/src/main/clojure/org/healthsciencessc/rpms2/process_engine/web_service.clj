@@ -26,6 +26,22 @@
           (for [[k v] params]
             [(keyword k) v]))))
 
+;; The resolve-body function has used cond to allow for more resolutions to be added.
+;; For example, to add a resolution for handling multipart requests with files.
+(defn resolve-body
+  "If the body is available to be resolved, it will be read. There are instances when 
+   the stream to the body has been closed and should not be read, such as when an HTML 
+   form submits data."
+  [request]
+  (let [content-type (:content-type request)
+        data (:form-params request)
+        body (:body request)]
+    (cond 
+      (= content-type "application/json") (get-json-params body)
+      (= content-type "application/x-www-form-urlencoded") (keyify-params data)
+      (< 0 (count data)) (keyify-params data)
+      :else {})))
+
 (defn process-not-found-body
   [req process-name]
   (str "<h1>Process Not Found</h1>"
@@ -34,10 +50,10 @@
        (str "<p>" req "</p>")))
 
 (defroutes service-routes
-  (ANY "*" {:keys [uri context path-info request-method query-params form-params session body] :as req}
+  (ANY "*" {:keys [uri context path-info request-method query-params form-params session] :as req}
        (info "REQUEST: " req)
        (let [process-name (uri->process-name (name request-method) path-info)
-             body-params (merge (get-json-params body) (keyify-params form-params))
+             body-params (resolve-body req)
              params {:query-params (keyify-params query-params) :body-params body-params :session session :context context :path-info path-info}]
          (info "PROCESS NAME: " process-name)
          (try+
