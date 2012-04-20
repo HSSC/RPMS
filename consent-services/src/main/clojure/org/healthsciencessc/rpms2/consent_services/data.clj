@@ -1,12 +1,12 @@
-(ns org.healthsciencessc.rpms2.consent-services.data 
+(ns org.healthsciencessc.rpms2.consent-services.data
   (:use [clojure.set :only (difference)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [borneo.core :as neo])
   (:import [org.neo4j.graphdb.index IndexManager
-                                    IndexHits
-                                    Index]
+            IndexHits
+            Index]
            [org.neo4j.graphdb Node Relationship]
            [java.util UUID]))
 
@@ -26,13 +26,13 @@
 (defn ^Index neo-index [name type]
   "Gets or creates an index, which may be for :nodes or :relationships"
   (let [^IndexManager index-mgr (neo/index)]
-    (cond 
-      (= :nodes type)
-      (.forNodes index-mgr (str "node-" name "-idx"))
-      (= :relationships type)
-      (.forRelationships index-mgr (str "node-" name "-idx"))
-      :else
-      (throw (IllegalArgumentException.)))))
+    (cond
+     (= :nodes type)
+     (.forNodes index-mgr (str "node-" name "-idx"))
+     (= :relationships type)
+     (.forRelationships index-mgr (str "node-" name "-idx"))
+     :else
+     (throw (IllegalArgumentException.)))))
 
 (defn index-node [idx k v node]
   (.add idx node k v))
@@ -50,8 +50,8 @@
   [type-name]
   "Returns a node."
   (-> (neo-index "roottypes" :nodes)
-    (.get "name" type-name)
-    .getSingle))
+      (.get "name" type-name)
+      .getSingle))
 
 (defn find-parent
   [node relation]
@@ -69,7 +69,7 @@
 
 (defn chilren-nodes-by-rel
   [parent-node relation]
-  (doall (map #(.getStartNode %) (neo/rels parent-node relation :in))))
+  () (doall (map #(.getStartNode %) (neo/rels parent-node relation :in))))
 
 (defn children-nodes-by-type
   [parent-node child-type]
@@ -92,7 +92,7 @@
   (neo/create-rel! from type to))
 
 (defn- get-node-by-index [type id]
-  (-> (neo-index type :nodes) 
+  (-> (neo-index type :nodes)
       (.get "id" id)
       .getSingle))
 
@@ -104,6 +104,22 @@
                       (find-parent (get-node-by-index start-type start-id) parent-rel))]
     (children-nodes-by-type parent-node sibling-type)))
 
+(defn neighbors-by-type
+  "Gets all adjacent nodes of the given type to the given node"
+  [node type]
+  (let [{:keys [dir rel]} (domain/get-directed-relation (get-type node) type domain/default-data-defs)]
+    (if (and dir rel)
+      (neo/traverse node (fn [pos] (type-of? type (:node pos))) {rel dir}))))
+
+(defn walk-types-path
+  "Walks from the start node through all nodes of the given types and returns a collection of nodes of the last type in the path"
+  [start-node & types]
+  (loop [nodes (list start-node) type-path types]
+    (if (or (empty? type-path) (empty? nodes))
+      nodes
+      (recur (distinct (filter identity (flatten (map (fn [node] (neighbors-by-type node (first type-path))) nodes))))
+             (rest type-path)))))
+
 (defn new-node
   [type data]
   (-> (clean-nils data)
@@ -113,7 +129,7 @@
 
 (defn create-node
   [type props]
-  (neo/with-tx 
+  (neo/with-tx
     (let [node-props (new-node type props)
           node (neo/create-node! node-props)]
       (index-node (neo-index type :nodes) "id" (:id node-props) node)
@@ -125,8 +141,8 @@
   (neo/with-tx
     (let [upd-node (get-node-by-index type id)
           merged-data (merge (neo/props upd-node) data)
-          update-data (domain/validate-persistent-record 
-                        (clean-nils merged-data) type domain/default-data-defs)]
+          update-data (domain/validate-persistent-record
+                       (clean-nils merged-data) type domain/default-data-defs)]
       (neo/set-props! upd-node update-data)
       upd-node)))
 
@@ -150,25 +166,25 @@
 
 (defmethod get-related-obj :belongs-to
   [record node {:keys [relationship related-to]}]
-  (if-let [parent-node (find-parent node relationship)] 
+  (if-let [parent-node (find-parent node relationship)]
     (when parent-node (node->record parent-node related-to))))
 
 (defmethod get-related-obj :has-many
   [record node relation]
-  (if-let [relationship (domain/get-relationship-from-child 
-                       (:type record) 
-                       (:related-to relation)
-                       domain/default-data-defs)]
+  (if-let [relationship (domain/get-relationship-from-child
+                         (:type record)
+                         (:related-to relation)
+                         domain/default-data-defs)]
     (map #(node->record % (:related-to relation))
          (chilren-nodes-by-rel node relationship))))
 
 (defn add-relations
   [record node relations]
   (into record
-    (for [relation relations]
-      (let [related-obj (get-related-obj record node relation)]
-        (when related-obj
-          [(domain/relation-name->key relation) related-obj])))))
+        (for [relation relations]
+          (let [related-obj (get-related-obj record node relation)]
+            (when related-obj
+              [(domain/relation-name->key relation) related-obj])))))
 
 (defn node->record
   [node type]
@@ -186,7 +202,7 @@
         data-def-types (set (keys data-defs))]
     (doseq [node (difference data-def-types type-nodes)]
       (create-type node))
-    (doseq [rel (difference type-nodes data-def-types)] 
+    (doseq [rel (difference type-nodes data-def-types)]
       (neo/delete-node! (find-record-type-node rel)))))
 
 (defn validate-relation
@@ -195,18 +211,18 @@
     (if (and rel-type type id)
       (let [other-node (get-node-by-index type id)]
         (cond
-          from (assoc relation
-                      :from other-node
-                      :to :self)
-          to (assoc relation
-                    :from :self
-                    :to other-node)))
+         from (assoc relation
+                :from other-node
+                :to :self)
+         to (assoc relation
+              :from :self
+              :to other-node)))
       (throw (IllegalArgumentException. "Bad relation")))))
 
 (defn validate-domain-relations
   [type props]
-  (for [{:keys [related-to relationship]} 
-        (domain/get-parent-relations type domain/default-data-defs) 
+  (for [{:keys [related-to relationship]}
+        (domain/get-parent-relations type domain/default-data-defs)
         :when (get props (keyword related-to))]
     {:from :self
      :to (get-node-by-index related-to (get-in props [(keyword related-to) :id]))
@@ -231,7 +247,7 @@
 (defn find-record
   [type id]
   (if-let [node (get-node-by-index type id)]
-      (node->record node type)))
+    (node->record node type)))
 
 (defn find-records-by-attrs
   [type attr-map]
@@ -263,10 +279,10 @@
                        :rel-type :kind-of}]
                      (validate-domain-relations type properties)
                      (map validate-relation extra-relationships))]
-  (neo/with-tx 
-    (let [node (create-node type properties)]
-      (create-edges node rels)
-      (node->record node type)))))
+    (neo/with-tx
+      (let [node (create-node type properties)]
+        (create-edges node rels)
+        (node->record node type)))))
 
 (defn update
   [type id data]

@@ -25,6 +25,7 @@
                               {:username {:persisted true :required true}
                                :password {:omit true :persisted true :required true :validation (fn [password] (< 5 (count password)))}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                       {:type :belongs-to :related-to "group" :relationship :in-group}
                        {:type :has-many :related-to "role-mapping"}]}
 
    "role" {:attributes (merge base
@@ -43,6 +44,10 @@
                                    :protocol-label {:persisted true}})
                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
+   "group" {:attributes (merge base
+                               {:name {:persisted true}})
+            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
+   
    "role-mapping" {:attributes base
                    :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit true}
                                {:type :belongs-to :related-to "role" :relationship :has-role}
@@ -57,6 +62,10 @@
 (defn get-parent-relations
   [type data-defs]
   (filter #(= :belongs-to (:type %)) (get-relations type data-defs)))
+
+(defn get-parent-relation
+  [parent-type child-type data-defs]
+  (first (filter #(= parent-type (:related-to %)) (get-parent-relations child-type data-defs))))
 
 (defn record-relations
   [type data-defs]
@@ -97,6 +106,14 @@
   [parent-type child-type data-defs]
   (:relationship (first (filter #(= parent-type (:related-to %))
                                 (:relations (data-defs child-type))))))
+
+(defn get-directed-relation
+  [start-type end-type data-defs]
+  (let [parent-dir (get-parent-relation start-type end-type data-defs)
+        child-dir (get-parent-relation end-type start-type data-defs)]
+    (cond
+     parent-dir {:dir :in :rel (:relationship parent-dir)}
+     child-dir {:dir :out :rel (:relationship child-dir)})))
 
 (defn validate
   [record]
