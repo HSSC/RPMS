@@ -1,9 +1,7 @@
-(ns org.healthsciencessc.rpms2.consent-collector.create-consenter 
-  (:require [hiccup.core :as hiccup]
-            [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
-            [org.healthsciencessc.rpms2.consent-collector.helpers :as helper]
-            [hiccup.page-helpers :as hpages]
-            [hiccup.form-helpers :as hform])
+(ns org.healthsciencessc.rpms2.consent-collector.create-consenter
+  (:require
+   [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
+   [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))

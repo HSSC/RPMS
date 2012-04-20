@@ -4,3 +4,7 @@ src/main/script/org/healthsciencessc/rpms2/*.js
 XXsrc/main/resources/public/app.js
 log
 .*.swp
+.classpath
+.project
+.settings
+local

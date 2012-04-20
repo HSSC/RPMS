@@ -3,11 +3,13 @@
   (:use [clojure.data.json :only (read-json json-str)]
         org.healthsciencessc.rpms2.consent-collector.test.helpers
         org.healthsciencessc.rpms2.consent-collector.test.scenario-helpers)
-  (:use clojure.test))
-
-(use-fixtures :each setup-scenarios)
+  (:use clojure.test)
+  (:require [clj-http.fake :as faking]
+            [org.healthsciencessc.rpms2.consent-collector.test.factories :as fax]))
 
 (comment
+(use-fixtures :each setup-scenarios)
+
 (deftest use-case-consent-collector-logs-into-consent-system-login-one-site
   "Consent Collector opens the browser to the RPMS Consent site.
    Consent Collector is redirected to SSO login page and logs in with credentials.
@@ -25,12 +27,18 @@
    "
     
   (with-client page (url "/view/login")
-    (-> page
-        (spit-page "view-login.html")
-        (fill-out-and-submit-first-form {"userid" "foo"
-                                         "password" "bar"})
-        (should-be-on-page "/view/select/location")
-        (fill-out-and-submit-first-form {"location" "Registration"})
-        (should-be-on-page "/view/select/lock-code")
-        (fill-out-and-submit-first-form {"lockcode" "9876"})
-        (should-be-on-page "/view/select/consenter")))))
+    (faking/with-global-fake-routes-in-isolation
+      {#".*/security/authenticate" (constantly {:status 200
+                                                :body (json-str (fax/user-with-locations
+                                                                  "Charleston"
+                                                                  "New York"))})}
+      (-> page
+          ;; (spit-page "view-login.html")
+          (fill-out-and-submit-first-form {"userid" "foo"
+                                           "password" "bar"})
+          (should-be-on-page "/view/select/location")
+          (fill-out-and-submit-first-form {"location" "Registration"})
+          (should-be-on-page "/view/select/lock-code")
+          (fill-out-and-submit-first-form {"lockcode" "9876"})
+          (should-be-on-page "/view/select/consenter")))))
+  )

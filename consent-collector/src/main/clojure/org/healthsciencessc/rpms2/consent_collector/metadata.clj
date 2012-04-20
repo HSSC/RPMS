@@ -7,8 +7,19 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.factories 
           :only (generate-meta-data-items)])
   (:use [org.healthsciencessc.rpms2.consent-collector.helpers 
-          :only (mypath name-value-bold-input placeholder-kw submit-button rpms2-page myredirect)])
+          :only (mypath placeholder-kw submit-button rpms2-page myredirect)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
+
+
+(defn- name-value-bold-input
+   "Creates a div with a label and name, which will be horizontally styled.
+    Setting data-role to 'fieldcontain' tells jquery mobile to group the 
+    label and the value and display horizontally if possible."
+   [form-name v id]
+
+   [:div.valueimportantblock {:data-role "fieldcontain" } 
+     [:label {:for v :class "labeldim" } (i18n form-name v "label") ]
+     [:div.highlightvalue { :id id } ]])
 
 (defn form-meta-data
   "Displays a form for the user to enter the meta data items 

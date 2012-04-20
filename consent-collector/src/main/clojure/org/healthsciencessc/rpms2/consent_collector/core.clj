@@ -1,9 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-collector.core
   (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
                                                        [web-service :as ws]]
-            [hiccup.core :as hiccup]
-            [hiccup.page-helpers :as hpages]
-            [hiccup.form-helpers :as hform]
             [org.healthsciencessc.rpms2.consent-collector [dsa-client :as dsa]
                                                           [fake-dsa-client]
             						  [helpers :as helper]
@@ -20,11 +17,7 @@
             [ring.util
              [codec :as codec]
              [response :as response]])
-  (:use [sandbar.stateful-session :only [session-put!
-                                         session-get
-                                         session-delete-key!
-                                         flash-put!
-                                         flash-get]])
+  (:use [sandbar.stateful-session :only [ session-get ]])
   (:use [ring.util.response :only [redirect]])
   (:use [clojure.string :only (replace-first)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]])
@@ -32,45 +25,62 @@
   (:use clojure.pprint)
   (:import org.healthsciencessc.rpms2.process_engine.core.DefaultProcess))
 
-(defn default-get-view-not-authorized 
-  [_]
-  (helper/rpms2-page (i18n :not-authorized-message) :pageheader "NOT AUTHORIZED HEADER"))
+
+
+(defn- logged-in
+  [ctx]
+  (if (session-get :user) true false))
+
+(defn- not-logged-in
+  [ctx]
+  (println "not logged in")
+  (if (session-get :user) false true))
 
 (def processes [{:name "get-login"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (login/default-get-login ctx)) }
+                 :run-fn (fn [ctx] (login/default-get-login ctx))}
 
                 {:name "get-view-login"
                  :runnable-fn (fn [context] (not (contains? context :password))),
-                 :run-fn (fn [ctx] (login/view ctx))
-		}
+                 :run-fn (fn [ctx] (login/view ctx))}
 
                 {:name "post-view-login"
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (login/perform ctx))
 		}
+                {:name "get-view-logout"
+                 :runnable-fn (constantly true)
+                 :run-fn (fn [ctx] (login/logout ctx)) }
 
                 {:name "get-view-not-authorized"
                  :runnable-fn (constantly true)
-                 :run-fn default-get-view-not-authorized}
+                 :run-fn login/default-get-view-not-authorized}
 
                 {:name "get-view-select-lock-code"
-                 :runnable-fn (constantly true)
+                 :runnable-fn (fn [ctx] (if (session-get :user) true false))
                  :run-fn (fn [ctx] (select-lockcode/view ctx)) }
+
+                ;; Go to login screen if not logged in
+                {:name "get-view-select-lock-code"
+                 :runnable-fn not-logged-in 
+                 :run-fn (fn [ctx] (login/view ctx)) }
+
+                {:name "post-view-select-lock-code"
+                 :runnable-fn (fn [ctx] (if (session-get :user) true false))
+                 :run-fn (fn [ctx] (select-lockcode/perform ctx)) }
 
                 {:name "post-view-select-lock-code"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-lockcode/perform ctx)) }
+                ;; Go to login screen if not logged in
+                 :run-fn (fn [ctx] (login/view ctx)) }
                                 
                 {:name "post-view-select-location"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-location/perform ctx))
-		}
+                 :run-fn (fn [ctx] (select-location/perform ctx))}
                                 
                 {:name "get-view-select-location"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-location/view ctx))
-		}
+                 :run-fn (fn [ctx] (select-location/view ctx))}
 
                 {:name "get-view-select-consenter"
                  :runnable-fn (constantly true)
@@ -112,6 +122,9 @@
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (metadata/view ctx)) }
 
+                {:name "get-some-ajax-data"
+                 :runnable-fn (constantly true)
+                 :run-fn (fn [ctx] (pr-str {:foo 12, :bar [true false nil]}))}
  		])
 
 
@@ -185,6 +198,6 @@
 (def app (-> (ws/ws-constructor)
              (wrap-dsa-auth)
              (sandbar.stateful-session/wrap-stateful-session)
-             (wrap-context-setter)
+             (wrap-context-setter) ;; bind helper/*context*
              (wrap-exceptions)
              (wrap-resource "public")))

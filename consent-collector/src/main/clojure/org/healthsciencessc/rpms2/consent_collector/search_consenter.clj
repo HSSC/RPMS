@@ -1,10 +1,7 @@
-
-(ns org.healthsciencessc.rpms2.consent-collector.search-consenter 
-  (:require [hiccup.core :as hiccup]
-            [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
-            [org.healthsciencessc.rpms2.consent-collector.helpers :as helper]
-            [hiccup.page-helpers :as hpages]
-            [hiccup.form-helpers :as hform])
+(ns org.healthsciencessc.rpms2.consent-collector.search-consenter
+  (:require
+   [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
+   [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
@@ -15,53 +12,54 @@
   the details associated with the selected consenter (e.g. patient)"
   []
   ;; (let [i18n (partial i18n "search-consenter-results")]
-  [:div
-  [:div#consenter-details-section  
-   [:div.areaTitle (i18n "consenter-details-verify-record-details" )]
-   [:div.bordered-half 
-     (for [v [ "visit-number" "medical-record-number" "encounter-date" ]]
-	(helper/name-value-bold-input "search-consenter-results-form" v (str "consenter-" v)))]]
+  [:div#consenter-details
+    [:h1 (i18n "consenter-details-verify-record-details" )]
+    [:ul (for [v [ "visit-number" 
+                   "medical-record-number" 
+                   "encounter-date" ]]
+                   [:li {:data-role "fieldcontain" } 
+                   [:label {:for v :class "labeldim" } (i18n "search-consenter-results-form" v "label") ]
+                   [:div.highlightvalue { :id (str "consenter-" v ) } ]])]
 
-  [:div.areaTitle (i18n "consenter-details-verify-patient-details" )]
-  [:div.bordered-half 
-    [:div#consenter-details  
-       (for [v [ "name"
+    [:h1 (i18n "consenter-details-verify-patient-details" )]
+    [:ul (for [v [ "name"
                  "date-of-birth"
                  "last-4-digits-ssn"
                  "zipcode"
                  "referring-doctor"
                  "primary-care-physician"
                  "primary-care-physician-city" ]]
-           (helper/name-value-bold "search-consenter-results-form" v (str "consenter-" v)))]]
+          [:li {:data-role "fieldcontain" } 
+            [:label {:for v :class "labeldim" } (i18n "search-consenter-results-form" v "label") ]
+            [:div.highlightvalue { :id (str "consenter-" v ) } ]]) ]
 
-	;; section for "Is this correct?" with the selected patient-id
-	;; and Yes/No buttons
-        [:div.areaTitleCentered (i18n "consenter-details-confirmation-question" )]
+	;; section for "Is this correct?" with Yes/No buttons
+   [:div.areaTitleCentered (i18n "consenter-details-confirmation-question" )]
 
-  	[:form#other-section { :method "GET" :action (helper/mypath "/view/search/results") } 
-   	  [:input {:type "hidden" :name "patient-id" :id "patient-id" :value "no patient" } ]
-   	  [:input {:type "hidden" :name "patient-name" :id "patient-name" :value "no patient" } ]
-   	  [:input {:type "hidden" :name "patient-encounter-data" :id "patient-name" :value "no patient" } ]
-          (helper/submit-button "search-consenter-results-yes") 
-          (helper/submit-button "search-consenter-results-no")]])
+   ;; save current selection 
+   [:form#other-section { :method "GET" :action (helper/mypath "/view/search/results") } 
+      [:input {:type "hidden" :name "patient-id" :id "patient-id" :value "no patient" } ]
+      [:input {:type "hidden" :name "patient-name" :id "patient-name" :value "no patient" } ]
+      [:input {:type "hidden" :name "patient-encounter-data" :id "patient-name" :value "no patient" } ]
+      (helper/submit-button "search-consenter-results-yes") 
+      (helper/submit-button "search-consenter-results-no")]])
 
 
 (defn generate-consenter-results-list
- "Generate the clickable list of consenters on the 
-  Search Results page (left side)."
- [results]
+  "Emit clickable list of consenters on the Search Results page."
+  [results]
 
- (for [{first :firstname last :lastname :as user} results]
-    [:div {:onclick "org.healthsciencessc.rpms2.core.consenter_search_result_clicked(this)"
-           :data-user (pr-str user)}
-          [:span.standout (str first " " last ) ]
-    [:div.secondary (str "MRN: " (:medical-record-number user) ) ] ]))
+  [:ul.search-results
+  (for [{mrn :medical-record-number fn :firstname ln :lastname :as user} results]
+    [:li {:onclick "org.healthsciencessc.rpms2.core.consenter_search_result_clicked(this)"
+           :data-user (pr-str user)} fn " " ln 
+    [:div.secondary "MRN: " mrn ] ])])
 
 (defn page-search-consenter-results
   [results]
   (try
     (helper/rpms2-page-two-column
-      (generate-consenter-results-list results) 
+      [:div#search-consenter-list (generate-consenter-results-list results) ]
       (consenter-details) 
       :title (i18n :hdr-search-consenter-results) ) 
   (catch Exception ex  
@@ -82,27 +80,13 @@
        	(helper/myredirect "/view/select/consenter"))
       (page-search-consenter-results results))))
 
-
 (defn get-view
   [ctx]
-  (debug "default-get-view-search-consenters" ctx)
+  ;(debug "default-get-view-search-consenters" ctx)
   (process-search-consenters (:query-params ctx)))
 
 (defn post-view
   [ctx]
-  (debug "default-post-view-search-consenters " ctx)
+  ;(debug "default-post-view-search-consenters " ctx)
   (process-search-consenters (:body-params ctx)))
-
-#_(defn view 
-  "Returns view "
-  [ctx]
-  (helper/rpms2-page "SEARCH CONSENTER" :title (i18n :hdr-login)))
-
-#_(defn perform
-  "Performs...  "
-
-  [{{:keys [userid password]} :body-params} ]
-  ;;dsa/post-security-authenticate
-  (debug "perform-not done")
-  (helper/myredirect "/view/select/location"))
 

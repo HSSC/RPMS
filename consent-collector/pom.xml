@@ -101,7 +101,7 @@
 		<dependency>
 			<groupId>hiccup</groupId>
 			<artifactId>hiccup</artifactId>
-			<version>0.3.8</version>
+			<version>1.0.0</version>
 		</dependency>
 		
 		<dependency>
@@ -111,7 +111,9 @@
 		</dependency>
 
 		<dependency>
- 		  <groupId>clj-http-fake</groupId>
+      <!-- Using the gfredericks fork until the global macros are merged into the main project.
+           See https://github.com/myfreeweb/clj-http-fake/pull/6 -->
+ 		  <groupId>com.gfredericks</groupId>
 		  <artifactId>clj-http-fake</artifactId>
 		  <version>0.3.0</version>
 		</dependency>

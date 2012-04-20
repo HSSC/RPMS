@@ -44,18 +44,18 @@
 (deftest post-view-login-test
   (testing "Test authentication."
     (are [doc status location]
-    (testing doc
-      (with-redefs [dsa/authenticate
-                    (constantly {:status status})]
-        (let [resp (login/perform {:userid "foobar", :password "hunter2"})]
-          (is (redirects? resp location)))))
-    "Authentication succeeds" 200 "/view/select/location"
-    "Authentication fails" 401 "/view/login"
-    "User doesn't exist" 404 "/view/login")))
+         (testing doc
+           (with-redefs [dsa/authenticate
+                         (constantly {:status status})]
+             (let [resp (login/perform {:userid "foobar", :password "hunter2"})]
+               (is (redirects? resp location)))))
+         "Authentication succeeds" 200 "/view/select/location"
+         "Authentication fails" 401 "/view/login"
+         "User doesn't exist" 404 "/view/login")))
 
 
 (deftest determine-users-location-test
-    (are [doc locations path text]
+  (are [doc locations path text]
        (testing doc
          (with-session {:user (apply factories/user-with-locations locations)}
            (-> (select-location/view {})
@@ -71,7 +71,7 @@
 (deftest get-view-not-authorized-test
   (let [msg (i18n :not-authorized-message)]
     (is msg)
-    (->> (core/default-get-view-not-authorized {})
+    (->> (login/default-get-view-not-authorized {})
          (re-find (re-pattern msg))
          (is))))
 
@@ -93,23 +93,23 @@
 ;; will go to /view/select/consenter
 (deftest get-view-select-lockcode
   (testing "Test that select-lockcode displays a valid input form for entering lockcode."
-  (let [html (select-lockcode/view {}) ]
-    (is (re-find #"<input[^>]*lockcode.*>" html)))))
+    (let [html (select-lockcode/view {}) ]
+      (is (re-find #"<input[^>]*lockcode.*>" html)))))
 
 (deftest lockcode-tests
   (testing "Testing lockcode submissions"
-  (are [doc lockcode path in-session?]
-       (testing doc
-         (-> {:body-params (if lockcode {:lockcode lockcode} {})}
-             select-lockcode/perform
-             (redirects? path)
-             (is))
-         (is (= (if in-session? lockcode nil)
-                (session-get :lockcode))))
-       "Valid lockcode" "1234" "/view/select/consenter" true
-       "Non-numeric" "abba" "/view/select/lock-code" false
-       "Bad length" "123" "/view/select/lock-code" false
-       "No lock code" nil "/view/select/lock-code" false)))
+    (are [doc lockcode path in-session?]
+         (testing doc
+           (-> {:body-params (if lockcode {:lockcode lockcode} {})}
+               select-lockcode/perform
+               (redirects? path)
+               (is))
+           (is (= (if in-session? lockcode nil)
+                  (session-get :lockcode))))
+         "Valid lockcode" "1234" "/view/select/consenter" true
+         "Non-numeric" "abba" "/view/select/lock-code" false
+         "Bad length" "123" "/view/select/lock-code" false
+         "No lock code" nil "/view/select/lock-code" false)))
 
 (deftest view-select-consenter-test
   (let [html (select-consenter/view {})]

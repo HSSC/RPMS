@@ -20,7 +20,6 @@
   which are joined by a dash. "
   [a & bs]
 
-  (info "i18n-existing " a " bs " bs )
   (j18n/resource (make-resource-keyword (cons a bs)) my-bundle))
 
 (defn i18n
@@ -28,7 +27,6 @@
    If nothing is defined in the resource bundle, prints a message
    and returns the name."
   [a & bs]
-  (info "i18n " a " bs " bs )
   (or (apply i18n-existing a bs)
       (let [msg (make-resource-keyword (cons a bs))]
         (info "missing resource definition: " msg)
