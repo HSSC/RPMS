@@ -53,6 +53,11 @@
       (.get "name" type-name)
       .getSingle))
 
+(defn rel-between
+  "Returns the Relationship of type rel between node1 and node2"
+  [node1 node2 rel]
+  (first (filter #(= node2 (neo/other-node % node1)) (neo/rels node1 rel))))
+
 (defn find-parent
   [node relation]
   (if-let [rels (neo/rels node relation :out)]
@@ -73,7 +78,7 @@
 
 (defn children-nodes-by-type
   [parent-node child-type]
-  (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type)]
+  (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type domain/default-data-defs)]
     (neo/traverse parent-node (fn [pos] (type-of? child-type (:node pos))) {child-rel :in})))
 
 (defn clean-nils
@@ -113,8 +118,8 @@
 
 (defn walk-types-path
   "Walks from the start node through all nodes of the given types and returns a collection of nodes of the last type in the path"
-  [start-node & types]
-  (loop [nodes (list start-node) type-path types]
+  [start-node path]
+  (loop [nodes (list start-node) type-path path]
     (if (or (empty? type-path) (empty? nodes))
       nodes
       (recur (distinct (filter identity (flatten (map (fn [node] (neighbors-by-type node (first type-path))) nodes))))
@@ -255,6 +260,13 @@
             (= attr-map (select-keys record (keys attr-map))))
           (find-all type)))
 
+(defn find-related-records
+  "From the start record, finds all the records at the end of the relation path"
+  [start-type start-id & relation-path]
+  (let [start-node (get-node-by-index start-type start-id)
+        nodes (walk-types-path start-node relation-path)]
+    (map #(node->record % (last relation-path)) nodes)))
+
 (defn find-children
   [parent-type parent-id child-type]
   (let [parent-node (get-node-by-index parent-type parent-id)]
@@ -297,3 +309,21 @@
     (neo/with-tx
       (neo/set-props! node props))
     true))
+
+(defn relate-records
+  [child-type child-id parent-type parent-id]
+  (let [child-node (get-node-by-index child-type child-id)
+        parent-node (get-node-by-index parent-type parent-id)
+        rel (:relationship (domain/get-parent-relation parent-type child-type domain/default-data-defs))]
+    (do
+      (create-relationship child-node rel parent-node)
+      (find-record child-type child-id))))
+
+(defn unrelate-records
+  [child-type child-id parent-type parent-id]
+  (let [child-node (get-node-by-index child-type child-id)
+        parent-node (get-node-by-index parent-type parent-id)
+        rel (:relationship (domain/get-parent-relation parent-type child-type domain/default-data-defs))]
+    (do
+      (neo/delete! (rel-between child-node parent-node rel))
+      (find-record child-type child-id))))

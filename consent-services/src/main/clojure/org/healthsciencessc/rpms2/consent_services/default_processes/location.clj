@@ -56,6 +56,19 @@
               (let [loc-id (get-in params [:query-params :location])
                     loc-data (:body-params params)]
                 (json-str (data/update "location" loc-id loc-data))))
+    :run-if-false forbidden-fn}
+
+   {:name "delete-security-location"
+    :runnable-fn (fn [params]
+                   (let [user (get-in params [:session :current-user])
+                         user-org-id (get-in user [:organization :id])
+                         loc-id (get-in params [:query-params :location])]
+                     (or (super-admin? user)
+                         (and (admin? user)
+                              (data/belongs-to? "location" loc-id "organization" user-org-id)))))
+    :run-fn (fn [params]
+              (let [loc-id (get-in params [:query-params :location])]
+                (json-str (data/delete "location" loc-id))))
     :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) loc-processes))

@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.user
-  (:use [clojure.data.json :only (json-str pprint-json)])
+  (:use [clojure.data.json :only (json-str pprint-json)]
+        [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth])
@@ -12,38 +13,86 @@
               (if-let [user-node (first (filter #(= username (:username %))
                                                 (data/get-raw-nodes "user")))]
                 (if (and user-node (auth/good-password? password (:password user-node)))
-                  (first (data/find-records-by-attrs "user" {:username username})))))}
+                  (first (data/find-records-by-attrs "user" {:username username})))))
+    :run-if-false forbidden-fn}
 
    {:name "get-security-authenticate"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (json-str (:current-user (:session params))))}
+              (json-str (:current-user (:session params))))
+    :run-if-false forbidden-fn}
 
    {:name "get-security-users"
-    :runnable-fn (fn [params] true)
+    :runnable-fn (fn [params]
+                   (let [current-user (get-in params [:session :current-user])
+                         current-user-org-id (get-in current-user [:organization :id])
+                         org-id (get-in params [:query-params :organization])]
+                     (or (super-admin? current-user)
+                         (and (admin? current-user)
+                              (if org-id (data/belongs-to? "user" (:id current-user) "organization" org-id) true)))))
     :run-fn (fn [params]
-              (json-str (data/find-all "user")))}
+              (let [user (get-in params [:session :current-user])
+                    user-org-id (get-in user [:organization :id])
+                    org-id (get-in params [:query-params :organization])]
+                (cond
+                 org-id (json-str (data/find-children "organization" org-id "user"))
+                 :else (cond
+                        (super-admin? user) (json-str (data/find-all "user"))
+                        (admin? user) (json-str (data/find-children "organization" user-org-id "user"))))))
+    :run-if-false forbidden-fn}
 
    {:name "get-security-user"
-    :runnable-fn (fn [params] true)
+    :runnable-fn (fn [params]
+                   (let [current-user (get-in params [:session :current-user])
+                         current-user-org-id (get-in current-user [:organization :id])
+                         user-id (get-in params [:query-params :user])]
+                     (or
+                      (super-admin? current-user)
+                      (and (admin? current-user) (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
     :run-fn (fn [params]
-              (let [user-id (Integer/parseInt (-> params :query-params :user))]
-                (json-str (data/find-record "user" user-id))))}
+              (let [user-id (get-in params [:query-params :user])]
+                (json-str (data/find-record "user" user-id))))
+    :run-if-false forbidden-fn}
 
    {:name "put-security-user"
-    :runnable-fn (fn [params] true)
+    :runnable-fn (fn [params]
+                   (let [current-user (get-in params [:session :current-user])
+                         current-user-org-id (get-in current-user [:organization :id])
+                         user (:body-params params)
+                         user-org-id (get-in user [:organization :id])]
+                     (or (super-admin? user)
+                         (and (admin? user) (= current-user-org-id user-org-id)))))
     :run-fn (fn [params]
               (let [user-data (:body-params params)
                     unhashed-pwd (:password user-data)
                     user (assoc user-data :password (auth/hash-password unhashed-pwd))]
-                (json-str (data/create "user" user))))}
+                (json-str (data/create "user" user))))
+    :run-if-false forbidden-fn}
 
-   ;; curl -i -X POST -H "Content-type: application/json" -d "{\"username\" : \"foobar\"}" http://localhost:3000/security/user?user=<ID>
    {:name "post-security-user"
-    :runnable-fn (fn [params] true)
+    :runnable-fn (fn [params]
+                   (let [current-user (get-in params [:session :current-user])
+                         current-user-org-id (get-in current-user [:organization :id])
+                         org-id (get-in params [:query-params :organization])]
+                     (or (super-admin? current-user)
+                         (and (admin? current-user)
+                              (if org-id (data/belongs-to? "user" (:id current-user) "organization" org-id) true)))))
     :run-fn (fn [params]
-              (let [user-id (Integer/parseInt (get-in params [:query-params :user]))
+              (let [user-id (get-in params [:query-params :user])
                     user-data (:body-params params)]
-                (json-str (data/update "user" user-id user-data))))}])
+                (json-str (data/update "user" user-id user-data))))
+    :run-if-false forbidden-fn}
+
+   {:name "delete-security-user"
+    :runnable-fn (fn [params]
+                   (let [current-user (get-in params [:session :current-user])
+                         current-user-org-id (get-in current-user [:organization :id])
+                         user-id (get-in params [:query-params :user])]
+                     (or (super-admin? current-user)
+                         (and (admin? current-user) (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
+    :run-fn (fn [params]
+              (let [user-id (get-in params [:query-params :user])]
+                (json-str (data/delete "user" user-id))))
+    :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) user-processes))
