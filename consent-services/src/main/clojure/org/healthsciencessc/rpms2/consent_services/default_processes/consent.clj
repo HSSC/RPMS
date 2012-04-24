@@ -44,6 +44,7 @@
     (or
       (superadmin? user)
       (and (or 
+             (admin? user :organization {:id org-id})
              (consent-collector? user :organization {:id org-id})
              (consent-manager? user :organization {:id org-id}))
         (= user-org-id org-id)))))
@@ -62,6 +63,15 @@
                     consenters)))))
     :run-if-false forbidden-fn}
 
+    {:name "put-consent-consenter"
+     :runnable-fn can-see-consenters?
+     :run-fn (fn [params]
+              (let [org-id (get-in params [:query-params :organization])
+                    loc-id (get-in params [:query-params :location])
+                    consenter (:body-params params)]
+                  (json-str (data/create "consenter" consenter))))
+    :run-if-false forbidden-fn}
+
     {:name "get-consent-consenter"
      :runnable-fn can-see-consenters?
      :run-fn (fn [params]
@@ -74,8 +84,11 @@
                      regex-match? (regex-map-pred search-keys)
                      loc-consenters (if loc-id
                                            (filter-by :location loc-id consenters)
-                                           consenters)]
-                  (filter regex-match? loc-consenters)))
+                                           consenters)
+                     results (filter regex-match? loc-consenters)]
+                 (if (< 0 (count results))
+                   (with-out-str (pprint-json (filter regex-match? loc-consenters)))
+                   {:status 404})))
      :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) consent-processes))
