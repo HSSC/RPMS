@@ -26,7 +26,8 @@
                                :password {:omit true :persisted true :required true :validation (fn [password] (< 5 (count password)))}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
                        {:type :belongs-to :related-to "group" :relationship :in-group}
-                       {:type :has-many :related-to "role-mapping"}]}
+                       {:type :has-many :related-to "role-mapping"}
+                       {:type :has-many-through :related-to "role-mapping" :relation-path ["group"]}]}
 
    "role" {:attributes (merge base
                               {:name {:persisted true :required true}
@@ -59,6 +60,7 @@
 
    "role-mapping" {:attributes base
                    :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit true}
+                               {:type :belongs-to :related-to "group" :relationship :has-group :omit true}
                                {:type :belongs-to :related-to "role" :relationship :has-role}
                                {:type :belongs-to :related-to "organization" :relationship :has-organization}
                                {:type :belongs-to :related-to "location" :relationship :has-location}]}
@@ -96,13 +98,18 @@
   (keep (attr-search :persisted)
         (:attributes data-def)))
 
-(defmulti relation-name->key :type)
+(defmulti relation-name->key
+  (fn [relation]
+    ((:type relation)
+     {:belongs-to :parent
+      :has-many :children
+      :has-many-through :children})))
 
-(defmethod relation-name->key :belongs-to
+(defmethod relation-name->key :parent
   [relation]
   (keyword (:related-to relation)))
 
-(defmethod relation-name->key :has-many
+(defmethod relation-name->key :children
   [relation]
   (keyword (str (:related-to relation) "s")))
 

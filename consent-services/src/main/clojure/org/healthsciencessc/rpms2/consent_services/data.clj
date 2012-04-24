@@ -180,16 +180,28 @@
                          (:type record)
                          (:related-to relation)
                          domain/default-data-defs)]
-    (map #(node->record % (:related-to relation))
-         (children-nodes-by-rel node relationship))))
+    (vec (map #(node->record % (:related-to relation))
+              (children-nodes-by-rel node relationship)))))
+
+(defmethod get-related-obj :has-many-through
+  [record node relation]
+  (let [{:keys [related-to relation-path]} relation
+        path (conj relation-path related-to)]
+    (vec (map #(node->record % related-to) (walk-types-path node path)))))
 
 (defn add-relations
   [record node relations]
-  (into record
-        (for [relation relations]
-          (let [related-obj (get-related-obj record node relation)]
-            (when related-obj
-              [(domain/relation-name->key relation) related-obj])))))
+  (reduce
+   (fn [record-map relation]
+     (let [related-obj (get-related-obj record node relation)
+           related-obj-key (domain/relation-name->key relation)]
+       (if related-obj
+         (if-let [current-val (related-obj-key record-map)]
+           (assoc record-map related-obj-key (into current-val related-obj))
+           (assoc record-map related-obj-key related-obj))
+         record-map)))
+   record
+   relations))
 
 (defn node->record
   [node type]
