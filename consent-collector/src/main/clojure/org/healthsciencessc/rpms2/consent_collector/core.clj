@@ -17,7 +17,7 @@
             [ring.util
              [codec :as codec]
              [response :as response]])
-  (:use [sandbar.stateful-session :only [ session-get ]])
+  (:use [sandbar.stateful-session :only [ session-get session-put! flash-put!]])
   (:use [ring.util.response :only [redirect]])
   (:use [clojure.string :only (replace-first)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]])
@@ -33,7 +33,6 @@
 
 (defn- not-logged-in
   [ctx]
-  (println "not logged in")
   (if (session-get :user) false true))
 
 (def processes [{:name "get-login"
@@ -193,11 +192,35 @@
         (error "EXCEPTION CAUGHT" t)
         {:status 500, :body (.getMessage t)}))))
 
+(defn process-not-found-response
+  [req]
+  (flash-put! :header (str "PROCESS NOT FOUND: " (:uri req)))
+  (helper/myredirect (or (session-get :last-page)
+                         "login")))
+
+(defn wrap-better-process-not-found-response
+  [app]
+  (fn [req]
+    (let [{:keys [status body] :as resp} (app req)]
+      (if (= 404 status)
+        (process-not-found-response req)
+        resp))))
+
+(defn wrap-last-page
+  [app]
+  (fn [req]
+    (let [resp (app req)]
+      (when (= :get (:request-method req))
+        (session-put! :last-page (:uri req)))
+      resp)))
+
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
 (def app (-> (ws/ws-constructor)
              (wrap-dsa-auth)
-             (sandbar.stateful-session/wrap-stateful-session)
              (wrap-context-setter) ;; bind helper/*context*
              (wrap-exceptions)
+             (wrap-better-process-not-found-response)
+             (wrap-last-page)
+             (sandbar.stateful-session/wrap-stateful-session)
              (wrap-resource "public")))

@@ -23,7 +23,7 @@
         details (js/$ "#consenter-details") 
         ;other-section (js/$ "#consenter-details")
         other-section (js/$ "#other-section")
-        {:keys [firstname lastname]} user]
+        {:keys [first-name last-name]} user]
 
     ;; Set the highlight style on the clicked div
     (.removeClass (js/$ ".user-selected") "user-selected")
@@ -34,7 +34,7 @@
     ;; Set this value in the form that will be submitted if the 
     ;; user selects yes, that this is the correct record
     (.val (.find other-section (str "#patient-id")) (:medical-record-number user))
-    (.val (.find other-section (str "#patient-name")) (str (:firstname user) " " (:lastname user) ))
+    (.val (.find other-section (str "#patient-name")) (str first-name " " last-name))
     (.val (.find other-section (str "#patient-encounter-date")) (:consenter-encounter-date user))
 
     ;; Set text values in details section to the corresponding value in the user record
@@ -42,6 +42,6 @@
                          (select-keys [:zipcode :date-of-birth :last-4-digits-ssn
                                        :referring-doctor :primary-care-physician :primary-care-physician-city
 				       :visit-number :encounter-date :medical-record-number ])
-                         (assoc :name (str firstname " " lastname)))]
+                         (assoc :name (str first-name " " last-name)))]
       (.text (.find details (str "#consenter-" (name id))) val))
 ))

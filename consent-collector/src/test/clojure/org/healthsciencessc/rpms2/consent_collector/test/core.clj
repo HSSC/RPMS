@@ -118,8 +118,10 @@
          [[:form (en/attr= :action "/view/create/consenter")]])))
 
 (deftest view-search-consenters-test
-  (with-redefs [dsa/search-consenters (constantly [{:firstname "FOO" :lastname "BAR"}
-                                                   {:firstname "BAZ" :lastname "BAM"}])]
+  (with-redefs [search-consenter/search-consenters
+                (constantly {:status 200
+                             :json [{:first-name "FOO" :last-name "BAR"}
+                                    {:first-name "BAZ" :last-name "BAM"}]})]
     (let [html (search-consenter/get-view {})]
       (are [text] (page-has-text? html text)
            "FOO BAR"
@@ -132,5 +134,5 @@
     (is form)
     (are [sel] (is (not (empty? (en/select form sel))))
          [[:form (en/attr= :action "/create/consenter")]]
-         [[:input (en/attr= :name "firstname")]]
-         [[:input (en/attr= :name "lastname")]])))
+         [[:input (en/attr= :name "first-name")]]
+         [[:input (en/attr= :name "last-name")]])))

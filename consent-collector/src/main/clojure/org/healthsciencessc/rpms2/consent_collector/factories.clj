@@ -19,8 +19,8 @@
 
 (def test-data 
 	{ 
-	:lastname [ "Smith" "Wilson" "Dylan" "Obama" "Jones" "Sanderson" "Rugg" "Gerkin" "Crawford" ] 
-	:firstname [ "Tami" "Cindy" "Bob" "Jennifer" "Barkley" "Wendy" "Gary" "Dan" "Jean" ]
+	:last-name [ "Smith" "Wilson" "Dylan" "Obama" "Jones" "Sanderson" "Rugg" "Gerkin" "Crawford" ] 
+	:first-name [ "Tami" "Cindy" "Bob" "Jennifer" "Barkley" "Wendy" "Gary" "Dan" "Jean" ]
         :medical-record-number [ "900000101" "900000102" "900000103" "900000104" ]
         :zipcode [ "29414" "38017" "29810" "12345" "99887" ]
         :referring-doctor [ "Dr Spock"  "Dr Kirk" "Dr Frank" "Dr Johnson" "Dr Jones" ]
@@ -101,8 +101,8 @@
 (defn generate-user 
   [prototype]
 
-  {:firstname (generate-datum :firstname prototype) 
-    :lastname (generate-datum :lastname prototype) 
+  {:first-name (generate-datum :first-name prototype) 
+    :last-name (generate-datum :last-name prototype) 
     :medical-record-number (generate-medical-record-number)
     :encounter-date "2012-01-15" 
     :visit-number "vn-90001" 
@@ -170,8 +170,8 @@
 )
 
 (comment "Sample User"
-  [{:firstname "Joe"
-    :lastname "Smith"
+  [{:first-name "Joe"
+    :last-name "Smith"
     :medical-record-number "90001" 
     :encounter-date "2012-01-15" 
     :visit-number "vn-90001" 

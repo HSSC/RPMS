@@ -53,11 +53,11 @@
            (helper/myredirect "/view/login" ))
     (if (= (:status resp) 200)
       (do
-	(let [bb (:json resp) ]
-                (println "USER JSON IS " bb)
+	(let [u (:json resp) ]
+                (println "USER JSON IS " u)
 	 	(helper/remove-session-data)
-        	(debug "USER RECORD => " bb )
-        	(session-put! :user bb)
+        	(debug "USER RECORD => " u )
+        	(session-put! :user (assoc u :password password))
 	)
         (debug "LOGIN succeeded: " userid)
         (helper/myredirect "/view/select/location"))

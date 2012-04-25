@@ -28,68 +28,26 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 
 .title { color: white; font-size: 1.1em; }
 .progressArea { font-size: .6em; color: #bdb6cc; }
-
-.sectiontitlecentered {
-	text-align: center;
-	border-bottom: thick solid #a9a9a9;
-	background: #f5f5f5;
-	color: silver;
-	font-size: 1.1em;
-}
-
-
-h1.centered {
-	text-align: center;
-	border-bottom: thick solid navy;
-}
+.centered { text-align: center; }
 
 .value { margin-left: 5px; color: gray; line-height: 1.1em; }
-
-// color: #0ac6ff;
-.valueimportantblock { 
-	display: block;
-	float: left;
-}
+.valueimportantblock { display: block; float: left; }
 
 .labeldim { 
 	color: gray; 
-	//font-weight: normal;
 	float: left;
 	text-align: right; 
 	display: block;
 	width: 100px;
 	padding-right: 3px;
 	font-size: .8em;
-	//font-weight: bold;
 }
 
-.highlightvalue { 
-	margin-left: 5px; 
-	color: navy; 
-	font-weight: bold;
-	font-size: 1.2em;
-	}
+.highlightvalue { margin-left: 5px; color: navy; font-weight: bold; font-size: 1.2em; xbackground-color: #ccccff; }
 
-.sectiontitle {
-	border-bottom: thin solid #222222;
-	background: #f5f5f5;
-	color: silver;
-	font-size: 1.1em;
-}
-
-
-.areaTitle {
-	xborder-bottom: thin solid #222222;
-	xbackground: #f5f5f5;
-	color: navy;
-	font-size: 1.1em;
-}
-
+.areaTitle { color: navy; font-size: 1.1em; }
 
 .areaTitleCentered {
-	//border-bottom: thin solid #222222;
-	//background: #f5f5f5;
-	//color: silver;
 	font-size: 1.1em;
 	text-align: center;
 	float: left;
@@ -97,9 +55,6 @@ h1.centered {
 	width: 400px;
 	font-weight: bold;
 }
-
-
-
 
 .leftcolumn { 
 	width: 33%;
@@ -219,6 +174,6 @@ ul.search-results {
 	list-style: none; margin: 0; padding: 0; border: none;
 }
 
-.search-results li { margin: 0; padding-bottom:  20px; font-size: 1.5em; line-height: 2em; }
-.search-results li .secondary { font-size: .8em; left-padding: 15px; line-height: 1em; }
+.search-results li { margin: 0; padding-left: 2px; padding-bottom:  20px; font-size: 1.5em; line-height: 2em; }
+.search-results li .secondary { font-size: .8em; padding-left: 15px; line-height: 1em; }
 

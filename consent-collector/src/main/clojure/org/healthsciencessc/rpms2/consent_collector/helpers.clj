@@ -41,18 +41,6 @@
   (let [u (session-get :user)]
         (if u (:username u) nil)))
 
-(defn generate-kw
-  "Returns a keyword for a label item, to be used in 
-  looking up a string in a resource bundle."
-  [form-name field-name keyword-type]
-  (keyword (str form-name "-" field-name "-" keyword-type)))
-
-(defn placeholder-kw
-  "Returns a keyword for a label item, to be used in 
-  looking up a string in a resource bundle."
-  [form-name field-name]
-  (generate-kw form-name field-name "placeholder"))
-
 (defn text-field3
    "Returns a text field in a div. The keywords for the label
    and name of the text field are used to lookup the 
@@ -110,13 +98,13 @@
    [user]
 
    [:div#userinfo
-     [:span.label "User: " ] [:span.value (username) ]
-     [:span.label " Location: " ] [:span.value (session-get :location) ]
-     [:span.label " Org" ] [:span.value (session-get :org-name) ]
+     [:span.label (i18n :hdr-user-label) ] [:span.value (username) ]
+     [:span.label  (i18n :hdr-location-label) ] [:span.value (session-get :location) ]
+     [:span.label (i18n :hdr-organization-label) ] [:span.value (session-get :org-name) ]
      ;; if locked, show a lock symbol
      (if (session-get :lockcode) 
-        [:span " LOCKED" ]
-        [:span " NOT LOCKED" ])] )
+        [:span (i18n :hdr-locked) ]
+        [:span (i18n :hdr-unlocked)])] )
 
 (defn- header
  "The header displays page title, and information about logged in user."

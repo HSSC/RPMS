@@ -6,16 +6,18 @@
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
+(def consenter-fields  ["first-name"
+                        "last-name"
+                        "consenter-id"
+                        "date-of-birth"
+                        "zipcode"])
+
 (defn view 
    "Returns form to search consenter with a button to create the consenter"
   [ctx]
   (helper/rpms2-page 
     (helper/standard-form "POST" (helper/mypath "/view/search/consenters") 
-    (for [s [ "firstname" 
-	      "lastname" 
-	      "consenter-id" 
-	      "date-of-birth" 
-	      "zipcode" ]]
+    (for [s consenter-fields]
               (helper/text-field3 "search-consenters-form" s))
        	 (helper/submit-button "search-consenters-form") 
          [:div#tiny [:form {:method "GET" :action (helper/mypath "/view/create/consenter") } 

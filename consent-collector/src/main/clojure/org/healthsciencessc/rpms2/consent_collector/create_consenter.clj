@@ -12,9 +12,9 @@
   (helper/rpms2-page 
     (helper/standard-form "POST" (helper/mypath "/create/consenter")
      [:p "Present form for the user fill out to Create consenter" ]
-       [:div#consenter-details  (for [v [ "firstname"
-                                     "middlename"
-                                     "lastname"
+       [:div#consenter-details  (for [v [ "first-name"
+                                     "middle-name"
+                                     "last-name"
                                      "local-identifier"
                                      "local-identifier-type"
                                      "gender"
@@ -33,7 +33,6 @@
   "Performs...  "
 
   [{{:keys [userid password]} :body-params} ]
-  ;;dsa/post-security-authenticate
   (debug "perform-not done")
   (helper/myredirect "/view/select/location"))
 

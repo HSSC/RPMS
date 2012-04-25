@@ -12809,14 +12809,14 @@ org.healthsciencessc.rpms2.core.consenter_search_result_clicked = function conse
   var other_section__2734 = $.call(null, "#other-section");
   var map__2731__2735 = user__2732;
   var map__2731__2736 = cljs.core.truth_(cljs.core.seq_QMARK_.call(null, map__2731__2735)) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2731__2735) : map__2731__2735;
-  var lastname__2737 = cljs.core.get.call(null, map__2731__2736, "\ufdd0'lastname");
-  var firstname__2738 = cljs.core.get.call(null, map__2731__2736, "\ufdd0'firstname");
+  var last_name__2737 = cljs.core.get.call(null, map__2731__2736, "\ufdd0'last-name");
+  var first_name__2738 = cljs.core.get.call(null, map__2731__2736, "\ufdd0'first-name");
   $.call(null, ".user-selected").removeClass("user-selected");
   $.call(null, div).addClass("user-selected");
   other_section__2734.find(cljs.core.str.call(null, "#patient-id")).val("\ufdd0'medical-record-number".call(null, user__2732));
-  other_section__2734.find(cljs.core.str.call(null, "#patient-name")).val(cljs.core.str.call(null, "\ufdd0'firstname".call(null, user__2732), " ", "\ufdd0'lastname".call(null, user__2732)));
+  other_section__2734.find(cljs.core.str.call(null, "#patient-name")).val(cljs.core.str.call(null, first_name__2738, " ", last_name__2737));
   other_section__2734.find(cljs.core.str.call(null, "#patient-encounter-date")).val("\ufdd0'consenter-encounter-date".call(null, user__2732));
-  var G__2739__2740 = cljs.core.seq.call(null, cljs.core.assoc.call(null, cljs.core.select_keys.call(null, user__2732, cljs.core.Vector.fromArray(["\ufdd0'zipcode", "\ufdd0'date-of-birth", "\ufdd0'last-4-digits-ssn", "\ufdd0'referring-doctor", "\ufdd0'primary-care-physician", "\ufdd0'primary-care-physician-city", "\ufdd0'visit-number", "\ufdd0'encounter-date", "\ufdd0'medical-record-number"])), "\ufdd0'name", cljs.core.str.call(null, firstname__2738, " ", lastname__2737)));
+  var G__2739__2740 = cljs.core.seq.call(null, cljs.core.assoc.call(null, cljs.core.select_keys.call(null, user__2732, cljs.core.Vector.fromArray(["\ufdd0'zipcode", "\ufdd0'date-of-birth", "\ufdd0'last-4-digits-ssn", "\ufdd0'referring-doctor", "\ufdd0'primary-care-physician", "\ufdd0'primary-care-physician-city", "\ufdd0'visit-number", "\ufdd0'encounter-date", "\ufdd0'medical-record-number"])), "\ufdd0'name", cljs.core.str.call(null, first_name__2738, " ", last_name__2737)));
   if(cljs.core.truth_(G__2739__2740)) {
     var G__2742__2744 = cljs.core.first.call(null, G__2739__2740);
     var vec__2743__2745 = G__2742__2744;

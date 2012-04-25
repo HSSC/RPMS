@@ -7,49 +7,41 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.factories 
           :only (generate-meta-data-items)])
   (:use [org.healthsciencessc.rpms2.consent-collector.helpers 
-          :only (mypath placeholder-kw submit-button rpms2-page myredirect)])
+          :only (mypath submit-button rpms2-page myredirect)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
 
-
-(defn- name-value-bold-input
-   "Creates a div with a label and name, which will be horizontally styled.
-    Setting data-role to 'fieldcontain' tells jquery mobile to group the 
-    label and the value and display horizontally if possible."
-   [form-name v id]
-
-   [:div.valueimportantblock {:data-role "fieldcontain" } 
-     [:label {:for v :class "labeldim" } (i18n form-name v "label") ]
-     [:div.highlightvalue { :id id } ]])
+(comment
+  (def ^:private md-i18n
+    "meaningless docstring"
+    (partial i18n :metadata-form)))
 
 (defn form-meta-data
   "Displays a form for the user to enter the meta data items 
   that are required."
   [ctx]
 
-  [:div.standardForm [:div.areaTitle (i18n :meta-data-form-section-label ) ]
-    (let [a (generate-meta-data-items) form-name "meta-data-form" ]
-    [:form {:method "GET" :action 
-            (mypath "/view/select/protocols" ) } 
-          (for [item a] 
-               [:div 
-		;; when type is string then display a text field
-		;;(pr-str "<br/><b>" (:name item) "</b> type " (:data-type item)) 
-		;;[:label (pr-str "<br/>Meta data <b>" (:name item) "</b> type " (:data-type item)) ]
-		(when (= (:data-type item) "date") 
-			[:div
-			(pr-str "<br/><b>" (:name item) "</b> type " (:data-type item)) 
-			(name-value-bold-input form-name (:name item) (:name item))
-			[:div [:label (:name item) ] [:input { :type "date" } ]]])
-		(when (= (:data-type item) "string") 
-		   [:div 
-   			[:div.valueimportantblock {:data-role "fieldcontain" } 
-[:label {:for (:name item) :class "labeldim" } (i18n form-name (:name item) "label" ) ]
-			[:input { :type "text" :value (i18n (placeholder-kw form-name (:name item))) :name (:name item)} ] ]
-			]
-		)
- 	   ]) 
-       ])
-   [:div (submit-button "meta-data-form") ] ])
+  (let [md-i18n (partial i18n :meta-data-form)]
+    [:div.standardForm [:div.areaTitle (md-i18n :section-label ) ]
+     [:form {:method "GET" :action 
+             (mypath "/view/select/protocols" ) } 
+      (for [{nm :name :as item} (generate-meta-data-items)]
+        [:div 
+         ;; when type is string then display a text field
+         ;;(pr-str "<br/><b>" (:name item) "</b> type " (:data-type item)) 
+         ;;[:label (pr-str "<br/>Meta data <b>" (:name item) "</b> type " (:data-type item)) ]
+         (when (= (:data-type item) "date") 
+           [:div
+            (pr-str "<br/><b>" nm "</b> type " (:data-type item))
+            [:div.valueimportantblock {:data-role "fieldcontain" } 
+             [:label {:for nm :class "labeldim" } (md-i18n nm "label") ]
+             [:div.highlightvalue { :id nm } ]]
+            [:div [:label nm] [:input { :type "date" } ]]])
+         (when (= (:data-type item) "string") 
+           [:div 
+            [:div.valueimportantblock {:data-role "fieldcontain" } 
+             [:label {:for nm :class "labeldim" } (md-i18n nm "label" ) ]
+             [:input { :type "text" :value (md-i18n nm :placeholder) :name nm}]]])])]
+     [:div (submit-button "meta-data-form")]]))
 
 (defn view 
   "Returns meta data form"

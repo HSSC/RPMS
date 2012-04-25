@@ -3,6 +3,7 @@
             [clj-http.client :as http])
   (:import org.apache.http.auth.MalformedChallengeException
            org.apache.http.client.ClientProtocolException)
+  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug!]])
   (:use [org.healthsciencessc.rpms2.consent-collector  [factories :as factory]
                                                        [config :only (config)]
                                                        [fake-dsa-client :as fake]]
@@ -13,7 +14,7 @@
 
 (defn- build-url 
    "Builds url for DSA for given path."
-   [path] 
+   [path]
    (let [ dsa-url (config "rpms2.dsa.url")
       no-slashes (fn [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
       mypath  (if dsa-url 
@@ -45,9 +46,9 @@
 
 ;; where to catch exceptions
 ;;  java.net.UnknownHostException
-(defn dsa-process-call
+(defn dsa-call
   [process-name arguments]
-  (let [[_ method path-dashes] (re-matches #"(get|post|put|delete)-(.+)" process-name)
+  (let [[_ method path-dashes] (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
         method (keyword method),
         path (s/replace path-dashes "-" "/")
         maybe-parse-json
@@ -68,66 +69,11 @@
         request
         maybe-parse-json)))
 
-(defmacro def-dsa-processes
-  [& pnames]
-  `(do ~@(for [pname pnames]
-           `(defn ~pname [args#]
-                (dsa-process-call ~(str pname) args#)))))
-
-(def-dsa-processes
-  get-authorized-locations
-
-  ;; requires an admin
-  get-security-locations
-
-  ;; requires either you are a super admin or are an admin
-  ;; for the related organization ?location=some-location-id
-  get-security-location
-
-  ;; create new location; probably gotta be an admin for the org
-  ;; or something
-  put-security-location
-
-  ;; update location
-  post-security-location
-
-  ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/organizations
-  get-security-organizations
-
-  ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/organization?organization=<ID>
-  get-security-organization
-
-  ;; curl -i -X PUT -H "Content-type: application/json" -d "{\"name\" : \"MUSC FOOBAR\"}" http://localhost:3000/organizat
-  put-security-organization
-
-   ;; curl -i -X POST -H "Content-type: application/json" -d "{\"name\" : \"MUSC BAZ\"}" http://localhost:3000/organization?organization=<ID>
-  post-security-organization
-
-  delete-security-organization
-
-  get-security-roles
-
-  get-security-role
-
-  put-security-role
-
-  post-security-roles
-
-  get-security-authenticate
-
-  get-security-users
-
-  get-security-user
-
-  put-security-user
-
-  post-security-user)
-
 (defn authenticate
   "Call security/authenticate userid password"
   [user-id password]
   (binding [*dsa-auth* [user-id password]]
-    (get-security-authenticate {})))
+    (dsa-call :get-security-authenticate {})))
 
 (defn lock 
   "Sends the lock code to the server to lock."
@@ -138,14 +84,6 @@
   "Sends the lock code to the server to unlock."
   [lockcode]
   {:status 200})
-
-(defn search-consenters
-  [params]
-  (try (let [m (factory/generate-user-list params) 
-	v (into [] m )]
-	(debug "search-consenters - ==> " (count v) " " v )
-	v)
-  (catch Exception ex (error "search-consenters failed: " params " " ex))))
 
 (defn get-protocols
   []
