@@ -85,12 +85,6 @@
   [data]
   (into {} (filter (comp not nil? val) data)))
 
-(defn- find-node
-  [neo4j-id]
-  (throw (Exception. "Not a good idea.  Node ID's are unstable according to bitly/HA1qG6"))
-  (if neo4j-id
-    (neo/get-id neo4j-id)))
-
 (defn- ^Relationship create-relationship
   [from type to]
   "Relation is a string"

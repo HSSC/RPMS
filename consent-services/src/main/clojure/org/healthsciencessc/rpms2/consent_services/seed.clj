@@ -50,40 +50,37 @@
                        ["Consent Designer" "design"]
                        ["Consent Manager" "manage"]
                        ["Consent System" "csys"]]]
-    (create "role" {:name name
+    (data/create "role" {:name name
                     :code code
                     :organization {:id def-org}}))
   nil)
 
 (defn- create-langs [def-org]
   (doseq [^Locale lc (Locale/getAvailableLocales)]
-    (create "language"
+    (data/create "language"
             {:name (.getDisplayName lc)
              :code (.getLanguage lc)
              :organization {:id def-org}})))
 
 (defn- create-org []
-  (:id (create "organization"
+  (:id (data/create "organization"
                {:name "Default Organization"
                 :code "deforg"})))
 
-(defn- get-role-id-by-code
+(defn- get-role-by-code
   [code]
-  (-> (data/find-records-by-attrs "role"
-                             {:code code})
-      first
-      :id))
+  (first (data/find-records-by-attrs "role" {:code code})))
 
 (defn- create-users [def-org]
-  (let [super-admin (:id (create "user"
+  (let [super-admin (:id (data/create "user"
                                  {:first-name "Super"
                                   :last-name "Administrator"
                                   :username "admin"
                                   :password (auth/hash-password "root")
                                   :organization {:id def-org}}))]
-    (create "role-mapping"
+    (data/create "role-mapping"
             {:organization {:id def-org}
-             :role {:id (get-role-id-by-code "sadmin")}
+             :role {:id (get-role-by-code "sadmin")}
              :user {:id super-admin}})))
 
 (defn seed-graph! []
@@ -92,20 +89,35 @@
     (create-users def-org)
     (create-langs def-org)))
 
-(defn create-test-nodes
+(defn create-test-nodes!
   []
-  (let [org (create "organization" {:name "MUSC"})
+  (let [org (data/create "organization" {:name "MUSC"})
         org-id (:id org)
-        location (create "location" {:name "Registration Desk" :organization {:id (:id org)}})
-        collector (create "user" {:username "collector" :password (auth/hash-password "foobar")
-                                  :organization {:id org-id}})
-        admin (create "user" {:username "musc-admin" :password (auth/hash-password "foobar")
-                              :organization {:id org-id}})]
-    (create "role-mapping" {:organization {:id (:id org)}
-                            :role {:id (get-role-id-by-code "collect")}
-                            :user {:id (:id collector)}
-                            :location {:id (:id location)}})
-    (create "role-mapping" {:organization {:id (:id org)}
-                            :role {:id (get-role-id-by-code "admin")}
-                            :user {:id (:id admin)}
-                            :location {:id (:id location)}})))
+        reg-desk (data/create "location" {:name "Registration Desk" :organization org})
+        cafeteria (data/create "location" {:name "Cafeteria" :organization org})
+        library (data/create "location" {:name "Library" :organization org})
+        lab (data/create "location" {:name "Research Lab" :organization org})
+        jimbo (data/create "user" {:username "jimbo" :password (auth/hash-password "foobar") :organization org})
+        juan (data/create "user" {:username "juan" :password (auth/hash-password "foobar") :organization org})
+        jane (data/create "user" {:username "jane" :password (auth/hash-password "foobar") :organization org})
+        consent-mgr-grp (data/create "group" {:name "Consent Managers" :org org})
+        collector-role (get-role-by-code "collect")]
+    (data/create "role-mapping" {:organization org :user jimbo :role collector-role})
+    (data/create "role-mapping" {:organization org :user juan :role collector-role :location reg-desk})
+    (doseq [loc (list reg-desk cafeteria library lab)]
+      (data/create "role-mapping" {:organization org :user juan :role collector-role :location loc}))
+    (data/create "role-mapping" {:organization org :group consent-mgr-grp :role (get-role-by-code "manage")})
+    (data/relate-records "user" (:id jimbo) "group" (:id consent-mgr-grp))))
+
+(defn reset-dev-db!
+  []
+  (do
+    (println "Deleting all data...")
+    (data/delete-all-nodes!)
+    (println "Setting up schema...")
+    (setup-default-schema!)
+    (println "Seeding default data...")
+    (seed-graph!)
+    (println "Seeding test data...")
+    (create-test-nodes!)
+    "Done!"))
