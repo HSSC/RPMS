@@ -12,16 +12,16 @@
   (if (map? r)
     (into {}
           (for [[k v] r :when
-            (not (or (map? v) (= :id k)))]
-              [k v]))))
+                (not (or (map? v) (= :id k)))]
+            [k v]))))
 
 (def db-cache (atom {}))
 
 (defn fill-cache! [type]
   (letfn [(assoc-cache [c type]
-             (with-meta (assoc c type
-                               (data/find-all type))
-                        (assoc (meta c) type true)))]
+            (with-meta (assoc c type
+                              (data/find-all type))
+              (assoc (meta c) type true)))]
     (swap! db-cache assoc-cache type)))
 
 (defn get-cache [type]
@@ -29,7 +29,7 @@
     (if-not (get cache-meta type)
       (fill-cache! type)))
   (get @db-cache type))
-  
+
 (defn exists-in-db? [type props]
   (let [record (bare-record props)
         cache (get-cache type)]
@@ -50,38 +50,38 @@
                        ["Consent Designer" "design"]
                        ["Consent Manager" "manage"]
                        ["Consent System" "csys"]]]
-    (data/create "role" {:name name
+    (create "role" {:name name
                     :code code
-                    :organization {:id def-org}}))
+                    :organization def-org}))
   nil)
 
 (defn- create-langs [def-org]
   (doseq [^Locale lc (Locale/getAvailableLocales)]
-    (data/create "language"
+    (create "language"
             {:name (.getDisplayName lc)
              :code (.getLanguage lc)
-             :organization {:id def-org}})))
+             :organization def-org})))
 
 (defn- create-org []
-  (:id (data/create "organization"
-               {:name "Default Organization"
-                :code "deforg"})))
+  (create "organization"
+          {:name "Default Organization"
+           :code "deforg"}))
 
 (defn- get-role-by-code
   [code]
   (first (data/find-records-by-attrs "role" {:code code})))
 
 (defn- create-users [def-org]
-  (let [super-admin (:id (data/create "user"
-                                 {:first-name "Super"
-                                  :last-name "Administrator"
-                                  :username "admin"
-                                  :password (auth/hash-password "root")
-                                  :organization {:id def-org}}))]
-    (data/create "role-mapping"
-            {:organization {:id def-org}
-             :role {:id (get-role-by-code "sadmin")}
-             :user {:id super-admin}})))
+  (let [super-admin (create "user"
+                            {:first-name "Super"
+                             :last-name "Administrator"
+                             :username "admin"
+                             :password (auth/hash-password "root")
+                             :organization def-org})]
+    (create "role-mapping"
+            {:organization def-org
+             :role (get-role-by-code "sadmin")
+             :user super-admin})))
 
 (defn seed-graph! []
   (let [def-org (create-org)]
