@@ -218,9 +218,9 @@
   (let [type-nodes (set (map :name (map neo/props (children-nodes-by-rel (neo/root) :root))))
         data-def-types (set (keys data-defs))]
     (doseq [node (difference data-def-types type-nodes)]
-      (create-type node))
-    (doseq [rel (difference type-nodes data-def-types)]
-      (neo/delete-node! (find-record-type-node rel)))))
+      (create-type node))))
+    ;;(doseq [rel (difference type-nodes data-def-types)]
+      ;;(neo/delete-node! (find-record-type-node rel)))))
 
 (defn validate-relation
   [{:keys [from to rel-type] :as relation}]

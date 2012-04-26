@@ -1,13 +1,47 @@
 (ns org.healthsciencessc.rpms2.consent-services.seed
-  (:use [org.healthsciencessc.rpms2.consent-services.data
-         :only [create find-records-by-attrs setup-schema]])
-  (:require [org.healthsciencessc.rpms2.consent-services.auth :as auth]
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain])
   (:import [java.util Locale]))
 
 (defn setup-default-schema!
   []
-  (setup-schema domain/default-data-defs))
+  (data/setup-schema domain/default-data-defs))
+
+(defn bare-record [r]
+  (if (map? r)
+    (into {}
+          (for [[k v] r :when
+            (not (or (map? v) (= :id k)))]
+              [k v]))))
+
+(def db-cache (atom {}))
+
+(defn fill-cache! [type]
+  (letfn [(assoc-cache [c type]
+             (with-meta (assoc c type
+                               (data/find-all type))
+                        (assoc (meta c) type true)))]
+    (swap! db-cache assoc-cache type)))
+
+(defn get-cache [type]
+  (let [cache-meta (meta @db-cache)]
+    (if-not (get cache-meta type)
+      (fill-cache! type)))
+  (get @db-cache type))
+  
+(defn exists-in-db? [type props]
+  (let [record (bare-record props)
+        cache (get-cache type)]
+    (some (fn [x]
+            (if (= record (bare-record x))
+              x))
+          cache)))
+
+(defn create
+  [type props]
+  (or (exists-in-db? type props)
+      (data/create type props)))
 
 (defn- create-roles [def-org]
   (doseq [[name code] [["Super Administrator" "sadmin"]
@@ -35,7 +69,7 @@
 
 (defn- get-role-id-by-code
   [code]
-  (-> (find-records-by-attrs "role"
+  (-> (data/find-records-by-attrs "role"
                              {:code code})
       first
       :id))

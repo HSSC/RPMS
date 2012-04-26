@@ -12,9 +12,8 @@
 (defn ws-init
   []
   (data/connect! (config/conf "neo4j-db-path"))
-  (if (= "true" (config/conf "seed-database"))
-    (seed/seed-graph!))
   (seed/setup-default-schema!)
+  (seed/seed-graph!)
   (process/load-processes config/default-process-class-path))
 
 (defn ws-destroy
