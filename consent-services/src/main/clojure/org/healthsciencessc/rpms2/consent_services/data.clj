@@ -21,7 +21,13 @@
   (neo/stop!))
 
 (defn delete-all-nodes! []
-  (neo/purge!))
+  (neo/purge!)
+  (neo/with-tx
+    (let [index-manager (neo/index)]
+      (doseq [x (.nodeIndexNames index-manager)]
+        (.delete (.forNodes index-manager x)))
+      (doseq [x (.relationshipIndexNames index-manager)]
+        (.delete (.forRelationships index-manager x))))))
 
 (defn ^Index neo-index [name type]
   "Gets or creates an index, which may be for :nodes or :relationships"

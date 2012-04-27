@@ -8,11 +8,14 @@
   []
   (data/setup-schema domain/default-data-defs))
 
+(def remove-keys #{:id :password})
+
 (defn bare-record [r]
+  "Removes id's maps and optional extra keywords"
   (if (map? r)
     (into {}
           (for [[k v] r :when
-                (not (or (map? v) (= :id k)))]
+                (not (or (coll? v) (contains? remove-keys k)))]
             [k v]))))
 
 (def db-cache (atom {}))
@@ -38,10 +41,17 @@
               x))
           cache)))
 
+(defn update-cache [type record]
+  (swap! db-cache update-in [type] conj record))
+
 (defn create
+  "Makes or finds"
   [type props]
-  (or (exists-in-db? type props)
-      (data/create type props)))
+  (if-let [record (exists-in-db? type props)]
+    record
+    (let [record (data/create type props)]
+      (update-cache type record)
+      record)))
 
 (defn- create-roles [def-org]
   (doseq [[name code] [["Super Administrator" "sadmin"]
