@@ -65,6 +65,7 @@
 
     {:name "put-consent-consenter"
      :runnable-fn can-see-consenters?
+     ;;FIXME this isn't validating org-id of what was passed in
      :run-fn (fn [params]
               (let [org-id (get-in params [:query-params :organization])
                     loc-id (get-in params [:query-params :location])

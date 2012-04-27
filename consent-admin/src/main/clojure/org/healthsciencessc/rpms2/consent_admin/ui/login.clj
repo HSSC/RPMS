@@ -5,9 +5,9 @@
   "Generates the login form"
   [ctx]
   (let [error (:error ctx)]
-    [:div#login-pane.login-pane {} 
-      (if error [:div#error.error (:message error)] nil)
-      [:form#login-form.login-form {method="POST"}
-        [:input#username.username {:type "text"}]
-        [:input#password.password {:type "password"}]
-        [:input#login.login {:type "submit"}]]]))
+    [:div#login-pane {} 
+      (if error [:div#error (:message error)] nil)
+      [:form#login-form {:method "POST"}
+        [:input#username {:type "text" :name "username"}]
+        [:input#password {:type "password" :name "password"}]
+        [:input#login {:type "submit"}]]]))

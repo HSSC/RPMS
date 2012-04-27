@@ -8,4 +8,4 @@
 
 ;; Tests that the bootstrap-locations function returns a sequence of values.
 (deftest test-bootstrap-locations
-  (is (seq? (bootstrap-locations))))
+  (is (sequential? (bootstrap-locations))))

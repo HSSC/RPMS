@@ -1,19 +1,17 @@
 (ns org.healthsciencessc.rpms2.consent-admin.core
   (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
                                                        [web-service :as ws]]
+            [org.healthsciencessc.rpms2.consent-admin.process [login :as login]]
             [ring.util [codec :as codec]
-                       [response :as response]])
-  (:use compojure.core)
-  (:use org.healthsciencessc.rpms2.consent-admin.config)
-  (:use [sandbar.stateful-session :only [session-put!
-                                         session-get
-                                         session-delete-key!
-                                         flash-put!
-                                         flash-get]])
-  (:require [org.healthsciencessc.rpms2.consent-admin.process [login :as login]]))
+                       [response :as response]]
+            [org.healthsciencessc.rpms2.consent-admin.security :as security]
+            [sandbar.stateful-session :as sandbar])
+  (:use [compojure.core]
+        [compojure.handler]
+        [clojure.pprint]
+        [org.healthsciencessc.rpms2.consent-admin.config]))
 
-
-;;(process/load-processes (first (bootstrap-locations)))
+(pe/load-processes (first (bootstrap-locations)))
 
 (defn wrap-resource
   "Middleware that first checks to see whether the request map matches a static
@@ -28,8 +26,18 @@
         (or (response/resource-response path {:root root-path})
                         (handler request))))))
 
+(defn wrap-debug
+  "Simple middleware to print out everything.
+  Can be placed in multiple points in the handling."
+  [handler]
+  (fn [request]
+    (pprint request)
+    (handler request)))
+
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
-(def app (-> (ws/ws-constructor)
-             (sandbar.stateful-session/wrap-stateful-session)
-             (wrap-resource "public")))
+(def app (-> (ws/ws-constructor
+               security/ensure-auth-handler
+               sandbar/wrap-stateful-session)
+             (wrap-resource "public")
+           site))

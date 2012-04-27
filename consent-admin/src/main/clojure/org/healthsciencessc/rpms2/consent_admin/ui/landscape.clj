@@ -11,22 +11,22 @@
 (defn header
   "Creates the default header that is used for the application"
   [params options]  
-  [:div#header.header [:h1 "RPMS"]])
+  [:div#header [:h1 "RPMS"]])
 
 (defn footer
   "Creates the default header that is used for the application"
   [params options]
-  [:div#footer.footer [:h3 "Page Footer"]])
+  [:div#footer [:h3 "Page Footer"]])
 
 (defn header-no-session
   "Creates the header that is used for the application when a session is active."
   [params options]  
-  [:div#header.header [:h1 "RPMS"]])
+  [:div#header [:h1 "RPMS"]])
 
 (defn footer-no-session
   "Creates the header that is used for the application when a session is not active."
   [params options]
-  [:div#footer.footer [:h3 "Page Footer"]])
+  [:div#footer [:h3 "Page Footer"]])
 
 (defn leftbar
   "Creates the default header that is used for the application"
