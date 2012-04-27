@@ -1,7 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.consent
-  (:use [clojure.data.json :only (json-str pprint-json)]
-        [org.healthsciencessc.rpms2.consent-services.domain-utils 
-           :only (forbidden-fn)]
+  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils
+         :only (forbidden-fn)]
         [org.healthsciencessc.rpms2.consent-domain.roles])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
@@ -21,14 +20,14 @@
 (defn regex-insensitive
   [str]
   (Pattern/compile str case-insensitive))
-  
+
 (defn regex-map-pred
   "This function takes a map where values are (string) regexes to be matched against,
    and returns a predicate that applies to a map, only returning true when all
    [key regex] pairs successfully match.  Uses case insensitive by default.
    ((regex-map-pred {:a \"abc\" :b \"321\"}) {:a \"aa123ABC\" :b \"1122321\"}) ->> true"
   [regex-map]
-  (let [regex-fn (fn [[k v]] 
+  (let [regex-fn (fn [[k v]]
                    (let [rgx (regex-insensitive v)]
                      (fn [m]
                        (if (string? (get m k))
@@ -42,54 +41,53 @@
         user-org-id (get-in user [:organization :id])
         org-id (get-in params [:query-params :organization])]
     (or
-      (superadmin? user)
-      (and (or 
-             (admin? user :organization {:id org-id})
-             (consent-collector? user :organization {:id org-id})
-             (consent-manager? user :organization {:id org-id}))
-        (= user-org-id org-id)))))
+     (superadmin? user)
+     (and (or
+           (admin? user :organization {:id org-id})
+           (consent-collector? user :organization {:id org-id})
+           (consent-manager? user :organization {:id org-id}))
+          (= user-org-id org-id)))))
 
 (def consent-processes
-   ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/consent/consenters?organization=<ID>
-   [{:name "get-consent-consenters"
-     :runnable-fn can-see-consenters?
-     :run-fn (fn [params]
+  ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/consent/consenters?organization=<ID>
+  [{:name "get-consent-consenters"
+    :runnable-fn can-see-consenters?
+    :run-fn (fn [params]
               (let [org-id (get-in params [:query-params :organization])
                     loc-id (get-in params [:query-params :location])
                     consenters (data/find-children "organization" org-id "consenter")]
-                (with-out-str (pprint-json
-                  (if loc-id
-                    (filter-by :location loc-id consenters)
-                    consenters)))))
+                (if loc-id
+                  (filter-by :location loc-id consenters)
+                  consenters)))
     :run-if-false forbidden-fn}
 
-    {:name "put-consent-consenter"
-     :runnable-fn can-see-consenters?
-     ;;FIXME this isn't validating org-id of what was passed in
-     :run-fn (fn [params]
+   {:name "put-consent-consenter"
+    :runnable-fn can-see-consenters?
+    ;;FIXME this isn't validating org-id of what was passed in
+    :run-fn (fn [params]
               (let [org-id (get-in params [:query-params :organization])
                     loc-id (get-in params [:query-params :location])
                     consenter (:body-params params)]
-                  (json-str (data/create "consenter" consenter))))
+                (data/create "consenter" consenter)))
     :run-if-false forbidden-fn}
 
-    {:name "get-consent-consenter"
-     :runnable-fn can-see-consenters?
-     :run-fn (fn [params]
-               (let [org-id (get-in params [:query-params :organization])
-                     loc-id (get-in params [:query-params :location])
-                     consenters (data/find-children "organization" org-id "consenter")
-                     search-keys (select-keys (:query-params params)
-                                              (keys (get-in domain/default-data-defs
-                                                      ["consenter" :attributes])))
-                     regex-match? (regex-map-pred search-keys)
-                     loc-consenters (if loc-id
-                                           (filter-by :location loc-id consenters)
-                                           consenters)
-                     results (filter regex-match? loc-consenters)]
-                 (if (< 0 (count results))
-                   (with-out-str (pprint-json (filter regex-match? loc-consenters)))
-                   {:status 404})))
-     :run-if-false forbidden-fn}])
+   {:name "get-consent-consenter"
+    :runnable-fn can-see-consenters?
+    :run-fn (fn [params]
+              (let [org-id (get-in params [:query-params :organization])
+                    loc-id (get-in params [:query-params :location])
+                    consenters (data/find-children "organization" org-id "consenter")
+                    search-keys (select-keys (:query-params params)
+                                             (keys (get-in domain/default-data-defs
+                                                           ["consenter" :attributes])))
+                    regex-match? (regex-map-pred search-keys)
+                    loc-consenters (if loc-id
+                                     (filter-by :location loc-id consenters)
+                                     consenters)
+                    results (filter regex-match? loc-consenters)]
+                (if (< 0 (count results))
+                  (filter regex-match? loc-consenters)
+                  {:status 404})))
+    :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) consent-processes))
