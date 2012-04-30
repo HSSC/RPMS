@@ -8,6 +8,7 @@
             [sandbar.stateful-session :as sandbar])
   (:use [compojure.core]
         [compojure.handler]
+        [hiccup.middleware]
         [clojure.pprint]
         [org.healthsciencessc.rpms2.consent-admin.config]))
 
@@ -40,4 +41,5 @@
                security/ensure-auth-handler
                sandbar/wrap-stateful-session)
              (wrap-resource "public")
+             (wrap-base-url "/administration")
            site))

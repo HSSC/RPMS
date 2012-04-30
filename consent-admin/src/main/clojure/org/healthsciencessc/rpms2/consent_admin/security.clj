@@ -9,8 +9,6 @@
 
 (defn is-authenticated?
   []
-  (println "SANDBAR SESSION:")
-  (pprint @sandbar/sandbar-session)
   (let [{:keys [username password]} (sandbar/session-get :user)]
     (and username password)))
 
