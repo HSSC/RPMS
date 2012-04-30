@@ -26,5 +26,6 @@
 		<module>consent-domain</module>
 		<module>consent-services</module>
 		<module>consent-collector</module>
+		<module>consent-admin</module>
 	</modules>
 </project>
