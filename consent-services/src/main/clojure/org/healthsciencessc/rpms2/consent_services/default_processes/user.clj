@@ -1,6 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.user
-  (:use [clojure.data.json :only (json-str pprint-json)]
-        [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
+  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth])
@@ -18,7 +17,7 @@
    {:name "get-security-authenticate"
     :runnable-fn (fn [params] true)
     :run-fn (fn [params]
-              (json-str (:current-user (:session params))))
+              (:current-user (:session params)))
     :run-if-false forbidden-fn}
 
    {:name "get-security-users"
@@ -34,10 +33,10 @@
                     user-org-id (get-in user [:organization :id])
                     org-id (get-in params [:query-params :organization])]
                 (cond
-                 org-id (json-str (data/find-children "organization" org-id "user"))
+                 org-id (data/find-children "organization" org-id "user")
                  :else (cond
-                        (super-admin? user) (json-str (data/find-all "user"))
-                        (admin? user) (json-str (data/find-children "organization" user-org-id "user"))))))
+                        (super-admin? user) (data/find-all "user")
+                        (admin? user) (data/find-children "organization" user-org-id "user")))))
     :run-if-false forbidden-fn}
 
    {:name "get-security-user"
@@ -50,7 +49,7 @@
                       (and (admin? current-user) (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
     :run-fn (fn [params]
               (let [user-id (get-in params [:query-params :user])]
-                (json-str (data/find-record "user" user-id))))
+                (data/find-record "user" user-id)))
     :run-if-false forbidden-fn}
 
    {:name "put-security-user"
@@ -65,7 +64,7 @@
               (let [user-data (:body-params params)
                     unhashed-pwd (:password user-data)
                     user (assoc user-data :password (auth/hash-password unhashed-pwd))]
-                (json-str (data/create "user" user))))
+                (data/create "user" user)))
     :run-if-false forbidden-fn}
 
    {:name "post-security-user"
@@ -79,7 +78,7 @@
     :run-fn (fn [params]
               (let [user-id (get-in params [:query-params :user])
                     user-data (:body-params params)]
-                (json-str (data/update "user" user-id user-data))))
+                (data/update "user" user-id user-data)))
     :run-if-false forbidden-fn}
 
    {:name "delete-security-user"
@@ -91,7 +90,7 @@
                          (and (admin? current-user) (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
     :run-fn (fn [params]
               (let [user-id (get-in params [:query-params :user])]
-                (json-str (data/delete "user" user-id))))
+                (data/delete "user" user-id)))
     :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) user-processes))

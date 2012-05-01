@@ -1,6 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.group-role
-  (:use [clojure.data.json :only (json-str pprint-json)]
-        [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
+  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
@@ -39,7 +38,7 @@
                                                        :group {:id group-id}
                                                        :location {:id %}})
                          loc-ids)))
-                (json-str (data/find-record "group" group-id))))
+                (data/find-record "group" group-id)))
     :run-if-false forbidden-fn}
    
    {:name "delete-security-grouprole"

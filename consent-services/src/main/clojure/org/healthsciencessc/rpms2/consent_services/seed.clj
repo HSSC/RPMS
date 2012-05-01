@@ -110,7 +110,7 @@
         jimbo (data/create "user" {:username "jimbo" :password (auth/hash-password "foobar") :organization org})
         juan (data/create "user" {:username "juan" :password (auth/hash-password "foobar") :organization org})
         jane (data/create "user" {:username "jane" :password (auth/hash-password "foobar") :organization org})
-        consent-mgr-grp (data/create "group" {:name "Consent Managers" :org org})
+        consent-mgr-grp (data/create "group" {:name "Consent Managers" :organization org})
         collector-role (get-role-by-code "collect")]
     (data/create "role-mapping" {:organization org :user jimbo :role collector-role})
     (data/create "role-mapping" {:organization org :user juan :role collector-role :location reg-desk})

@@ -1,7 +1,8 @@
 (ns org.healthsciencessc.rpms2.process-engine.web-service
   (:use compojure.core
         ring.middleware.session
-        [clojure.data.json :only (read-json)]
+        [ring.util.response :only (response content-type)]
+        [clojure.data.json :only (read-json json-str)]
         [clojure.string :only (blank? join split)]
         [slingshot.slingshot :only (try+)]
         [clojure.tools.logging :only (info error)])
@@ -42,6 +43,16 @@
       (< 0 (count data)) (keyify-params data)
       :else {})))
 
+(defn format-response-body
+  [body request]
+  (let [requested-content-type (:content-type request)]
+    (cond
+     (= requested-content-type "application/json")
+     (content-type (response (json-str body)) requested-content-type)
+     (= requested-content-type "text/clojure")
+     (content-type (response body) requested-content-type)
+     :else body)))
+
 (defn process-not-found-body
   [req process-name]
   (str "<h1>Process Not Found</h1>"
@@ -57,7 +68,7 @@
              params {:query-params (keyify-params query-params) :body-params body-params :session session :context context :path-info path-info}]
          (info "PROCESS NAME: " process-name)
          (try+
-          (process/dispatch process-name params)
+          (format-response-body (process/dispatch process-name params) req)
           (catch [:type :org.healthsciencessc.rpms2.process-engine.core/no-default-process] _
             (error (str "Could not find process " process-name))
             {:status 404 :body (process-not-found-body req process-name)})))))
