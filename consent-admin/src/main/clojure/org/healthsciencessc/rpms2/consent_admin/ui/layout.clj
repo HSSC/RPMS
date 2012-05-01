@@ -1,7 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
   (require [org.healthsciencessc.rpms2.process-engine.path :as path]
            [hiccup.page :as page]
-          [hiccup.element :as element]
+           [hiccup.element :as element]
            [sandbar.stateful-session :as sess])
   (use [org.healthsciencessc.rpms2.consent-admin.ui.burp]))
 
@@ -10,10 +10,10 @@
   [params & options]  
     [:div#header.header
       [:h1 "RPMS"]
-      [:div#loginstat
-        [:h4#username (get (sess/session-get :user) :username)]
+      [:ul#loginstat
+        [:li#current-user (get (sess/session-get :user) :username)]
         (element/link-to "/security/logout"
-                         [:h4#logout "Logout"])]])
+                         [:li#logout "Logout"])]])
 
 (defn header-no-session
   "Creates the default header that is used for the application"
@@ -57,8 +57,8 @@
                      "/js/jquery-1.7.2.min.js"
                      "/js/consent-admin.js"
                      "/js/jquery-ui-1.8.19.custom.min.js")
-    (page/include-css "/css/clean.css"
-                      "/css/consent-admin.css"
+    (page/include-css "/css/consent-admin.css"
+                      "/css/clean.css"
                       "/css/redmond/jquery-ui-1.8.19.custom.css")])
 
 (defn layout 

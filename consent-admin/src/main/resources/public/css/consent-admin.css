@@ -1,23 +1,76 @@
-div.page{
+body {
+	font-family: Candara, Arial, sans-serif;
+	font-size: 1.2em;
+}
+
+#textbox {
+	width: 10em;
+}
+
+div.page {
 	
 }
 
-div.header{
+#login-pane {
+	margin: 5em;
+	padding: 1.4em;
+	background-color: #cccccc;
+}
+
+#current-user {
+}
+
+.submit {
+	width: 8em;
+	height: 1.8em;
+	font-size: 1.4em;
+	margin: 1em auto 0 auto;
+}
+
+form {
+	margin-left: auto;
+	margin-right:auto;
+	width: 14em;
+}
+
+#header {
 	width: 100%;
-	height: 40px;
 	background-color: #cccccc;
 	border: none; 
+	position: relative;
 }
+
+label, input {
+	display: block;
+	padding: .3em 0 .3em 0;
+	margin: .3em auto 0 auto;
+	width: 100%;
+}
+
+#title {
+ 	display:inline-block;
+}
+
+#loginstat {
+	position: absolute;
+	right: 0;
+	margin: 0 1em 0 0;
+	top: 0;
+}
+
+#loginstat li {
+	list-style-type: none;
+}
+
 
 div.footer{
 	width: 100%;
-	height: 25px;
 	background-color: #cccccc;
-	border: none;
+	border:none;
 	position:absolute;
-	bottom:0
+	bottom:0;
 }
 
-div.leftbar{
+div.leftbar {
 	width: 20%;
 }
