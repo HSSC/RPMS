@@ -1,7 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.core
   (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
                                                        [web-service :as ws]]
-            [org.healthsciencessc.rpms2.consent-admin.process [login :as login]]
             [ring.util [codec :as codec]
                        [response :as response]]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
@@ -12,7 +11,6 @@
         [clojure.pprint]
         [org.healthsciencessc.rpms2.consent-admin.config]))
 
-(pe/load-processes (first (bootstrap-locations)))
 
 (defn wrap-resource
   "Middleware that first checks to see whether the request map matches a static
@@ -22,7 +20,7 @@
   [handler root-path]
   (fn [request]
     (if-not (= :get (:request-method request))
-      (handler request)                        
+      (handler request)
       (let [path (.substring (codec/url-decode (:path-info request)) 1)]
         (or (response/resource-response path {:root root-path})
                         (handler request))))))
@@ -41,5 +39,8 @@
                security/ensure-auth-handler
                sandbar/wrap-stateful-session)
              (wrap-resource "public")
-             (wrap-base-url "/administration")
+             wrap-base-url
            site))
+
+
+(pe/load-processes (first (bootstrap-locations)))
