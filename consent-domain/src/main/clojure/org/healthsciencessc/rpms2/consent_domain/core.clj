@@ -64,6 +64,14 @@
                                {:type :belongs-to :related-to "role" :relationship :has-role}
                                {:type :belongs-to :related-to "organization" :relationship :has-organization}
                                {:type :belongs-to :related-to "location" :relationship :has-location}]}
+
+   "meta-item" {:attribures (merge base
+                                   {:name {:persisted true}}
+                                   {:description {:persisted true}}
+                                   {:uri {:persisted true}}
+                                   {:data-type {:persisted true}}
+                                   {:default-value {:persisted true}})
+                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
    })
 
 (defn get-relations
