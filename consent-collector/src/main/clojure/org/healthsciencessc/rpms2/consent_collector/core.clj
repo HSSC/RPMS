@@ -85,6 +85,10 @@
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (select-consenter/view ctx)) }
 
+                {:name "post-view-select-consenter"
+                 :runnable-fn (constantly true)
+                 :run-fn (fn [ctx] (select-consenter/perform ctx)) }
+
                 {:name "post-view-search-consenters"
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (search-consenter/post-view ctx)) }

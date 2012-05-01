@@ -3,9 +3,9 @@
             [clj-http.client :as http])
   (:import org.apache.http.auth.MalformedChallengeException
            org.apache.http.client.ClientProtocolException)
-  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug!]])
   (:use [org.healthsciencessc.rpms2.consent-collector  [factories :as factory]
                                                        [config :only (config)]
+                                                       [debug :only (debug!)]
                                                        [fake-dsa-client :as fake]]
         [clojure.tools.logging :only (debug info error warn)]
         [clojure.data.json :only (read-json json-str)]))
@@ -73,17 +73,9 @@
   "Call security/authenticate userid password"
   [user-id password]
   (binding [*dsa-auth* [user-id password]]
-    (dsa-call :get-security-authenticate {})))
-
-(defn lock 
-  "Sends the lock code to the server to lock."
-  [lockcode]
-  {:status 200})
-
-(defn unlock 
-  "Sends the lock code to the server to unlock."
-  [lockcode]
-  {:status 200})
+    (dsa-call :get-security-authenticate {})
+    ;(fake/fake-authenticate user-id password)
+    ))
 
 (defn get-protocols
   []

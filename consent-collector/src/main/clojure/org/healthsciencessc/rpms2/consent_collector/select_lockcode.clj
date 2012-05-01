@@ -11,15 +11,6 @@
   (and (string? lockcode)
        (re-matches #"\d{4}" lockcode)))
 
-#_(defn form-select-lock-code 
-     "Generates form for entering lockcode - a required
-     4 digit number."
-   []
-   (helper/standard-form "POST" (helper/mypath "/view/select/lock-code" )
-      (i18n :lock-code-form-enter-lock-code ) 
-      [:input {:name "lockcode" :type "number" :required "" :length 4 :min 0 :max "9999"}]
-      (helper/submit-button "lock-code-form") ))
-
 (defn perform 
   "Validates lock code.  If valid, continue on to /view/select/consenter.
   Otherwise, go back to /view/select/lock-code to try again.
@@ -30,7 +21,6 @@
   (if (valid-lock-code? lockcode) 
     (do
       (session-put! :lockcode lockcode)
-      (dsa/lock lockcode)
       (helper/myredirect "/view/select/consenter"))
     (do
       (session-delete-key! :lockcode)
@@ -43,8 +33,20 @@
    4 digit number."
   [_]
   (helper/rpms2-page 
-     (helper/standard-form "POST" (helper/mypath "/view/select/lock-code" )
+    (helper/standard-form "POST" (helper/mypath "/view/select/lock-code" )
       (i18n :lock-code-form-enter-lock-code ) 
-      [:input {:name "lockcode" :type "number" :required "" :length 4 :min 0 :max "9999"}]
-      (helper/submit-button "lock-code-form") )
+      [:input {:name "lockcode" 
+               :type "number" 
+               :required "" 
+               :length 4 
+               :min 0 
+               :max "9999"}]
+
+      (let [form-name "lock-code-form"]
+        [:div.centered [:input {:type "submit" 
+               :data-theme "a" 
+               :data-role "button" 
+               :data-inline "true" 
+               :value (i18n "lock-code-form-submit-button") 
+               :name "lock-code-form-submit-button" } ]]))
      :title (i18n :hdr-select-lockcode))) 

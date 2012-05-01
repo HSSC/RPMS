@@ -1,8 +1,9 @@
 
 @media only screen and (device-width: 768px) {
-	#outer { width: 720px; height; 290px; background-color: #ffcc66; border: thin solid red; }
+	#outer { width: 720px; height; 290px; xbackground-color: #ffcc66; 
+		xborder: thin solid red; }
 	#content { width: 750px; height: 300px; 
-		background-color: #ccffff; border: 10px solid #66ffff; }
+		background-color: #ccffff; xborder: 10px solid #66ffff; }
 }
 
 
@@ -10,10 +11,10 @@
 and (max-device-width: 1024px) and (orientation:portrait) {
 
 	/* PORTRAIT */
-	#outer { background-color: pink ; height: 490px; width: 455px; border: thin solid green; }
+	#outer { xbackground-color: pink ; height: 490px; width: 455px; xborder: thin solid green; }
 
-	#content { background-color: white /* pink /* #ffffcc /*yellowish*/;  /* ipad 1024x768*/
-		height: 760px; width: 740px; border: thin solid #cc0099; }
+	#content { xbackground-color: white /* pink /* #ffffcc /*yellowish*/;  /* ipad 1024x768*/
+		height: 760px; width: 740px; xborder: thin solid #cc0099; }
 
 	#subouter { background-color: orange; height: 200px; width: 475px; border: thin solid #3399ff; } }
 
@@ -21,13 +22,17 @@ and (max-device-width: 1024px) and (orientation:portrait) {
 @media only screen and (min-device-width: 481px) 
 and (max-device-width: 1024px) and (orientation:landscape) {
 	/* LANDSCAPE */
-	#outer { background-color: silver ; height: 290px; width: 850px; border: thin solid #ffff00; }
+	#outer { xbackground-color: silver ; height: 290px; width: 850px; xborder: thin solid #ffff00; }
 	#content { xbackground-color: #669966; height: 450px; width: 970px; border: 10px solid red; }
-	#subouter { background-color: purple; height: 270px; width: 870px; border: thick solid navy ; }
+	#subouter { xbackground-color: purple; height: 270px; width: 870px; xborder: thick solid navy ; }
 }
+-
 
-.title { color: white; font-size: 1.1em; }
-.progressArea { font-size: .6em; color: #bdb6cc; }
+.title { text-align: center; }
+/* 
+ * .progressArea { font-size: .6em; color: #bdb6cc; }
+ *
+ */
 .centered { text-align: center; }
 
 .value { margin-left: 5px; color: gray; line-height: 1.1em; }
@@ -79,8 +84,6 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 input:required:invalid, input:focus:invalid 
 		{ background-color: #cccccc; -maz-box-shadow: none; }
 
-#loginName { font-color: navy; font-size: 1em; }
-#username { font-color: navy; font-size: 1em; xborder: thick solid green; }
 .highlight { font-color: navy; font-size: 1em; background-color: yellow;}
 
 //=========== Forms
@@ -101,10 +104,13 @@ input:required:invalid, input:focus:invalid
 	border-radius: 15px; -moz-border-radius: 15px;}
 
 
-form { border: thin solid gray; margin: 5px; padding: 5px; 
-	border-radius: 15px; -moz-border-radius: 15px; margin: 50px; 
-	background-color: white;
-}
+div.innerform { border: 1px solid gray; 
+	margin: 5px; padding: 5px; border-radius: 15px; 
+	-moz-border-radius: 15px; margin: 50px; 
+	xwidth: 500px;
+	}
+
+div.innerform { xtext-align: right; } 
 
 .wideForm { width: 500px; }
 
@@ -135,9 +141,11 @@ form { border: thin solid gray; margin: 5px; padding: 5px;
 .inputdata .value { text-align: left ; }
 
 /* Header Styles */
-
-#flash { font-size: 1.1em; background-color: yellow; color: black; 
-	padding: 10px; line-height: 1.2em; width: 100%; }
+#flash { 
+ background-color: white ; color: black; 
+ border-bottom: thin solid black;
+ text-align: center;
+ padding: 10px; line-height: 1.2em; width: 100%; }
 
 #userinfo { 
 	font-size: .9em; background-color: #222222; color: white; 

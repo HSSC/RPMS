@@ -10,7 +10,7 @@
   "Returns form to create a consenter."
   [ctx]
   (helper/rpms2-page 
-    (helper/standard-form "POST" (helper/mypath "/create/consenter")
+    (helper/standard-form "POST" (helper/mypath "/view/create/consenter")
      [:p "Present form for the user fill out to Create consenter" ]
        [:div#consenter-details  (for [v [ "first-name"
                                      "middle-name"
@@ -26,14 +26,18 @@
                                      "date-of-birth"
                                      ]]
 	(helper/text-field3 "create-consenter-form" v))]
-        (helper/submit-button "create-consenter-form"))
+
+        [:div.centered
+          (helper/submit-button "create-consenter-form" 
+                   (i18n "create-consenter-form-submit-button" ) 
+                   "create-consenter") ])
 	:title (i18n :hdr-create-consenter)))
 
 (defn perform
   "Performs...  "
 
   [{{:keys [userid password]} :body-params} ]
-  (debug "perform-not done")
+  (debug "create consenter not implemented")
   (helper/myredirect "/view/select/location"))
 
 

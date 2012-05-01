@@ -31,38 +31,25 @@
       (dsa/dsa-call :get-consent-consenters {:organization org-id})
       (dsa/dsa-call :get-consent-consenter (assoc consenter-params :organization org-id)))))
 
-#_(defn search-consenters
+(defn search-consenters
     [params]
     {:status 200
      :json
      (vec (factory/generate-user-list params))})
 
-(debug! search-consenters)
-
+;(debug! search-consenters)
 
 (defn consenter-details
-  "This is right hand side of the search results page, showing
-  the details associated with the selected consenter (e.g. patient)"
+  "This is right hand side of search results page, showing
+  details associated with selected consenter (e.g. patient)"
   []
-  (let [scrf-i18n (partial i18n :search-consenter-results-form)]
+  (let [scrf-i18n (partial i18n :search-consenter-results-form)
+        ;; TODO filter out first-name and last-name
+        displayed-fields (cons "name" sc/consenter-fields) ]
     [:div#consenter-details
-     [:h1 (scrf-i18n :verify-record-details)]
-     [:ul (for [v [ "visit-number" 
-                    "medical-record-number" 
-                    "encounter-date" ]]
+     [:h1 (scrf-i18n :selected-consenter) ]
+     [:ul (for [v displayed-fields]
             [:li {:data-role "fieldcontain" } 
-             [:label {:for v :class "labeldim" } (scrf-i18n v :label) ]
-             [:div.highlightvalue { :id (str "consenter-" v ) } "..." ]])]
-
-     [:h1 (scrf-i18n :verify-patient-details)]
-     [:ul (for [v [ "name"
-                    "date-of-birth"
-                    "last-4-digits-ssn"
-                    "zipcode"
-                    "referring-doctor"
-                    "primary-care-physician"
-                    "primary-care-physician-city" ]]
-            [:li {:data-role "fieldcontain" }
              [:label {:for v :class "labeldim" } (scrf-i18n v :label) ]
              [:div.highlightvalue { :id (str "consenter-" v ) } "..." ]]) ]
 
@@ -70,12 +57,24 @@
      [:h1.centered (scrf-i18n :confirmation-question )]
 
      ;; save current selection 
+     ;; obviously we an no longer save these beause these aren't the fields
+     ;; maybe create json and stick in the hidden field as the selected user
      [:form#other-section { :method "GET" :action (helper/mypath "/view/search/results") } 
       [:input {:type "hidden" :name "patient-id" :id "patient-id" :value "no patient" } ]
+      [:input {:type "hidden" :name "name" :id "name" :value "no patient" } ]
       [:input {:type "hidden" :name "patient-name" :id "patient-name" :value "no patient" } ]
       [:input {:type "hidden" :name "patient-encounter-data" :id "patient-name" :value "no patient" } ]
+
+       #_[:input {
+        :type "submit" :name "HI"   :value "Hi"
+        :onclick "org.healthsciencessc.rpms2.core.consenter_confirmed_clicked(this)" } ]
+                
+       #_[:input { :type "submit" :name "SEARCH"   :value "Search"
+        :onclick "org.healthsciencessc.rpms2.core.search(this)" } ]
+
+      [:div.centered
       (helper/submit-button "search-consenter-results-yes") 
-      (helper/submit-button "search-consenter-results-no")]]))
+      (helper/submit-button "search-consenter-results-no")]]]))
 
 (defn- flash-and-redirect
   [i18n-key path]
@@ -83,8 +82,8 @@
   (helper/myredirect path))
 
 (defn process-search-consenters
-  ;; TODO: add the org/loc from the session into the
-  ;; query params; remove the submit button
+  ;; TODO: add the org/loc from session into the
+  ;; query params; remove submit button
   ;; maybe use a filter to select the correct parameters
   ;; and add in user defaults
   [parms]
@@ -92,6 +91,7 @@
     (cond
      
      (= 401 status)
+      ;; forbidden or unknown host
      (flash-and-redirect :flash-service-failure "/view/select/consenter")
 
      (empty? results)
@@ -116,3 +116,4 @@
   [ctx]
   (process-search-consenters (:body-params ctx)))
 
+;(debug! process-search-consenters)

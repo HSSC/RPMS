@@ -25,26 +25,43 @@
   [ctx]
 
   (helper/rpms2-page 
-     [:div.standardForm
-     [:form#loginForm {:action (helper/mypath "/view/login") 
+     [:div
+     [:form {:action (helper/mypath "/view/login") 
                        :method "POST" :name "loginForm" :id "loginForm" 
-                       :data-ajax "false" } 
-      (i18n :login-form-username) 
-      [:input {:id "username" :name "userid" :type "text" :required "" 
-               :placeholder (i18n "login-form-username-placeholder") } ]
+                       :data-ajax "false" 
+                       :data-theme "a" } 
 
-      (i18n :login-form-password) 
-      [:input {:name "password" :type "password" :required ""
-               :placeholder (i18n "login-form-password-placeholder") }] 
+      [:div.innerform.centered
 
-      (helper/submit-button  "login-form") ]] :title (i18n :hdr-login)))
+      [:div {:data-role "fieldcontain"  }
+        [:label {:for "username" } (i18n :login-form-username) ]
+        [:input {:id "username" :name "userid" :type "text" :required "" 
+               :placeholder (i18n "login-form-username-placeholder") } ]]
+
+      [:div {:data-role "fieldcontain" }
+        [:label {:for "password" } (i18n :login-form-password) ]
+        [:input {:name "password" :id "password" :type "password" :required ""
+               :placeholder (i18n "login-form-password-placeholder") }]]] 
+
+      
+      [:div.centered (helper/submit-button  "login-form") ] ]] :title (i18n :hdr-login)))
+
+(defn view1 
+  "Returns login form"
+  [ctx]
+  (helper/rpms2-page  
+     [:a {:href "foo.html" :data-rel "dialog" } "OPEN DIALOG 1 "
+      "INVALID LOGIN HELLO DIALOG" ]
+    :title (i18n :hdr-login))
+  )
 
 (defn perform
   "Authenticates using username and password.  
    If successful, saves user in session and redirects to /view/select/location; 
    otherwise sets flash error message and redirects to /view/login.  "
-
-  [{{:keys [userid password]} :body-params} ]
+  [ ctx ] 
+  (let [ { {:keys [userid password]} :body-params } ctx ]
+  ;[ { {:keys [userid password]} :body-params } :as ctx ]
   (let [resp (dsa/authenticate userid password)]
     (if (= (:status resp) 500)
         (do
@@ -54,7 +71,6 @@
     (if (= (:status resp) 200)
       (do
 	(let [u (:json resp) ]
-                (println "USER JSON IS " u)
 	 	(helper/remove-session-data)
         	(debug "USER RECORD => " u )
         	(session-put! :user (assoc u :password password))
@@ -65,8 +81,7 @@
  	(helper/remove-session-data)
         (flash-put! :header (i18n :flash-invalid-login))
         (debug "LOGIN FAILED:" userid)
-        (helper/myredirect "/view/login"))))))
-
+        (helper/myredirect "/view/login")))))))
 
 (defn default-get-view-not-authorized 
   "Display when user has no authorized locations."

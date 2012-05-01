@@ -73,82 +73,30 @@
       [:input (merge { :type t :name field-name :placeholder (i18n placeholder-keyword) :length 100 } input-opts) ]]))
 
 
-(defn submit-button
-  "Returns standard submit button for form."
-  [form-name]
 
-  (let [kw (keyword (str form-name "-submit-button" ))]
-    [:input {:type "submit" :value (i18n kw) :name (str form-name "-submit-button") } ]))
+(defn submit-button
+  "Returns submit button for form."
+  ([form-name]
+    (submit-button form-name (i18n form-name "submit-button")  
+                   (str form-name "-submit-button"))) 
+  ([form-name v n] 
+    [:input 
+      {:type "submit" 
+       :data-theme "a"
+       :data-role "button"
+       :data-inline "true"
+       :value v :name n } ]))
+
+(defn ajax-submit-button
+  [form-name]
+  (submit-button form-name))
 
 (defn standard-form 
   "Wraps form in a standard structure."
   [method action & body]
 
-  [:div.standardForm 
-   [:form {:method method :action action :data-ajax "false" } 
+  [:div.innerform [:form {:method method :action action :data-ajax "false" } 
     body ] ])
-
-(def progress-indicator
-   "Using the current context, determines which
-   progress dots should be displayed and displays them."
-  [:span.progressArea "" ])
-
-
-(defn- user-info
-   [user]
-
-   [:div#userinfo
-     [:span.label (i18n :hdr-user-label) ] [:span.value (username) ]
-     [:span.label  (i18n :hdr-location-label) ] [:span.value (session-get :location) ]
-     [:span.label (i18n :hdr-organization-label) ] [:span.value (session-get :org-name) ]
-     ;; if locked, show a lock symbol
-     (if (session-get :lockcode) 
-        [:span (i18n :hdr-locked) ]
-        [:span (i18n :hdr-unlocked)])] )
-
-(defn- header
- "The header displays page title, and information about logged in user."
- [title]
-  [:div.header 
-  [:div.ui-grid-b
-   (if-let [msg (flash-get :header)]
-      [:div#flash msg])
-   (if-let [user (session-get :user)]
-      [:div.userinfo (user-info user)])
-
-   [:div.ui-block-a.title title ]
-   [:div.ui-block-b "RPMS2" ]
-   [:div.ui-block-c [:div 
-       (if-let [nm (username)]
-         (helem/link-to (mypath "/view/logout") (str "Logout " nm ))
-         (helem/link-to (mypath "/view/login")  "Login" ))]]]])
-
-
-(defn- patient-description
-  []
-  (let [[n id d] (map session-get [:patient-name :patient-id :patient-encounter-date])]
-    (if n
-      (format "Patient Name: <span class='value'>%s</span> Encounter ID: %s Date: %s" n id d)
-      "RPMS2")))
-
-(defn- patient-footer [] [:div.footer (patient-description) ])
-
-(defn- non-patient-footer
-  []
-  [:div.footer 
-  [:div.ui-grid-b
-   [:div.ui-block-a 
-	(if-let [nm (username)] 
-		[:div (helem/link-to "/logout" (str "Logout " nm)) 
-                      (helem/link-to "/login" "login" ) ]) ] 
-   [:div.ui-block-b "RPMS2 (no patient)" ]
-   [:div.ui-block-c (if-let [nm (username)]
-                      [:div#header-userid nm
-                       (if-let [loc (session-get :location)] (str " @ " loc)) ] )]]])
-
-(defn- footer
-  []
-  (if (= (session-get :patient-id) "no patient") (non-patient-footer) (patient-footer) ))
 
 (defn remove-session-data
   "Remove session data"
@@ -176,25 +124,28 @@
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0\" >"
     (hpage/include-css 
      (absolute-path "app.css")
-     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" )
+     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" )
 
      ;; Add organization specify styles
-     (if-let [org (session-get :org-name)]
-      (hpage/include-css  (absolute-path (str org ".css")) ))
+     ;;(if-let [org (session-get :org-name)]
+     ;; (hpage/include-css  (absolute-path (str org ".css")) ))
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     ;;(helem/javascript-tag (format "var GENERATED = %s;" (pr-str *context*)))
     (hpage/include-js 
-     "http://code.jquery.com/jquery-1.6.4.min.js"
-     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
-     (absolute-path "app.js"))]
+     ;; "goog.net.XhrIO.js"
+     "http://code.jquery.com/jquery-1.7.1.min.js"
+     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"
+     (absolute-path "app.js"))
+     ; ${function() { ${ \"button, input:submit, input:button\" ).button(); });
+     ]
    [:body 
-    [:div {:data-role "page" } 
-    [:div#header {:data-role "header" } (header title) ]
-    [:div#content {:data-role "content" } content]
-    [:div#footer {:data-role "footer" } (footer)]]
-    ]))
+    [:div {:data-role "page" :data-theme "a"  }  
+      [:div {:data-role "header" } (if-let [msg (flash-get :header)] 
+                                     [:div title [:div#flash msg ]]
+                                     [:h1 title ] ) ]
+      [:div#content {:data-role "content" :data-theme "d" } content]]]))
 
 (defn rpms2-page-two-column
   "Emits a standard two-column RPMS2 page."
@@ -205,3 +156,4 @@
 	     [:div.ui-block-a col1-content ]
 	     [:div.ui-block-b col2-content ]]
         :title title ))
+
