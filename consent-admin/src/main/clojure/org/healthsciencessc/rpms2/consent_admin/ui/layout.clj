@@ -2,34 +2,73 @@
   (require [org.healthsciencessc.rpms2.process-engine.path :as path]
            [hiccup.page :as page]
            [hiccup.element :as element]
-           [sandbar.stateful-session :as sess])
-  (use [org.healthsciencessc.rpms2.consent-admin.ui.burp]))
+           [sandbar.stateful-session :as sess]))
 
 (defn header
   "Creates the default header that is used for the application"
   [params & options]  
     [:div#header.header
-      [:h1 "RPMS"]
-      [:ul#loginstat
-        [:li#current-user (get (sess/session-get :user) :username)]
-        (element/link-to "/security/logout"
-                         [:li#logout "Logout"])]])
+      [:h3#headertitle "Consent Management - Administration"]
+      [:ul#loginstat.headerlist
+        [:li#current-user.first [:span {:onclick "RPMS.launchInPane(\"/view/profile\")"} (get (sess/session-get :user) :username)]]
+        [:li#logout [:span {:onclick "RPMS.logout();"} "Logout"]]]])
 
 (defn header-no-session
   "Creates the default header that is used for the application"
   [params & options]  
-    [:div#header.header
-      [:h1 "RPMS"]])
+    [:div#header.header])
  
 (defn footer
   "Creates the default header that is used for the application"
   [params & options]
-  [:div#footer.footer [:h3 "Page Footer"]])
+  [:div#footer.footer ])
+
+(defn create-nav-item
+  "Creates a list item for use in navigation"
+  [url label]
+  [:li.navitem [:a {:href "#" :onclick (str "RPMS.launchInPane(\"" url "\")") } label]])
+
 
 (defn leftbar
   "Creates the default header that is used for the application"
   [params & options]
-  [:div#leftbar.leftbar "I'm the leftbar"])
+  [:div#leftbar.leftbar 
+    [:div#navigator 
+      (if true 
+        (list [:h4#orgnavlabel [:a {:href "#"} "Organization"]] 
+          [:div#orgnavpanel.navpanel
+            [:ul#orgnavlist.navlist
+              (create-nav-item "/view/organization" "Settings")
+              (create-nav-item "/view/locations" "Locations")]]))
+      (if true 
+        (list [:h4#secnavlabel [:a {:href "#"} "Security"]] 
+          [:div#secnavpanel.navpanel
+            [:ul#secnavlist.navlist
+              (create-nav-item "/view/users" "Users")
+              (create-nav-item "/view/groups" "Groups")
+              (create-nav-item "/view/roles" "Roles")]]) )
+      (if true 
+        (list [:h4#pronavlabel [:a {:href "#"} "Protocols"]] 
+          [:div#pronavpanel.navpanel
+            [:ul#pronavlist.navlist
+              (create-nav-item "/view/protocol/new" "Create")
+              (create-nav-item "/view/protocol/locations" "Locations")]]) )
+      (if true 
+        (list [:h4#libnavlabel [:a {:href "#"} "Library"]] 
+           [:div#libnavpanel.navpanel
+            [:ul#libnavlist.navlist
+              (create-nav-item "/view/policy/definitions" "Policy Definitions")
+              (create-nav-item "/view/policies" "Policies")
+              (create-nav-item "/view/metaitems" "Meta Items")
+              (create-nav-item "/view/widgets" "Widgets")]]) )]
+    [:script 
+"$(function() {
+  $( \"#navigator\" ).accordion({
+    collapsible: true,
+    fillSpace: true,
+    autoHeight: false
+  });
+});"]])
 
 (defn body
   "Creates the default layout that is used for the application"
@@ -59,7 +98,8 @@
                      "/js/jquery-ui-1.8.19.custom.min.js")
     (page/include-css "/css/consent-admin.css"
                       "/css/clean.css"
-                      "/css/redmond/jquery-ui-1.8.19.custom.css")])
+                      "/css/redmond/jquery-ui-1.8.19.custom.css")
+    [:script (str "RPMS.setContext(\"" (:context params) "\");")]])
 
 (defn layout 
   ""
