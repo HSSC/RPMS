@@ -65,7 +65,7 @@
                                {:type :belongs-to :related-to "organization" :relationship :has-organization}
                                {:type :belongs-to :related-to "location" :relationship :has-location}]}
 
-   "meta-item" {:attribures (merge base
+   "meta-item" {:attributes (merge base
                                    {:name {:persisted true}}
                                    {:description {:persisted true}}
                                    {:uri {:persisted true}}
