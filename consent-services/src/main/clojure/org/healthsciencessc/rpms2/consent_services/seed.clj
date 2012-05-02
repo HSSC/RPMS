@@ -115,7 +115,7 @@
     (data/create "role-mapping" {:organization org :user jimbo :role collector-role})
     (data/create "role-mapping" {:organization org :user juan :role collector-role :location reg-desk})
     (doseq [loc (list reg-desk cafeteria library lab)]
-      (data/create "role-mapping" {:organization org :user juan :role collector-role :location loc}))
+      (data/create "role-mapping" {:organization org :user jane :role collector-role :location loc}))
     (data/create "role-mapping" {:organization org :group consent-mgr-grp :role (get-role-by-code "manage")})
     (data/relate-records "user" (:id jimbo) "group" (:id consent-mgr-grp))))
 
