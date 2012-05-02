@@ -12,6 +12,10 @@
 
 (declare node->record)
 
+(def schema domain/default-data-defs)
+
+(def default-rel {:has-default :out})
+
 (defn connect!
   [path]
   (neo/start! path))
@@ -65,9 +69,8 @@
   (first (filter #(= node2 (neo/other-node % node1)) (neo/rels node1 rel))))
 
 (defn find-parent
-  [node relation]
-  (if-let [rels (neo/rels node relation :out)]
-    (.getEndNode (first rels))))
+  [child-node relation]
+  (first (neo/traverse child-node {relation :out})))
 
 (defn- get-type
   [node]
@@ -79,13 +82,15 @@
   (= type (get-type node)))
 
 (defn children-nodes-by-rel
-  [parent-node relation]
-  (doall (map #(.getStartNode %) (neo/rels parent-node relation :in))))
+  [parent-node relation & extra-rels]
+  (neo/traverse parent-node (apply merge {relation :in} extra-rels)))
 
 (defn children-nodes-by-type
-  [parent-node child-type]
-  (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type domain/default-data-defs)]
-    (neo/traverse parent-node (fn [pos] (type-of? child-type (:node pos))) {child-rel :in})))
+  [parent-node child-type & extra-rels]
+  (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type schema)]
+    (neo/traverse parent-node
+                  (fn [pos] (type-of? child-type (:node pos)))
+                  (apply merge {child-rel :in} extra-rels))))
 
 (defn clean-nils
   [data]
@@ -101,34 +106,28 @@
       (.get "id" id)
       .getSingle))
 
-(defn sibling-nodes-by-type
-  [{:keys [start-type start-id parent-type parent-id sibling-type]}]
-  (let [parent-rel (domain/get-relationship-from-child parent-type start-type domain/default-data-defs)
-        parent-node (if parent-id
-                      (get-node-by-index parent-type parent-id)
-                      (find-parent (get-node-by-index start-type start-id) parent-rel))]
-    (children-nodes-by-type parent-node sibling-type)))
-
 (defn neighbors-by-type
   "Gets all adjacent nodes of the given type to the given node"
-  [node type]
-  (let [{:keys [dir rel]} (domain/get-directed-relation (get-type node) type domain/default-data-defs)]
+  [node type & extra-rels]
+  (let [{:keys [dir rel]} (domain/get-directed-relation (get-type node) type schema)]
     (if (and dir rel)
-      (neo/traverse node (fn [pos] (type-of? type (:node pos))) {rel dir}))))
+      (neo/traverse node
+                    (fn [pos] (type-of? type (:node pos)))
+                    (apply merge {rel dir} extra-rels)))))
 
 (defn walk-types-path
   "Walks from the start node through all nodes of the given types and returns a collection of nodes of the last type in the path"
-  [start-node path]
+  [start-node path & extra-rels]
   (loop [nodes (list start-node) type-path path]
     (if (or (empty? type-path) (empty? nodes))
       nodes
-      (recur (distinct (filter identity (flatten (map (fn [node] (neighbors-by-type node (first type-path))) nodes))))
+      (recur (distinct (filter identity (flatten (map (fn [node] (neighbors-by-type node (first type-path)) extra-rels) nodes))))
              (rest type-path)))))
 
 (defn new-node
   [type data]
   (-> (clean-nils data)
-      (domain/validate-persistent-record type domain/default-data-defs)
+      (domain/validate-persistent-record type schema)
       (assoc :active true
              :id (str (UUID/randomUUID)))))
 
@@ -147,7 +146,7 @@
     (let [upd-node (get-node-by-index type id)
           merged-data (merge (neo/props upd-node) data)
           update-data (domain/validate-persistent-record
-                       (clean-nils merged-data) type domain/default-data-defs)]
+                       (clean-nils merged-data) type schema)]
       (neo/set-props! upd-node update-data)
       upd-node)))
 
@@ -179,7 +178,7 @@
   (if-let [relationship (domain/get-relationship-from-child
                          (:type record)
                          (:related-to relation)
-                         domain/default-data-defs)]
+                         schema)]
     (vec (map #(node->record % (:related-to relation))
               (children-nodes-by-rel node relationship)))))
 
@@ -206,12 +205,12 @@
 (defn node->record
   [node type]
   (let [props (neo/props node)
-        relations (domain/record-relations type domain/default-data-defs)]
+        relations (domain/record-relations type schema)]
     (if (:active props)
       (-> props
           (assoc :type type)
           (add-relations node relations)
-          (domain/validate-record type domain/default-data-defs)))))
+          (domain/validate-record type schema)))))
 
 (defn setup-schema
   [data-defs]
@@ -219,17 +218,17 @@
         data-def-types (set (keys data-defs))]
     (doseq [node (difference data-def-types type-nodes)]
       (create-type node))))
-    ;;(doseq [rel (difference type-nodes data-def-types)]
-      ;;(neo/delete-node! (find-record-type-node rel)))))
+;;(doseq [rel (difference type-nodes data-def-types)]
+;;(neo/delete-node! (find-record-type-node rel)))))
 
 (defn validate-relation
   [{:keys [from to rel-type] :as relation}]
-  (let [{:keys [id type] :as node} 
-          (cond (map? from) from
-                (map? to) to
-                :else
-                (throw (IllegalArgumentException. "Bad relation")))
-         ]
+  (let [{:keys [id type] :as node}
+        (cond (map? from) from
+              (map? to) to
+              :else
+              (throw (IllegalArgumentException. "Bad relation")))
+        ]
     (if (and rel-type type id)
       (let [other-node (get-node-by-index type id)]
         (cond
@@ -244,7 +243,7 @@
 (defn validate-domain-relations
   [type props]
   (for [{:keys [related-to relationship]}
-        (domain/get-parent-relations type domain/default-data-defs)
+        (domain/get-parent-relations type schema)
         :when (get props (keyword related-to))]
     {:from :self
      :to (get-node-by-index related-to (get-in props [(keyword related-to) :id]))
@@ -255,13 +254,6 @@
   (map neo/props (find-all-instance-nodes type)))
 
 ;; Public API
-(defn belongs-to?
-  [child-type child-id parent-type parent-id]
-  (let [parent-node (get-node-by-index parent-type parent-id)
-        child-node (get-node-by-index child-type child-id)
-        rel (domain/get-relationship-from-child parent-type child-type domain/default-data-defs)]
-    (= parent-node (find-parent child-node rel))))
-
 (defn find-all
   [type]
   (filter identity (map #(node->record % type) (find-all-instance-nodes type))))
@@ -279,29 +271,30 @@
 
 (defn find-related-records
   "From the start record, finds all the records at the end of the relation path"
-  [start-type start-id & relation-path]
-  (let [start-node (get-node-by-index start-type start-id)
-        nodes (walk-types-path start-node relation-path)]
-    (map #(node->record % (last relation-path)) nodes)))
+  ([start-type start-id relation-path]
+     (find-related-records start-type start-id relation-path true))
+  ([start-type start-id relation-path include-defaults]
+     (let [start-node (get-node-by-index start-type start-id)
+           nodes (walk-types-path start-node relation-path (if include-defaults default-rel))]
+       (map #(node->record % (last relation-path)) nodes))))
 
 (defn find-children
-  [parent-type parent-id child-type]
-  (let [parent-node (get-node-by-index parent-type parent-id)]
-    (map #(node->record % child-type) (children-nodes-by-type parent-node child-type))))
+  ([parent-type parent-id child-type]
+     (find-children parent-type parent-id child-type true))
+  ([parent-type parent-id child-type include-defaults]
+     (let [parent-node (get-node-by-index parent-type parent-id)]
+       (map #(node->record % child-type)
+            (children-nodes-by-type parent-node child-type (if include-defaults default-rel))))))
 
-(defn find-siblings
-  "Takes :start-type :start-id :parent-type :parent-id :sibling-type as keys"
-  [{:keys [sibling-type] :as sibling-relations}]
-  (map #(node->record % sibling-type) (sibling-nodes-by-type sibling-relations)))
-
-(defn siblings?
-  [{:keys [sibling-id] :as sibling-relations}]
-  (let [sibling-nodes (sibling-nodes-by-type sibling-relations)
-        sibling-ids (map #(:id (neo/props %)) sibling-nodes)]
-    (not (nil? (some #{sibling-id} sibling-ids)))))
+(defn belongs-to?
+  ([child-type child-id parent-type parent-id]
+     (belongs-to? child-type child-id parent-type parent-id true))
+  ([child-type child-id parent-type parent-id include-defaults]
+     (let [children (find-children parent-type parent-id child-type include-defaults)]
+       (some (partial = child-id) (map :id children)))))
 
 (defn create
-  [type properties & extra-relationships]   ;; data includes default relationships.  relationships is extra relationships
+  [type properties & extra-relationships]
   "extra-relationships is a sequence of maps with either :from or :to, plus a relationtype"
   (let [rels (concat [{:from :self
                        :to (find-record-type-node type)
@@ -331,7 +324,7 @@
   [child-type child-id parent-type parent-id]
   (let [child-node (get-node-by-index child-type child-id)
         parent-node (get-node-by-index parent-type parent-id)
-        rel (:relationship (domain/get-parent-relation parent-type child-type domain/default-data-defs))]
+        rel (:relationship (domain/get-parent-relation parent-type child-type schema))]
     (do
       (create-relationship child-node rel parent-node)
       (find-record child-type child-id))))
@@ -340,7 +333,7 @@
   [child-type child-id parent-type parent-id]
   (let [child-node (get-node-by-index child-type child-id)
         parent-node (get-node-by-index parent-type parent-id)
-        rel (:relationship (domain/get-parent-relation parent-type child-type domain/default-data-defs))]
+        rel (:relationship (domain/get-parent-relation parent-type child-type schema))]
     (do
       (neo/delete! (rel-between child-node parent-node rel))
       (find-record child-type child-id))))

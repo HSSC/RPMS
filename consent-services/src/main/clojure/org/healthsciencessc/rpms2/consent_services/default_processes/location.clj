@@ -9,12 +9,13 @@
     :runnable-fn (fn [{{user :current-user} :session}]
                    (some-kind-of-admin? user))
     :run-fn (fn [params]
-              (let [user (get-in params [:session :current-user])]
+              (let [user (get-in params [:session :current-user])
+                    user-org-id (get-in user [:organization :id])]
                 (cond
                  (super-admin? user)
                  (data/find-all "location")
                  (admin? user)
-                 (data/find-siblings (:id user) "user" "organization" "location"))))
+                 (data/find-children "organization" user-org-id "location"))))
     :run-if-false forbidden-fn}
 
    {:name "get-security-location"
@@ -50,7 +51,7 @@
                          loc-id (get-in params [:query-params :location])]
                      (or (super-admin? user)
                          (and (admin? user)
-                              (data/belongs-to? "location" loc-id "organization" org-id)))))
+                              (data/belongs-to? "location" loc-id "organization" org-id false)))))
     :run-fn (fn [params]
               (let [loc-id (get-in params [:query-params :location])
                     loc-data (:body-params params)]
@@ -64,7 +65,7 @@
                          loc-id (get-in params [:query-params :location])]
                      (or (super-admin? user)
                          (and (admin? user)
-                              (data/belongs-to? "location" loc-id "organization" user-org-id)))))
+                              (data/belongs-to? "location" loc-id "organization" user-org-id false)))))
     :run-fn (fn [params]
               (let [loc-id (get-in params [:query-params :location])]
                 (data/delete "location" loc-id)))
