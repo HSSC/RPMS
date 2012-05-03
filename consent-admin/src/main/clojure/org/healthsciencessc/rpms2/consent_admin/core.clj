@@ -4,7 +4,8 @@
             [ring.util [codec :as codec]
                        [response :as response]]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [sandbar.stateful-session :as sandbar])
+            [sandbar.stateful-session :as sandbar]
+            [ring.middleware.content-type :as content-type])
   (:use [compojure.core]
         [compojure.handler]
         [hiccup.middleware]
@@ -39,8 +40,9 @@
                security/ensure-auth-handler
                sandbar/wrap-stateful-session)
              (wrap-resource "public")
+             content-type/wrap-content-type
              wrap-base-url
-           site))
+             site))
 
 
 (pe/load-processes (first (bootstrap-locations)))

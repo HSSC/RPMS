@@ -3,7 +3,7 @@
  */
 body {
 	font-family: Candara, Arial, sans-serif;
-	font-size: 1.2em;
+	font-size: 100%;
 }
 
 form {
@@ -60,7 +60,7 @@ ul.headerlist li{
 	display: inline;
 	list-style-type: none;
 	font-family: Lucida Grande, Lucida Sans, Arial, sans-serif;
-	font-size: 0.6em;
+	font-size: 0.8em;
 	border-left: solid black 1px;
 }
 
@@ -92,6 +92,30 @@ div.footer{
 	position:absolute;
 	height: 1.5em;
 	bottom:0px;
+	font-size: 0.7em;
+}
+
+#footerbrand{
+	position: absolute;
+	margin-left: 1.0em;
+	left: 0;
+}
+
+#footerorg{
+	position: absolute;
+	margin-right: 1.0em;
+	right: 0;
+}
+
+#footerorg a{
+	text-decoration: none;
+	color: black;
+}
+
+#footerversion{
+	position: absolute;
+	margin-right: 1.0em;
+	right: 0;
 }
 
 /*
@@ -139,5 +163,13 @@ div.content{
 	left: 20%;
 	top: 2.5em;
 	bottom: 1.5em;
+}
+
+div.pane{
+	margin: 0.3em;
+}
+
+#dialog{
+	font-size: 1.0em;
 }
 

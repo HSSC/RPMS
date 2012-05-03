@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
   (require [org.healthsciencessc.rpms2.process-engine.path :as path]
+           [org.healthsciencessc.rpms2.consent-admin.ui.jquery :as jquery]
            [hiccup.page :as page]
            [hiccup.element :as element]
            [sandbar.stateful-session :as sess]))
@@ -11,7 +12,8 @@
       [:h3#headertitle "Consent Management - Administration"]
       [:ul#loginstat.headerlist
         [:li#current-user.first [:span {:onclick "RPMS.launchInPane(\"/view/profile\")"} (get (sess/session-get :user) :username)]]
-        [:li#logout [:span {:onclick "RPMS.logout();"} "Logout"]]]])
+        [:li#logout [:span {:onclick "RPMS.logout();"} "Logout"]]
+        [:div#dialog  "Are you sure you want to end this session?"]]])
 
 (defn header-no-session
   "Creates the default header that is used for the application"
@@ -21,12 +23,16 @@
 (defn footer
   "Creates the default header that is used for the application"
   [params & options]
-  [:div#footer.footer ])
+  [:div#footer.footer 
+    [:span#footerbrand "Research Permissions Management System"]
+    [:span#footerorg [:a {:href "http://www.healthsciencessc.org" :target "_blank"} "Health Sciences of South Carolina" ]]
+    [:span#footerversion "Version 2.0.0-SNAPSHOT"]
+    (jquery/center-on :#footerorg :#footer)])
 
 (defn create-nav-item
   "Creates a list item for use in navigation"
   [url label]
-  [:li.navitem [:a {:href "#" :onclick (str "RPMS.launchInPane(\"" url "\")") } label]])
+  [:li.navitem [:a {:href "#" :onclick (str "RPMS.launchInPane(\"" url "\", {})") } label]])
 
 
 (defn leftbar
@@ -92,13 +98,13 @@
   [params & options]
   [:head [:meta {:charset "utf-8"}]
          [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-    (page/include-js "/js/consent-admin.js"
-                     "/js/jquery-1.7.2.min.js"
-                     "/js/consent-admin.js"
-                     "/js/jquery-ui-1.8.19.custom.min.js")
-    (page/include-css "/css/consent-admin.css"
-                      "/css/clean.css"
-                      "/css/redmond/jquery-ui-1.8.19.custom.css")
+         [:title "RPMS Administration"]
+    (page/include-css "/css/clean.css"
+                      "/css/redmond/jquery-ui-1.8.19.custom.css"
+                      "/css/consent-admin.css")
+    (page/include-js "/js/jquery-1.7.2.min.js"
+                     "/js/jquery-ui-1.8.19.custom.min.js"
+                     "/js/consent-admin.js")
     [:script (str "RPMS.setContext(\"" (:context params) "\");")]])
 
 (defn layout 

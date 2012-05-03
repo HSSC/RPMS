@@ -13,6 +13,11 @@
         [sandbar.stateful-session])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
+(defn handle-root-request
+  "Redirects the request to the get-login process."
+  [ctx]
+   (rutil/redirect (path/root-link ctx "/login")))
+
 (defn redirect-to-security-login
   "Redirects the request to the get-security-login process."
   [ctx]
@@ -41,7 +46,9 @@
 (defn generate-login-page
   ""
   [ctx]
-  (layout/layout-no-session ctx (ui-login-form ctx)))
+  (if (security/is-authenticated?)
+    (rutil/redirect (path/root-link ctx "/view/home"))
+    (layout/layout-no-session ctx (ui-login-form ctx))))
 
 
 (defn do-login
@@ -55,6 +62,11 @@
 
 (def process-defns
   [
+   ;; Handles a root request. Redirects to /login
+   {:name "get"
+    :runnable-fn (constantly true)
+    :run-fn handle-root-request}
+
    ;; Redirects to /security/login
    {:name "get-login"
     :runnable-fn (constantly true)
