@@ -15,7 +15,7 @@
                          (and (admin? user)
                               (cond
                                org-id (data/belongs-to? "user" (:id user) "organization" org-id)
-                               loc-id (data/siblings? {:start-type "user" :start-id (:id user) :parent-type "organization" :parent-id user-org-id :sibling-type "location" :sibling-id loc-id}))
+                               loc-id (data/belongs-to? "location" loc-id "organization" org-id))
                               :else true))))
     :run-fn (fn [params]
               (let [user (get-in params [:session :current-user])
@@ -24,10 +24,10 @@
                     loc-id (get-in params [:query-params :location])]
                 (cond
                  org-id (data/find-children "organization" org-id "role")
-                 loc-id (data/find-related-records "location" loc-id "role-mapping" "role")
+                 loc-id (data/find-related-records "location" loc-id (list "role-mapping" "role"))
                  :else (cond
                         (super-admin? user) (data/find-all "role")
-                        (admin? user) (data/find-siblings {:start-type "user" :start-id (:id user) :parent-type "organization" :parent-id user-org-id :sibling-type "role"})))))
+                        (admin? user) (data/find-children "organization" user-org-id "role")))))
     :run-if-false forbidden-fn}
 
    {:name "get-security-role"
@@ -59,11 +59,11 @@
    {:name "post-security-role"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
-                         role (:body-params params)
                          user-org-id (get-in user [:organization :id])
-                         role-org-id (get-in role [:organization :id])]
+                         role-id (get-in params [:query-params :role])
+                         role (:body-params params)]
                      (or (super-admin? user)
-                         (and (admin? user) (= user-org-id role-org-id)))))
+                         (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id false)))))
     :run-fn (fn [params]
               (let [role-id (get-in params [:query-params :role])
                     role (:body-params params)]
@@ -76,7 +76,7 @@
                          user-org-id (get-in user [:organization :id])
                          role-id (get-in params [:query-params :role])]
                      (or (super-admin? user)
-                         (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id)))))
+                         (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id false)))))
     :run-fn (fn [params]
               (let [role-id (get-in params [:query-params :role])]
                 (data/delete "role" role-id)))
