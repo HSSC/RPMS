@@ -35,8 +35,8 @@
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
    "language" {:attributes (merge base
-                              {:name {:persisted true :required true}
-                               :code {:persisted true}})
+                                  {:name {:persisted true :required true}
+                                   :code {:persisted true}})
                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
    "location" {:attributes (merge base
@@ -48,15 +48,15 @@
    "group" {:attributes (merge base
                                {:name {:persisted true}})
             :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
-   
+
    "consenter" {:attributes (merge base
                                    person
-                                  {:consenter-id {:persisted true :required true}
-                                   :gender {:persisted true :required true}
-                                   :dob {:persisted true :required true}
-                                   :zipcode {:persisted true :required true}})
-               :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
-                           {:type :belongs-to :related-to "location" :relationship :in-location}]}
+                                   {:consenter-id {:persisted true :required true}
+                                    :gender {:persisted true :required true}
+                                    :dob {:persisted true :required true}
+                                    :zipcode {:persisted true :required true}})
+                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                            {:type :belongs-to :related-to "location" :relationship :in-location}]}
 
    "role-mapping" {:attributes base
                    :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit true}
@@ -72,7 +72,19 @@
                                    {:data-type {:persisted true}}
                                    {:default-value {:persisted true}})
                 :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
-   })
+
+   "policy" {:attributes (merge base
+                                {:name {:persisted true}}
+                                {:description {:persisted true}}
+                                {:uri {:persisted true}}
+                                {:code {:persisted true}})
+             :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
+
+   "policy-defintion" {:attributes (merge base
+                                          {:name {:persisted true}}
+                                          {:description {:persisted true}}
+                                          {:code {:persisted true}})
+                       :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}})
 
 (defn get-relations
   [type data-defs]

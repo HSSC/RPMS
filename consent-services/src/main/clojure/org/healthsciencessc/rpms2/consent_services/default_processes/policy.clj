@@ -1,33 +1,33 @@
-(ns org.healthsciencessc.rpms2.consent-services.default-processes.meta-item
+(ns org.healthsciencessc.rpms2.consent-services.default-processes.policy
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-domain.roles :as role])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def meta-item-processes
-  [{:name "get-library-metaitems"
+(def policy-processes
+  [{:name "get-library-policys"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])]
                      (or (role/consent-collector? user) (role/protocol-designer? user))))
     :run-fn (fn [params]
               (let [user (get-in params [:session :current-user])
                     user-org-id (get-in user [:organization :id])]
-                (data/find-children "organization" user-org-id "meta-item")))
+                (data/find-children "organization" user-org-id "policy")))
     :run-if-false forbidden-fn}
 
-   {:name "get-library-metaitem"
+   {:name "get-library-policy"
     :runnable-fn (fn [params]
-                   (let [meta-item-id (get-in params [:query-params :metaitem])
+                   (let [policy-id (get-in params [:query-params :policy])
                          user (get-in params [:session :current-user])
                          user-org-id (get-in user [:organization :id])]
-                     (data/belongs-to? "meta-item" meta-item-id "organization" user-org-id)))
+                     (data/belongs-to? "policy" policy-id "organization" user-org-id)))
     :run-fn (fn [params]
-              (let [meta-item-id (get-in params [:query-params :metaitem])]
-                (data/find-record "meta-item" meta-item-id)))
+              (let [policy-id (get-in params [:query-params :policy])]
+                (data/find-record "policy" policy-id)))
     :run-if-false forbidden-fn}
 
-   {:name "put-library-metaitem"
+   {:name "put-library-policy"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
                          user-org-id (get-in user [:organization :id])
@@ -35,11 +35,11 @@
                      (and (role/protocol-designer? user)
                           (= user-org-id item-org-id))))
     :run-fn (fn [params]
-              (let [meta-item (:body-params params)]
-                (data/create "meta-item" meta-item)))
+              (let [policy (:body-params params)]
+                (data/create "policy" policy)))
     :run-if-false forbidden-fn}
 
-   {:name "post-library-metaitem"
+   {:name "post-library-policy"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
                          user-org-id (get-in user [:organization :id])
@@ -47,12 +47,12 @@
                      (and (role/protocol-designer? user)
                           (= user-org-id item-org-id))))
     :run-fn (fn [params]
-              (let [meta-item-id (get-in params [:query-params :metaitem])
-                    meta-item (:body-params params)]
-                (data/update "meta-item" meta-item-id meta-item)))
+              (let [policy-id (get-in params [:query-params :policy])
+                    policy (:body-params params)]
+                (data/update "policy" policy-id policy)))
     :run-if-false forbidden-fn}
 
-   {:name "delete-library-metaitem"
+   {:name "delete-library-policy"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
                          user-org-id (get-in user [:organization :id])
@@ -60,8 +60,8 @@
                      (and (role/protocol-designer? user)
                           (= user-org-id item-org-id))))
     :run-fn (fn [params]
-              (let [meta-item-id (get-in params [:query-params :metaitem])]
-                (data/delete "meta-item" meta-item-id)))
+              (let [policy-id (get-in params [:query-params :policy])]
+                (data/delete "policy" policy-id)))
     :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) meta-item-processes))
+(process/register-processes (map #(DefaultProcess/create %) policy-processes))
