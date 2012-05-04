@@ -3,4 +3,4 @@
 paths.bootstrap=
 
 # The URL that points the the Consent Domain Services application.
-services.url
+services.url=http://obis-rpms-neodb-dev.mdc.musc.edu:8080/services
