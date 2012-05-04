@@ -20,10 +20,15 @@
   [candidate hashed]
   (BCrypt/checkpw candidate hashed))
 
-(def unauthorized-response
+(def unauthorized-response-browser
   {:status 401
    :body "Access Denied"
    :headers {"Content-Type" "text/plain" "WWW-Authenticate" "Basic"}})
+
+(def unauthorized-response
+  {:status 401
+   :body "Access Denied"
+   :headers {"Content-Type" "text/plain"}})
 
 (defn add-user-to-session
   [request user]
@@ -40,17 +45,19 @@
 (defn wrap-authentication
   [handler authenticate]
   (fn [request]
-    (let [auth ((:headers request) "authorization")
+    (let [auth (get-in request [:headers "authorization"])
           cred (and auth
                     (decode-cred
-                     (last
-                      (re-find #"^Basic (.*)$" auth))))
+                      (last
+                        (re-find #"^Basic (.*)$" auth))))
           user (and cred
                     (last
                      (re-find #"^(.*):" cred)))
           pass (and cred
                     (last
                      (re-find #":(.*)$" cred)))]
-      (if-let [auth-user (authenticate user pass)]
-        (handler (add-user-to-session request auth-user))
-        unauthorized-response))))
+      (if (and user pass)
+          (if-let [auth-user (authenticate user pass)]
+            (handler (add-user-to-session request auth-user))
+            unauthorized-response)
+          unauthorized-response-browser))))

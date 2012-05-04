@@ -1,8 +1,8 @@
 (ns org.healthsciencessc.rpms2.process-engine.web-service
   (:use compojure.core
         ring.middleware.session
-        [ring.util.response :only (response content-type)]
-        [clojure.data.json :only (read-json json-str)]
+        [ring.util.response :only (response content-type response?)]
+        [clojure.data.json :only (read-json pprint-json)]
         [clojure.string :only (blank? join split)]
         [slingshot.slingshot :only (try+)]
         [clojure.tools.logging :only (info error)])
@@ -46,12 +46,15 @@
 (defn format-response-body
   [body request]
   (let [requested-content-type (:content-type request)]
-    (cond
-     (= requested-content-type "application/json")
-     (content-type (response (json-str body)) requested-content-type)
-     (= requested-content-type "text/clojure")
-     (content-type (response body) requested-content-type)
-     :else body)))
+    (if-not (response? body)
+      (cond
+       (= requested-content-type "application/json")
+       (content-type (response (with-out-str (pprint-json body))) requested-content-type)
+       (= requested-content-type "text/clojure")
+       (content-type (response (with-out-str (prn body))) requested-content-type)
+       :else 
+       (content-type (response (with-out-str (prn body))) "text/clojure"))
+      body)))
 
 (defn process-not-found-body
   [req process-name]
