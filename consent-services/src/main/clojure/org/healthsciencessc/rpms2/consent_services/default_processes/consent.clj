@@ -66,9 +66,9 @@
     :runnable-fn can-see-consenters?
     ;;FIXME this isn't validating org-id of what was passed in
     :run-fn (fn [params]
-              (let [org-id (get-in params [:query-params :organization])
+              (let [org (get-in params [:session :current-user :organization])
                     loc-id (get-in params [:query-params :location])
-                    consenter (:body-params params)]
+                    consenter (assoc (:body-params params) :organization org)]
                 (data/create "consenter" consenter)))
     :run-if-false forbidden-fn}
 
