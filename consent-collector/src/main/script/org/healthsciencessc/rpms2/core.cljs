@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.rpms2.core
-  (:require [goog.net.XhrIo])
+  (:require [goog.net.XhrIo :as xhio ])
   (:use [cljs.reader :only [read-string]]))
 
 (defn mylog 
@@ -24,8 +24,6 @@
       (.log js/console "**** 18 IN CALLBACK")
 	v))
 
-
-
 (defn ^:export search
   []
   (.log js/console "25 search() enter search")
@@ -36,7 +34,7 @@
   (.log js/console (str "29 search() EXCEPTION " ex))
   )
 
-  (.log js/console "27 search() after json")
+  (.log js/console "27 search() after json call search")
   (.log js/console "28 calling search is anybody out there?")
   (ajax-sexp-get 
 		"/sexp/search/consenters" ;; the url
@@ -88,7 +86,7 @@
         other-section (js/$ "#other-section")
         {:keys [first-name last-name]} user]
 
-    ;; Set the highlight style on the clicked div
+    ;; Set the highlight style on clicked div
     (.removeClass (js/$ ".user-selected") "user-selected")
     (.addClass (js/$ div) "user-selected")
 		
@@ -101,9 +99,11 @@
     (.val (.find other-section (str "#patient-name")) (str first-name " " last-name))
     (.val (.find other-section (str "#patient-encounter-date")) (:consenter-encounter-date user))
 
-    ;; Set text values in details section to the corresponding value in the user record
+    ;; Set text values in details section to the corresponding value in user record
+    (def display-fields [:zipcode :date-of-birth :consenter-id ])
     (doseq [[id val] (-> user
-                         (select-keys [:zipcode  
+                         (assoc :name (str first-name " " last-name)
+                         (select-keys display-fields #_[:zipcode  
                                        :date-of-birth 
                                        :last-4-digits-ssn
                                        :referring-doctor 
@@ -111,7 +111,7 @@
                                        :primary-care-physician-city
 				       :visit-number 
                                        :encounter-date 
-                                       :medical-record-number ])
-                         (assoc :name (str first-name " " last-name)))]
+                                       :consenter-id 
+                                       :medical-record-number ])))]
       (.text (.find details (str "#consenter-" (name id))) val))
 ))

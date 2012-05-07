@@ -19,12 +19,19 @@
 	patient-encounter-date (:patient-encounter-date (:query-params ctx)) 
 	]
 	(if (= y "Yes") 
-	   (do 
-		(session-put! :patient-id patient-id)
-		(session-put! :patient-name patient-name)
-		(session-put! :patient-encounter-date patient-encounter-date)
-    		(helper/myredirect "/view/select/protocols"))
+            (if (or (empty? patient-name)
+                    (= patient-name "no patient")) 
+                (do 
+                   (flash-put! :header "No patient selected." )
+	   	   (helper/myredirect "/view/select/consenter"))
+	        (do 
+		   (session-put! :patient-id patient-id)
+		   (session-put! :patient-name patient-name)
+		   (session-put! :patient-encounter-date patient-encounter-date)
+                   (flash-put! :header (print-str "Patient selected: "  patient-name))
+    		   (helper/myredirect "/view/select/protocols")))
 	   (do
 	    	(session-delete-key! :patient-id)
+                (flash-put! :header "Search again" )
 	   	(helper/myredirect "/view/select/consenter")))))
 

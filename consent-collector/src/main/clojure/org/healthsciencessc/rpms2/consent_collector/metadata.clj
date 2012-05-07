@@ -41,7 +41,7 @@
             [:div.valueimportantblock {:data-role "fieldcontain" } 
              [:label {:for nm :class "labeldim" } (md-i18n nm "label" ) ]
              [:input { :type "text" :value (md-i18n nm :placeholder) :name nm}]]])])]
-     [:div (submit-button "meta-data-form")]]))
+     [:div.centered (submit-button "meta-data-form")]]))
 
 (defn view 
   "Returns meta data form"
@@ -55,5 +55,4 @@
   ;;dsa/post-security-authenticate
   (debug "perform-not done")
   (myredirect "/view/select/location"))
-
 

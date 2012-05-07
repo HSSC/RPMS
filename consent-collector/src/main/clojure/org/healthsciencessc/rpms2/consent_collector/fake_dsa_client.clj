@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-collector.fake-dsa-client
   (:require [clojure.string :as s]
-            [clj-http.fake :as http])
+            ;[clj-http.fake :as http]
+            )
   (:use [org.healthsciencessc.rpms2.consent-collector.factories :as factory]
         [clojure.tools.logging :only (debug info error)]
         [org.healthsciencessc.rpms2.consent-collector.config :only (config)]
@@ -146,7 +147,7 @@
 ;; if fake-dsa is enabled, then set clj-http.fake routes to 
 ;; permanently map to the mocked routes instead of 
 ;; actually invoking dsa (clj-http.fake)
-(when (= (config "fake-dsa")  "true" )
+#_(when (= (config "fake-dsa")  "true" )
   (debug "Using fake-dsa")
   (alter-var-root #'http/*fake-routes* (constantly my-fake-routes)))
 

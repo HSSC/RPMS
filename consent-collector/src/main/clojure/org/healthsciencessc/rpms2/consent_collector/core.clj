@@ -13,6 +13,7 @@
             						  [search-results :as search-results] 
             						  [select-protocol :as select-protocol] 
             						  [metadata :as metadata]
+            						  [seed :as seed]
 							]
             [ring.util
              [codec :as codec]
@@ -125,6 +126,10 @@
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (metadata/view ctx)) }
 
+                {:name "get-test-data"
+                 :runnable-fn (constantly true)
+                 :run-fn (fn [ctx] (seed/add-test-data ctx)) }
+
                 {:name "get-some-ajax-data"
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (pr-str {:foo 12, :bar [true false nil]}))}
@@ -179,6 +184,8 @@
       (app req))))
 
 (defn wrap-dsa-auth
+  "Include basic authentication in the request if username password
+  have been previously stored in the session."
   [app]
   (fn [req]
     (if-let [{:keys [username password]} (session-get :user)]
@@ -192,8 +199,8 @@
     (try (app req)
       (catch Throwable t
         (.printStackTrace t)
-        (println "EXCEPTION CAUGHT" t)
-        (error "EXCEPTION CAUGHT" t)
+        (println "core.clj line 202: EXCEPTION CAUGHT" t " req" req)
+        (error "core 203 EXCEPTION CAUGHT " t " req " req)
         {:status 500, :body (.getMessage t)}))))
 
 (defn process-not-found-response
@@ -211,6 +218,8 @@
         resp))))
 
 (defn wrap-last-page
+  "Save a copy of the last page we visited, in case
+  there is an error and we need to return to the original page."
   [app]
   (fn [req]
     (let [resp (app req)]
@@ -218,13 +227,35 @@
         (session-put! :last-page (:uri req)))
       resp)))
 
+(defn add-logging 
+  [handler]
+  (fn [req]
+    (println "Got request: "  (:request-method req) (:uri req) )
+    (info "core 234: Got request: " (:uri req) " " req)
+    (handler req)))
+
+(defn add-path-info
+  [handler]
+  (fn [req] 
+    ;(println "Got request - URI " (:uri req))
+    #_(handler (assoc req :xpath-info (:uri req)))
+    (handler req)
+    ))
+
+(defn middleware [handler] (-> handler
+                             (add-logging)
+                             ;(add-path-info)
+                             ))
+
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
-(def app (-> (ws/ws-constructor)
-             (wrap-dsa-auth)
+(def app (-> (ws/ws-constructor middleware  )
+            ;; add middleware function
+           ;;
+             (wrap-dsa-auth)       ;; add basic authentication to request
              (wrap-context-setter) ;; bind helper/*context*
              (wrap-exceptions)
-             (wrap-better-process-not-found-response)
+             #_(wrap-better-process-not-found-response)
              (wrap-last-page)
              (sandbar.stateful-session/wrap-stateful-session)
              (wrap-resource "public")))

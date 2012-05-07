@@ -56,8 +56,12 @@
   [field-name prototype]
   (let [data (field-name test-data) 
         data (if-let [given (field-name prototype)]
+               (do #_(println "given " given)
+               #_(println "field-name " field-name)
+               #_(println "prototype " prototype)
+               #_(println "data " data)
                (filter #(= given (subs % 0 (count given))) data)
-               data)]
+               data))]
     (if (empty? data)
       (field-name prototype)
       (rand-nth data))))
@@ -105,6 +109,7 @@
     :last-name (generate-datum :last-name prototype) 
     :medical-record-number (generate-medical-record-number)
     :encounter-date "2012-01-15" 
+    :consenter-id "1000101" 
     :visit-number "vn-90001" 
     :date-of-birth "1981-02-03" 
     :last-4-digits-ssn "0000" 

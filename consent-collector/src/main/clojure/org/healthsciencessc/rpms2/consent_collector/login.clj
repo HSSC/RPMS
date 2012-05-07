@@ -4,6 +4,7 @@
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! destroy-session! ]])
   (:use [clojure.tools.logging :only (debug info error)])
+  (:use [clojure.pprint])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
 (defn logout
@@ -54,6 +55,16 @@
       "INVALID LOGIN HELLO DIALOG" ]
     :title (i18n :hdr-login))
   )
+
+(defn prettyprint 
+  [u]
+  (let [rm (get-in u [:role-mappings])]
+    (println "RoleMapping loc " (get-in rm [:location]) " role " (get-in rm [:role]) )
+    (doall (for [z rm] (println "z is " z))))
+
+  (doall (for [m (:role-mappings u )] 
+           (println "Role mapping ==> " (get-in m [:role :name])
+                    " location " (get-in m [:location :name])))))
 
 (defn perform
   "Authenticates using username and password.  

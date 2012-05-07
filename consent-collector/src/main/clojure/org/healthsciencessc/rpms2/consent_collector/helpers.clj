@@ -4,7 +4,7 @@
              [page :as hpage]
              [element :as helem]])
   (:require [ring.util.response :as ring])
-  (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get]])
+  (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing)]))
@@ -35,6 +35,14 @@
   "Redirect, adding context information as needed."
   [url]
   (ring/redirect (mypath url)))
+
+(defn flash-and-redirect
+  "Sets flash message and goes to the specified page."
+  [i18n-key path]
+  (println "msg  " (i18n i18n-key) " path " path)
+  (info "msg  " (i18n i18n-key) " path " path)
+  (flash-put! :header (i18n i18n-key))
+  (myredirect path))
 
 (defn username
   []
@@ -156,4 +164,5 @@
 	     [:div.ui-block-a col1-content ]
 	     [:div.ui-block-b col2-content ]]
         :title title ))
+
 
