@@ -83,7 +83,7 @@
 
 (defn pane
   "Creates a structure representing a pane.  Accepts a request context, title, and pane content and returns the appropriate structure."
-  [ctx title content]
+  [ctx title & content]
   (list
     [:div.content-title.ui-helper-reset.ui-state-default.ui-corner-all title]
     [:div.content-data content]))

@@ -44,5 +44,5 @@
              wrap-base-url
              site))
 
-
-(pe/load-processes (first (bootstrap-locations)))
+(defn ws-init []
+  (pe/load-processes (first (bootstrap-locations))))
