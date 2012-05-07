@@ -53,7 +53,7 @@
        (= requested-content-type "text/clojure")
        (content-type (response (with-out-str (prn body))) requested-content-type)
        :else 
-       (content-type (response (with-out-str (prn body))) "text/clojure"))
+       body)
       body)))
 
 (defn process-not-found-body
