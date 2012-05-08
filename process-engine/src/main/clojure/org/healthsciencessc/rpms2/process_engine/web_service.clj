@@ -50,10 +50,12 @@
       (cond
        (= requested-content-type "application/json")
        (content-type (response (with-out-str (pprint-json body))) requested-content-type)
-       (= requested-content-type "text/clojure")
-       (content-type (response (with-out-str (prn body))) requested-content-type)
+       (or (map? body)
+           (= requested-content-type "text/clojure")
+           (= requested-content-type "application/clojure"))
+       (content-type (response (with-out-str (prn body))) "application/clojure")
        :else 
-       body)
+       (response body))
       body)))
 
 (defn process-not-found-body
