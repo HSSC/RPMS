@@ -6,20 +6,6 @@
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
-#_(def create-consenter-fields [ "first-name"
-                               "middle-name"
-                               "last-name"
-                               "local-identifier"
-                               "local-identifier-type"
-                               "gender"
-                               "race"
-                               "religion"
-                               "address"
-                               "phone"
-                               "email"
-                               "date-of-birth" ])
-
-
 (defn view 
   "Returns form to create a consenter."
   [ctx]
@@ -43,12 +29,8 @@
 
   [ctx]
   (let [parms (:body-params ctx)]
-    (println "create-consenter/perform Parms " parms)
+    ;(println "create-consenter/perform Parms " parms)
     ;; should we do any validation before attempt to create the consenter?
-    ;;(doall (for [v create-consenter-fields] 
-    ;;        (println "the value of " v " is " ((keyword v) parms))))
-    ;; specify organization , location as query params,  consenter is body param
-    ;; could probably put this in the ring wrapper
     ;; handle standard errors
     (let [resp (dsa/dsa-create-consenter parms) 
           status (:status resp)]

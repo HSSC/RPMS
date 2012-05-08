@@ -23,34 +23,75 @@
               (helper/text-field3 "search-consenters-form" (name s)))
 
         [:div.centered  {:data-role "fieldcontain" } 
-           (helper/submit-button "search-consenters" 
-                   (i18n "search-consenters-form-submit-button" ) 
-                   "search-consenters")
-            (helper/submit-button "search-consenters" 
-                   (i18n "create-consenter-form-submit-button") 
-                   "create-consenter") ]]] 
+
+          [:input {:type "submit" 
+                   :data-theme "a"
+                   :data-role "button"
+                   :data-inline "true "
+                   :value (i18n "search-consenters-form-submit-button")
+                   :name "search-consenters" } ]
+
+          [:input {:type "submit" 
+                   :data-theme "a"
+                   :data-role "button"
+                   :data-inline "true "
+                   :value (i18n "select-consenters-view-create-consenter-button")
+                   :name "create-consenters" } ]]]] 
 
     :title (i18n :hdr-search-consenters)))
-  
-;(debug! view)
+
+
+(defn- perform-search
+   [ctx]
+   (let [org-id (get-in (session-get :org-location) [:organization :id])
+          _ (debug "perform-search org id " org-id)
+          _ (debug "org id " org-id)
+          response  (dsa/dsa-search-consenters (ctx :body-params) org-id)
+          _ (debug "response"  response)
+          status (:status response)
+          _ (debug "status "  status )
+          json (:json response)
+          _ (debug "json "  json )
+          results json
+          _ (debug "results  "  results )
+         ]
+
+    (info "perform-search response " results " status is " status  )
+    (if (or (= status 200) 
+            (= status 302))
+         (do 
+            (session-put! :search-results results)
+            (helper/myredirect "/view/search/consenters"))
+         (if (= status 404) 
+            (helper/flash-and-redirect (str "Nothing matches those criteria.  Try again or create a new consenter.") "/view/select/consenter")
+            (helper/flash-and-redirect (str "problem with search " status) "/view/select/consenter"))
+         )))
+
+
+(defn- is-search?
+  "Returns if the current request represents a search."
+  [ctx]
+
+  (let [ bp (:body-params ctx)
+        do-search (:search-consenters bp)
+        do-create (:create-consenter bp) ]
+
+  (debug "is-search? parms: " bp,  " do-search: ",  do-search,  " create: " do-create,  
+         " SEARCH IS " (not (empty? do-search)) ) 
+  (not (empty? do-search)) ))
 
 (defn perform
   "Either create a new consenter or go to search page.
   If search-consenters parameter has a value, then perform a search.
   Otherwise, create a new consenter."
-  [ { {:keys [search-consenters create-consenter]} :body-params :as ctx} ]
-  (if search-consenters 
-      (let [org-id (get-in (session-get :org-location) [:organization :id])
-              {status :status results :json} (dsa/dsa-search-consenters (ctx :body-params) org-id)]
-          (info "select_consenter/perform response from search is " results " status is " status  )
-          (if (= status 200) 
-              (do 
-                  (session-put! :search-results results)
-                  (helper/myredirect "/view/search/consenters"))
-              (if (= status 404) 
-                  (helper/flash-and-redirect (str "Nothing matches those criteria.  Try again or create a new consenter.") "/view/select/consenter")
-                  (helper/flash-and-redirect (str "problem with search " status) "/view/select/consenter"))
-                ))
-      (helper/myredirect "/view/create/consenter"))) 
+  [ ctx ] 
 
-;(debug! perform)
+  (println "select_consenter/perform SEARCH? " (is-search? ctx ))
+  (if (is-search? ctx )
+      (perform-search ctx)
+      (helper/myredirect "/view/create/consenter")))
+
+
+(debug! perform)
+(debug! perform-search)
+

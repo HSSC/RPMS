@@ -1,19 +1,13 @@
 (ns org.healthsciencessc.rpms2.consent-collector.metadata
   "Processes for the meta data view and actions. "
-  (:require ( [org.healthsciencessc.rpms2.consent-collector [helpers :as helper]
-                                                         [factories :as factory]]))
+  (:require ( [org.healthsciencessc.rpms2.consent-collector [helpers :as helper]]))
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])
-  (:use [org.healthsciencessc.rpms2.consent-collector.factories 
+  (:use [org.healthsciencessc.rpms2.consent-collector.dsa-client
           :only (generate-meta-data-items)])
   (:use [org.healthsciencessc.rpms2.consent-collector.helpers 
           :only (mypath submit-button rpms2-page myredirect)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
-
-(comment
-  (def ^:private md-i18n
-    "meaningless docstring"
-    (partial i18n :metadata-form)))
 
 (defn form-meta-data
   "Displays a form for the user to enter the meta data items 
@@ -21,9 +15,9 @@
   [ctx]
 
   (let [md-i18n (partial i18n :meta-data-form)]
-    [:div.standardForm [:div.areaTitle (md-i18n :section-label ) ]
+    [:div.centered
      [:form {:method "GET" :action 
-             (mypath "/view/select/protocols" ) } 
+             (mypath "/view/unimplemented" ) } 
       (for [{nm :name :as item} (generate-meta-data-items)]
         [:div 
          ;; when type is string then display a text field
@@ -47,12 +41,4 @@
   "Returns meta data form"
   [ctx]
   (rpms2-page (form-meta-data ctx) :title (i18n :hdr-metadata)))
-
-(defn perform
-  "Performs...  "
-
-  [{{:keys [userid password]} :body-params} ]
-  ;;dsa/post-security-authenticate
-  (debug "perform-not done")
-  (myredirect "/view/select/location"))
 

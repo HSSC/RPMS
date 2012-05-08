@@ -175,7 +175,7 @@ div.innerform { xtext-align: right; }
 	width: 600px; 
 }
 
-.user-selected { background-color: black ; color: yellow ; }
+.user-selected { background-color: black ; color: white ; }
 
 ul.search-results {
 	xbackground-color: white;

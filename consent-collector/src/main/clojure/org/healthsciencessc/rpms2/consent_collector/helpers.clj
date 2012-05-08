@@ -39,8 +39,8 @@
 (defn flash-and-redirect
   "Sets flash message and goes to the specified page."
   [i18n-key path]
-  (println "msg  " (i18n i18n-key) " path " path)
-  (info "msg  " (i18n i18n-key) " path " path)
+
+  (debug "flash-and-redirect  " (i18n i18n-key) " path " path)
   (flash-put! :header (i18n i18n-key))
   (myredirect path))
 
@@ -74,7 +74,8 @@
 
    (let [ placeholder-keyword (keyword (str form-name "-" field-name "-placeholder" ))
 	type-keyword (keyword (str form-name "-" field-name "-type" ))
-	type-value (i18n-existing type-keyword)
+	type-value (i18n type-keyword)
+	;type-value (i18n-existing type-keyword)
 	t  (if type-value type-value "text") ]
    [:div.inputdata  {:data-role "fieldcontain" } 
       [:label {:for field-name :class "labelclass" } (i18n form-name field-name "label") ]
@@ -85,15 +86,25 @@
 (defn submit-button
   "Returns submit button for form."
   ([form-name]
-    (submit-button form-name (i18n form-name "submit-button")  
-                   (str form-name "-submit-button"))) 
+    (submit-button (i18n form-name "submit-button")
+                   (str "-submit-button"))) 
+  ([v n] 
+    [:input 
+      {:type "submit" 
+       :data-theme "a"
+       :data-role "button"
+       :data-inline "true"
+       :value v :name n } ])
+
+
   ([form-name v n] 
     [:input 
       {:type "submit" 
        :data-theme "a"
        :data-role "button"
        :data-inline "true"
-       :value v :name n } ]))
+       :value v :name n } ])
+  )
 
 (defn ajax-submit-button
   [form-name]
@@ -134,13 +145,8 @@
      (absolute-path "app.css")
      "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" )
 
-     ;; Add organization specify styles
-     ;;(if-let [org (session-get :org-name)]
-     ;; (hpage/include-css  (absolute-path (str org ".css")) ))
-
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
-    ;;(helem/javascript-tag (format "var GENERATED = %s;" (pr-str *context*)))
     (hpage/include-js 
      ;; "goog.net.XhrIO.js"
      "http://code.jquery.com/jquery-1.7.1.min.js"
@@ -157,7 +163,7 @@
 
 (defn rpms2-page-two-column
   "Emits a standard two-column RPMS2 page."
-  [col1-content col2-content & {:keys [title]}]
+  [col1-content col2-content title]
 
   (rpms2-page 
 	[:div.ui-grid-f

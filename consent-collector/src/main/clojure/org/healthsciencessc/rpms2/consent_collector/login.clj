@@ -56,16 +56,6 @@
     :title (i18n :hdr-login))
   )
 
-(defn prettyprint 
-  [u]
-  (let [rm (get-in u [:role-mappings])]
-    (println "RoleMapping loc " (get-in rm [:location]) " role " (get-in rm [:role]) )
-    (doall (for [z rm] (println "z is " z))))
-
-  (doall (for [m (:role-mappings u )] 
-           (println "Role mapping ==> " (get-in m [:role :name])
-                    " location " (get-in m [:location :name])))))
-
 (defn perform
   "Authenticates using username and password.  
    If successful, saves user in session and redirects to /view/select/location; 

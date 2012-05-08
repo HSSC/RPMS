@@ -7,18 +7,24 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
 
-(defn handle-search-selection-response
+(defn- search-selected 
   "If yes button was selected, go to the select protocols page.
   Otherwise, go back to the search page.
 
   TODO: Make sure that a patient id was actually selected."
-  [ctx]
-  (let [ y (:search-consenter-results-yes-submit-button (:query-params ctx))
-	patient-id (:patient-id (:query-params ctx)) 
-	patient-name (:patient-name (:query-params ctx)) 
-	patient-encounter-date (:patient-encounter-date (:query-params ctx)) 
+  [parms]
+
+  (debug "search-selected " parms)
+  (try
+  (let [ y  (:search-consenter-results-yes parms)
+        _ (debug "search-selected: y =  " y )
+	patient-id (:patient-id parms ) 
+        _ (debug "patient id " patient-id )
+	patient-name (:patient-name parms ) 
+        _ (debug "patient name  " patient-name )
+	patient-encounter-date (:patient-encounter-date parms ) 
 	]
-	(if (= y "Yes") 
+	(if (not (empty? y)) 
             (if (or (empty? patient-name)
                     (= patient-name "no patient")) 
                 (do 
@@ -33,5 +39,16 @@
 	   (do
 	    	(session-delete-key! :patient-id)
                 (flash-put! :header "Search again" )
-	   	(helper/myredirect "/view/select/consenter")))))
+	   	(helper/myredirect "/view/select/consenter"))))
+    
+    (catch Exception ex (debug "Exception in search-selected " ex))))
 
+(defn view 
+  [ctx]
+  (search-selected (:query-params ctx)))
+
+(defn perform 
+  [ctx]
+  (search-selected (:body-params ctx)))
+
+   

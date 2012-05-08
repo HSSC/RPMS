@@ -4,8 +4,7 @@
   (:import org.apache.http.auth.MalformedChallengeException
            org.apache.http.client.ClientProtocolException)
   (:use [slingshot.slingshot :only (try+)])
-  (:use [org.healthsciencessc.rpms2.consent-collector  [factories :as factory]
-                                                       [config :only (config)]
+  (:use [org.healthsciencessc.rpms2.consent-collector  [config :only (config)]
                                                        [debug :only (debug!)] ]
         [clojure.tools.logging :only (debug info error warn)]
         [clojure.pprint :only (pprint)]
@@ -43,11 +42,9 @@
       mypath  (if dsa-url 
                   (str (no-slashes dsa-url) "/" (no-slashes path)) 
                   (do 
-                      (println  "WARNING: No dsa-url configured " path )
                       (warn "WARNING: No dsa-url configured "  path)
-                      (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/services" "/" path )))] 
+                      (str "http://localhost:8080/" path )))] 
       (debug "Using dsa-url: " mypath )
-      (println "Using dsa-url: " mypath )
       mypath))
 
 ;; TODO - find out why the auth isn't working right (we shouldn't
@@ -64,16 +61,16 @@
     (catch ClientProtocolException e
       ;; TODO -- check if cause is a MalformedChallengeException
       (do 
-        (println (str "FAILED: " req) )
-        (println (str "ClientProtocol Exception " (.getMessage e) )
+        (error (str "FAILED: " req) )
+        (error (str "ClientProtocol Exception " (.getMessage e) )
                    ) {:status 401}))
     (catch java.net.UnknownHostException ex
         ;; we want to define flash message here
-        (do (println "UNKNOWN HOST: " req " exception " ex) 
+        (do 
             (debug "UNKNOWN HOST " ex)
            {:status 500 :error-message (str "Unknown host: " ex) }))
     (catch slingshot.ExceptionInfo ex
-      (do (println "SLINGSHOT EXCEPTION" ex)
+      (do (error "SLINGSHOT EXCEPTION" ex)
         {:status 403  :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
 
     (catch Exception ex 
@@ -83,12 +80,8 @@
     (catch Object obj 
       (do 
         (error "http/request failed: object error " obj)
-        ;;(println "An OBJECT error " obj)
-        ;;(println "======== STATUS " (:status obj))
-        (println "==http request failed --> " (pprint obj))
+        (error "==http request failed --> " (pprint obj))
         {:status (:status obj) :body (print-str "OBJ INVALID REQUEST - see logs for details" )}))))
-    
-(debug! request)
 
 ;; where to catch exceptions
 ;;  java.net.UnknownHostException
@@ -125,15 +118,13 @@
   "Call security/authenticate userid password"
   [user-id password]
   (binding [*dsa-auth* [user-id password]]
-    (dsa-call :get-security-authenticate {})
-    ;(fake/fake-authenticate user-id password)
-    ))
-
+    (dsa-call :get-security-authenticate {})))
 
 (defn- remove-blank-vals
   "Given a map, removes all key/val pairs for which the value
   is blank."
   [m]
+  (debug  "REMOVE BLANK " m )
   (into {}
         (for [[k v] m :when (not (s/blank? v))]
           [k v])))
@@ -156,15 +147,62 @@
       (debug "dsa-create-consenter JSON = " (json-str p) )
       (dsa-call :put-consent-consenter p)))
 
+(def protocol-names [ 
+	"Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
+	"Consent for Medical Treatment" 
+	"Medicare" 
+	"Tricare" ])
 
-#_(defn dsa-search-consenters
-    [params]
-    {:status 200
-     :json
-     (vec (factory/generate-user-list params))})
+(def data-mappings {
+   :location [ :id :name :code :protocol-label :organization ]
+   :meta-item [ :id :name :description :data-type :default-value :organization ]
+   :protocol [ :id :name :description :protocol-id :code :required :select-by-default :organization :location ]
+})
 
-;(debug! dsa-search-consenters)
+
+(defn- id
+  []
+  (rand-int 1000000000))
+
+
+(defn generate-meta-data-items
+ []
+ (list
+
+{ :id (id) :name "additional-guarantor" :description "Additional guarantor" :data-type "string" :organization "MYORG" }
+{ :id (id) :name "referring-doctor" :description "Date admitted" :data-type "string" :organization "MYORG" }
+{ :id (id) :name "referring-doctor-city" :description "" :data-type "string" :organization "MYORG" }
+{ :id (id) :name "primary-care-physician" :description "" :data-type "string " :organization "MYORG" }
+{ :id (id) :name "primary-care-physician-city" :description "" :data-type "string" :organization "MYORG" }
+{ :id (id) :name "attending-physician" :description "" :data-type "string" :organization "MYORG" }
+{ :id (id) :name "advanced-directives-given" :description "" :data-type "yes-no" :organization "MYORG" }
+{ :id (id) :name "admission-date" :description "Date admitted" :data-type "string" :organization "MYORG" }
+{ :id (id) :name "form-signer" :description "Signer" :data-type "choice - patient or patient rep" :organization "MYORG" }
+
+  )
+)
+
+(defn generate-protocol
+  [prototype]
+  { :name  (:name prototype)
+    :description (if (:description prototype) (:description prototype) "description for protocol")
+    :protocol-id "generated protocol-id"
+    :code "description for protocol"
+    :required (if (:required prototype) (:required prototype) false )
+    :select-by-default (if 
+	(:select-by-default prototype) 
+	(:select-by-default prototype) false )
+    :organization "description for protocol"
+    :location "description for protocol"
+  })
 
 (defn get-protocols
   []
-  (factory/generate-protocol-list))
+  (list 
+    (generate-protocol {:name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" :select-by-default true :required true :description "Inform patient of right of access to attending physician" } ) 
+
+    (generate-protocol {:name "Consent for Medical Treatment" :select-by-default false :required false :description "Some consent for medical treatment stuff " } ) 
+
+    (generate-protocol {:name "Medicare" :select-by-default false :required false :description "Medicare stuff" } ) 
+
+    (generate-protocol {:name "Tricare" :select-by-default true :required false :description "Tricare stuff" } ) ))

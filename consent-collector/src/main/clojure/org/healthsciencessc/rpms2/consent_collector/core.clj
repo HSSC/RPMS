@@ -2,18 +2,17 @@
   (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
                                                        [web-service :as ws]]
             [org.healthsciencessc.rpms2.consent-collector [dsa-client :as dsa]
-                                                          [fake-dsa-client]
             						  [helpers :as helper]
             						  [login :as login]
             						  [select-location  :as select-location] 
             						  [select-lockcode  :as select-lockcode] 
             						  [select-consenter :as select-consenter] 
             						  [search-consenter :as search-consenter] 
-            						  [create-consenter :as create-consenter] 
             						  [search-results :as search-results] 
+            						  [create-consenter :as create-consenter] 
             						  [select-protocol :as select-protocol] 
             						  [metadata :as metadata]
-            						  [seed :as seed]
+            						  [unimplemented :as unimplemented]
 							]
             [ring.util
              [codec :as codec]
@@ -92,19 +91,19 @@
 
                 {:name "post-view-search-consenters"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-consenter/post-view ctx)) }
+                 :run-fn (fn [ctx] (search-consenter/perform ctx)) }
 
                 {:name "get-view-search-consenters"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-consenter/get-view ctx)) }
+                 :run-fn (fn [ctx] (search-consenter/view ctx)) }
 
                 {:name "post-view-search-results"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-results/handle-search-selection-response ctx)) }
+                 :run-fn (fn [ctx] (search-results/perform ctx)) }
 
                 {:name "get-view-search-results"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-results/handle-search-selection-response ctx)) }
+                 :run-fn (fn [ctx] (search-results/view ctx)) }
 
                 {:name "get-view-create-consenter"
                  :runnable-fn (constantly true)
@@ -126,13 +125,10 @@
                  :runnable-fn (constantly true)
                  :run-fn (fn [ctx] (metadata/view ctx)) }
 
-                {:name "get-test-data"
+                {:name "get-view-unimplemented"
                  :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (seed/add-test-data ctx)) }
+                 :run-fn (fn [ctx] (unimplemented/view ctx)) }
 
-                {:name "get-some-ajax-data"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (pr-str {:foo 12, :bar [true false nil]}))}
  		])
 
 
@@ -199,7 +195,6 @@
     (try (app req)
       (catch Throwable t
         (.printStackTrace t)
-        (println "core.clj line 202: EXCEPTION CAUGHT" t " req" req)
         (error "core 203 EXCEPTION CAUGHT " t " req " req)
         {:status 500, :body (.getMessage t)}))))
 
@@ -227,17 +222,17 @@
         (session-put! :last-page (:uri req)))
       resp)))
 
+
+
 (defn add-logging 
   [handler]
   (fn [req]
-    (println "Got request: "  (:request-method req) (:uri req) )
     (info "core 234: Got request: " (:uri req) " " req)
     (handler req)))
 
 (defn add-path-info
   [handler]
   (fn [req] 
-    ;(println "Got request - URI " (:uri req))
     #_(handler (assoc req :xpath-info (:uri req)))
     (handler req)
     ))
@@ -247,15 +242,15 @@
                              ;(add-path-info)
                              ))
 
+
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
-(def app (-> (ws/ws-constructor middleware  )
+(def app (-> (ws/ws-constructor middleware )
             ;; add middleware function
-           ;;
              (wrap-dsa-auth)       ;; add basic authentication to request
              (wrap-context-setter) ;; bind helper/*context*
-             (wrap-exceptions)
+             #_(wrap-exceptions)
              #_(wrap-better-process-not-found-response)
-             (wrap-last-page)
+             #_(wrap-last-page)
              (sandbar.stateful-session/wrap-stateful-session)
              (wrap-resource "public")))
