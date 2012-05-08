@@ -77,19 +77,15 @@
     :runnable-fn (constantly true)
     :run-fn generate-login-page}
 
+   ;; Provides the landing page for an authenticated user.
    {:name "get-view-home"
     :runnable-fn (constantly true)
-    :run-fn (fn [ctx] (layout/layout ctx "You've successfully authenticated."))}
+    :run-fn (fn [ctx] (layout/layout ctx ""))}
 
+   ;; Performs the authentication.
    {:name "post-security-login"
     :runnable-fn (constantly true)
     :run-fn do-login}
-
-   {:name "get-message"
-    :runnable-fn (constantly true)
-    :run-fn (fn [ctx]
-              (str "Normal: " (config/config "message") " Keyword: " (:message config/config)))}
-
    ])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))

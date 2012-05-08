@@ -167,6 +167,9 @@ div.content{
 
 div.pane{
 	margin: 0.1em;
+	position: absolute;
+	width: 100%;
+	height: 100%;
 }
 
 div.content-title{

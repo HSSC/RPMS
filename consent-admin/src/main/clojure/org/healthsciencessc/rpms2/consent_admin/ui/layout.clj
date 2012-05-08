@@ -106,7 +106,7 @@
                      "/js/jquery-ui-1.8.19.custom.min.js"
                      "/js/pane.js"
                      "/js/consent-admin.js")
-    [:script (str "PaneManager.setContext(\"" (:context params) "\");")]])
+    [:script (str "PaneManager.basepath = \"" (:context params) "\";")]])
 
 (defn layout 
   ""
@@ -125,7 +125,7 @@
 (defn pane
   "Creates a structure representing a pane.  Accepts a request context, title, and pane content and returns the appropriate structure."
   [ctx title content]
-  [:div.pane
+  (list
     [:div.content-title.ui-helper-reset.ui-state-default.ui-corner-all title]
-    [:div.content-data content]])
+    [:div.content-data content]))
 

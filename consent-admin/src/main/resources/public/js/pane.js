@@ -1,11 +1,27 @@
+// The PaneManager allows for treating requests for viewable content as viewable within an existing
+// container that is referred to as a Pane.  A Pane represents a single view of data that can be 
+// chained to other Panes in order to go back and forth through the stack of views.  A Pane is structured
+// as follwows:
+//
+// pane = {
+// 	request: {
+// 		url: "",	// The original URL that requested the Pane. This is the application path, meaning it starts after the context path.
+// 		params: {},	// The original parameters that are added to the URL.  These are added to the request as query parameters.
+// 		options: {}	// The original options that accompanied.
+// 	},
+// 	previous: , 	// The Pane that opened this Pane using a 'push'.  Allows for this Pane to 'pop' back to the previous Pane.
+// 	pane: 			// Reference to the DIV that is the top container for the Pane content.
+// }
+//
+//
+
 var PaneManager = {
-		// Context Controllers.
-		setContext: function(x){this.context = x},
+		// Request References/Methods
+		basepath: null, // The base path to prepend to URL.  Typically, this is just the contextPath of the application
 		
-		// Creates the URL to be used for JSON requests
 		getUrl: function(x, ps){
-			if(this.context != null && x.indexOf(this.context) != 0){
-				x = this.context + x;
+			if(this.basepath != null && x.indexOf(this.basepath) != 0){
+				x = this.basepath + x;
 			}
 			if(ps != null && !$.isEmptyObject(ps)){
 				x = x + "?" + $.param(ps);
@@ -13,17 +29,28 @@ var PaneManager = {
 			return x;
 		},
 		
-		// Pane Controllers
-		panes: [],
+		// Pane References
 		current: null,
-		content: null, 
+		content: null, // This Should Be Set Externally
 		
-		hasPanes: function(){return this.panes.length > 0 && this.current != null;},
+		hasPanes: function(){return this.current != null;},
 		
 		reset: function(){
-			this.panes = [];
+			var t = this.current;
+			var c = this.content;
 			this.current = null;
-			this.content.empty();
+			var callback = null;
+			if(arguments.length > 0){
+				callback = arguments[0];
+			}
+			if(t != null){
+				t.pane.hide("slide", {direction: "down"}, this.settings.duration, function(){
+					c.empty();
+					if(callback){
+						callback();
+					}
+				});
+			}
 		},
 		
 		// Text that is used in the UI.  Can be overridden on init.
@@ -43,6 +70,10 @@ var PaneManager = {
 			}
 		},
 		
+		settings: {
+			duration: 500	// The duration of a transition between slides.
+		},
+		
 		// Confirm Method
 		confirm: function(options){
 			var m = this.util.mapped$rq(options, "message");
@@ -55,7 +86,7 @@ var PaneManager = {
 			this.confirmDialog.text(m);
 
 			var buts = {};
-			buts[ol] = of;
+			buts[ol] = function (){of(); $(this).dialog( "close" )};
 			buts[cl] = cf;
 			this.confirmDialog.dialog({
 				title: t,
@@ -94,22 +125,21 @@ var PaneManager = {
 			map: function(m){
 				if(m == null) return {};
 				return m;
-			}
+			},
+			nothing: function(){}
 		},
 		
 		// Starts a new stack of panes.  Clears all existing panes out and starts a new stack.
 		stack: function(url, params, options){
-			if(this.hasPanes()  && this.hasModifiedState()){
-				settings = {};
-				settings["onok"] = function(){
-						options.onpreload = function(){PaneManager.reset();};
-						PaneManager.push(url, params, options)
-					};
-				settings["message"] = this.text.pane.confirm$reset;
-				this.confirm(settings);
+			var pushfx = function(){PaneManager.push(url, params, options)};
+			
+			if(this.hasPanes()){
+				this.confirm({
+					onok: function(){PaneManager.reset(pushfx)}, 
+					message: this.text.pane.confirm$reset});
 			}
 			else{
-				this.push(url, params, options);
+				pushfx();
 			}
 		},
 		
@@ -141,14 +171,18 @@ var PaneManager = {
 		
 		// Processes a successful retrieve of a pane.
 		onsuccess: function(data, request, status, xhr){
-			var pane = {
-					request: request
-			};
-			if(request.options.onpreload){
-				request.options.onpreload();
+			// Create The Pane - Expects that any prepane processing has already been done.
+			var pane = {request: request};
+			if(this.current != null){
+				pane.previous = this.current;
+				$(this.current.pane).hide("slide", {direction: "left"}, this.settings.duration);
 			}
 			
-			$(content).html(data);
+			$(this.content).append("<div class='pane' style='display:none;'></div>");
+			pane.pane = $(content).children().last();
+			pane.pane.html(data);
+			pane.pane.show("slide", {direction: "right"}, this.settings.duration);
+			this.current = pane;
 		},
 		
 		// Processes a failed request for a pane.
@@ -157,7 +191,24 @@ var PaneManager = {
 		},
 		
 		// Removes the current pane from the stack, making the previous pane the current one.
-		pop: function(options){alert(this.getUrl(x))},
+		pop: function(options){
+			var poppane = this.current;
+			this.current = null;
+			if(poppane){
+				// Define The Post Hide Current Function
+				var postHide = function(){
+					poppane.pane.remove();
+				};
+				poppane.pane.hide("slide", {direction: "right"}, this.settings.duration, postHide);
+				
+				// Define The Show Previous Function
+				var previous = poppane.previous;
+				if(previous){
+					this.current = previous;
+					previous.pane.show("slide", {direction: "left"}, this.settings.duration);
+				}
+			}
+		},
 		
 		// Refreshes the current pane in the stack.
 		refresh: function(options){alert(this.getUrl(x))}
