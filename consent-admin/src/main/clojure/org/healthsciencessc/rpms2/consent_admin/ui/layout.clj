@@ -11,8 +11,8 @@
     [:div#header.header
       [:h3#headertitle "Consent Management - Administration"]
       [:ul#loginstat.headerlist
-        [:li#current-user.first [:span {:onclick "RPMS.launchInPane(\"/view/profile\")"} (get (sess/session-get :user) :username)]]
-        [:li#logout [:span {:onclick "RPMS.logout();"} "Logout"]]
+        [:li#current-user.first [:span {:onclick "PaneManager.stack(\"/view/profile\", {}, {})"} (get (sess/session-get :user) :username)]]
+        [:li#logout [:span {:onclick "PaneManager.logout();"} "Logout"]]
         [:div#dialog  "Are you sure you want to end this session?"]]])
 
 (defn header-no-session
@@ -32,7 +32,7 @@
 (defn create-nav-item
   "Creates a list item for use in navigation"
   [url label]
-  [:li.navitem [:a {:href "#" :onclick (str "RPMS.launchInPane(\"" url "\", {})") } label]])
+  [:li.navitem [:a {:href "#" :onclick (str "PaneManager.stack(\"" url "\", {})") } label]])
 
 
 (defn leftbar
@@ -104,8 +104,9 @@
                       "/css/consent-admin.css")
     (page/include-js "/js/jquery-1.7.2.min.js"
                      "/js/jquery-ui-1.8.19.custom.min.js"
+                     "/js/pane.js"
                      "/js/consent-admin.js")
-    [:script (str "RPMS.setContext(\"" (:context params) "\");")]])
+    [:script (str "PaneManager.setContext(\"" (:context params) "\");")]])
 
 (defn layout 
   ""
@@ -120,4 +121,11 @@
   (page/html5
     (head ctx)
     (body-no-session ctx content)))
+
+(defn pane
+  "Creates a structure representing a pane.  Accepts a request context, title, and pane content and returns the appropriate structure."
+  [ctx title content]
+  [:div.pane
+    [:div.content-title.ui-helper-reset.ui-state-default.ui-corner-all title]
+    [:div.content-data content]])
 

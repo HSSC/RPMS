@@ -166,7 +166,15 @@ div.content{
 }
 
 div.pane{
-	margin: 0.3em;
+	margin: 0.1em;
+}
+
+div.content-title{
+	text-align: center;
+}
+
+div.content-data{
+	margin-top: 0.2em;
 }
 
 #dialog{
