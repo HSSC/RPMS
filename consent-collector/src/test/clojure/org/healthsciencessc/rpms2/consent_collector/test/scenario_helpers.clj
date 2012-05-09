@@ -9,6 +9,7 @@
             [net.cgrand.enlive-html :as en]
             [ring.adapter.jetty :as jetty]))
 
+(comment
 (defmacro is!
   "Like clojure.test/is, but short-circuits the test on failure.
   Works with the def-rpms-test macro."
@@ -116,3 +117,4 @@
   [page file]
   (.save page (java.io.File. file))
   page)
+)

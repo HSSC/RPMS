@@ -136,3 +136,24 @@
          [[:form (en/attr= :action "/view/create/consenter")]]
          [[:input (en/attr= :name "first-name")]]
          [[:input (en/attr= :name "last-name")]])))
+
+
+(comment
+#_(deftest dsa-create-consenters-test-missing-required
+  "Verify create-consenter"
+
+  (let [results (dsa/dsa-create-consenter {})]
+    (is (or (= 409 (:status results)     ;client side validation
+            (= 403 (:status results)     ;server side validation
+    ))))))
+
+#_(deftest dsa-create-consenters-test-2
+  "Verify create-consenter"
+
+  (binding [dsa/*dsa-auth* ["juan" "foobar" ]]
+    (let [ loggedin (dsa/authenticate "juan" "foobar" )
+        _ (println "LOGGED IN " loggedin)
+          results (dsa/dsa-create-consenter {:first-name "Randy" :last-name "Reindeer" })]
+      (is (= 200 (:status results))))))
+         
+)

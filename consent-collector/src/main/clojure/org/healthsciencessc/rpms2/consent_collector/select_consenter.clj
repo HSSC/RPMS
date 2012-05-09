@@ -19,7 +19,7 @@
              :action (helper/mypath "/view/select/consenter") 
              :data-ajax "false" }
 
-        (for [s dsa/consenter-fields]
+        (for [s dsa/consenter-search-fields]
               (helper/text-field3 "search-consenters-form" (name s)))
 
         [:div.centered  {:data-role "fieldcontain" } 
@@ -42,19 +42,15 @@
 
 
 (defn- perform-search
+  "Invokes dsa call to search consenters.  
+  Search results are stored in the session for
+  subsequent display.  Displays results and/or an appropriate flash message."
+
    [ctx]
    (let [org-id (get-in (session-get :org-location) [:organization :id])
-          _ (debug "perform-search org id " org-id)
-          _ (debug "org id " org-id)
           response  (dsa/dsa-search-consenters (ctx :body-params) org-id)
-          _ (debug "response"  response)
           status (:status response)
-          _ (debug "status "  status )
-          json (:json response)
-          _ (debug "json "  json )
-          results json
-          _ (debug "results  "  results )
-         ]
+          results (:json response) ]
 
     (info "perform-search response " results " status is " status  )
     (if (or (= status 200) 
@@ -63,13 +59,18 @@
             (session-put! :search-results results)
             (helper/myredirect "/view/search/consenters"))
          (if (= status 404) 
-            (helper/flash-and-redirect (str "Nothing matches those criteria.  Try again or create a new consenter.") "/view/select/consenter")
-            (helper/flash-and-redirect (str "problem with search " status) "/view/select/consenter"))
-         )))
+            (helper/flash-and-redirect 
+                (i18n :flash-search-consenter-results-no-matches)
+                "/view/select/consenter")
+            (helper/flash-and-redirect 
+                (str (i18n :flash-search-consenter-results-search-failed) " " status)
+                "/view/select/consenter")))))
 
 
 (defn- is-search?
-  "Returns if the current request represents a search."
+  "Returns true if the current request represents a search.
+  Different submit buttons are used for search and create. This method
+  determines which of the buttons was pressed. "
   [ctx]
 
   (let [ bp (:body-params ctx)
@@ -86,12 +87,9 @@
   Otherwise, create a new consenter."
   [ ctx ] 
 
-  (println "select_consenter/perform SEARCH? " (is-search? ctx ))
   (if (is-search? ctx )
       (perform-search ctx)
       (helper/myredirect "/view/create/consenter")))
 
-
-(debug! perform)
-(debug! perform-search)
-
+;(debug! perform)
+;(debug! perform-search)

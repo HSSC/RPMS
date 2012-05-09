@@ -12,27 +12,43 @@
 
 (def ^:dynamic *dsa-auth* nil)
 
-(def consenter-fields  [:first-name
-                        :last-name
-                        :consenter-id
-                        :date-of-birth
-                        :zipcode])
+(def consenter-search-fields  [:first-name
+                               :last-name
+                               :consenter-id
+                               :dob
+                               :zipcode])
 
 
 (def create-consenter-fields [ :first-name
                                :middle-name
                                :last-name
-                               :local-identifier
-                               :local-identifier-type
+                               :title
+                               :suffix
+                               :consenter-id
                                :gender
-                               :race
-                               :religion
-                               :address
-                               :phone
-                               :email
-                               :date-of-birth ])
+                               :dob
+                               :zipcode ])
 
 
+(def consenter-field-defs { 
+                               :first-name          { :required true }
+                               :middle-name         {}
+                               :last-name           { :required true }
+                               :title               {}
+                               :suffix              {}
+                               :consenter-id        { :required true }
+                               :gender              { :required true :type "gender" :x18n-name "gender" }
+                               :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
+                               :zipcode             { :required true :type "number" } 
+})
+
+
+;;consider using values from domain-services
+(def create-consenter-required-fields [ :first-name
+                                        :last-name 
+                                        :gender
+                                        :dob
+                                        :zipcode ])
 
 (defn- build-url 
    "Builds url for DSA for given path."
@@ -43,7 +59,9 @@
                   (str (no-slashes dsa-url) "/" (no-slashes path)) 
                   (do 
                       (warn "WARNING: No dsa-url configured "  path)
-                      (str "http://localhost:8080/" path )))] 
+                      #_(str "http://olocalhost:8080/" path )
+                      (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/services/" path)
+                    ))] 
       (debug "Using dsa-url: " mypath )
       mypath))
 
@@ -93,10 +111,13 @@
         path (s/replace path-dashes "-" "/")
         maybe-parse-json
         (fn [{:keys [content-type status body headers] :as resp}]
+          (debug "status is " status " body is " body )
           (if (= 403 status) 
-            (do (println "FORBIDDEN") {:status 403} )
+              (do (println "FORBIDDEN") {:status 403} )
             (if (= 200 status)
-              (assoc resp :json (read-json body))
+              (try 
+                (assoc resp :json (read-json body))
+                (catch Exception ex (do (debug "WARNING: BODY IS NOT JSON " body ) resp) ))
               resp))) ]
     
     ;; try catch here?
@@ -124,10 +145,18 @@
   "Given a map, removes all key/val pairs for which the value
   is blank."
   [m]
-  (debug  "REMOVE BLANK " m )
   (into {}
         (for [[k v] m :when (not (s/blank? v))]
           [k v])))
+
+(defn- has-all-required-fields 
+  "Given a map, ensures all required fields are there. 
+  Returns a list of missing fields."
+  [m required-fields]
+
+  (if (= (count (select-keys m required-fields)) (count required-fields))
+    nil
+    (pr-str "All of these are required: " required-fields)))
 
 (defn dsa-search-consenters
   "Search consenters."
@@ -135,17 +164,21 @@
   [params org-id]
   (debug "dsa-search-consenters PARAMS = " params " ORG " org-id)
   (let [consenter-params (remove-blank-vals
-                          (select-keys params consenter-fields)) ]
+                          (select-keys params consenter-search-fields)) ]
       (dsa-call :get-consent-consenters (assoc consenter-params :organization org-id))))
 
 (defn dsa-create-consenter
   "Create a consenter."
   [params]
   (debug "dsa-create-consenter PARAMS = " params)
-  (let [p (remove-blank-vals (select-keys params create-consenter-fields)) ]
-      (debug "dsa-create-consenter P = " p )
-      (debug "dsa-create-consenter JSON = " (json-str p) )
-      (dsa-call :put-consent-consenter p)))
+  (let [p (remove-blank-vals (select-keys params create-consenter-fields)) 
+        invalid (has-all-required-fields p create-consenter-required-fields)]
+      (if invalid 
+          (do (debug "INVALID - CANNOT CREATE " p  " invalid msg " invalid)
+              {:status 409 :body "Validation failed - Please enter all required values" })
+          (do (debug "dsa-create-consenter P = " p  " count " (count p))
+              (dsa-call :put-consent-consenter p) ))))
+      
 
 (def protocol-names [ 
 	"Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
@@ -158,7 +191,6 @@
    :meta-item [ :id :name :description :data-type :default-value :organization ]
    :protocol [ :id :name :description :protocol-id :code :required :select-by-default :organization :location ]
 })
-
 
 (defn- id
   []

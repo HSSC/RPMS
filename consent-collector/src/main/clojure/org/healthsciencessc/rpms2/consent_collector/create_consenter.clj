@@ -15,9 +15,35 @@
              :action (helper/mypath "/view/create/consenter")
              :data-ajax "false" } 
       [:div.centered "Present form for the user fill out to Create consenter" ]
-        [:div#consenter-details  
-          (for [v dsa/create-consenter-fields ] 
-             (helper/text-field3 "create-consenter-form" (name v)))]
+      [:div#consenter-details  
+         (for [v dsa/create-consenter-fields] 
+             (list 
+               (let [form-name "create-consenter-form"
+                     field-name (name v)
+
+                     i18n-name (:i18n-name (dsa/consenter-field-defs v)) 
+                     required (:required (dsa/consenter-field-defs v))
+                     specified-kind  (:type dsa/consenter-field-defs v)
+                     len (:length (dsa/consenter-field-defs v))
+
+                     kind (if specified-kind specified-kind "text")
+
+                     label (if i18n-name (i18n i18n-name "label") 
+                                        (i18n form-name field-name "label" )) 
+
+                     placeholder  (if i18n-name (i18n i18n-name "placeholder") 
+                                                (i18n form-name field-name "placeholder" ) )
+
+                     m {:type kind :name field-name :placeholder placeholder } 
+                     mp1 (if required (assoc m :required "") m) 
+                     input-map (if len (assoc mp1 :length "") mp1) 
+                     ]
+
+                     [:div.inputdata  {:data-role "fieldcontain" } 
+                       [:label {:for field-name :class "labelclass" } label ]
+                       [:input input-map ] ])))]
+               
+
         [:div.centered
            (helper/submit-button "create-consenter-form" 
              (i18n "create-consenter-form-submit-button" ) "create-consenter") ]]]
@@ -25,22 +51,28 @@
 
 (defn perform
   "Saves consenter and if successful, goes to /view/select/protocol.
-  If insufficient privileges, displays flash"
+  If insufficient privileges or if the fields are not validated, displays flash message."
 
   [ctx]
   (let [parms (:body-params ctx)]
-    ;(println "create-consenter/perform Parms " parms)
-    ;; should we do any validation before attempt to create the consenter?
-    ;; handle standard errors
     (let [resp (dsa/dsa-create-consenter parms) 
-          status (:status resp)]
-      (if (= 403 (:status resp)) 
-         (helper/flash-and-redirect 
-            (print-str "You " (helper/username) " are not authorized to create a consenter")
-           "/view/create/consenter" ) 
-         (if (= 401 (:status resp)) 
-           (helper/flash-and-redirect "not logged in" "/view/create/consenter")
-          (let [body (:body resp) 
-                msg (print-str "Consenter created " body " id=" (:id body)) ]
-          (helper/flash-and-redirect msg "/view/select/protocols")))))))
+          status (:status resp) 
+          body (:body resp)]
+
+      (cond (= 403 (:status resp))
+            (helper/flash-and-redirect 
+                 (print-str "You " (helper/username) " are not authorized to create a consenter")
+                 "/view/create/consenter" ) 
+
+            (= 409 (:status resp))
+            (helper/flash-and-redirect (:body resp) 
+                 "/view/create/consenter" ) 
+
+            (= 401 (:status resp))
+                 (helper/flash-and-redirect 
+                 "not logged in" 
+                 "/view/login")
+
+            :else
+                 (helper/myredirect  "/view/select/protocols")))))
 

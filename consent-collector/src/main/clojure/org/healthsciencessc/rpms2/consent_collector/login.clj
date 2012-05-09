@@ -28,7 +28,9 @@
   (helper/rpms2-page 
      [:div
      [:form {:action (helper/mypath "/view/login") 
-                       :method "POST" :name "loginForm" :id "loginForm" 
+                       :method "POST" 
+                       :name "loginForm" 
+                       :id "loginForm" 
                        :data-ajax "false" 
                        :data-theme "a" } 
 
@@ -43,18 +45,7 @@
         [:label {:for "password" } (i18n :login-form-password) ]
         [:input {:name "password" :id "password" :type "password" :required ""
                :placeholder (i18n "login-form-password-placeholder") }]]] 
-
-      
       [:div.centered (helper/submit-button  "login-form") ] ]] :title (i18n :hdr-login)))
-
-(defn view1 
-  "Returns login form"
-  [ctx]
-  (helper/rpms2-page  
-     [:a {:href "foo.html" :data-rel "dialog" } "OPEN DIALOG 1 "
-      "INVALID LOGIN HELLO DIALOG" ]
-    :title (i18n :hdr-login))
-  )
 
 (defn perform
   "Authenticates using username and password.  
@@ -74,8 +65,7 @@
 	(let [u (:json resp) ]
 	 	(helper/remove-session-data)
         	(debug "USER RECORD => " u )
-        	(session-put! :user (assoc u :password password))
-	)
+        	(session-put! :user (assoc u :password password)))
         (debug "LOGIN succeeded: " userid)
         (helper/myredirect "/view/select/location"))
       (do 
