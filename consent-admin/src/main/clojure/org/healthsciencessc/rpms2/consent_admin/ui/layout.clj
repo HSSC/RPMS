@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
   (require [org.healthsciencessc.rpms2.process-engine.path :as path]
            [org.healthsciencessc.rpms2.consent-admin.ui.jquery :as jquery]
+           [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
            [hiccup.page :as page]
            [hiccup.element :as element]
            [sandbar.stateful-session :as sess]))
@@ -29,52 +30,10 @@
     [:span#footerversion "Version 2.0.0-SNAPSHOT"]
     (jquery/center-on :#footerorg :#footer)])
 
-(defn create-nav-item
-  "Creates a list item for use in navigation"
-  [url label]
-  [:li.navitem [:a {:href "#" :onclick (str "PaneManager.stack(\"" url "\", {})") } label]])
-
-
 (defn leftbar
   "Creates the default header that is used for the application"
-  [params & options]
-  [:div#leftbar.leftbar 
-    [:div#navigator 
-      (if true 
-        (list [:h4#orgnavlabel [:a {:href "#"} "Organization"]] 
-          [:div#orgnavpanel.navpanel
-            [:ul#orgnavlist.navlist
-              (create-nav-item "/view/organization" "Settings")
-              (create-nav-item "/view/locations" "Locations")]]))
-      (if true 
-        (list [:h4#secnavlabel [:a {:href "#"} "Security"]] 
-          [:div#secnavpanel.navpanel
-            [:ul#secnavlist.navlist
-              (create-nav-item "/view/users" "Users")
-              (create-nav-item "/view/groups" "Groups")
-              (create-nav-item "/view/roles" "Roles")]]) )
-      (if true 
-        (list [:h4#pronavlabel [:a {:href "#"} "Protocols"]] 
-          [:div#pronavpanel.navpanel
-            [:ul#pronavlist.navlist
-              (create-nav-item "/view/protocol/new" "Create")
-              (create-nav-item "/view/protocol/locations" "Locations")]]) )
-      (if true 
-        (list [:h4#libnavlabel [:a {:href "#"} "Library"]] 
-           [:div#libnavpanel.navpanel
-            [:ul#libnavlist.navlist
-              (create-nav-item "/view/policy/definitions" "Policy Definitions")
-              (create-nav-item "/view/policies" "Policies")
-              (create-nav-item "/view/metaitems" "Meta Items")
-              (create-nav-item "/view/widgets" "Widgets")]]) )]
-    [:script 
-"$(function() {
-  $( \"#navigator\" ).accordion({
-    collapsible: true,
-    fillSpace: true,
-    autoHeight: false
-  });
-});"]])
+  [ctx & options]
+  [:div#leftbar.leftbar (nav/navigator ctx)])
 
 (defn body
   "Creates the default layout that is used for the application"
