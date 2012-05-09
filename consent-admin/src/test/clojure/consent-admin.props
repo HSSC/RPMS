@@ -1,1 +1,6 @@
+# The paths that clojure files can be read from and be evaluated at runtime.  Enables the overriding 
+# and extension of custom functionality.
 paths.bootstrap=
+
+# The URL that points the the Consent Domain Services application.
+services.url=http://localhost:2500/
