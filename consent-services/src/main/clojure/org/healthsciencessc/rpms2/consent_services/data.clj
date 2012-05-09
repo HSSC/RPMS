@@ -171,7 +171,7 @@
 (defmethod get-related-obj :belongs-to
   [record node {:keys [relationship related-to]}]
   (if-let [parent-node (find-parent node relationship)]
-    (when parent-node (node->record parent-node related-to))))
+    (when parent-node (node->record parent-node related-to :add-rels false))))
 
 (defmethod get-related-obj :has-many
   [record node relation]
@@ -203,14 +203,17 @@
    relations))
 
 (defn node->record
-  [node type]
+  [node type & {:keys [add-rels] :or {add-rels true}}]
   (let [props (neo/props node)
         relations (domain/record-relations type schema)]
     (if (:active props)
-      (-> props
-          (assoc :type type)
-          (add-relations node relations)
-          (domain/validate-record type schema)))))
+      (domain/validate-record
+       (let [record (assoc props :type type)]
+         (if add-rels
+           (add-relations record node relations)
+           record))
+       type 
+       schema))))
 
 (defn setup-schema
   [data-defs]
@@ -242,11 +245,12 @@
 
 (defn validate-domain-relations
   [type props]
-  (for [{:keys [related-to relationship]}
+  (for [{:keys [related-to relationship name]}
         (domain/get-parent-relations type schema)
-        :when (get props (keyword related-to))]
+        :let [rel-key (or name (keyword related-to))]
+        :when (get props rel-key)]
     {:from :self
-     :to (get-node-by-index related-to (get-in props [(keyword related-to) :id]))
+     :to (get-node-by-index related-to (get-in props [rel-key :id]))
      :rel-type relationship}))
 
 (defn get-raw-nodes

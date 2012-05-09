@@ -84,7 +84,21 @@
                                           {:name {:persisted true}}
                                           {:description {:persisted true}}
                                           {:code {:persisted true}})
-                       :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}})
+                       :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
+
+   "form" {:attributes (merge base
+                              {:name {:persisted true}}
+                              {:code {:persisted true}})
+           :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                       {:type :has-many :related-to "widget"}]}
+
+   "widget" {:attributes (merge base
+                                {:name {:persisted true}}
+                                {:type {:persisted true}})
+             :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                         {:type :belongs-to :related-to "form" :relationship :in-form}
+                         {:type :belongs-to :related-to "widget" :relationship :contained-in :name :contained-in}
+                         {:type :has-many :related-to "widget" :name :contains}]}})
 
 (defn get-relations
   [type data-defs]
@@ -94,9 +108,17 @@
   [type data-defs]
   (filter #(= :belongs-to (:type %)) (get-relations type data-defs)))
 
+(defn get-child-relations
+  [type data-defs]
+  (filter #(= :has-many (:type %)) (get-relations type data-defs)))
+
 (defn get-parent-relation
   [parent-type child-type data-defs]
   (first (filter #(= parent-type (:related-to %)) (get-parent-relations child-type data-defs))))
+
+(defn get-child-relation
+  [parent-type child-type data-defs]
+  (first (filter #(= child-type (:related-to %)) (get-child-relations parent-type data-defs))))
 
 (defn record-relations
   [type data-defs]
@@ -126,12 +148,12 @@
       :has-many-through :children})))
 
 (defmethod relation-name->key :parent
-  [relation]
-  (keyword (:related-to relation)))
+  [{:keys [related-to name]}]
+  (or name (keyword related-to)))
 
 (defmethod relation-name->key :children
-  [relation]
-  (keyword (str (:related-to relation) "s")))
+  [{:keys [related-to name]}]
+  (or name (keyword (str related-to "s"))))
 
 (defn all-valid-keys
   [{:keys [attributes relations]}]
