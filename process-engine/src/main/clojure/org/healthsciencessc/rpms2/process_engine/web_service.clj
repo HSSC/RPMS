@@ -38,8 +38,8 @@
         data (:form-params request)
         body (:body request)]
     (cond 
-      (= content-type "application/json") (get-json-params body)
-      (= content-type "application/x-www-form-urlencoded") (keyify-params data)
+      (.startsWith content-type "application/json") (get-json-params body)
+      (.startsWith content-type "application/x-www-form-urlencoded") (keyify-params data)
       (< 0 (count data)) (keyify-params data)
       :else {})))
 
@@ -48,11 +48,11 @@
   (let [requested-content-type (:content-type request)]
     (if-not (response? body)
       (cond
-       (= requested-content-type "application/json")
+       (.startsWith requested-content-type "application/json")
        (content-type (response (with-out-str (pprint-json body))) requested-content-type)
        (or (map? body)
-           (= requested-content-type "text/clojure")
-           (= requested-content-type "application/clojure"))
+           (.startsWith requested-content-type "text/clojure")
+           (.startsWith requested-content-type "application/clojure"))
        (content-type (response (with-out-str (prn body))) "application/clojure")
        :else 
        body)
