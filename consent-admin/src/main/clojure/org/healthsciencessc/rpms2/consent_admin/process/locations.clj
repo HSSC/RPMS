@@ -10,18 +10,17 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (defn layout-locations
-  [params]
-  (let [locs (get-locations params)]
-    (html/html
-      (layout/pane nil "Locations" 
-        [:div (with-out-str (pprint locs))
-          (for [x locs]
-            [:div.location
-              [:h3 (:name x)]
-              [:ul
-                [:li "ID: " (:id x)]
-                [:li "Protocol Label" (:protocol-label x)]
-                [:li "Code: " (:code x)]]])]))))
+  [ctx]
+  (let [locs (get-locations ctx)]
+    (layout/render ctx "Locations"
+      [:div (with-out-str (pprint locs))
+        (for [x locs]
+          [:div.location
+            [:h3 (:name x)]
+            [:ul
+              [:li "ID: " (:id x)]
+              [:li "Protocol Label" (:protocol-label x)]
+              [:li "Code: " (:code x)]]])])))
 
 (def process-defns
   [{:name "get-view-locations"

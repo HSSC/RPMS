@@ -13,18 +13,17 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (defn layout-organizations
-  [params]
-  (let [orgs (get-organizations params)]
-    (html/html
-      (layout/pane nil "Organizations"
-        (for [x orgs]
-          [:div.organization
-            [:pre (with-out-str (pprint x))]
-            [:h3 (:name x)]
-            [:ul
-              [:li "ID: " (:id x)]
-              [:li "Location-label" (:id x)]
-              [:li "Code: " (:code x)]]])))))
+  [ctx]
+  (let [orgs (get-organizations ctx)]
+    (layout/render ctx "Organizations"
+      (for [x orgs]
+        [:div.organization
+          [:pre (with-out-str (pprint x))]
+          [:h3 (:name x)]
+          [:ul
+            [:li "ID: " (:id x)]
+            [:li "Location-label" (:id x)]
+            [:li "Code: " (:code x)]]]))))
 
 (def process-defns
   [{:name "get-view-organizations"

@@ -21,10 +21,10 @@ var PaneManager = {
 		
 		getUrl: function(x, ps){
 			if(this.basepath != null && x.indexOf(this.basepath) != 0){
-				x = this.basepath + x;
+				x = this.basepath + x + "?view-mode=pane";
 			}
 			if(ps != null && !$.isEmptyObject(ps)){
-				x = x + "?" + $.param(ps);
+				x = x + "&" + $.param(ps);
 			}
 			return x;
 		},
@@ -99,7 +99,7 @@ var PaneManager = {
 		
 		// Logout Method
 		logout: function(){
-			url = this.context + "/logout";
+			url = this.basepath + "/logout";
 			options = {};
 			options["message"] = this.text.logout.message;
 			options["onok"] = function() {document.location = url;};

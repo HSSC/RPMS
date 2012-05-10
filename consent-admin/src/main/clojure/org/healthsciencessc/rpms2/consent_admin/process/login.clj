@@ -35,7 +35,7 @@
   [ctx]
   (if (security/is-authenticated?)
     (rutil/redirect (path/root-link ctx "/view/home"))
-    (layout/layout-no-session ctx (ui-login-form ctx))))
+    (layout/render ctx "Login" (ui-login-form ctx))))
 
 (defn do-login
   ""
@@ -75,7 +75,7 @@
    ;; Provides the landing page for an authenticated user.
    {:name "get-view-home"
     :runnable-fn (constantly true)
-    :run-fn (fn [ctx] (layout/layout ctx ""))}
+    :run-fn (fn [ctx] (layout/render ctx "Home"))}
 
    ;; Performs the authentication.
    {:name "post-security-login"

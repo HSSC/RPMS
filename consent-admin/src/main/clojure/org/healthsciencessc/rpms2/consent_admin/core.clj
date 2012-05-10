@@ -44,5 +44,7 @@
              wrap-base-url
              site))
 
-(defn ws-init []
+(defn init 
+  "Initializes the application when it is first started up"
+  []
   (pe/load-processes (first (bootstrap-locations))))

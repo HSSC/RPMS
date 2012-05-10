@@ -34,7 +34,7 @@
    the stream to the body has been closed and should not be read, such as when an HTML 
    form submits data."
   [request]
-  (let [content-type (:content-type request)
+  (let [content-type (or (:content-type request) "NA")
         data (:form-params request)
         body (:body request)]
     (cond 
@@ -45,7 +45,7 @@
 
 (defn format-response-body
   [body request]
-  (let [requested-content-type (:content-type request)]
+  (let [requested-content-type (or (:content-type request) "NA")]
     (if-not (response? body)
       (cond
        (.startsWith requested-content-type "application/json")

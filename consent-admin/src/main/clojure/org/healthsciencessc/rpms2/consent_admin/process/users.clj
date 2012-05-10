@@ -15,20 +15,19 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (defn layout-users
-  [params]
-  (let [users (get-users params)]
-    (html/html
-      (with-out-str (pprint users))
-      (layout/pane nil "Users"
-          [:div.controls
-            "edit" "new"]
-          [:div#users
-            (for [x users]
-              [:div.user
-                [:h3 (str/join " " [(:first-name x) (:last-name x)])]
-                [:ul
-                  [:li "ID: " (:id x)]
-                  [:li "Username: " (:username x)]]])]))))
+  [ctx]
+  (let [users (get-users ctx)]
+    (with-out-str (pprint users))
+    (layout/render ctx "Users"
+        [:div.controls
+          "edit" "new"]
+        [:div#users
+          (for [x users]
+            [:div.user
+              [:h3 (str/join " " [(:first-name x) (:last-name x)])]
+              [:ul
+                [:li "ID: " (:id x)]
+                [:li "Username: " (:username x)]]])])))
 
 (def process-defns
   [{:name "get-view-users"
