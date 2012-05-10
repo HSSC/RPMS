@@ -33,20 +33,15 @@
    4 digit number."
   [_]
   (helper/rpms2-page 
-    (helper/standard-form "POST" (helper/mypath "/view/select/lock-code" )
-      (i18n :lock-code-form-enter-lock-code ) 
-      [:input {:name "lockcode" 
-               :type "number" 
-               :required "" 
-               :length 4 
-               :min 0 
-               :max "9999"}]
-
-      (let [form-name "lock-code-form"]
-        [:div.centered [:input {:type "submit" 
-               :data-theme "a" 
-               :data-role "button" 
-               :data-inline "true" 
-               :value (i18n "lock-code-form-submit-button") 
-               :name "lock-code-form-submit-button" } ]]))
-     :title (i18n :hdr-select-lockcode))) 
+    (helper/post-form "/view/select/lock-code" 
+        (list [:div.left (i18n :lock-code-form-enter-lock-code ) ]
+              [:input {:id "lockcode" :name "lockcode" :type "number" :required "" :length 4 :min 0 :max "9999" 
+                      :placeholder (i18n :lock-code-form-enter-lock-code-placeholder) } ])
+       (list
+          [:input {:type "submit" 
+                   :data-theme "a" 
+                   :data-role "button" 
+                   :data-inline "true" 
+                   :value (i18n "lock-code-form-submit-button") 
+                   :name "lock-code-form-submit-button" } ]))
+   :title (i18n :hdr-select-lockcode))) 

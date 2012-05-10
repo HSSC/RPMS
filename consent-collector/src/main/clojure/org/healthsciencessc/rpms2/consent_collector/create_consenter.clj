@@ -19,24 +19,29 @@
          (for [v dsa/create-consenter-fields] 
              (list 
                (let [form-name "create-consenter-form"
+                     field-def (dsa/consenter-field-defs v) 
                      field-name (name v)
 
-                     i18n-name (:i18n-name (dsa/consenter-field-defs v)) 
-                     required (:required (dsa/consenter-field-defs v))
-                     specified-kind  (:type dsa/consenter-field-defs v)
+                     i18n-name (:i18n-name field-def) 
+                     required (:required field-def)
+                     specified-kind (:type field-def)
+                     default-val-fn (:default-value field-def) 
+                     generated-val (if default-val-fn default-val-fn)
+
                      len (:length (dsa/consenter-field-defs v))
 
                      kind (if specified-kind specified-kind "text")
 
                      label (if i18n-name (i18n i18n-name "label") 
-                                        (i18n form-name field-name "label" )) 
+                                         (i18n form-name field-name "label" )) 
 
                      placeholder  (if i18n-name (i18n i18n-name "placeholder") 
                                                 (i18n form-name field-name "placeholder" ) )
 
                      m {:type kind :name field-name :placeholder placeholder } 
                      mp1 (if required (assoc m :required "") m) 
-                     input-map (if len (assoc mp1 :length "") mp1) 
+                     mp2 (if generated-val  (assoc mp1 :value generated-val) mp1) 
+                     input-map (if len (assoc mp2 :length len) mp2) 
                      ]
 
                      [:div.inputdata  {:data-role "fieldcontain" } 

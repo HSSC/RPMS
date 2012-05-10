@@ -19,6 +19,10 @@
                                :zipcode])
 
 
+(defn- generate-default-consenter-id
+  []
+  (str "CONSENTER-" (rand-int 10000)))
+
 (def create-consenter-fields [ :first-name
                                :middle-name
                                :last-name
@@ -36,7 +40,8 @@
                                :last-name           { :required true }
                                :title               {}
                                :suffix              {}
-                               :consenter-id        { :required true }
+                               :consenter-id        { :required true :default-value 
+                                                         (generate-default-consenter-id) }
                                :gender              { :required true :type "gender" :x18n-name "gender" }
                                :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
                                :zipcode             { :required true :type "number" } 
@@ -50,20 +55,16 @@
                                         :dob
                                         :zipcode ])
 
+(defn- no-slashes [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
+
 (defn- build-url 
    "Builds url for DSA for given path."
    [path]
-   (let [ dsa-url (config "rpms2.dsa.url")
+   (let [ dsa-url (config "rpms2.dsa.url") ]
       no-slashes (fn [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
-      mypath  (if dsa-url 
+      (if dsa-url 
                   (str (no-slashes dsa-url) "/" (no-slashes path)) 
-                  (do 
-                      (warn "WARNING: No dsa-url configured "  path)
-                      #_(str "http://olocalhost:8080/" path )
-                      (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/services/" path)
-                    ))] 
-      (debug "Using dsa-url: " mypath )
-      mypath))
+                  (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/services/" path))))
 
 ;; TODO - find out why the auth isn't working right (we shouldn't
 ;; be getting this exception)
@@ -74,7 +75,8 @@
     (do
       (debug (str "request REQ: " req))
       (let [resp (http/request  req )]
-        (debug (str "request RESPONSE: " resp))
+        (debug (str "DSA RESPONSE: " resp))
+        (debug (str "DSA RESPONSE(pretty): " (pprint resp)))
         resp))
     (catch ClientProtocolException e
       ;; TODO -- check if cause is a MalformedChallengeException
@@ -94,10 +96,9 @@
     (catch Exception ex 
       (do 
         (debug "SOME OTHER ERROR: " ex)
-        {:status 999  :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
+        {:status 500 :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
     (catch Object obj 
       (do 
-        (error "http/request failed: object error " obj)
         (error "==http request failed --> " (pprint obj))
         {:status (:status obj) :body (print-str "OBJ INVALID REQUEST - see logs for details" )}))))
 
@@ -111,7 +112,6 @@
         path (s/replace path-dashes "-" "/")
         maybe-parse-json
         (fn [{:keys [content-type status body headers] :as resp}]
-          (debug "status is " status " body is " body )
           (if (= 403 status) 
               (do (println "FORBIDDEN") {:status 403} )
             (if (= 200 status)
@@ -238,3 +238,9 @@
     (generate-protocol {:name "Medicare" :select-by-default false :required false :description "Medicare stuff" } ) 
 
     (generate-protocol {:name "Tricare" :select-by-default true :required false :description "Tricare stuff" } ) ))
+
+
+; add an entry to the log showing the url
+(let [ dsa-url (config "rpms2.dsa.url") ]
+  (if dsa-url (debug "using " dsa-url)
+              (warn "WARNING: no dsa-url configured")))

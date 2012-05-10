@@ -8,22 +8,15 @@
 
 
 (defn- search-selected 
-  "If yes button was selected, go to the select protocols page.
-  Otherwise, go back to the search page.
-
-  TODO: Make sure that a patient id was actually selected."
+  "If yes button was selected, go to select protocols page.
+  Otherwise, go back to the search page."
   [parms]
 
   (debug "search-selected " parms)
-  (try
   (let [ y  (:search-consenter-results-yes parms)
-        _ (debug "search-selected: y =  " y )
 	patient-id (:patient-id parms ) 
-        _ (debug "patient id " patient-id )
 	patient-name (:patient-name parms ) 
-        _ (debug "patient name  " patient-name )
-	patient-encounter-date (:patient-encounter-date parms ) 
-	]
+	patient-encounter-date (:patient-encounter-date parms ) ]
 	(if (not (empty? y)) 
             (if (or (empty? patient-name)
                     (= patient-name "no patient")) 
@@ -39,9 +32,8 @@
 	   (do
 	    	(session-delete-key! :patient-id)
                 (flash-put! :header "Search again" )
-	   	(helper/myredirect "/view/select/consenter"))))
+	   	(helper/myredirect "/view/select/consenter")))))
     
-    (catch Exception ex (debug "Exception in search-selected " ex))))
 
 (defn view 
   [ctx]

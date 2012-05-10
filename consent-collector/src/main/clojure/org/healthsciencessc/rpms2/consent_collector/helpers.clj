@@ -117,6 +117,19 @@
   [:div.innerform [:form {:method method :action action :data-ajax "false" } 
     body ] ])
 
+
+(defn post-form 
+  [path body & submit-buttons ]
+
+  [:div
+     [:form {:action (mypath path) 
+             :method "POST" 
+             :data-ajax "false" 
+             :data-theme "a" } 
+      [:div.innerform.centered body ] 
+      [:div.centered submit-buttons ] ]]) 
+
+
 (defn remove-session-data
   "Remove session data"
   []
@@ -141,6 +154,7 @@
   (hpage/html5 {:class ipad-html5-class }
     [:head
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0\" >"
+    "<meta name=\"apple-mobile-web-app-capable\" contents\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
      "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" )
@@ -148,7 +162,6 @@
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
-     ;; "goog.net.XhrIO.js"
      "http://code.jquery.com/jquery-1.7.1.min.js"
      "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"
      (absolute-path "app.js"))
@@ -170,5 +183,4 @@
 	     [:div.ui-block-a col1-content ]
 	     [:div.ui-block-b col2-content ]]
         :title title ))
-
 

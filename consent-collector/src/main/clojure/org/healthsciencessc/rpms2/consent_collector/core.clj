@@ -26,108 +26,51 @@
   (:import org.healthsciencessc.rpms2.process_engine.core.DefaultProcess))
 
 
-
-(defn- logged-in
+(defn- goto-login-page
   [ctx]
-  (if (session-get :user) true false))
+  (login/view ctx))
 
-(defn- not-logged-in
-  [ctx]
-  (if (session-get :user) false true))
+(defn- active-session? 
+  [_]
+  (session-get :user))
 
-(def processes [{:name "get-login"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (login/default-get-login ctx))}
+(defn- no-session? 
+  [_]
+  (not (active-session?)))
 
-                {:name "get-view-login"
-                 :runnable-fn (fn [context] (not (contains? context :password))),
-                 :run-fn (fn [ctx] (login/view ctx))}
+(def processes [{:name "get-login" :runnable-fn (constantly true) :run-fn login/default-get-login }
 
-                {:name "post-view-login"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (login/perform ctx))
-		}
-                {:name "get-view-logout"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (login/logout ctx)) }
+                {:name "get-view-login" :runnable-fn (fn [context] (not (contains? context :password))), :run-fn login/view }
+                {:name "post-view-login" :runnable-fn (constantly true) :run-fn login/perform }
 
-                {:name "get-view-not-authorized"
-                 :runnable-fn (constantly true)
-                 :run-fn login/default-get-view-not-authorized}
+                {:name "get-view-logout" :runnable-fn (constantly true) :run-fn login/logout }
 
-                {:name "get-view-select-lock-code"
-                 :runnable-fn (fn [ctx] (if (session-get :user) true false))
-                 :run-fn (fn [ctx] (select-lockcode/view ctx)) }
+                {:name "get-view-not-authorized" :runnable-fn (constantly true) :run-fn login/default-get-view-not-authorized}
 
-                ;; Go to login screen if not logged in
-                {:name "get-view-select-lock-code"
-                 :runnable-fn not-logged-in 
-                 :run-fn (fn [ctx] (login/view ctx)) }
+                {:name "get-view-select-lock-code"  :runnable-fn active-session?  :run-fn select-lockcode/view :run-if-false goto-login-page  }
+                {:name "post-view-select-lock-code" :runnable-fn active-session?  :run-fn select-lockcode/perform :run-if-false goto-login-page } 
 
-                {:name "post-view-select-lock-code"
-                 :runnable-fn (fn [ctx] (if (session-get :user) true false))
-                 :run-fn (fn [ctx] (select-lockcode/perform ctx)) }
+                {:name "get-view-select-location"  :runnable-fn active-session?  :run-fn select-location/view :run-if-false goto-login-page }
+                {:name "post-view-select-location" :runnable-fn active-session?  :run-fn select-location/perform :run-if-false goto-login-page }
 
-                {:name "post-view-select-lock-code"
-                 :runnable-fn (constantly true)
-                ;; Go to login screen if not logged in
-                 :run-fn (fn [ctx] (login/view ctx)) }
-                                
-                {:name "post-view-select-location"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-location/perform ctx))}
-                                
-                {:name "get-view-select-location"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-location/view ctx))}
+                {:name "get-view-select-consenter" :runnable-fn active-session?  :run-fn select-consenter/view :run-if-false goto-login-page }
+                {:name "post-view-select-consenter" :runnable-fn active-session?  :run-fn select-consenter/perform :run-if-false goto-login-page }
 
-                {:name "get-view-select-consenter"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-consenter/view ctx)) }
+                {:name "post-view-search-consenters" :runnable-fn active-session?  :run-fn search-consenter/perform :run-if-false goto-login-page }
+                {:name "get-view-search-consenters" :runnable-fn active-session?  :run-fn search-consenter/view :run-if-false goto-login-page }
 
-                {:name "post-view-select-consenter"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-consenter/perform ctx)) }
+                {:name "get-view-search-results" :runnable-fn active-session?  :run-fn search-results/view :run-if-false goto-login-page }
+                {:name "post-view-search-results" :runnable-fn active-session?  :run-fn search-results/perform  :run-if-false goto-login-page }
 
-                {:name "post-view-search-consenters"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-consenter/perform ctx)) }
+                {:name "get-view-create-consenter" :runnable-fn active-session?  :run-fn create-consenter/view :run-if-false goto-login-page }
+                {:name "post-view-create-consenter" :runnable-fn active-session?  :run-fn create-consenter/perform :run-if-false goto-login-page }
 
-                {:name "get-view-search-consenters"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-consenter/view ctx)) }
+                {:name "get-view-select-protocols" :runnable-fn active-session?  :run-fn select-protocol/view :run-if-false goto-login-page }
+                {:name "post-view-select-protocols" :runnable-fn active-session?  :run-fn select-protocol/perform :run-if-false goto-login-page }
 
-                {:name "post-view-search-results"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-results/perform ctx)) }
+                {:name "get-view-meta-data" :runnable-fn active-session?  :run-fn metadata/view :run-if-false goto-login-page }
 
-                {:name "get-view-search-results"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (search-results/view ctx)) }
-
-                {:name "get-view-create-consenter"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (create-consenter/view ctx)) }
-
-                {:name "post-view-create-consenter"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (create-consenter/perform ctx)) }
-
-                {:name "get-view-select-protocols"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-protocol/view ctx)) }
-
-                {:name "post-view-select-protocols"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (select-protocol/perform ctx)) }
-
-                {:name "get-view-meta-data"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (metadata/view ctx)) }
-
-                {:name "get-view-unimplemented"
-                 :runnable-fn (constantly true)
-                 :run-fn (fn [ctx] (unimplemented/view ctx)) }
+                {:name "get-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
 
  		])
 
@@ -222,24 +165,24 @@
         (session-put! :last-page (:uri req)))
       resp)))
 
-
-
 (defn add-logging 
   [handler]
   (fn [req]
     (info "core 234: Got request: " (:uri req) " " req)
-    (handler req)))
+    (let [resp (handler req)]
+      (info "core 234: Got response " (:uri req) " " resp)
+      resp)))
 
 (defn add-path-info
   [handler]
   (fn [req] 
-    #_(handler (assoc req :xpath-info (:uri req)))
-    (handler req)
+    (handler (assoc req :xpath-info (:uri req)))
+    #_(handler req)
     ))
 
 (defn middleware [handler] (-> handler
                              (add-logging)
-                             ;(add-path-info)
+                             (add-path-info)
                              ))
 
 
@@ -249,7 +192,7 @@
             ;; add middleware function
              (wrap-dsa-auth)       ;; add basic authentication to request
              (wrap-context-setter) ;; bind helper/*context*
-             #_(wrap-exceptions)
+             (wrap-exceptions)
              #_(wrap-better-process-not-found-response)
              #_(wrap-last-page)
              (sandbar.stateful-session/wrap-stateful-session)

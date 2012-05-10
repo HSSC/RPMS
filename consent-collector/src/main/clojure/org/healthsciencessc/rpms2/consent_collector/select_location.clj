@@ -30,25 +30,24 @@
   "Display the select location form."
   [locs-names]
   (helper/rpms2-page 
-      [:div.innerform 
-       [:form {:method "POST" 
-               :action  (helper/mypath "/view/select/location" )
-               :data-ajax "false" }
+    (helper/post-form "/view/select/location"
+      (list
          [:fieldset {:data-role "controlgroup" }
- 	  "<legend>" (i18n :select-location-form-location-label) "</legend>"
+ 	  ;[:div.left "<legend>" (i18n :select-location-form-location-label) "</legend>" ]
+ 	  [:div.left (i18n :select-location-form-location-label) ]
           (for [l locs-names] 
 	    (let [rbname (str "radio-choice-" l)]
 	      [:div	
                 [:input {:name "location" :id rbname :type "radio" :value l } ]
 	        [:label {:for rbname} l ]  ]
-	)) ]
-          [:div.centered
-                   [:input {:type "submit"
-                            :data-theme "a"
-                            :data-role "button"
-                            :data-inline "true"
-                            :value (i18n "select-location-form-submit-button") 
-                            :name "select-location-submit-button" } ]]]]
+	)) ])
+        (list 
+           [:input {:type "submit"
+                    :data-theme "a"
+                    :data-role "button"
+                    :data-inline "true"
+                    :value (i18n "select-location-form-submit-button") 
+                    :name "select-location-submit-button" }]))
     :title (i18n :hdr-select-location)))
 
 (defn view 

@@ -26,26 +26,18 @@
   [ctx]
 
   (helper/rpms2-page 
-     [:div
-     [:form {:action (helper/mypath "/view/login") 
-                       :method "POST" 
-                       :name "loginForm" 
-                       :id "loginForm" 
-                       :data-ajax "false" 
-                       :data-theme "a" } 
+     (helper/post-form "/view/login" 
+        (list [:div {:data-role "fieldcontain"  }
+                 [:label {:for "username" } (i18n :login-form-username) ]
+                 [:input {:id "username" :name "userid" :type "text" :required "" 
+                      :placeholder (i18n "login-form-username-placeholder") } ]]
+              [:div {:data-role "fieldcontain" }
+                 [:label {:for "password" } (i18n :login-form-password) ]
+                 [:input {:name "password" :id "password" :type "password" :required ""
+                      :placeholder (i18n "login-form-password-placeholder") }]])
+        (list (helper/submit-button  "login-form")) )
+   :title (i18n :hdr-login)))
 
-      [:div.innerform.centered
-
-      [:div {:data-role "fieldcontain"  }
-        [:label {:for "username" } (i18n :login-form-username) ]
-        [:input {:id "username" :name "userid" :type "text" :required "" 
-               :placeholder (i18n "login-form-username-placeholder") } ]]
-
-      [:div {:data-role "fieldcontain" }
-        [:label {:for "password" } (i18n :login-form-password) ]
-        [:input {:name "password" :id "password" :type "password" :required ""
-               :placeholder (i18n "login-form-password-placeholder") }]]] 
-      [:div.centered (helper/submit-button  "login-form") ] ]] :title (i18n :hdr-login)))
 
 (defn perform
   "Authenticates using username and password.  

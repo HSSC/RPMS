@@ -56,9 +56,7 @@
                  (for [{ zipcode :zipcode, fname :first-name, ln :last-name, :as user} results]
                       [:li {:onclick "org.healthsciencessc.rpms2.core.consenter_search_result_clicked(this)"
                             :data-user (pr-str user)} fname " " ln 
-                      #_[:div.secondary "MRN: " mrn ] 
-                      [:div.secondary "Zipcode " zipcode ] 
-                       ])]]
+                      [:div.secondary "Zipcode " zipcode ] ])]]
              [:div#consenter-details (consenter-details) ]
              (i18n :hdr-search-consenter-results)))))
 
@@ -70,5 +68,5 @@
   [ctx]
   (handle-search-results (:body-params ctx)))
 
-(debug! handle-search-results)
-(debug! consenter-details)
+;(debug! handle-search-results)
+;(debug! consenter-details)

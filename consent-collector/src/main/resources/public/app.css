@@ -23,7 +23,7 @@ and (max-device-width: 1024px) and (orientation:portrait) {
 and (max-device-width: 1024px) and (orientation:landscape) {
 	/* LANDSCAPE */
 	#outer { xbackground-color: silver ; height: 290px; width: 850px; xborder: thin solid #ffff00; }
-	#content { xbackground-color: #669966; height: 450px; width: 970px; border: 10px solid red; }
+	#content { xbackground-color: #669966; height: 450px; width: 970px; xborder: 10px solid red; }
 	#subouter { xbackground-color: purple; height: 270px; width: 870px; xborder: thick solid navy ; }
 }
 -
@@ -34,6 +34,7 @@ and (max-device-width: 1024px) and (orientation:landscape) {
  *
  */
 .centered { text-align: center; }
+.left { text-align: left; }
 
 .value { margin-left: 5px; color: gray; line-height: 1.1em; }
 .valueimportantblock { display: block; float: left; }
@@ -104,10 +105,10 @@ input:required:invalid, input:focus:invalid
 	border-radius: 15px; -moz-border-radius: 15px;}
 
 
-div.innerform { border: 1px solid gray; 
+div.innerform { 
+	border: 1px solid gray; 
 	margin: 5px; padding: 5px; border-radius: 15px; 
 	-moz-border-radius: 15px; margin: 50px; 
-	xwidth: 500px;
 	}
 
 div.innerform { xtext-align: right; } 
@@ -145,7 +146,7 @@ div.innerform { xtext-align: right; }
  background-color: white ; color: black; 
  border-bottom: thin solid black;
  text-align: center;
- padding: 10px; line-height: 1.2em; width: 100%; }
+ padding: 10px; font-size: 1.5em; line-height: 2.0em; width: 100%; }
 
 #userinfo { 
 	font-size: .9em; background-color: #222222; color: white; 
@@ -161,11 +162,6 @@ div.innerform { xtext-align: right; }
 /* 3rd column of header */
 .header .ui-grid-b .ui-block-c { text-align: right; }
 
-/* put background image of button */
-.logout-btn { }
-.login-btn { }
-
-
 /* Styles for the Search Results */ 
 #consenter-details-section {
 	background-color: white;
@@ -178,10 +174,13 @@ div.innerform { xtext-align: right; }
 .user-selected { background-color: black ; color: white ; }
 
 ul.search-results {
-	xbackground-color: white;
 	list-style: none; margin: 0; padding: 0; border: none;
 }
 
-.search-results li { margin: 0; padding-left: 2px; padding-bottom:  20px; font-size: 1.5em; line-height: 2em; }
+.search-results li { margin: 0; padding-left: 2px; padding-bottom: 20px; line-height: 2em; }
 .search-results li .secondary { font-size: .8em; padding-left: 15px; line-height: 1em; }
 
+/* grid f: 66/33*/
+.ui-grid-f .ui-block-a { width: 33.333%; }
+.ui-grid-f .ui-block-b { width: 66.663%; }
+.ui-grid-f .ui-block-a { clear: left; }
