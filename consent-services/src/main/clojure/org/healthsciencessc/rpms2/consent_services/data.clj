@@ -3,7 +3,8 @@
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
-            [borneo.core :as neo])
+            [borneo.core :as neo]
+            [clojure.zip :as zip])
   (:import [org.neo4j.graphdb.index IndexManager
             IndexHits
             Index]
@@ -70,7 +71,7 @@
 
 (defn find-parent
   [child-node relation]
-  (first (neo/traverse child-node {relation :out})))
+  (first (neo/traverse child-node :1 nil {relation :out})))
 
 (defn- get-type
   [node]
@@ -83,13 +84,15 @@
 
 (defn children-nodes-by-rel
   [parent-node relation & extra-rels]
-  (neo/traverse parent-node (apply merge {relation :in} extra-rels)))
+  (neo/traverse parent-node :1 nil (apply merge {relation :in} extra-rels)))
 
 (defn children-nodes-by-type
   [parent-node child-type & extra-rels]
   (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type schema)]
     (neo/traverse parent-node
-                  (fn [pos] (type-of? child-type (:node pos)))
+                  :1
+                  (fn [pos] (let [current-node (:node pos)]
+                              (and (not= current-node parent-node) (type-of? child-type current-node))))
                   (apply merge {child-rel :in} extra-rels))))
 
 (defn clean-nils
@@ -109,10 +112,12 @@
 (defn neighbors-by-type
   "Gets all adjacent nodes of the given type to the given node"
   [node type & extra-rels]
-  (let [{:keys [dir rel]} (domain/get-directed-relation (get-type node) type schema)]
+  (let [{:keys [dir rel]} (domain/get-directed-relationship (get-type node) type schema)]
     (if (and dir rel)
       (neo/traverse node
-                    (fn [pos] (type-of? type (:node pos)))
+                    :1
+                    (fn [pos] (let [current-node (:node pos)]
+                              (and (not= current-node node) (type-of? type current-node))))
                     (apply merge {rel dir} extra-rels)))))
 
 (defn walk-types-path
@@ -166,7 +171,7 @@
         (create-relationship from rel-type to)))))
 
 (defmulti get-related-obj
-  (fn [record node relation] (:type relation)))
+  (fn [record node relation] (:record-type relation)))
 
 (defmethod get-related-obj :belongs-to
   [record node {:keys [relationship related-to]}]
@@ -176,7 +181,7 @@
 (defmethod get-related-obj :has-many
   [record node relation]
   (if-let [relationship (domain/get-relationship-from-child
-                         (:type record)
+                         (:record-type record)
                          (:related-to relation)
                          schema)]
     (vec (map #(node->record % (:related-to relation))
@@ -193,7 +198,7 @@
   (reduce
    (fn [record-map relation]
      (let [related-obj (get-related-obj record node relation)
-           related-obj-key (domain/relation-name->key relation)]
+           related-obj-key (domain/get-relation-name relation)]
        (if related-obj
          (if-let [current-val (related-obj-key record-map)]
            (assoc record-map related-obj-key (into current-val related-obj))
@@ -208,11 +213,11 @@
         relations (domain/record-relations type schema)]
     (if (:active props)
       (domain/validate-record
-       (let [record (assoc props :type type)]
+       (let [record (assoc props :record-type type)]
          (if add-rels
            (add-relations record node relations)
            record))
-       type 
+       type
        schema))))
 
 (defn setup-schema
@@ -245,9 +250,9 @@
 
 (defn validate-domain-relations
   [type props]
-  (for [{:keys [related-to relationship name]}
+  (for [{:keys [related-to relationship] :as relation}
         (domain/get-parent-relations type schema)
-        :let [rel-key (or name (keyword related-to))]
+        :let [rel-key (domain/get-relation-name relation)]
         :when (get props rel-key)]
     {:from :self
      :to (get-node-by-index related-to (get-in props [rel-key :id]))
@@ -256,6 +261,17 @@
 (defn get-raw-nodes
   [type]
   (map neo/props (find-all-instance-nodes type)))
+
+(defn create-node-with-default-relationships
+  [node-type node-properties extra-relationships]
+  (let [rels (concat [{:from :self
+                       :to (find-record-type-node node-type)
+                       :rel-type :kind-of}]
+                     (validate-domain-relations node-type node-properties)
+                     (map validate-relation extra-relationships))
+        node (create-node node-type node-properties)]
+    (create-edges node rels)
+    node))
 
 ;; Public API
 (defn find-all
@@ -300,15 +316,34 @@
 (defn create
   [type properties & extra-relationships]
   "extra-relationships is a sequence of maps with either :from or :to, plus a relationtype"
-  (let [rels (concat [{:from :self
-                       :to (find-record-type-node type)
-                       :rel-type :kind-of}]
-                     (validate-domain-relations type properties)
-                     (map validate-relation extra-relationships))]
+  (node->record
+   (neo/with-tx
+     (create-node-with-default-relationships type properties extra-relationships))
+   type))
+
+(defn create-records
+  [type props]
+  (let [parent-rel (domain/get-parent-relationship type type schema)
+        child-rel (domain/get-child-relationship type type schema)
+        record-tree (zip/zipper (fn [node] (not (empty? (child-rel node))))
+                                (fn [node] (child-rel node))
+                                (fn [node children] (assoc node child-rel children))
+                                props)]
     (neo/with-tx
-      (let [node (create-node type properties)]
-        (create-edges node rels)
-        (node->record node type)))))
+      (loop [loc record-tree]
+        (if (zip/end? loc)
+          (let [root-id (get-in (zip/root loc) [:neo-data :id])]
+            (find-record type root-id))
+          (do
+            (let [parent-loc (zip/up loc)
+                  parent-data (if parent-loc (:neo-data (zip/node parent-loc)))
+                  child-node (zip/node loc)
+                  neo-data (if parent-data
+                             (assoc child-node parent-rel parent-data)
+                             child-node)
+                  record (node->record (create-node-with-default-relationships type neo-data nil) type)]
+              (recur
+               (zip/next (zip/replace loc (assoc child-node :neo-data record)))))))))))
 
 (defn update
   [type id data]
@@ -328,7 +363,7 @@
   [child-type child-id parent-type parent-id]
   (let [child-node (get-node-by-index child-type child-id)
         parent-node (get-node-by-index parent-type parent-id)
-        rel (:relationship (domain/get-parent-relation parent-type child-type schema))]
+        rel (domain/get-parent-relationship parent-type child-type schema)]
     (do
       (create-relationship child-node rel parent-node)
       (find-record child-type child-id))))
@@ -337,7 +372,7 @@
   [child-type child-id parent-type parent-id]
   (let [child-node (get-node-by-index child-type child-id)
         parent-node (get-node-by-index parent-type parent-id)
-        rel (:relationship (domain/get-parent-relation parent-type child-type schema))]
+        rel (domain/get-parent-relationship parent-type child-type schema)]
     (do
       (neo/delete! (rel-between child-node parent-node rel))
       (find-record child-type child-id))))

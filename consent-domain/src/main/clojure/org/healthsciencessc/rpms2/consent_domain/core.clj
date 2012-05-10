@@ -100,6 +100,11 @@
                          {:type :belongs-to :related-to "widget" :relationship :contained-in :name :contained-in}
                          {:type :has-many :related-to "widget" :name :contains}]}})
 
+(defn get-relationship-from-relation
+  [relation]
+  (let [{:keys [name relationship]} relation]
+    (or name relationship)))
+
 (defn get-relations
   [type data-defs]
   (get-in data-defs [type :relations]))
@@ -112,13 +117,19 @@
   [type data-defs]
   (filter #(= :has-many (:type %)) (get-relations type data-defs)))
 
-(defn get-parent-relation
+(defn get-parent-relationship
   [parent-type child-type data-defs]
-  (first (filter #(= parent-type (:related-to %)) (get-parent-relations child-type data-defs))))
+  (let [parent-relation (first
+                         (filter #(= parent-type (:related-to %))
+                                 (get-parent-relations child-type data-defs)))]
+    (get-relationship-from-relation parent-relation)))
 
-(defn get-child-relation
+(defn get-child-relationship
   [parent-type child-type data-defs]
-  (first (filter #(= child-type (:related-to %)) (get-child-relations parent-type data-defs))))
+  (let [child-relation (first
+                        (filter #(= child-type (:related-to %))
+                                (get-child-relations parent-type data-defs)))]
+    (get-relationship-from-relation child-relation)))
 
 (defn record-relations
   [type data-defs]
@@ -155,23 +166,29 @@
   [{:keys [related-to name]}]
   (or name (keyword (str related-to "s"))))
 
+(defn get-relation-name
+  [relation]
+  (or (:name relation)
+      (relation-name->key relation)))
+
 (defn all-valid-keys
   [{:keys [attributes relations]}]
   (concat (map first (remove #(-> % second :omit) attributes))
-          (map relation-name->key relations)))
+          (map get-relation-name relations)))
 
 (defn get-relationship-from-child
   [parent-type child-type data-defs]
-  (:relationship (first (filter #(= parent-type (:related-to %))
-                                (:relations (data-defs child-type))))))
+  (let [relation (first (filter #(= parent-type (:related-to %))
+                                (:relations (data-defs child-type))))]
+    (get-relationship-from-relation relation)))
 
-(defn get-directed-relation
+(defn get-directed-relationship
   [start-type end-type data-defs]
-  (let [parent-dir (get-parent-relation start-type end-type data-defs)
-        child-dir (get-parent-relation end-type start-type data-defs)]
+  (let [parent-relationship (get-parent-relationship start-type end-type data-defs)
+        child-relationship (get-parent-relationship end-type start-type data-defs)]
     (cond
-     parent-dir {:dir :in :rel (:relationship parent-dir)}
-     child-dir {:dir :out :rel (:relationship child-dir)})))
+     parent-relationship {:dir :in :rel parent-relationship}
+     child-relationship {:dir :out :rel child-relationship})))
 
 (defn validate
   [record]
