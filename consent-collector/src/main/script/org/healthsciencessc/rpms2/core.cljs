@@ -71,6 +71,8 @@
     (.text (.find details (str "#consenter-name")) (str (:first-name user) " " (:last-name user) ))
     (.text (.find details (str "#consenter-zipcode")) (:zipcode user) )
     (.text (.find details "#consenter-date-of-birth") (:date-of-birth user) )
+    (.text (.find details "#consenter-dob") (:dob user) )
+    (.text (.find details "#consenter-consenter-id") (:consenter-id user) )
 		
     ;; Set this value in the form that will be submitted if the 
     ;; user selects yes, that this is the correct record

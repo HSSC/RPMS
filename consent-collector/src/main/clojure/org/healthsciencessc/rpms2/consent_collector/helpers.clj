@@ -8,7 +8,9 @@
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
   (:use [clojure.pprint])
-  (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing)]))
+  (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing
+                                                                       i18n-label-for
+                                                                       i18n-placeholder-for)]))
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
@@ -82,18 +84,6 @@
        :value v :name n } ])
   )
 
-(defn ajax-submit-button
-  [form-name]
-  (submit-button form-name))
-
-(defn standard-form 
-  "Wraps form in a standard structure."
-  [method action & body]
-
-  [:div.innerform [:form {:method method :action action :data-ajax "false" } 
-    body ] ])
-
-
 (defn post-form 
   [path body & submit-buttons ]
 
@@ -121,11 +111,6 @@
             :user  ]]
             (session-delete-key! k)))
 
-
-(defn required-indicator
-  []
-  [:span.red "*" ])
-
 (def ipad-html5-class
   "ui-mobile landscape min-width-320px min-width-480px min-width-768px min-width-1024px" )
 
@@ -144,7 +129,7 @@
   (hpage/html5 {:class ipad-html5-class }
     [:head
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0\" >"
-    "<meta name=\"apple-mobile-web-app-capable\" contents\"yes\" />"
+    "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
      "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" )
@@ -175,3 +160,55 @@
 	     [:div.ui-block-b col2-content ]]
         :title title ))
 
+
+(defn augment-readonly 
+  "Augment the map with attributes necessary to enter/edit the data
+  (as opposed to view or search the data."
+  [m field-def]
+  (assoc m :readonly ""))
+
+(defn augment-data-entry
+  "Augment the map with attributes necessary to enter/edit the data
+  (as opposed to view or search the data."
+  [m field-def]
+  (let [required (:required field-def)
+       default-val-fn (:default-value field-def)
+       generated-val (if default-val-fn (default-val-fn))  
+       mp1 (if required (assoc m :required "") m)          
+       mp2 (if generated-val (assoc mp1 :value generated-val) mp1)          
+       ]
+   mp2)
+)
+
+(defn emit-field-def
+  "Emits a field definition"
+  [field-def form-name field-name-orig augment]
+
+  (list (let [specified-kind (:type field-def)
+              t (if (and specified-kind (not (= specified-kind "gender"))) 
+                  specified-kind 
+                  "text")
+              n (:i18n-name field-def)
+              xfield-name (if n n field-name-orig)
+              field-name field-name-orig
+       m {:type t 
+          :class "inputclass" 
+          :id field-name
+          :name field-name
+          :placeholder (i18n-placeholder-for form-name xfield-name)
+          }
+       am (cond
+            (empty? augment)
+            m
+
+            (= "readonly" augment)
+            (assoc m :readonly "")
+
+            :else
+            (augment-data-entry m field-def)) 
+       ]
+       [:div.inputdata {:data-role "fieldcontain" } 
+            [:label {:for field-name 
+                     :class "labelclass" } 
+                 (i18n-label-for form-name xfield-name) ]
+            [:input am ]])))

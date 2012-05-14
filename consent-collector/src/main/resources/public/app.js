@@ -12844,6 +12844,8 @@ org.healthsciencessc.rpms2.core.consenter_search_result_clicked = function conse
   details__2738.find(cljs.core.str.call(null, "#consenter-name")).text(cljs.core.str.call(null, "\ufdd0'first-name".call(null, user__2737), " ", "\ufdd0'last-name".call(null, user__2737)));
   details__2738.find(cljs.core.str.call(null, "#consenter-zipcode")).text("\ufdd0'zipcode".call(null, user__2737));
   details__2738.find("#consenter-date-of-birth").text("\ufdd0'date-of-birth".call(null, user__2737));
+  details__2738.find("#consenter-dob").text("\ufdd0'dob".call(null, user__2737));
+  details__2738.find("#consenter-consenter-id").text("\ufdd0'consenter-id".call(null, user__2737));
   other_section__2739.find(cljs.core.str.call(null, "#patient-name")).val(cljs.core.str.call(null, first_name__2743, " ", last_name__2742));
   console.log("f patient name set ", cljs.core.str.call(null, first_name__2743, " ", last_name__2742));
   other_section__2739.find(cljs.core.str.call(null, "#patient-encounter-date")).val("\ufdd0'consenter-encounter-date".call(null, user__2737));

@@ -9,8 +9,7 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
 
 (defn form-meta-data
-  "Displays a form for the user to enter the meta data items 
-  that are required."
+  "Displays a form for user to enter required meta data items."
   [ctx]
 
   (let [md-i18n (partial i18n :meta-data-form)
@@ -20,7 +19,16 @@
         ncols (+
                 (quot nitems items-per-col)
                 (if (> 0 (rem nitems items-per-col)) 1 0))
-        _ (println "num items " (count items) " num columns " ncols)
+        _ (println "num items " nitems " num columns " ncols  
+                " QUOT " (quot nitems items-per-col)
+                " REM  " (rem nitems items-per-col))
+        _ (debug "num items " nitems " num columns " ncols  
+                " QUOT " (quot nitems items-per-col)
+                " REM  " (rem nitems items-per-col)
+                 " SUM " (+
+                (quot nitems items-per-col)
+                (if (> 0 (rem nitems items-per-col)) 1 0))
+                 )
         ]
     (helper/post-form "/view/unimplemented"
        (list (for [{nm :name :as item} items]
@@ -40,40 +48,21 @@
             [:div [:label nm] [:input { :type "date" } ]]]
 
            (= (:data-type item) "string") 
-           [:div 
-             (println "STRING " item)
             [:div.valueimportantblock {:data-role "fieldcontain" } 
              [:label {:for nm :class "labeldim" } (md-i18n nm "label" ) ]
-             [:input { :type "text" :value (md-i18n nm :placeholder) :name nm}]]]
+             [:input { :type "text" :value (md-i18n nm :placeholder) :name nm}]]
+
+           (= (:data-type item) "yes-no") 
+            [:div.valueimportantblock {:data-role "fieldcontain" } 
+             [:label {:for nm :class "labeldim" } "CHECKBOX " nm  ]
+             [:input { :type "checkbox" :id nm :name nm}] "CHECKBOX  " nm ]
 
            :else
-           [:div [:h1 "other" item ]]
+           [:div "other" item ]
            )
          ]))))
-       (helper/standard-submit-button { :value (i18n :meta-data-form-submit-button) } )))
+       (helper/standard-submit-button { :value (i18n :meta-data-form-submit-button) } ))))
 
-    #_[:div.centered
-     [:form {:method "GET" :action 
-             (mypath "/view/unimplemented" ) } 
-      (for [{nm :name :as item} (generate-meta-data-items)]
-        [:div 
-         ;; when type is string then display a text field
-         ;;(pr-str "<br/><b>" (:name item) "</b> type " (:data-type item)) 
-         ;;[:label (pr-str "<br/>Meta data <b>" (:name item) "</b> type " (:data-type item)) ]
-         (when (= (:data-type item) "date") 
-           [:div
-            (pr-str "<br/><b>" nm "</b> type " (:data-type item))
-            [:div.valueimportantblock {:data-role "fieldcontain" } 
-             [:label {:for nm :class "labeldim" } (md-i18n nm "label") ]
-             [:div.highlightvalue { :id nm } ]]
-            [:div [:label nm] [:input { :type "date" } ]]])
-         (when (= (:data-type item) "string") 
-           [:div 
-            [:div.valueimportantblock {:data-role "fieldcontain" } 
-             [:label {:for nm :class "labeldim" } (md-i18n nm "label" ) ]
-             [:input { :type "text" :value (md-i18n nm :placeholder) :name nm}]]])])]
-     [:div.centered (submit-button "meta-data-form")]])
-;)
 
 (defn view 
   "Returns meta data form"

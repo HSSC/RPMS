@@ -12,6 +12,8 @@
 
 (def ^:dynamic *dsa-auth* nil)
 
+;; we need a list of the required fields based on what is in 
+;; consent domain
 (def consenter-search-fields  [:first-name
                                :last-name
                                :consenter-id
@@ -21,7 +23,7 @@
 
 (defn- generate-default-consenter-id
   []
-  (str "CONSENTER-" (rand-int 10000)))
+  (str "CONSENTER-" (rand-int 1000)))
 
 (def create-consenter-fields [ :first-name
                                :middle-name
@@ -35,13 +37,13 @@
 
 
 (def consenter-field-defs { 
-  :first-name          { :required true }
+  :first-name          { :required true :i18n-name "first-name" }
   :middle-name         {}
-  :last-name           { :required true }
+  :last-name           { :required true :i18n-name "last-name"}
   :title               {}
   :suffix              {}
   :consenter-id        { :required true :default-value generate-default-consenter-id }
-  :gender              { :required true :type "gender" :x18n-name "gender" }
+  :gender              { :required true :type "gender" :i18n-name "gender" }
   :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
   :zipcode             { :required true :type "number" :i18n-name "zipcode" } 
 })
@@ -80,13 +82,12 @@
     (catch ClientProtocolException e
       ;; TODO -- check if cause is a MalformedChallengeException
       (do 
-        (error (str "FAILED: " req) )
-        (error (str "ClientProtocol Exception " (.getMessage e) )
-                   ) {:status 401}))
+        (error (str "ClientProtocol Exception " req " FAILED " (.getMessage e) )) 
+        {:status 401}))
     (catch java.net.UnknownHostException ex
         ;; we want to define flash message here
         (do 
-            (debug "UNKNOWN HOST " ex)
+           (debug "UNKNOWN HOST " ex)
            {:status 500 :error-message (str "Unknown host: " ex) }))
     (catch slingshot.ExceptionInfo ex
       (do (error "SLINGSHOT EXCEPTION" ex)
@@ -161,7 +162,6 @@
   "Search consenters."
 
   [params org-id]
-  (debug "dsa-search-consenters PARAMS = " params " ORG " org-id)
   (let [consenter-params (remove-blank-vals
                           (select-keys params consenter-search-fields)) ]
       (dsa-call :get-consent-consenters (assoc consenter-params :organization org-id))))
@@ -169,7 +169,7 @@
 (defn dsa-create-consenter
   "Create a consenter."
   [params]
-  (debug "dsa-create-consenter PARAMS = " params)
+  (debug "dsa-create-consenter " params )
   (let [p (remove-blank-vals (select-keys params create-consenter-fields)) 
         invalid (has-all-required-fields p create-consenter-required-fields)]
       (if invalid 
@@ -179,7 +179,7 @@
               (dsa-call :put-consent-consenter p) ))))
       
 
-(def protocol-names [ 
+#_(def protocol-names [ 
 	"Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
 	"Consent for Medical Treatment" 
 	"Medicare" 
@@ -203,7 +203,7 @@
 { :id (id) :name "additional-guarantor" :description "Additional guarantor" :data-type "string" :organization "MYORG" }
 { :id (id) :name "referring-doctor" :description "Date admitted" :data-type "string" :organization "MYORG" }
 { :id (id) :name "referring-doctor-city" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "primary-care-physician" :description "" :data-type "string " :organization "MYORG" }
+{ :id (id) :name "primary-care-physician" :description "" :data-type "string" :organization "MYORG" }
 { :id (id) :name "primary-care-physician-city" :description "" :data-type "string" :organization "MYORG" }
 { :id (id) :name "attending-physician" :description "" :data-type "string" :organization "MYORG" }
 { :id (id) :name "advanced-directives-given" :description "" :data-type "yes-no" :organization "MYORG" }
@@ -227,16 +227,48 @@
     :location "description for protocol"
   })
 
+(def get-protocol-metadata
+  {
+   "P0001" (list :meta-a :meta-b  "one" "two") 
+   "P0002" (list :meta-b "one" "two") 
+   "P0003" (list :meta-a :meta-c "one" "two") 
+   "P0004" (list :meta-d "one" "two") 
+  })
+
+(defn get-protocols-version
+  [protocols]
+  ;;for each protocol, collect the meta data fields into a set
+  ;;return the set
+  {}
+)
+
+
 (defn get-protocols
   []
   (list 
-    (generate-protocol {:name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" :select-by-default true :required true :description "Inform patient of right of access to attending physician" } ) 
+    {:protocol-id "P0001" 
+     :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
+     :select-by-default true 
+     :required true 
+     :description "Inform patient of right of access to attending physician" } 
 
-    (generate-protocol {:name "Consent for Medical Treatment" :select-by-default false :required false :description "Some consent for medical treatment stuff " } ) 
+    {:protocol-id "P0002"
+     :name "Consent for Medical Treatment" 
+     :select-by-default false 
+     :required false 
+     :description "Some consent for medical treatment stuff " } 
 
-    (generate-protocol {:name "Medicare" :select-by-default false :required false :description "Medicare stuff" } ) 
+    {:protocol-id "P0003"
+     :name "Medicare" 
+     :select-by-default false 
+     :required false 
+     :description "Medicare stuff" }  
 
-    (generate-protocol {:name "Tricare" :select-by-default true :required false :description "Tricare stuff" } ) ))
+    {:protocol-id "P0004"
+     :name "Tricare" 
+     :select-by-default true 
+     :required false 
+     :description "Tricare stuff" } ))
 
 
 ; add an entry to the log showing the url
