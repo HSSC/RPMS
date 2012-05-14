@@ -35,13 +35,10 @@
   (helper/rpms2-page 
     (helper/post-form "/view/select/lock-code" 
         (list [:div.left (i18n :lock-code-form-enter-lock-code ) ]
-              [:input {:id "lockcode" :name "lockcode" :type "number" :required "" :length 4 :min 0 :max "9999" 
-                      :placeholder (i18n :lock-code-form-enter-lock-code-placeholder) } ])
-       (list
-          [:input {:type "submit" 
-                   :data-theme "a" 
-                   :data-role "button" 
-                   :data-inline "true" 
+              [:input {:id "lockcode" :name "lockcode" :type "number" 
+                       :required "" :length 4 :min 0 :max "9999" 
+                       :placeholder (i18n :lock-code-form-enter-lock-code-placeholder) } ])
+        (helper/standard-submit-button {
                    :value (i18n "lock-code-form-submit-button") 
-                   :name "lock-code-form-submit-button" } ]))
+                   :name "lock-code-form-submit-button" } ))
    :title (i18n :hdr-select-lockcode))) 

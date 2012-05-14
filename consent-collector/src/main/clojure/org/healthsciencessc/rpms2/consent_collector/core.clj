@@ -71,6 +71,7 @@
                 {:name "get-view-meta-data" :runnable-fn active-session?  :run-fn metadata/view :run-if-false goto-login-page }
 
                 {:name "get-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
+                {:name "post-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
 
  		])
 

@@ -33,21 +33,18 @@
     (helper/post-form "/view/select/location"
       (list
          [:fieldset {:data-role "controlgroup" }
- 	  ;[:div.left "<legend>" (i18n :select-location-form-location-label) "</legend>" ]
  	  [:div.left (i18n :select-location-form-location-label) ]
           (for [l locs-names] 
 	    (let [rbname (str "radio-choice-" l)]
 	      [:div	
                 [:input {:name "location" :id rbname :type "radio" :value l } ]
-	        [:label {:for rbname} l ]  ]
+	        [:label {:for rbname :class "labelclass" } l ]  ]
 	)) ])
-        (list 
-           [:input {:type "submit"
-                    :data-theme "a"
-                    :data-role "button"
-                    :data-inline "true"
+
+        (helper/standard-submit-button { 
                     :value (i18n "select-location-form-submit-button") 
-                    :name "select-location-submit-button" }]))
+                    :name "select-location-submit-button" } ))
+
     :title (i18n :hdr-select-location)))
 
 (defn view 
@@ -61,7 +58,6 @@
   [_]
   (let [locs-data (authorized-locations (session-get :user))
           locs-names (map :name locs-data)]
-      ;;(debug "location/view  -> data = " locs-data)
       (if (or (= nil locs-names) 
               (= nil (first locs-names))
               (empty? locs-names))
@@ -73,4 +69,3 @@
             (session-put! :org-name (get-in (first locs-data) [:organization :name])) 
             (helper/myredirect "/view/select/lock-code"))
             (select-location-form locs-names)))))
-

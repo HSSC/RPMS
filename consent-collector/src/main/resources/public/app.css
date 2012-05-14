@@ -28,16 +28,20 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 }
 -
 
-.title { text-align: center; }
 /* 
  * .progressArea { font-size: .6em; color: #bdb6cc; }
  *
  */
-.centered { text-align: center; }
+.centered !important { text-align: center; }
 .left { text-align: left; }
 
 .value { margin-left: 5px; color: gray; line-height: 1.1em; }
 .valueimportantblock { display: block; float: left; }
+.submit-area { width: 100%; text-align: center; }
+
+.post-form-parent { position:relative;  }
+
+.post-form { width: 100%; text-align: center; xbackground-color: pink; xborder: thick solid navy;  }
 
 .labeldim { 
 	color: gray; 
@@ -70,7 +74,7 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 }
 
 #search-consenter-list { 
-	border-right: 1px #e0e0e0; 
+	border-right: 5px #e0e0e0; 
 	display: block;
 	height: 100%;
 	width: 100%;
@@ -82,8 +86,13 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 }
 
 
+.red { color: red ; }
 input:required:invalid, input:focus:invalid 
-		{ background-color: #cccccc; -maz-box-shadow: none; }
+   { background-color: #cccccc; -maz-box-shadow: none;  }
+
+input:required::after { content: "*"; color: red; }
+
+*:required::after { content: "*"; color: red; }
 
 .highlight { font-color: navy; font-size: 1em; background-color: yellow;}
 
@@ -103,7 +112,6 @@ input:required:invalid, input:focus:invalid
 
 #consenter-detail { border: thin solid gray; margin: 10px; padding: 10px; 
 	border-radius: 15px; -moz-border-radius: 15px;}
-
 
 div.innerform { 
 	border: 1px solid gray; 
@@ -128,17 +136,30 @@ div.innerform { xtext-align: right; }
     background: pink;
     border-radius: 15px; -moz-border-radius: 15px; }
 
-#loginFormDiv { border: thin solid orange; margin: 50px; padding: 50px; 
-	border-radius: 15px; -moz-border-radius: 15px;}
-
 .footer { background-image: "MUSC.jpg"; padding: 25px; }
 
 #protocol-name { padding: 3px; color: navy; font-size: .8em; font-weight: bold; }
 #protocol-description { padding-left: 5px; color: #222; font-size: .9em; }
 
-.inputdata { xbackground-color: #ccccff; vertical-align: middle ; }
-.labelclass { float: left; text-align: right; display: block; width: 200px; padding-right: 2px;
-	font-weight: bold; padding-top: 7px; padding-bottom: 7px; }
+.inputdata { 
+	xbackground-color: #ccccff; vertical-align: middle ; 
+}
+
+.labelclass { 
+	float: left; 
+	text-align: right; 
+	display: block; 
+	padding-right: 2px;
+	font-weight: bold; 
+	padding-top: 7px; 
+	padding-bottom: 7px; 
+}
+
+.inputclass { 
+	text-align: left; 
+	xborder: thin solid navy; 
+}
+
 .inputdata .value { text-align: left ; }
 
 /* Header Styles */
@@ -146,7 +167,7 @@ div.innerform { xtext-align: right; }
  background-color: white ; color: black; 
  border-bottom: thin solid black;
  text-align: center;
- padding: 10px; font-size: 1.5em; line-height: 2.0em; width: 100%; }
+ padding: 10px; font-size: 1em; line-height: 1.2em; width: 100%; }
 
 #userinfo { 
 	font-size: .9em; background-color: #222222; color: white; 
@@ -155,9 +176,7 @@ div.innerform { xtext-align: right; }
 	width: 100%;
 }
 
-.header .value { color: yellow; } 
-.header .label { color: silver; } 
-.header .title { font-size: 1.2em; } 
+.header .title { font-size: 1.2em; text-align: center; } 
 
 /* 3rd column of header */
 .header .ui-grid-b .ui-block-c { text-align: right; }
@@ -173,12 +192,9 @@ div.innerform { xtext-align: right; }
 
 .user-selected { background-color: black ; color: white ; }
 
-ul.search-results {
-	list-style: none; margin: 0; padding: 0; border: none;
-}
-
-.search-results li { margin: 0; padding-left: 2px; padding-bottom: 20px; line-height: 2em; }
-.search-results li .secondary { font-size: .8em; padding-left: 15px; line-height: 1em; }
+ul.search-results { list-style: none; margin: 0; padding: 0; padding-right: 5px; border-right: thin solid black; }
+.search-results li { margin: 0; padding-left: 2px; padding-bottom: 20px; line-height: 2em; font-weight: bold; }
+.search-results li .secondary { font-size: .8em; xpadding-left: 15px; line-height: 1em; }
 
 /* grid f: 66/33*/
 .ui-grid-f .ui-block-a { width: 33.333%; }

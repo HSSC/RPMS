@@ -28,7 +28,7 @@
              [:div.highlightvalue { :id (str "consenter-" (name vn) ) } "..." ]] ) ) ]]
 
      ;; section for "Is this correct?" with Yes/No buttons
-     [:h1.centered (i18n :search-consenter-results-form :confirmation-question )]
+     [:h2.centered (i18n :search-consenter-results-form :confirmation-question )]
 
      [:form#other-section { :method "POST" :action (helper/mypath "/view/search/results") } 
 
@@ -38,8 +38,9 @@
             [:input {:type "hidden" :name f :id f :value "no patient"}])
 
       [:div.centered
+      (helper/submit-button "NO" "search-consenter-results-no")
       (helper/submit-button "YES" "search-consenter-results-yes") 
-      (helper/submit-button "NO" "search-consenter-results-no")]] ])
+       ]] ])
 
 (defn handle-search-results
   "Search results are available in the session.

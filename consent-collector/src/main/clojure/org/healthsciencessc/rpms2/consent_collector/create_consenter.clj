@@ -10,12 +10,9 @@
   "Returns form to create a consenter."
   [ctx]
   (helper/rpms2-page 
-    [:div.innerform 
-      [:form {:method "POST"
-             :action (helper/mypath "/view/create/consenter")
-             :data-ajax "false" } 
-      [:div.centered "Present form for the user fill out to Create consenter" ]
-      [:div#consenter-details  
+    (helper/post-form "/view/create/consenter" 
+      (list 
+      [:div.left "Present form for the user fill out to Create consenter" ]
          (for [v dsa/create-consenter-fields] 
              (list 
                (let [form-name "create-consenter-form"
@@ -30,7 +27,9 @@
 
                      len (:length (dsa/consenter-field-defs v))
 
-                     kind (if specified-kind specified-kind "text")
+                     kind (if (and specified-kind 
+                                   (not (= specified-kind "gender")))
+                                   specified-kind "text")
 
                      label (if i18n-name (i18n i18n-name "label") 
                                          (i18n form-name field-name "label" )) 
@@ -38,7 +37,8 @@
                      placeholder  (if i18n-name (i18n i18n-name "placeholder") 
                                                 (i18n form-name field-name "placeholder" ) )
 
-                     m {:type kind :name field-name :placeholder placeholder } 
+                     m {:type kind :name field-name :id field-name :placeholder placeholder 
+                        :class "inputclass" } 
                      mp1 (if required (assoc m :required "") m) 
                      mp2 (if generated-val  (assoc mp1 :value generated-val) mp1) 
                      input-map (if len (assoc mp2 :length len) mp2) 
@@ -46,12 +46,12 @@
 
                      [:div.inputdata  {:data-role "fieldcontain" } 
                        [:label {:for field-name :class "labelclass" } label ]
-                       [:input input-map ] ])))]
-               
+                       [:input input-map ] ]))))
 
-        [:div.centered
+        (list [:div.centered
            (helper/submit-button "create-consenter-form" 
-             (i18n "create-consenter-form-submit-button" ) "create-consenter") ]]]
+             (i18n "create-consenter-form-submit-button" ) "create-consenter") ]))
+
      :title (i18n :hdr-create-consenter)))
 
 (defn perform

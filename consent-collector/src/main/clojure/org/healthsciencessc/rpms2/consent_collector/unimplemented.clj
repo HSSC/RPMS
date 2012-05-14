@@ -9,3 +9,9 @@
   [ctx]
 
   (helper/rpms2-page "Unimplemented" :title "Feature is not available."))
+
+(defn perform 
+   "Displays unimplemented message"
+  [ctx]
+
+  (helper/rpms2-page "Unimplemented" :title "Feature is not available."))

@@ -7,6 +7,7 @@
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
+  (:use [clojure.pprint])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing)]))
 
 ;; web application context, bound in core
@@ -49,39 +50,14 @@
   (let [u (session-get :user)]
         (if u (:username u) nil)))
 
-(defn text-field3
-   "Returns a text field in a div. The keywords for the label
-   and name of the text field are used to lookup the 
-   strings in the resource bundle.
-   
-   Lookup the type and use that if it's available.  If no type
-   is specified, type defaults to text.
-
-   Example data in resource file:
-   my-form-variable=loc1
-   my-form-variable-label=Location 1
-   my-form-variable-placeholder=Enter Location 1
-
-   my-form-zipcode=zipcode
-   my-form-zipcode-label=Zipcode
-   my-form-zipcode-placeholder=Enter Zipcode
-   my-form-zipcode-type=number
-   "
-
-;; Sample invocation (text-field3 "foo" "bar" :type "number" :required true)
-
-   [form-name field-name & {:as input-opts}]
-
-   (let [ placeholder-keyword (keyword (str form-name "-" field-name "-placeholder" ))
-	type-keyword (keyword (str form-name "-" field-name "-type" ))
-	type-value (i18n type-keyword)
-	;type-value (i18n-existing type-keyword)
-	t  (if type-value type-value "text") ]
-   [:div.inputdata  {:data-role "fieldcontain" } 
-      [:label {:for field-name :class "labelclass" } (i18n form-name field-name "label") ]
-      [:input (merge { :type t :name field-name :placeholder (i18n placeholder-keyword) :length 100 } input-opts) ]]))
-
-
+(defn standard-submit-button 
+  "Standard submit button.  :name and :value should be define plus optionally other."
+  [input-opts]
+  [:input (merge { :type "submit" 
+                   :data-theme "a"
+                   :data-role "button"
+                   :data-inline "true"
+                   } input-opts) ])
 
 (defn submit-button
   "Returns submit button for form."
@@ -121,13 +97,14 @@
 (defn post-form 
   [path body & submit-buttons ]
 
-  [:div
+  (let [retval  [:div.centered.post-form
      [:form {:action (mypath path) 
              :method "POST" 
              :data-ajax "false" 
              :data-theme "a" } 
       [:div.innerform.centered body ] 
-      [:div.centered submit-buttons ] ]]) 
+      [:div.submit-area submit-buttons ] ]]] 
+      (debug "post-form " (pprint retval)) retval)) 
 
 
 (defn remove-session-data
@@ -144,8 +121,21 @@
             :user  ]]
             (session-delete-key! k)))
 
+
+(defn required-indicator
+  []
+  [:span.red "*" ])
+
 (def ipad-html5-class
   "ui-mobile landscape min-width-320px min-width-480px min-width-768px min-width-1024px" )
+
+(defn get-input-type
+  [form-name field-name]
+
+  (let [ type-keyword (keyword (str form-name "-" field-name "-type" ))
+      type-value (i18n type-keyword)
+      t  (if type-value (i18n type-value) "text") ]
+    (println "t is " t)))
 
 (defn rpms2-page
   "Emits a standard RPMS2 page."
@@ -157,21 +147,22 @@
     "<meta name=\"apple-mobile-web-app-capable\" contents\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
-     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" )
+     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" )
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
-     "http://code.jquery.com/jquery-1.7.1.min.js"
-     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"
+     "http://code.jquery.com/jquery-1.6.4.min.js"
+     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
      (absolute-path "app.js"))
      ; ${function() { ${ \"button, input:submit, input:button\" ).button(); });
      ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
-      [:div {:data-role "header" } (if-let [msg (flash-get :header)] 
-                                     [:div title [:div#flash msg ]]
-                                     [:h1 title ] ) ]
+      [:div {:data-role "header" } 
+       [:h1 title ] 
+       (if-let [msg (flash-get :header)] 
+               [:div#flash msg ])]
       [:div#content {:data-role "content" :data-theme "d" } content]]]))
 
 (defn rpms2-page-two-column

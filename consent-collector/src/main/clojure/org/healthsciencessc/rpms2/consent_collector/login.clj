@@ -27,15 +27,16 @@
 
   (helper/rpms2-page 
      (helper/post-form "/view/login" 
-        (list [:div {:data-role "fieldcontain"  }
-                 [:label {:for "username" } (i18n :login-form-username) ]
+        (list [:div.inputdata {:data-role "fieldcontain"  }
+                 [:label {:for "username" :class "labelclass" } (i18n :login-form-username) ]
                  [:input {:id "username" :name "userid" :type "text" :required "" 
                       :placeholder (i18n "login-form-username-placeholder") } ]]
               [:div {:data-role "fieldcontain" }
-                 [:label {:for "password" } (i18n :login-form-password) ]
+                 [:label {:for "password" :class "labelclass" } (i18n :login-form-password) ]
                  [:input {:name "password" :id "password" :type "password" :required ""
                       :placeholder (i18n "login-form-password-placeholder") }]])
-        (list (helper/submit-button  "login-form")) )
+
+        (helper/standard-submit-button { :value (i18n :login-form-submit-button) } ))
    :title (i18n :hdr-login)))
 
 

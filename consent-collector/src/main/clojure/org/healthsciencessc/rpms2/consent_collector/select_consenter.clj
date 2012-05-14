@@ -18,22 +18,27 @@
     (helper/post-form "/view/select/consenter" 
      (list 
         (for [s dsa/consenter-search-fields]
-              (helper/text-field3 "search-consenters-form" (name s))))
+          (let [field-name (name s)
+                form-name "search-consenters-form"
+                placeholder-keyword (keyword (str form-name "-" field-name "-placeholder" ))
+	        ;;type-keyword (keyword (str form-name "-" field-name "-type" ))
+	        ;;type-value (i18n type-keyword)
+	        ;;tx  (if type-value type-value "text") 
+                t (helper/get-input-type form-name field-name) ]
+                [:div.inputdata  {:data-role "fieldcontain" } 
+                [:label {:for field-name :class "labelclass" } (i18n form-name field-name "label") ]
+                [:input { :type t :class "inputclass" :id field-name :name field-name :placeholder (i18n placeholder-keyword) } ]])))
 
-    (list
-        [:div.centered  {:data-role "fieldcontain" } 
-          [:input {:type "submit" 
-                   :data-theme "a"
-                   :data-role "button"
-                   :data-inline "true "
-                   :value (i18n "search-consenters-form-submit-button")
-                   :name "search-consenters" } ]
-          [:input {:type "submit" 
-                   :data-theme "a"
-                   :data-role "button"
-                   :data-inline "true "
-                   :value (i18n "select-consenters-view-create-consenter-button")
-                   :name "create-consenters" } ]])) 
+
+     [:div.centered  {:data-role "fieldcontain" } 
+
+          (helper/standard-submit-button { :value (i18n "search-consenters-form-submit-button")
+                                           :name "search-consenters" } )
+
+          (helper/standard-submit-button { :value (i18n "select-consenters-view-create-consenter-button")
+                                           :name "create-consenters" } )
+
+     ]) 
     :title (i18n :hdr-search-consenters)))
 
 
