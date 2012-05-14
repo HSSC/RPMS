@@ -38,7 +38,7 @@
 	    (let [rbname (str "radio-choice-" l)]
 	      [:div	
                 [:input {:name "location" :id rbname :type "radio" :value l } ]
-	        [:label {:for rbname :class "labelclass" } l ]  ]
+	        [:label {:for rbname } l ]  ]
 	)) ])
 
         (helper/standard-submit-button { 
