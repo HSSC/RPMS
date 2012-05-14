@@ -35,16 +35,15 @@
 
 
 (def consenter-field-defs { 
-                               :first-name          { :required true }
-                               :middle-name         {}
-                               :last-name           { :required true }
-                               :title               {}
-                               :suffix              {}
-                               :consenter-id        { :required true :default-value 
-                                                         (generate-default-consenter-id) }
-                               :gender              { :required true :type "gender" :x18n-name "gender" }
-                               :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
-                               :zipcode             { :required true :type "number" } 
+  :first-name          { :required true }
+  :middle-name         {}
+  :last-name           { :required true }
+  :title               {}
+  :suffix              {}
+  :consenter-id        { :required true :default-value generate-default-consenter-id }
+  :gender              { :required true :type "gender" :x18n-name "gender" }
+  :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
+  :zipcode             { :required true :type "number" :i18n-name "zipcode" } 
 })
 
 

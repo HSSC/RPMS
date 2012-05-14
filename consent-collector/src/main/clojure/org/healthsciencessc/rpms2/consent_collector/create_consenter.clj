@@ -23,7 +23,7 @@
                      required (:required field-def)
                      specified-kind (:type field-def)
                      default-val-fn (:default-value field-def) 
-                     generated-val (if default-val-fn default-val-fn)
+                     generated-val (if default-val-fn (default-val-fn))
 
                      len (:length (dsa/consenter-field-defs v))
 
