@@ -1,16 +1,17 @@
 (ns org.healthsciencessc.rpms2.consent-admin.services
   (:require [clj-http.client :as client]
             [sandbar.stateful-session :as sess]
+            [clojure.pprint :as pp]
             [hiccup.util :as hutil])
   (:use [org.healthsciencessc.rpms2.consent-admin.config]
-        [clojure.data.json :only (read-json)]))
+        [clojure.data.json :only (json-str read-json)]))
 
 ;; Request And Response Support
 
 (defn- full-url
   "Creates the absolute URL to the services using the configured path to services."
   [url params]
-  (.toString (hutil/url (:services.url config) url params)))
+  (.toString (hutil/url (:services.url config) url params))) 
 
 (defn- credentials
   "Creats a map of all the header items needed for basic authentication."
@@ -94,10 +95,55 @@
   [_]
   (GET "/security/locations" {}))
 
+(defn get-users
+  [_]
+  (GET "/security/users" {}))
+(comment
+(defn add-user
+  [org-id o]
+  (PUT "/security/user"
+        nil
+        nil
+        (with-out-str (prn o))
+        (fn [r] (if-not (= 200 (:status r))
+                        {:invalid true}))))
+
+(defn edit-user
+  [id o]
+  (POST "/security/user"
+        {:user id} 
+        nil
+        (with-out-str (prn o))
+        (fn [r] (if-not (= 200 (:status r))
+                        {:valid false}
+                        {:valid true}))))
+)
 (defn get-organizations
   [_]
   (GET "/security/organizations" {}))
 
-(defn get-users
-  [_]
-  (GET "/security/users" {}))
+(defn add-organization
+  [o]
+  (PUT "/security/organization"
+       nil
+       nil
+       (with-out-str (prn o))
+       (fn [r]
+         (if (= 200 (:status r))
+           {:valid true}
+           {:valid false}))))
+
+(defn edit-organization
+  [id o]
+  (POST "/security/organization"
+        {:organization id} 
+        nil
+        (with-out-str (prn o))
+        (fn [r]
+          (if (= 200 (:status r))
+            {:valid true}
+            {:valid false}))))
+ 
+(defn get-organization
+  [id]
+  (GET "/security/organization" {:organization id}))

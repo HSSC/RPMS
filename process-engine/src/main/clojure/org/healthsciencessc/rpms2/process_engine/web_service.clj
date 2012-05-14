@@ -20,6 +20,12 @@
     (if (not (blank? body-str))
       (read-json body-str))))
 
+(defn read-clojure
+  [body]
+  (let [body-str (slurp body)]
+    (if (not (blank? body-str))
+      (read-string body-str))))
+
 (defn keyify-params
   [params]
   (if (map? params)
@@ -39,6 +45,7 @@
         body (:body request)]
     (cond 
       (.startsWith content-type "application/json") (get-json-params body)
+      (.startsWith content-type "application/clojure") (read-clojure body)
       (.startsWith content-type "application/x-www-form-urlencoded") (keyify-params data)
       (< 0 (count data)) (keyify-params data)
       :else {})))

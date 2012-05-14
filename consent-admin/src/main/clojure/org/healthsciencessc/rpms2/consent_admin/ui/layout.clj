@@ -64,6 +64,7 @@
     (page/include-js "/js/jquery-1.7.2.min.js"
                      "/js/jquery-ui-1.8.19.custom.min.js"
                      "/js/pane.js"
+                     "/js/jquery.form.js"
                      "/js/consent-admin.js")
     [:script (str "PaneManager.basepath = \"" (:context ctx) "\";")]])
 

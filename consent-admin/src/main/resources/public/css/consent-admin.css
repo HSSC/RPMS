@@ -170,6 +170,7 @@ div.pane{
 	position: absolute;
 	width: 100%;
 	height: 100%;
+	overflow: hidden;
 }
 
 div.content-title{
@@ -177,10 +178,65 @@ div.content-title{
 }
 
 div.content-data{
-	margin-top: 0.2em;
+	margin: 1.0em;
+	position: relative;
+	height: 100%;
+	
 }
 
 #dialog{
 	font-size: 1.0em;
 }
+
+.ui-selected {
+	background: grey;
+	/* border: 3px solid black; */
+}
+
+.ui-selectable {
+	overflow: visible ;
+	padding: 2em;
+	width: 40em;
+	max-height: 40em;
+}
+
+.ui-selectee {
+	padding: 1em;
+}
+
+.controls {
+	position: absolute;
+	right: 2em;
+	top: 2em;
+	bottom: 2em;
+	width: 30%;
+	padding: 0.5em;
+}
+
+.controls > .ui-button {
+	display: block;
+	margin: 1em;
+}
+
+#edit-form-status,#add-form-status {
+	display: none;
+}
+
+.scroll-container {
+	position: absolute;
+	top: 2em;
+	bottom: 2em;
+	left: 2em;
+/*	height: 60%;	 */
+	width: 50%;
+	padding: 0.5em;
+	overflow: auto;
+}
+
+.done-button {
+	position: absolute;
+	bottom: 2em;
+	width: 90%;
+}
+
 

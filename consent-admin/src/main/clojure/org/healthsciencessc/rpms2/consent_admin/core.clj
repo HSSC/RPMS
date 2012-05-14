@@ -5,6 +5,7 @@
                        [response :as response]]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [sandbar.stateful-session :as sandbar]
+            [noir.validation :as validation]
             [ring.middleware.content-type :as content-type])
   (:use [compojure.core]
         [compojure.handler]
@@ -42,7 +43,8 @@
              (wrap-resource "public")
              content-type/wrap-content-type
              wrap-base-url
-             site))
+             validation/wrap-noir-validation
+           site))
 
 (defn init 
   "Initializes the application when it is first started up"

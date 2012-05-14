@@ -21,8 +21,9 @@ var PaneManager = {
 		
 		getUrl: function(x, ps){
 			if(this.basepath != null && x.indexOf(this.basepath) != 0){
-				x = this.basepath + x + "?view-mode=pane";
+				x = this.basepath + x;
 			}
+                        x += "?view-mode=pane";
 			if(ps != null && !$.isEmptyObject(ps)){
 				x = x + "&" + $.param(ps);
 			}
@@ -196,6 +197,13 @@ var PaneManager = {
 			pane.pane.html(data);
 			pane.pane.show("slide", {direction: "right"}, this.settings.duration);
 			this.current = pane;
+			window.history.pushState(request,'',request.url);
+		},
+		
+		// When content is refreshed for a pane.
+		onrefresh: function(data, target, status, xhr){
+			target.pane.empty();
+			target.pane.html(data);
 		},
 		
 		// When content is refreshed for a pane.
