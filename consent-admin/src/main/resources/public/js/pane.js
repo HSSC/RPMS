@@ -126,7 +126,19 @@ var PaneManager = {
 				if(m == null) return {};
 				return m;
 			},
-			nothing: function(){}
+			nothing: function(){},
+			getin: function(map){
+				var value = map;
+				if(arguments.length > 1){
+					for(var i = 1; i < arguments.length; i++){
+						value = value[arguments[i]];
+						if(value == null){
+							return null;
+						}
+					}
+				}
+				return value;
+			}
 		},
 		
 		// Starts a new stack of panes.  Clears all existing panes out and starts a new stack.
@@ -172,7 +184,8 @@ var PaneManager = {
 		// Processes a successful retrieve of a pane.
 		onsuccess: function(data, request, status, xhr){
 			// Create The Pane - Expects that any prepane processing has already been done.
-			var pane = {request: request};
+			var pane = {request: request, cache: {}};
+			pane.refresh = function(){PaneManager.refresh({pane: pane})};
 			if(this.current != null){
 				pane.previous = this.current;
 				$(this.current.pane).hide("slide", {direction: "left"}, this.settings.duration);
@@ -185,32 +198,87 @@ var PaneManager = {
 			this.current = pane;
 		},
 		
+		// When content is refreshed for a pane.
+		onrefresh: function(data, target, status, xhr){
+			target.pane.empty();
+			target.pane.html(data);
+		},
+		
 		// Processes a failed request for a pane.
 		onfailure: function(data, request, status, xhr){
 			alert("Failed: " + data);
 		},
 		
 		// Removes the current pane from the stack, making the previous pane the current one.
+		// onpop, postpop
 		pop: function(options){
+			options = this.util.map(options);
 			var poppane = this.current;
-			this.current = null;
+			
 			if(poppane){
+				var previous = poppane.previous;
+				
 				// Define The Post Hide Current Function
+				if(poppane.request.options.onpop){
+					if(false === poppane.request.options.onpop(options, poppane, previous)){
+						return;
+					}
+				}
+				
+				// Poppin Is A Go
+				this.current = null;
 				var postHide = function(){
 					poppane.pane.remove();
 				};
 				poppane.pane.hide("slide", {direction: "right"}, this.settings.duration, postHide);
 				
 				// Define The Show Previous Function
-				var previous = poppane.previous;
 				if(previous){
 					this.current = previous;
+					if(poppane.request.options.postpop){
+						poppane.request.options.postpop(options, poppane, previous);
+					}
 					previous.pane.show("slide", {direction: "left"}, this.settings.duration);
 				}
 			}
 		},
 		
 		// Refreshes the current pane in the stack.
-		refresh: function(options){alert(this.getUrl(x))}
+		refresh: function(options){
+			options = this.util.map(options);
+			target = this.util.mapped(options, "pane", this.current);
+			if(target){
+				var fullUrl = this.getUrl(target.request.url, target.request.params);
+				var settings = {
+						dataType: "html",
+						success: function(data, status, xhr){
+							PaneManager.onrefresh(data, target, status, xhr);
+						},
+						error: function(data, status, xhr){
+							PaneManager.onfailure(data, target.request, status, xhr);
+						}
+				}
+				if(options != null && options.ajax != null){
+					settings = $.extend(settings, options['ajax']);
+				}
+				$.ajax(fullUrl, settings);
+			}
+		},
+		
+		// Provides a way to cache values specifically on the pane.  When a pane goes out of scope/popped so does the cache.
+		cache: function(){
+			if(arguments.length == 0){
+				return this.current.cache;
+			}
+			else if(arguments.length == 1){
+				return this.current.cache[arguments[0]]
+			}
+			else{
+				for(var i = 0 ; (i+1) < arguments.length; i=i+2){
+					this.current.cache[arguments[i]] = arguments[i+1];
+				}
+				return this.current.cache;
+			}
+		}
 		
 };

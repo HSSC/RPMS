@@ -13,7 +13,8 @@
   []
   (data/connect! (config/conf "neo4j-db-path"))
   (seed/setup-default-schema!)
-  (seed/seed-graph!)
+  (seed/seed-base-org!)
+  (seed/seed-example-org!)
   (process/load-processes config/default-process-class-path))
 
 (defn ws-destroy
@@ -33,7 +34,8 @@
           (do
             (data/delete-all-nodes!)
             (seed/setup-default-schema!)
-            (seed/seed-graph!))
+            (seed/seed-base-org!)
+            (seed/seed-example-org!))
           "Done"))
 
 (defroutes app

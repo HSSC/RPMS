@@ -32,21 +32,21 @@
 
 (defn- leftbar
   "Creates the default header that is used for the application"
-  [ctx]
-  [:div#leftbar.leftbar (nav/navigator ctx)])
+  []
+  [:div#leftbar.leftbar (nav/navigator)])
 
 (defn- body
   "Creates the default layout that is used for the application"
-  [ctx elements]
+  [elements]
   [:body [:div#page.page
                (header)
-               (leftbar ctx)
+               (leftbar)
                [:div#content.content elements]
                (footer)]])
 
 (defn- body-no-session
   "Creates the default layout that is used for the application"
-  [ctx elements]
+  [elements]
   [:body [:div#page.page
                (header-no-session)
                [:div#content.content elements]
@@ -72,14 +72,14 @@
   [ctx elements]
   (page/html5
     (head ctx)
-    (body ctx elements)))
+    (body elements)))
 
 (defn- layout-no-session
   ""
   [ctx elements]
   (page/html5
     (head ctx)
-    (body-no-session ctx elements)))
+    (body-no-session elements)))
 
 (defn- pane
   "Creates a structure representing a pane.  Accepts a request context, title, and pane content and returns the appropriate structure."

@@ -13,6 +13,7 @@
   (layout/render ctx "This Is The First Pane, Bob"
                  "Some bogus text for the first pane."
                  [:input {:type :button :value "Go To Protocol" :onclick "PaneManager.push('/view/protocol', {}, {})"}]
+                 [:input {:type :button :value "Pop This Mutha" :onclick "PaneManager.pop({})"}]
                  [:input {:type :button :value "Reset" :onclick "PaneManager.reset()"}]))
 
 (defn view-protocol
