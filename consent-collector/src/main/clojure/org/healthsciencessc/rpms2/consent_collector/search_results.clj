@@ -21,7 +21,7 @@
             (if (or (empty? patient-name)
                     (= patient-name "no patient")) 
                 (do 
-                   (flash-put! :header "No patient selected." )
+                   (flash-put! :header (i18n :search-consenter-results-no-selection ) )
 	   	   (helper/myredirect "/view/select/consenter"))
 	        (do 
 		   (session-put! :patient-id patient-id)
@@ -31,7 +31,6 @@
     		   (helper/myredirect "/view/select/protocols")))
 	   (do
 	    	(session-delete-key! :patient-id)
-                (flash-put! :header "Search again" )
 	   	(helper/myredirect "/view/select/consenter")))))
     
 

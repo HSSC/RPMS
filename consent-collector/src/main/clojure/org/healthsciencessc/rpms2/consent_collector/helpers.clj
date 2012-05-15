@@ -7,6 +7,7 @@
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
+  (:use [clojure.data.json :only (read-json json-str)])
   (:use [clojure.pprint])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing
                                                                        i18n-label-for
@@ -132,15 +133,16 @@
     "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
-     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" )
+     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" 
+     (absolute-path "jquery.mobile.datebox-1.0.1.min.css") )
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
      "http://code.jquery.com/jquery-1.6.4.min.js"
      "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
+     (absolute-path "jquery.mobile.datebox-1.0.1.js" )
      (absolute-path "app.js"))
-     ; ${function() { ${ \"button, input:submit, input:button\" ).button(); });
      ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
@@ -191,12 +193,18 @@
               n (:i18n-name field-def)
               xfield-name (if n n field-name-orig)
               field-name field-name-orig
-       m {:type t 
+       mx {:type t 
           :class "inputclass" 
           :id field-name
           :name field-name
           :placeholder (i18n-placeholder-for form-name xfield-name)
           }
+
+       m (if (= t "date") 
+            (merge {:data-theme "d" 
+                    :data-role "datebox" 
+                    :data-options  (json-str {:mode "calbox" :calWeekMode true :calWeekModeFirstDay 1 })
+                   } mx) mx)
        am (cond
             (empty? augment)
             m
@@ -207,6 +215,9 @@
             :else
             (augment-data-entry m field-def)) 
        ]
+
+        ;;(println "TYPE IS " t "  MAP IS " am)
+        ;;(debug  "TYPE IS " t "  MAP IS " am)
        [:div.inputdata {:data-role "fieldcontain" } 
             [:label {:for field-name 
                      :class "labelclass" } 

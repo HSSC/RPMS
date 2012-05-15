@@ -12,7 +12,7 @@
   (helper/rpms2-page 
     (helper/post-form "/view/create/consenter" 
       (list 
-      [:div.left "Present form for the user fill out to Create consenter" ]
+      [:div.left (i18n :create-consenter-form-section-label) ]
          (for [v dsa/create-consenter-fields] 
              (list 
                (helper/emit-field-def (dsa/consenter-field-defs v) :create-consenter-form (name v) "editable" ))))

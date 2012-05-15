@@ -24,11 +24,7 @@
                 :as user} results]
             [:li {:onclick "org.healthsciencessc.rpms2.core.consenter_search_result_clicked(this)"
                   :data-user (pr-str user)} fn " " ln 
-             (println "USER IS [" (pr-str user) "]")
-             (debug "ZZZ USER IS [" (pr-str user) "]")
-             (debug "ZZZ zip [" zip  "]")
-             (debug "ZZZ consenter-id [" consenter-id  "]")
-             (debug "ZZZ dob [" dob "]")
+                 ;;(debug "ZZZ display-search-items USER IS [" (pr-str user) "]")
                  [:div.secondary "Zipcode " zip ] ])]])
 
 (defn- verify-section 
@@ -38,12 +34,10 @@
 
   (list 
     [:div#consenter-details-section
+    [:h1 (i18n :search-consenter-results-form :selected-consenter) ]
     [:div#consenter-details 
-     [:h1 (i18n :search-consenter-results-form :selected-consenter) ]
      [:ul (for [vn search-results-verify-fields ] 
              (list 
-               ;(helper/emit-field-def (dsa/consenter-field-defs vn) :search-consenters-results-form (name vn) "readonly")
-
                [:li {:data-role "fieldcontain" } 
                      [:label {:for (name vn) :class "labeldim" } 
                      (i18n-label-for :search-consenter-results-form (name vn) ) ]

@@ -41,19 +41,20 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 
 .post-form-parent { position:relative;  }
 
-.post-form { width: 100%; text-align: center; xbackground-color: pink; xborder: thick solid navy;  }
+.post-form { width: 100%; text-align: center; }
 
 .labeldim { 
 	color: gray; 
 	float: left;
 	text-align: right; 
+	text-align: left ; 
 	display: block;
 	width: 100px;
 	padding-right: 3px;
-	font-size: .8em;
+	xfont-size: .8em;
 }
 
-.highlightvalue { margin-left: 5px; color: navy; font-weight: bold; font-size: 1.2em; xbackground-color: #ccccff; }
+.highlightvalue { margin-left: 5px; xcolor: navy; font-weight: bold; font-size: 1.2em; }
 
 .areaTitle { color: navy; font-size: 1.1em; }
 
@@ -78,7 +79,7 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 	display: block;
 	height: 100%;
 	width: 100%;
-        padding-right: 5px; 
+        padding-right: 0px; 
         margin-right: 0; 
         margin-left: 0px;
         line-height: 1.1em;
@@ -106,6 +107,7 @@ input:required::after { content: "*"; color: red; }
 	padding: 10px; 
 }
 
+#consenter-details-section > h1 { font-size: 1.2em; }
 #consenter-details > h1 { font-size: 1.2em; }
 #consenter-details > h2 { font-size: 1.2em; color: navy; text-align: center; }
 #other-section { xborder: thin solid #660099; text-align: center; }
@@ -144,11 +146,7 @@ div.innerform {
 	padding-bottom: 7px; 
 }
 
-.inputclass { 
-	text-align: left; 
-	xborder: thin solid navy; 
-}
-
+.inputclass { text-align: left; }
 .inputdata .value { text-align: left ; }
 
 /* Header Styles */
@@ -171,10 +169,10 @@ div.innerform {
 .header .ui-grid-b .ui-block-c { text-align: right; }
 
 /* Styles for the Search Results */ 
-.user-selected { background-color: black ; color: white ; }
+.user-selected { background-color: #0000A0 ; color: white ; }
 
 ul.search-results { list-style: none; margin: 0; padding: 0; }
-.search-results li { margin: 0; padding-left: 2px; padding-bottom: 20px; line-height: 2em; font-weight: bold; }
+.search-results li { margin: 0; padding: 0px; padding-bottom: 20px; line-height: 2em; font-weight: bold; }
 .search-results li .secondary { font-size: .8em; xpadding-left: 15px; line-height: 1em; }
 
 /* grid f: 66/33*/

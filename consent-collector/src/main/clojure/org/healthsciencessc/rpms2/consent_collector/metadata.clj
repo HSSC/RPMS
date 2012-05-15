@@ -19,16 +19,6 @@
         ncols (+
                 (quot nitems items-per-col)
                 (if (> 0 (rem nitems items-per-col)) 1 0))
-        _ (println "num items " nitems " num columns " ncols  
-                " QUOT " (quot nitems items-per-col)
-                " REM  " (rem nitems items-per-col))
-        _ (debug "num items " nitems " num columns " ncols  
-                " QUOT " (quot nitems items-per-col)
-                " REM  " (rem nitems items-per-col)
-                 " SUM " (+
-                (quot nitems items-per-col)
-                (if (> 0 (rem nitems items-per-col)) 1 0))
-                 )
         ]
     (helper/post-form "/view/unimplemented"
        (list (for [{nm :name :as item} items]

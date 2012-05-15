@@ -1,10 +1,12 @@
 (ns org.healthsciencessc.rpms2.consent-collector.dsa-client
   (:require [clojure.string :as s]
+            [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [clj-http.client :as http])
   (:import org.apache.http.auth.MalformedChallengeException
            org.apache.http.client.ClientProtocolException)
   (:use [slingshot.slingshot :only (try+)])
   (:use [org.healthsciencessc.rpms2.consent-collector  [config :only (config)]
+                                                       [i18n :only [i18n i18n-label-for i18n-placeholder-for]]
                                                        [debug :only (debug!)] ]
         [clojure.tools.logging :only (debug info error warn)]
         [clojure.pprint :only (pprint)]
@@ -50,11 +52,24 @@
 
 
 ;;consider using values from domain-services
-(def create-consenter-required-fields [ :first-name
+;;MERGE WITH values from domain-services (consenter-id is required but first-name and last-name is not)
+(defn- get-consent-domain-required-consenter-fields
+  []
+  (let [attrs (:attributes (domain/default-data-defs "consenter")) ]
+    (filter #(:required (attrs %)) (keys attrs))))
+
+(def my-create-consenter-required-fields [ :first-name
                                         :last-name 
                                         :gender
                                         :dob
                                         :zipcode ])
+
+(defn- generate-create-consenter-required-fields
+  []
+  (distinct (flatten (merge my-create-consenter-required-fields (get-consent-domain-required-consenter-fields)))))
+
+(def create-consenter-required-fields (generate-create-consenter-required-fields))
+(debug "GENERATED create-consenter-required-fields ==> " create-consenter-required-fields)
 
 (defn- no-slashes [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
 
@@ -174,7 +189,8 @@
         invalid (has-all-required-fields p create-consenter-required-fields)]
       (if invalid 
           (do (debug "INVALID - CANNOT CREATE " p  " invalid msg " invalid)
-              {:status 409 :body "Validation failed - Please enter all required values" })
+              {:status 409 :body 
+               (i18n :create-consenter-form-validation-failed) })
           (do (debug "dsa-create-consenter P = " p  " count " (count p))
               (dsa-call :put-consent-consenter p) ))))
       
@@ -213,7 +229,7 @@
   )
 )
 
-(defn generate-protocol
+#_(defn generate-protocol
   [prototype]
   { :name  (:name prototype)
     :description (if (:description prototype) (:description prototype) "description for protocol")
