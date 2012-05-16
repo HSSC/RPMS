@@ -197,22 +197,9 @@
               (dsa-call :put-consent-consenter p) ))))
       
 
-#_(def protocol-names [ 
-	"Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
-	"Consent for Medical Treatment" 
-	"Medicare" 
-	"Tricare" ])
-
-(def data-mappings {
-   :location [ :id :name :code :protocol-label :organization ]
-   :meta-item [ :id :name :description :data-type :default-value :organization ]
-   :protocol [ :id :name :description :protocol-id :code :required :select-by-default :organization :location ]
-})
-
 (defn- id
   []
   (rand-int 1000000000))
-
 
 (defn generate-meta-data-items
  []
@@ -260,7 +247,7 @@
   {}
 )
 
-(defn get-published-protocols
+(defn xx-get-published-protocols
   []
   (list
     {:protocol {:id "P0001" 
@@ -270,6 +257,67 @@
                               {:id "LANG_EN01" :code "EN" :name "English" }
                               {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
                  :organization { :id 1 :name "Some Org" :code "mo" } } }
+
+
+    {:protocol {:id "P0002" 
+                 :name "Consent for Medical Treatment" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+
+
+    {:protocol {:id "P0003" 
+                 :name "Medicare" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "Greek" :name "Greek" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+
+    {:protocol {:id "P0004" 
+                 :name "Tricare" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "GE" :name "German" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+    )
+ ) 
+
+
+(defn get-published-protocols
+  []
+  (list
+    {:protocol {:id "P0001" 
+                 :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } 
+                 :meta-items [ {:name "Meta-1" :description "This is meta-1" 
+                                :data-type "xsd:string"
+                                :default-value "Meta-1 Default Value"
+                                :organization "BLAH" }
+                               {:name "Meta-2" :description "This is meta-2" 
+                                :data-type "xsd:string"
+                                :default-value "Meta-2 Default Value"
+                                :organization "BLAH 2" }
+                               {:name "Meta-3" :description "This is meta-3" 
+                                :data-type "xsd:string"
+                                :default-value "Meta-3 Default Value"
+                                :organization "BLAH 3" }
+                               {:name "Meta-4" :description "This is meta-4" 
+                                :data-type "xsd:string"
+                                :default-value "Meta-4 Default Value"
+                                :organization "BLAH 4" } ]
+                 ;; :policies [ "Meta-1" "Meta-2" "Meta-3" "Meta-4" ]
+                 ;; :endorsements [ "Meta-1" "Meta-2" "Meta-3" "Meta-4" ]
+                 ;; :form [ "Meta-1" "Meta-2" "Meta-3" "Meta-4" ]
+                 ;; :protocol [ "Meta-1" "Meta-2" "Meta-3" "Meta-4" ]
+     }
 
 
     {:protocol {:id "P0002" 
@@ -327,7 +375,8 @@
      :description "Tricare stuff" } ))
 
 
-; add an entry to the log showing the url
-(let [ dsa-url (config "rpms2.dsa.url") ]
-  (if dsa-url (debug "using " dsa-url)
-              (warn "WARNING: no dsa-url configured")))
+(let [ propname "rpms2.dsa.url" 
+       dsa-url (config propname) ]
+     (if dsa-url (debug "using " propname " value of " dsa-url)
+         (warn "WARNING: no value for property " propname " configured")))
+

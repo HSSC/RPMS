@@ -9,6 +9,8 @@
   (:use [clojure.string :only (replace-first join)])
   (:use [clojure.data.json :only (read-json json-str)])
   (:use [clojure.pprint])
+
+  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug!]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing
                                                                        i18n-label-for
                                                                        i18n-placeholder-for)]))
@@ -127,7 +129,7 @@
   "Emits a standard RPMS2 page."
   [content & {:keys [title]}]
 
-  (hpage/html5 {:class ipad-html5-class }
+  (let [resp (hpage/html5 {:class ipad-html5-class }
     [:head
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0\" >"
     "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
@@ -148,7 +150,11 @@
        [:h1 title ] 
        (if-let [msg (flash-get :header)] 
                [:div#flash msg ])]
-      [:div#content {:data-role "content" :data-theme "d" } content]]]))
+      [:div#content {:data-role "content" :data-theme "d" } content]]])] 
+
+      (debug "Page: " title " is \n\n" (pprint resp) "\n\n")
+      resp
+    ))
 
 (defn rpms2-page-two-column
   "Emits a standard two-column RPMS2 page."
@@ -160,64 +166,45 @@
 	     [:div.ui-block-b col2-content ]]
         :title title ))
 
+(defn emit-field
+  "Emits a field definition. 
+  Two variations - with or without a map containing default values."
 
-(defn augment-readonly 
-  "Augment the map with attributes necessary to enter/edit the data
-  (as opposed to view or search the data."
-  [m field-def]
-  (assoc m :readonly ""))
+  ([field-def form-name field ]  
+    (emit-field field-def form-name field {}))
 
-(defn augment-data-entry
-  "Augment the map with attributes necessary to enter/edit the data
-  (as opposed to view or search the data."
-  [m field-def]
-  (let [required (:required field-def)
-       default-val-fn (:default-value field-def)
-       generated-val (if default-val-fn (default-val-fn))  
-       mp1 (if required (assoc m :required "") m)          
-       mp2 (if generated-val (assoc mp1 :value generated-val) mp1)          
-       ]
-   mp2)
-)
-
-(defn emit-field-def
-  "Emits a field definition"
-  [field-def form-name field-name-orig augment]
+  ([field-def form-name field default-values]
 
   (list (let [specified-kind (:type field-def)
               t (if (and specified-kind (not (= specified-kind "gender"))) 
                   specified-kind 
                   "text")
-              n (:i18n-name field-def)
-              xfield-name (if n n field-name-orig)
-              field-name field-name-orig
+              normalized-field (if-let [n (:i18n-name field-def)] n field)
+
        mx {:type t 
-          :class "inputclass" 
-          :id field-name
-          :name field-name
-          :placeholder (i18n-placeholder-for form-name xfield-name)
+           :class "inputclass" 
+           :id field
+           :name field
+           :placeholder (i18n-placeholder-for form-name normalized-field)
           }
 
-       m (if (= t "date") 
-            (merge {:data-theme "d" 
-                    :data-role "datebox" 
-                    ;; :data-options  (json-str {:mode "calbox" :calWeekMode true :calWeekModeFirstDay 1 })
-                   } mx) mx)
-       am (cond
-            (empty? augment)
-            m
+       _ (debug "AAA FIELD NAME ORIG " field " defaults " default-values " defaults for this field " (get default-values (keyword field)))
+       ;; should also verify that is a valid value
+       m  (merge mx 
+            ;;(if (= "readonly" augment) {:readonly ""} {})
+            (if (= t "date") {:data-theme "d" 
+                              :data-role "datebox" 
+                             } {})
+            (if (:required field-def) {:required ""} {})
+            (if-let [val-fn (:default-value field-def) ] 
+              {:value (val-fn)} 
+              (if-let [v (get default-values (keyword field))] {:value v } {})))
+        ]
 
-            (= "readonly" augment)
-            (assoc m :readonly "")
-
-            :else
-            (augment-data-entry m field-def)) 
-       ]
-
-        ;;(println "TYPE IS " t "  MAP IS " am)
-        ;;(debug  "TYPE IS " t "  MAP IS " am)
        [:div.inputdata {:data-role "fieldcontain" } 
-            [:label {:for field-name 
+            [:label {:for field
                      :class "labelclass" } 
-                 (i18n-label-for form-name xfield-name) ]
-            [:input am ]])))
+                     (i18n-label-for form-name normalized-field) ]
+            [:input m ]]))))
+
+

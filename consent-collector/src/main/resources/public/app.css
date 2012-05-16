@@ -88,12 +88,12 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 
 
 .red { color: red ; }
+
 input:required:invalid, input:focus:invalid 
    { background-color: #cccccc; -maz-box-shadow: none;  }
 
-input:required::after { content: "*"; color: red; }
-
-*:required::after { content: "*"; color: red; }
+// input:required::after { content: "*"; color: red; }
+// *:required::after { content: "*"; color: red; }
 
 .highlight { font-color: navy; font-size: 1em; background-color: yellow;}
 
@@ -197,3 +197,40 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 }
 
 .ui-grid-f .ui-block-a { clear: left; }
+
+/* Grid for select protocols */
+.ui-grid-g {  width: 100%; border: thin solid black; }
+.ui-grid-g .ui-block-a {  clear: left; }
+
+.ui-grid-g .ui-block-a {  width: 10%; border: thin solid red; }
+.ui-grid-g .ui-block-b {  width: 60%; color: #ccccff; background-color: #ffffcc; border: thin dashed  blue; }
+.ui-grid-g .ui-block-c {  width: 30%; border: thin solid green ; }
+
+
+ul.select-protocol-list  { list-style: none; }
+ul.select-protocol-list  li {  width: 100%; display: block; }
+ul.select-protocol-list  li.even { 
+	xborder: thin solid red; 
+	background-color: white; 
+	text-align: left; }
+ul.select-protocol-list  li.odd { 
+	xborder: 1px dashed blue; 
+	xbackground-color: silver; 
+	text-align: left; }
+
+.protocol-col1 { 
+	position: relative;
+	left: 0px;
+	width: 300px;
+	font-weight: bold; text-align: left ; 
+	}
+
+.protocol-col3 { 
+	position: relative; 
+	font-size: .8em; 
+	top: -70px;
+	left: 300px;
+	vertical-align: middle;
+	width: 250px;
+	text-align: right; }
+

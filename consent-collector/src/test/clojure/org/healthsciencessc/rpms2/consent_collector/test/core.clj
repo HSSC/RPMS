@@ -7,6 +7,8 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]])
   (:use [sandbar.stateful-session :only (session-get)])
   (:use [clojure.tools.logging :only (debug info error)])
+  (:use [clojure.java.io]) 
+  (:use [clojure.pprint]) 
   (:use [clojure.data.json :only (read-json json-str)]
         org.healthsciencessc.rpms2.consent-collector.test.helpers)
   (:require [org.healthsciencessc.rpms2.consent-collector
@@ -137,6 +139,35 @@
          [[:input (en/attr= :name "first-name")]]
          [[:input (en/attr= :name "last-name")]])))
 
+
+(defn- spit-html
+  [page filename]
+  (with-open [wrtr (writer filename :append false)]
+    (.write wrtr page)))
+
+(deftest select-protocols-test
+  "Verify that /view/select/protocol screen renders."
+  (let [html (select-protocol/view {})
+        ;;_ (spit-html html "select_protocol.html")
+        [form] (en/select (en/html-snippet html)
+                          [[:form (en/attr= :action "/view/select/protocols")]])]
+    (is form)
+    (are [sel] (is (not (empty? (en/select form sel))))
+         [[:form (en/attr= :action "/view/select/protocols")]]
+         #_[[:input (en/attr= :name "first-name")]]
+         #_[[:input (en/attr= :name "last-name")]]
+         )))
+
+
+#_(deftest view-meta-data-test
+  "Verify that /view/meta-data screen renders."
+  (let [html (metadata/view {})
+        [form] (en/select (en/html-snippet html)
+                          [[:form (en/attr= :action "/view/select/protocols")]])]
+    (is form)
+    (are [sel] (is (not (empty? (en/select form sel))))
+         [[:form (en/attr= :action "/unimplemented")]]
+         )))
 
 (comment
 #_(deftest dsa-create-consenters-test-missing-required

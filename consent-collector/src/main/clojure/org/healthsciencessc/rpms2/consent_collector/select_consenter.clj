@@ -21,10 +21,14 @@
      (list 
         (for [s dsa/consenter-search-fields]
           (list 
-            (helper/emit-field-def (dsa/consenter-field-defs s) :search-consenters-form (name s) nil))))
+            (helper/emit-field 
+              (dissoc 
+                (dissoc (dsa/consenter-field-defs s) :required) :default-value)
+              :search-consenters-form (name s) 
+              (flash-get :search-params)
+              ))))
 
      [:div.centered  {:data-role "fieldcontain" } 
-
           (helper/standard-submit-button { :value (i18n "search-consenters-form-submit-button")
                                            :name "search-consenters" } )
 
@@ -47,6 +51,7 @@
           results (:json response) ]
 
     (info "perform-search response " results " status is " status  )
+    (flash-put! :search-params (ctx :body-params))
     (if (or (= status 200) 
             (= status 302))
          (do 

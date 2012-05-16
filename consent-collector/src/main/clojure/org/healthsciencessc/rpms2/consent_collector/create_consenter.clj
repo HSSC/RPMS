@@ -15,7 +15,11 @@
       [:div.left (i18n :create-consenter-form-section-label) ]
          (for [v dsa/create-consenter-fields] 
              (list 
-               (helper/emit-field-def (dsa/consenter-field-defs v) :create-consenter-form (name v) "editable" ))))
+               (helper/emit-field 
+                      (dsa/consenter-field-defs v) 
+                      ;;(dissoc (dsa/consenter-field-defs v) :required)
+                       :create-consenter-form (name v)  
+                       (flash-get :create-params)))))
 
         (list [:div.centered
            (helper/submit-button "create-consenter-form" 
@@ -28,11 +32,14 @@
   If insufficient privileges or if the fields are not validated, displays flash message."
 
   [ctx]
-  (let [parms (:body-params ctx)]
-    (let [resp (dsa/dsa-create-consenter parms) 
-          status (:status resp) 
-          body (:body resp)]
+  (let [parms (:body-params ctx)
+        resp (dsa/dsa-create-consenter parms) 
+        status (:status resp) 
+        body (:body resp)]
 
+      ;; save the parameters to fill out the form again if 
+      ;; the create fails. of course will need to remove the invalid values
+      (flash-put! :create-params parms)
       (cond (= 403 (:status resp))
             (helper/flash-and-redirect 
                  (print-str "You " (helper/username) " are not authorized to create a consenter")
@@ -48,5 +55,5 @@
                  "/view/login")
 
             :else
-                 (helper/myredirect  "/view/select/protocols")))))
+                 (helper/myredirect  "/view/select/protocols"))))
 
