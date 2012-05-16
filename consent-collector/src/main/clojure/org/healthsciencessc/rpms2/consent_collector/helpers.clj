@@ -133,15 +133,13 @@
     "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
-     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" 
-     (absolute-path "jquery.mobile.datebox-1.0.1.min.css") )
+     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" )
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
      "http://code.jquery.com/jquery-1.6.4.min.js"
      "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
-     (absolute-path "jquery.mobile.datebox-1.0.1.js" )
      (absolute-path "app.js"))
      ]
    [:body 
@@ -203,7 +201,7 @@
        m (if (= t "date") 
             (merge {:data-theme "d" 
                     :data-role "datebox" 
-                    :data-options  (json-str {:mode "calbox" :calWeekMode true :calWeekModeFirstDay 1 })
+                    ;; :data-options  (json-str {:mode "calbox" :calWeekMode true :calWeekModeFirstDay 1 })
                    } mx) mx)
        am (cond
             (empty? augment)

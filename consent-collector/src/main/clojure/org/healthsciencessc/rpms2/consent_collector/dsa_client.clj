@@ -80,7 +80,7 @@
       no-slashes (fn [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
       (if dsa-url 
                   (str (no-slashes dsa-url) "/" (no-slashes path)) 
-                  (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/services/" path))))
+                  (str "http://obis-rpms-neodb-dev.mdc.musc.edu:7474/" (no-slashes path)))))
 
 ;; TODO - find out why the auth isn't working right (we shouldn't
 ;; be getting this exception)
