@@ -1,6 +1,6 @@
 # Connection information for consent-services
 #rpms2.dsa.url=http://localhost:8080
-rpms2.dsa.url=http://obis-rpms-neodb-dev.mdc.musc.localhost:7474
+rpms2.dsa.url=http://obis-rpms-neodb-dev.mdc.musc.edu:8080
 
 # Fake dsa
 fake-dsa=false

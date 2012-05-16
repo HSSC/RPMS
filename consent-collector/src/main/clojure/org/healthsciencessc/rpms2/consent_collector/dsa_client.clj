@@ -65,6 +65,8 @@
                                         :zipcode ])
 
 (defn- generate-create-consenter-required-fields
+  "Add the required fields to our list of required fields, to make sure we get everything.
+  Note: currently (2012-05-16)  consent-domain is not adding first-name last-name but this app is requiring those"
   []
   (distinct (flatten (merge my-create-consenter-required-fields (get-consent-domain-required-consenter-fields)))))
 
@@ -80,7 +82,7 @@
       no-slashes (fn [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
       (if dsa-url 
                   (str (no-slashes dsa-url) "/" (no-slashes path)) 
-                  (str "http://obis-rpms-neodb-dev.mdc.musc.edu:7474/" (no-slashes path)))))
+                  (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/" (no-slashes path)))))
 
 ;; TODO - find out why the auth isn't working right (we shouldn't
 ;; be getting this exception)
@@ -258,6 +260,44 @@
   {}
 )
 
+(defn get-published-protocols
+  []
+  (list
+    {:protocol {:id "P0001" 
+                 :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+
+
+    {:protocol {:id "P0002" 
+                 :name "Consent for Medical Treatment" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+
+
+    {:protocol {:id "P0003" 
+                 :name "Medicare" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "Greek" :name "Greek" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+
+    {:protocol {:id "P0004" 
+                 :name "Tricare" 
+                 :status "published"
+                 :languages [ 
+                              {:id "LANG_EN01" :code "EN" :name "English" }
+                              {:id "LANG_EN02" :code "GE" :name "German" } ]
+                 :organization { :id 1 :name "Some Org" :code "mo" } } }
+    )
+ ) 
 
 (defn get-protocols
   []
