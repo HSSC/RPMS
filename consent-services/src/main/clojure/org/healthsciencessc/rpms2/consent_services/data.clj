@@ -117,7 +117,7 @@
       (neo/traverse node
                     :1
                     (fn [pos] (let [current-node (:node pos)]
-                              (and (not= current-node node) (type-of? type current-node))))
+                                (and (not= current-node node) (type-of? type current-node))))
                     (apply merge {rel dir} extra-rels)))))
 
 (defn walk-types-path
@@ -171,7 +171,7 @@
         (create-relationship from rel-type to)))))
 
 (defmulti get-related-obj
-  (fn [record node relation] (:record-type relation)))
+  (fn [record node relation] (:type relation)))
 
 (defmethod get-related-obj :belongs-to
   [record node {:keys [relationship related-to]}]
@@ -334,16 +334,15 @@
         (if (zip/end? loc)
           (let [root-id (get-in (zip/root loc) [:neo-data :id])]
             (find-record type root-id))
-          (do
-            (let [parent-loc (zip/up loc)
-                  parent-data (if parent-loc (:neo-data (zip/node parent-loc)))
-                  child-node (zip/node loc)
-                  neo-data (if parent-data
-                             (assoc child-node parent-rel parent-data)
-                             child-node)
-                  record (node->record (create-node-with-default-relationships type neo-data nil) type)]
-              (recur
-               (zip/next (zip/replace loc (assoc child-node :neo-data record)))))))))))
+          (let [parent-loc (zip/up loc)
+                parent-data (if parent-loc (:neo-data (zip/node parent-loc)))
+                child-node (zip/node loc)
+                neo-data (if parent-data
+                           (assoc child-node parent-rel parent-data)
+                           child-node)
+                record (node->record (create-node-with-default-relationships type neo-data nil) type)]
+            (recur
+             (zip/next (zip/replace loc (assoc child-node :neo-data record))))))))))
 
 (defn update
   [type id data]
