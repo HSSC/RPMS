@@ -126,7 +126,7 @@
   (loop [nodes (list start-node) type-path path]
     (if (or (empty? type-path) (empty? nodes))
       nodes
-      (recur (distinct (filter identity (flatten (map (fn [node] (neighbors-by-type node (first type-path)) extra-rels) nodes))))
+      (recur (distinct (filter identity (flatten (map (fn [node] (neighbors-by-type node (first type-path) extra-rels)) nodes))))
              (rest type-path)))))
 
 (defn new-node

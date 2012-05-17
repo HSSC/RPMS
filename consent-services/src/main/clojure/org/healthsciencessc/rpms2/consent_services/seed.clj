@@ -143,7 +143,7 @@
         sadmin-role (get-role-by-code "sadmin")
         admin-role (get-role-by-code "admin")
         clerk-role (get-role-by-code "collect")
-        manager-role (get-role-by-code "manager")
+        manager-role (get-role-by-code "manage")
         designer-role (get-role-by-code "design")]
     
     ;; Create Admin Role Mappings
