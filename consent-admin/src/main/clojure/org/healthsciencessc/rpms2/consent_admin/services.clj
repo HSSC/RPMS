@@ -8,6 +8,12 @@
 
 ;; Request And Response Support
 
+(defn service-error?
+  "Any response that isn't HTTP 200 from consent-services will
+  assoc the response as metadata."
+  [m]
+  (not (nil? (meta m))))
+
 (defn- full-url
   "Creates the absolute URL to the services using the configured path to services."
   [url params]
@@ -27,26 +33,25 @@
    :content-type "application/clojure" ;; tells our services to serve the Right Stuff
    :throw-exceptions false})
 
-(defn- failure-handler
-  "Simple handler that returns the body if the status is 200"
-  [resp]
-  (if (not= (:status resp) 200)
-    resp))
-
-
 (defn- meta-failure-handler
   "Simple handler that attaches error and response information as metadata to a returned map if request is unsuccessful."
-  [message]
+  [coll message]
   (fn [resp]
     (if (not= (:status resp) 200)
-      (with-meta {} {:response resp :message message :body (:body resp)}))))
+      (let [m (assoc resp :message message)]
+        (with-meta coll m)))))
+
+(def ^:private failure-handler
+  (meta-failure-handler {} "Something went wrong..."))
 
 (defn- handle-response
-  "Handle the response from all requests."
-  [resp handlers]
-  (or (first (drop-while (complement identity) (map #(% resp) handlers)))
-      (failure-handler resp)
-      (:body resp)))
+  "Handle the response from all requests.
+   xs is a list of handlers to casacde through."
+  [resp xs]
+  (let [handlers (concat xs [failure-handler #(:body %)])]
+    (first (drop-while (complement identity)
+                (map #(% resp)
+                     handlers)))))
 
 ;; The HTTP Request Functions
 
@@ -119,19 +124,14 @@
   (PUT "/security/user"
         nil
         nil
-        (with-out-str (prn o))
-        (fn [r] (if-not (= 200 (:status r))
-                        {:invalid true}))))
+        (with-out-str (prn o))))
 
 (defn edit-user
   [id o]
   (POST "/security/user"
         {:user id} 
         nil
-        (with-out-str (prn o))
-        (fn [r] (if-not (= 200 (:status r))
-                        {:valid false}
-                        {:valid true}))))
+        (with-out-str (prn o))))
 )
 (defn get-organizations
   [_]
@@ -142,22 +142,14 @@
   (PUT "/security/organization"
        nil
        nil
-       (with-out-str (prn o))
-       (fn [r]
-         (if (= 200 (:status r))
-           {:valid true}
-           {:valid false}))))
+       (with-out-str (prn o))))
 
 (defn edit-organization
   [id o]
   (POST "/security/organization"
         {:organization id} 
         nil
-        (with-out-str (prn o))
-        (fn [r]
-          (if (= 200 (:status r))
-            {:valid true}
-            {:valid false}))))
+        (with-out-str (prn o))))
  
 (defn get-organization
   [id]
