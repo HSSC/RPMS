@@ -196,6 +196,10 @@ div.content-data{
 	font-size: 1.0em;
 }
 
+div#progress{
+	display: none;
+}
+
 /*
  * Styling for Scrollable Data Areas
  */

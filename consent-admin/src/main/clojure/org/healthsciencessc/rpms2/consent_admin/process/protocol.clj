@@ -58,14 +58,14 @@
   "Generates a view that allows you to create a new protocol."
   [ctx]
   (layout/render ctx "Create Protocol"
-                 (container/scrollbox (form/dataform 
+                 (container/scrollbox (form/dataform (list 
                                  (form/input-hidden {:name :id :value "12345679101112"})
                                  (form/input-text {:name :name :label "Name"})
                                  (form/input-text {:name :code :label "Code"})
                                  (form/input-text {:name :protocol-id :label "Protocol ID"})
                                  (form/input-text {:name :description :label "Description"})
                                  (form/input-checkbox {:name :required :label "Required" :checked false})
-                                 (form/input-checkbox {:name :select-by-default :label "Select By Default" :checked false})))
+                                 (form/input-checkbox {:name :select-by-default :label "Select By Default" :checked false}))))
                  (actions/actions 
                    (actions/save-button {:method :post :url "/api/protocol" :params {:protocol :selected#id}})
                    (actions/pop-button))))

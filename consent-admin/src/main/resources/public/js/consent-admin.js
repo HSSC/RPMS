@@ -24,11 +24,31 @@ $(function(){
 	// Register Event - Click New Action
 	PaneManager.on("click", ".save-action", function(event){
 		var target = RPMS.findTarget(event, "div.save-action");
-		var url = PaneManager.getUrl(RPMS.get(target, "data-url"));
-		var method = RPMS.get(target, "data-method");
+		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
+		var fullUrl = PaneManager.getUrl(url, params, false);
+		var method = RPMS.get(target, "data-method");
 		var body = RPMS.getDataMap();
-		// Do Ajax
+		
+		var settings = {
+				data: body,
+				type: method,
+				dataType: "json",
+				success: function(data, status, xhr){
+					$("div#progress").dialog("close");
+					PaneManager.cache("changed", true);
+				},
+				error: function(data, status, xhr){
+					$("div#progress").dialog("close");
+				}
+		}
+		$.ajax(fullUrl, settings);
+		$("div#progress").dialog({
+			title: "Saving",
+			resizable: false,
+			height: h,
+			modal: true
+		});
 	});
 	
 	// Register Event - Click New Action

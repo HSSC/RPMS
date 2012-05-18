@@ -13,7 +13,8 @@
       [:ul#loginstat.headerlist
         [:li#current-user.first [:span {:onclick "PaneManager.stack(\"/view/profile\", {}, {})"} (get (sess/session-get :user) :username)]]
         [:li#logout [:span {:onclick "PaneManager.logout();"} "Logout"]]
-        [:div#dialog  "Are you sure you want to end this session?"]]])
+        [:div#dialog  "Are you sure you want to end this session?"]
+        [:div#progress [:img {:src "/image/loader.gif"}] ]]])
 
 (defn- header-no-session
   "Creates the default header that is used for the application"

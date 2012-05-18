@@ -34,16 +34,16 @@
 (defn create-fields [{:keys [name code protocol-label location-label]}]
   (list
       (formui/input-text {:name :name :label "Name" :value name})
-      (formui/input-text {:name :code :label "Code" :value code}))
+      (formui/input-text {:name :code :label "Code" :value code})
       (formui/input-text {:name :protocol-label :label "Protocol Label" :value protocol-label})
-      (formui/input-text {:name :location-label :label "Location Label" :value location-label}))
+      (formui/input-text {:name :location-label :label "Location Label" :value location-label})))
 
 (defn get-view-organization-add
   [ctx]
   (layout/render ctx "Create Organization"
                  (container/scrollbox (formui/dataform (create-fields {})))
                  (actions/actions 
-                   (actions/save-jquery-button {:method :post :url "/api/organization/add"})
+                   (actions/save-button {:method :post :url "/api/organization/add"})
                    (actions/pop-button))))
 
 (defn get-view-organization-edit
@@ -53,8 +53,7 @@
       (layout/render ctx "Edit Organization"
                  (container/scrollbox (formui/dataform (create-fields org)))
                  (actions/actions 
-                   (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id} :label "SaveNew"})
-                   (actions/save-jquery-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
+                   (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
                    (actions/pop-button))))))
 
 (defn ajax-status

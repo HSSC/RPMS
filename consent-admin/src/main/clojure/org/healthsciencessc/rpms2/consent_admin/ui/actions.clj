@@ -14,13 +14,13 @@
    {:data-url url  :data-map (to-attr-value params)} [:span.ui-button-text (or label "Details")]])
 
 ;;
-(defn save-button
+(defn save-new-button
   [{method :method url :url params :params label :label}]
   [:div.action.save-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
    {:data-method method :data-url url :data-map (to-attr-value params)} [:span.ui-button-text (or label "Save")]])
 
 ;;
-(defn save-jquery-button
+(defn save-button
   [{method :method url :url params :params label :label}]
   (list
     [:div.action.save-jquery-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
