@@ -21,13 +21,12 @@
             (if (or (empty? patient-name)
                     (= patient-name "no patient")) 
                 (do 
-                   (flash-put! :header (i18n :search-consenter-results-no-selection ) )
+                   (flash-put! :header (i18n :flash-search-consenter-results-no-selection ) )
 	   	   (helper/myredirect "/view/select/consenter"))
 	        (do 
 		   (session-put! :patient-id patient-id)
 		   (session-put! :patient-name patient-name)
 		   (session-put! :patient-encounter-date patient-encounter-date)
-                   (flash-put! :header (print-str "Patient selected: "  patient-name))
     		   (helper/myredirect "/view/select/protocols")))
 	   (do
 	    	(session-delete-key! :patient-id)

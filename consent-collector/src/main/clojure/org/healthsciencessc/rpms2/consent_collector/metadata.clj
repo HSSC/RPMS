@@ -1,61 +1,100 @@
 (ns org.healthsciencessc.rpms2.consent-collector.metadata
   "Processes for the meta data view and actions. "
-  (:require ( [org.healthsciencessc.rpms2.consent-collector [helpers :as helper]]))
+  (:require
+   [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
+   [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
+  (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! destroy-session! ]])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])
+  (:use [clojure.pprint :only (pprint)])
+  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.dsa-client
           :only (generate-meta-data-items)])
   (:use [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
 
-(defn form-meta-data
-  "Displays a form for user to enter required meta data items."
-  [ctx]
 
-  (let [md-i18n (partial i18n :meta-data-form)
-        items (generate-meta-data-items) 
-        items-per-col 5
-        nitems (count items)
-        ncols (+
-                (quot nitems items-per-col)
-                (if (> 0 (rem nitems items-per-col)) 1 0))
-        ]
-    (helper/post-form "/view/unimplemented"
-       (list (for [{nm :name :as item} items]
-        (do (println "META " nm) 
-          (list [:div 
-         ;; when type is string then display a text field
-         ;;(pr-str "<br/><b>" (:name item) "</b> type " (:data-type item)) 
-         ;;[:label (pr-str "<br/>Meta data <b>" (:name item) "</b> type " (:data-type item)) ]
-         (cond 
-           (= (:data-type item) "date")
-           [:div
-            (println "DATE")
-            (pr-str "<br/><b>" nm "</b> type " (:data-type item))
-            [:div.valueimportantblock {:data-role "fieldcontain" } 
-             [:label {:for nm :class "labeldim" } (md-i18n nm "label") ]
-             [:div.highlightvalue { :id nm } ]]
-            [:div [:label nm] [:input { :type "date" } ]]]
+(defn- date-field
+  [nm item]
 
-           (= (:data-type item) "string") 
-            [:div.valueimportantblock {:data-role "fieldcontain" } 
-             [:label {:for nm :class "labeldim" } (md-i18n nm "label" ) ]
-             [:input { :type "text" :value (md-i18n nm :placeholder) :name nm}]]
+  [:div.valueimportantblock {:data-role "fieldcontain" } 
+      [:label {:for nm :class "labeldim" } nm ]
+      [:input { :type "date" } ]])
 
-           (= (:data-type item) "yes-no") 
-            [:div.valueimportantblock {:data-role "fieldcontain" } 
-             [:label {:for nm :class "labeldim" } "CHECKBOX " nm  ]
-             [:input { :type "checkbox" :id nm :name nm}] "CHECKBOX  " nm ]
+(defn- string-field
+  [nm item]
 
-           :else
-           [:div "other" item ]
-           )
-         ]))))
-       (helper/standard-submit-button { :value (i18n :meta-data-form-submit-button) } ))))
+  [:div.valueimportantblock {:data-role "fieldcontain" } 
+      [:label {:for nm :class "labeldim" } nm  ]
+      [:input { :type "text" :name nm}]])
 
+(defn- yes-no-field
+  [nm item]
+
+  [:div.valueimportantblock {:data-role "fieldcontain" } 
+     [:label {:for nm :class "labeldim" } "CHECKBOX " nm  ]
+     [:input { :type "checkbox" :id nm :name nm}] "CHECKBOX  " nm ])
+
+(defn- drop-down-field
+  [nm item]
+)
+
+
+(defn- other-field
+  [nm item]
+
+  [:div.valueimportantblock {:data-role "fieldcontain" }  "OTHER" nm ])
+     
+
+(defn- emit-item
+  [item]
+
+  (cond   (or (= (:data-type item) "date")
+              (=  (:data-type item) "xsd:date"))
+          (date-field (:name item) item)
+            
+          (or (= (:data-type item) "string") 
+              (= (:data-type item) "xsd:string"))
+          (string-field (:name item) item)
+
+          (= (:data-type item) "yes-no") 
+          (yes-no-field (:name item) item)
+
+          ;;(= (:data-type item) "dropdown") 
+          ;;(dropdown-field (:name item) item)
+
+          :else
+          (other-field (:name item) item)))
+
+(defn- emit-hardcoded-items
+  []
+
+  [:div.valueimportantblock {:data-role "fieldcontain" } 
+  [:label {:for "who-is-signing" } "Who is signing the consent" ]
+  [:select { :name "who-is-signing"  :id "who-is-signing" }
+   [:option {:value "consenter" } "Consenter" ]
+   [:option {:value "consenter-rep" } "Consenter Representative" ] ]])
 
 (defn view 
   "Returns meta data form"
   [ctx]
-  (rpms2-page (form-meta-data ctx) :title (i18n :hdr-metadata)))
+  (rpms2-page 
+    (helper/post-form "/view/meta-data"
+     (list 
+       [:div.left "Enter the following information:" ]
+       (emit-hardcoded-items)
+       (for [item (flash-get :needed-meta-data)]
+            (emit-item item)))
+     (helper/standard-submit-button 
+        { :value (i18n :meta-data-form-submit-button) } ))
+    :title (i18n :hdr-metadata)))
 
+(defn perform
+  "Save meta data and prepare to enter the data."
+  [ctx]
+  (debug "Saving meta data and preparing to enter the data.")
+
+  (session-put! :current-form (dsa/sample-form))
+  (session-put! :current-page 0)
+  (session-put! :current-section 1)
+  (helper/myredirect "/collect/consents"))

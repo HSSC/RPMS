@@ -11,6 +11,7 @@
             						  [search-results :as search-results] 
             						  [create-consenter :as create-consenter] 
             						  [select-protocol :as select-protocol] 
+            						  [collect-consents :as collect-consents] 
             						  [metadata :as metadata]
             						  [unimplemented :as unimplemented]
 							]
@@ -43,7 +44,7 @@
                 {:name "get-view-login" :runnable-fn (fn [context] (not (contains? context :password))), :run-fn login/view }
                 {:name "post-view-login" :runnable-fn (constantly true) :run-fn login/perform }
 
-                {:name "get-view-logout" :runnable-fn (constantly true) :run-fn login/logout }
+                {:name "post-view-logout" :runnable-fn (constantly true) :run-fn login/logout }
 
                 {:name "get-view-not-authorized" :runnable-fn (constantly true) :run-fn login/default-get-view-not-authorized}
 
@@ -68,7 +69,13 @@
                 {:name "get-view-select-protocols" :runnable-fn active-session?  :run-fn select-protocol/view :run-if-false goto-login-page }
                 {:name "post-view-select-protocols" :runnable-fn active-session?  :run-fn select-protocol/perform :run-if-false goto-login-page }
 
+
+
                 {:name "get-view-meta-data" :runnable-fn active-session?  :run-fn metadata/view :run-if-false goto-login-page }
+                {:name "post-view-meta-data" :runnable-fn active-session?  :run-fn metadata/perform :run-if-false goto-login-page }
+
+                {:name "get-collect-consents" :runnable-fn active-session?  :run-fn collect-consents/view :run-if-false goto-login-page }
+                {:name "post-collect-consents" :runnable-fn active-session?  :run-fn collect-consents/perform :run-if-false goto-login-page }
 
                 {:name "get-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
                 {:name "post-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
@@ -163,7 +170,11 @@
   (fn [req]
     (let [resp (app req)]
       (when (= :get (:request-method req))
-        (session-put! :last-page (:uri req)))
+        (do (debug "last page (get) " (:uri req))
+        (session-put! :last-page (:uri req))))
+      (when (= :post (:request-method req))
+        (do (debug "last page (post) " (:uri req))
+        (session-put! :last-post-page (:uri req))))
       resp)))
 
 (defn add-logging 
@@ -195,6 +206,6 @@
              (wrap-context-setter) ;; bind helper/*context*
              (wrap-exceptions)
              #_(wrap-better-process-not-found-response)
-             #_(wrap-last-page)
+             (wrap-last-page)
              (sandbar.stateful-session/wrap-stateful-session)
              (wrap-resource "public")))

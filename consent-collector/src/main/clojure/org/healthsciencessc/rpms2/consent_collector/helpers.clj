@@ -1,8 +1,8 @@
 (ns org.healthsciencessc.rpms2.consent-collector.helpers
   "General purpose helpers used when creating views."
   (:require [hiccup
-             [page :as hpage]
-             [element :as helem]])
+               [page :as hpage]
+               [element :as helem]])
   (:require [ring.util.response :as ring])
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
@@ -10,7 +10,7 @@
   (:use [clojure.data.json :only (read-json json-str)])
   (:use [clojure.pprint])
 
-  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug!]])
+  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing
                                                                        i18n-label-for
                                                                        i18n-placeholder-for)]))
@@ -111,6 +111,8 @@
             :org-location 
             :org-name
             :lockcode
+            :search-params
+            :create-params
             :user  ]]
             (session-delete-key! k)))
 
@@ -125,6 +127,30 @@
       t  (if type-value (i18n type-value) "text") ]
     (println "t is " t)))
 
+(defn- footer
+  []
+  [:div.footer {:data-role "footer" :data-theme "c" } 
+    [:div.ui-grid-b
+      [:div.ui-block-a (if-let [loc (session-get :location)]
+                               (str "Location: " loc)) ]
+
+      [:div.ui-block-b (if-let [p (session-get :patient-name)]
+                               (str "Consenter: " p)) ]
+
+      [:div.ui-block-c (if-let [p (session-get :encounter-id)]
+                               (str "EncounterID: " p)) ] ]])
+
+(defn- logout-form
+  []
+  [:form {:method "POST" :action (absolute-path "/view/logout") }
+           [:input {:type "submit" 
+                    :name "logout-btn" 
+                    :data-role "button"
+                    :data-inline "true"
+                    :data-theme "a"
+                    :data-mini "true"
+                    :value "Logout" } ]])
+
 (defn rpms2-page
   "Emits a standard RPMS2 page."
   [content & {:keys [title]}]
@@ -135,26 +161,32 @@
     "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
-     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" )
+     ;;"http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" 
+     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" 
+      )
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
+     ;;"http://code.jquery.com/jquery-1.6.4.min.js"
+     ;;"http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
      "http://code.jquery.com/jquery-1.6.4.min.js"
-     "http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
+     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"
      (absolute-path "app.js"))
      ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
-      [:div {:data-role "header" } 
-       [:h1 title ] 
-       (if-let [msg (flash-get :header)] 
-               [:div#flash msg ])]
-      [:div#content {:data-role "content" :data-theme "d" } content]]])] 
-
-      (debug "Page: " title " is \n\n" (pprint resp) "\n\n")
-      resp
-    ))
+      [:div.header {:data-role "header" } 
+         [:div.ui-grid-b 
+            [:div.ui-block-a ]
+            [:div.ui-block-b.title title ]
+            [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
+         [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ]
+      [:div#content {:data-role "content" :data-theme "d" } content]
+      (footer)
+     ]])] 
+      (debug "Page: " title " is\n" (pprint-str resp) "\n\n")
+      resp))
 
 (defn rpms2-page-two-column
   "Emits a standard two-column RPMS2 page."
@@ -206,5 +238,4 @@
                      :class "labelclass" } 
                      (i18n-label-for form-name normalized-field) ]
             [:input m ]]))))
-
 

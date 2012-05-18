@@ -37,7 +37,7 @@
           (for [l locs-names] 
 	    (let [rbname (str "radio-choice-" l)]
 	      [:div	
-                [:input {:name "location" :id rbname :type "radio" :value l } ]
+                [:input {:name "location" :id rbname :type "radio" :value l :data-theme "c" } ]
 	        [:label {:for rbname } l ]  ]
 	)) ])
 

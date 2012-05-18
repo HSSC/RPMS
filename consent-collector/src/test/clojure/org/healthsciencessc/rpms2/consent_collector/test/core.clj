@@ -145,7 +145,7 @@
   (with-open [wrtr (writer filename :append false)]
     (.write wrtr page)))
 
-(deftest select-protocols-test
+(deftest select-protocols-view-test
   "Verify that /view/select/protocol screen renders."
   (let [html (select-protocol/view {})
         ;;_ (spit-html html "select_protocol.html")
@@ -158,6 +158,22 @@
          #_[[:input (en/attr= :name "last-name")]]
          )))
 
+
+#_(deftest select-protocols-perform-test
+  (testing "Verify that select protocols perform "
+    (are [doc lockcode path in-session?]
+         (testing doc
+           (-> {:body-params {:lockcode lockcode}}  ;; put in a few protocol ids
+               select-protocol/perform
+               (redirects? path)
+               (is))
+           (is (= (if in-session? lockcode nil)
+                  (session-get :lockcode))))
+         "SOMETHING Valid lockcode" "1234" "/view/meta-data" true
+        ;; "Non-numeric" "abba" "/view/select/lock-code" false
+        ;; "Bad length" "123" "/view/select/lock-code" false
+        ;; "No lock code" nil "/view/select/lock-code" false
+         )))
 
 #_(deftest view-meta-data-test
   "Verify that /view/meta-data screen renders."

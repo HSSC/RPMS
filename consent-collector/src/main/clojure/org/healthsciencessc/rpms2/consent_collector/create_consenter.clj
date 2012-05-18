@@ -55,5 +55,6 @@
                  "/view/login")
 
             :else
-                 (helper/myredirect  "/view/select/protocols"))))
+                 (do (session-put! :patient-name (str (:first-name parms) " " (:last-name parms)) )
+                     (helper/myredirect  "/view/select/protocols")))))
 

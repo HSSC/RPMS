@@ -25,7 +25,8 @@
               (dissoc 
                 (dissoc (dsa/consenter-field-defs s) :required) :default-value)
               :search-consenters-form (name s) 
-              (flash-get :search-params)
+              ;(flash-get :search-params)
+              (session-get :search-params)
               ))))
 
      [:div.centered  {:data-role "fieldcontain" } 
@@ -52,6 +53,7 @@
 
     (info "perform-search response " results " status is " status  )
     (flash-put! :search-params (ctx :body-params))
+    (session-put! :search-params (ctx :body-params))
     (if (or (= status 200) 
             (= status 302))
          (do 

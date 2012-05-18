@@ -14,6 +14,7 @@
 
   (destroy-session!)
   (helper/remove-session-data)
+  (flash-put! :header "You have been logged out.")
   (helper/myredirect "/view/login"))
 
 (defn default-get-login

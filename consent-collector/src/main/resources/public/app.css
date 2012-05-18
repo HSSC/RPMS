@@ -36,12 +36,12 @@ and (max-device-width: 1024px) and (orientation:landscape) {
 .left { text-align: left; }
 
 .value { margin-left: 5px; color: gray; line-height: 1.1em; }
-.valueimportantblock { display: block; float: left; }
+.valueimportantblock { border: thin solid red; display: block; }
 .submit-area { width: 100%; text-align: center; }
 
 .post-form-parent { position:relative;  }
 
-.post-form { width: 100%; text-align: center; }
+.post-form { width: 100%; text-align: center; xborder: thin solid blue; }
 
 .labeldim { 
 	color: gray; 
@@ -115,7 +115,7 @@ input:required:invalid, input:focus:invalid
 .confirm-selection { font-size: 1.2em; display: block; text-align: center; }
 
 div.innerform { 
-	border: 1px solid gray; 
+	xborder: 1px solid gray; 
 	margin: 5px; padding: 5px; border-radius: 15px; 
 	-moz-border-radius: 15px; margin: 50px; 
 	}
@@ -127,7 +127,7 @@ div.innerform {
     background: pink;
     border-radius: 15px; -moz-border-radius: 15px; }
 
-.footer { background-image: "MUSC.jpg"; padding: 25px; }
+// .footer { background-image: "MUSC.jpg"; padding: 25px; }
 
 #protocol-name { padding: 3px; color: navy; font-size: .8em; font-weight: bold; }
 #protocol-description { padding-left: 5px; color: #222; font-size: .9em; }
@@ -167,6 +167,12 @@ div.innerform {
 
 /* 3rd column of header */
 .header .ui-grid-b .ui-block-c { text-align: right; }
+.header .ui-grid-b .ui-block-b.title { text-align: center; }
+
+/* footer */
+.footer .ui-grid-b .ui-block-b { text-align: center; }
+.footer .ui-grid-b .ui-block-c { text-align: right; }
+.footer .ui-grid-b { margin-left: 5px; padding: 10px; background-color: white; font-size: .8em; color: #333333; }
 
 /* Styles for the Search Results */ 
 .user-selected { background-color: #0000A0 ; color: white ; }
@@ -175,7 +181,9 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 .search-results li { margin: 0; padding: 0px; padding-bottom: 20px; line-height: 2em; font-weight: bold; }
 .search-results li .secondary { font-size: .8em; xpadding-left: 15px; line-height: 1em; }
 
-/* grid f: 66/33*/
+.sectionlegend { text-align: left; font-size: 1.2em; }
+
+/* grid f: 33/66*/
 .ui-grid-f .ui-block-a { 
 	background-color: white;
 	width: 33.333%; 
@@ -198,19 +206,42 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 
 .ui-grid-f .ui-block-a { clear: left; }
 
+
 /* Grid for select protocols */
 .ui-grid-g {  width: 100%; border: thin solid black; }
 .ui-grid-g .ui-block-a {  clear: left; }
 
-.ui-grid-g .ui-block-a {  width: 10%; border: thin solid red; }
+.ui-grid-g .ui-block-a {  width: 10%; xborder: thin solid red; }
 .ui-grid-g .ui-block-b {  width: 60%; color: #ccccff; background-color: #ffffcc; border: thin dashed  blue; }
 .ui-grid-g .ui-block-c {  width: 30%; border: thin solid green ; }
 
 
+/* grid h: 66/33 */
+.ui-grid-h .ui-block-a { 
+	background-color: white;
+	width: 66.6666; 
+	padding-right: 5px;
+	position: fixed; 
+	border-right: thin solid black;
+	overflow: scroll; 
+	-webkit-overflow-scrolling: touch;
+	min-height: 400px;
+	height: 770px;
+}
+
+.ui-grid-h .ui-block-b { 
+	background-color: white;
+	width: 33.333%; 
+	margin-left: 15px;
+	left: 34%;
+	position: absolute;
+}
+
+.ui-grid-h .ui-block-a { clear: left; }
+
 ul.select-protocol-list  { list-style: none; }
 ul.select-protocol-list  li {  width: 100%; display: block; }
 ul.select-protocol-list  li.even { 
-	xborder: thin solid red; 
 	background-color: white; 
 	text-align: left; }
 ul.select-protocol-list  li.odd { 
