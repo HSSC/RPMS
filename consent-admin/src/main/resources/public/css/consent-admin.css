@@ -103,8 +103,9 @@ div.footer{
 
 #footerorg{
 	position: absolute;
-	margin-right: 1.0em;
-	right: 0;
+	right: 10em;
+	left: 10em;
+	text-align: center;
 }
 
 #footerorg a{
@@ -175,12 +176,19 @@ div.pane{
 
 div.content-title{
 	text-align: center;
+	position: absolute;
+	width: 100%;
+	height: 1.3em;
+	top: 0;
+	left: 0;
 }
 
 div.content-data{
-	margin: 1.0em;
-	position: relative;
-	height: 100%;
+	position: absolute;
+	width: 100%;
+	top: 1.3em;
+	left: 0;
+	bottom: 0;
 	
 }
 
@@ -188,55 +196,64 @@ div.content-data{
 	font-size: 1.0em;
 }
 
-.ui-selected {
-	background: grey;
-	/* border: 3px solid black; */
-}
-
-.ui-selectable {
-	overflow: visible ;
-	padding: 2em;
-	width: 40em;
-	max-height: 40em;
-}
-
-.ui-selectee {
-	padding: 1em;
-}
-
-.controls {
+/*
+ * Styling for Scrollable Data Areas
+ */
+div.scrollbox{
 	position: absolute;
-	right: 2em;
-	top: 2em;
-	bottom: 2em;
-	width: 30%;
-	padding: 0.5em;
-}
-
-.controls > .ui-button {
-	display: block;
-	margin: 1em;
-}
-
-#edit-form-status,#add-form-status {
-	display: none;
-}
-
-.scroll-container {
-	position: absolute;
-	top: 2em;
-	bottom: 2em;
-	left: 2em;
-/*	height: 60%;	 */
-	width: 50%;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 70%%;
 	padding: 0.5em;
 	overflow: auto;
 }
 
-.done-button {
+/*
+ * Styling for Selectable Lists
+ */
+div.selectlist{
 	position: absolute;
+	top: 2em;
 	bottom: 2em;
-	width: 90%;
+	left: 2em;
+	right: 2em;
+	overflow: visible ;
+	padding: 0.4em;
+	border-bottom: darkgrey 1px solid;
 }
 
+div.selectlistitem{
+	background-color: #F5F8F9;
+	padding: .15em;
+	border-bottom: darkgrey 1px solid;
+}
 
+div.selectlistitem:hover{
+	background: lightgrey;
+}
+
+div.selected {
+	background: #D9D8D9;
+}
+
+/*
+ * Styling for Action Buttons
+ */
+div.actionbox{
+	position: absolute;
+	top: 2em;
+	bottom: 2em;
+	right: 2em;
+	width: 20%;
+	padding: 0;
+}
+
+div.action{
+	display: block;
+	margin: 2em;
+}
+
+#progress-dialog{
+	display: none;
+}

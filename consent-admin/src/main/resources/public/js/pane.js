@@ -16,277 +16,291 @@
 //
 
 var PaneManager = {
-		// Request References/Methods
-		basepath: null, // The base path to prepend to URL.  Typically, this is just the contextPath of the application
-		
-		getUrl: function(x, ps){
-			if(this.basepath != null && x.indexOf(this.basepath) != 0){
-				x = this.basepath + x;
-			}
-                        x += "?view-mode=pane";
-			if(ps != null && !$.isEmptyObject(ps)){
-				x = x + "&" + $.param(ps);
-			}
-			return x;
-		},
-		
-		// Pane References
-		current: null,
-		content: null, // This Should Be Set Externally
-		
-		hasPanes: function(){return this.current != null;},
-		
-		reset: function(){
-			var t = this.current;
-			var c = this.content;
-			this.current = null;
-			var callback = null;
-			if(arguments.length > 0){
-				callback = arguments[0];
-			}
-			if(t != null){
-				t.pane.hide("slide", {direction: "down"}, this.settings.duration, function(){
-					c.empty();
-					if(callback){
-						callback();
-					}
-				});
-			}
-		},
-		
-		// Text that is used in the UI.  Can be overridden on init.
-		text:{
-			pane:{
-				confirm$reset: "Are you sure you want to clear out the current workspace?"
-			},
-			logout: {
-				title: "Confirm Logout",
-				ok: "Logout",
-				message: "Are you sure you want to end this session?"
-			},
-			label: {
-				cancel: "Cancel",
-				ok: "OK",
-				confirm: "Confirm"
-			}
-		},
-		
-		settings: {
-			duration: 500	// The duration of a transition between slides.
-		},
-		
-		// Confirm Method
-		confirm: function(options){
-			var m = this.util.mapped$rq(options, "message");
-			var of = this.util.mapped$rq(options, "onok");
-			var t = this.util.mapped(options, "title", this.text.label.confirm);
-			var h = this.util.mapped(options, "height", "auto");
-			var ol = this.util.mapped(options, "oklabel", this.text.label.ok);
-			var cl = this.util.mapped(options, "cancellabel", this.text.label.cancel);
-			var cf = this.util.mapped(options, "oncancel", function(){$( this ).dialog( "close" );});
-			this.confirmDialog.text(m);
-
-			var buts = {};
-			buts[ol] = function (){of(); $(this).dialog( "close" )};
-			buts[cl] = cf;
-			this.confirmDialog.dialog({
-				title: t,
-				resizable: false,
-				height: h,
-				modal: true,
-				buttons: buts
+	// Request References/Methods
+	basepath: null, // The base path to prepend to URL.  Typically, this is just the contextPath of the application
+	
+	getUrl: function(x, ps, pane){
+		if(pane == null){
+			pane = true;
+		}
+		ps = this.util.map(ps);
+		if(this.basepath != null && x.indexOf(this.basepath) != 0){
+			x = this.basepath + x;
+		}
+		if(pane){
+			ps["view-mode"] = "pane";
+		}
+		var con = "?";
+		if(x.indexOf(con) > 0){
+			con = "&";
+		}
+		if(ps != null && !$.isEmptyObject(ps)){
+			x = x + con + $.param(ps);
+		}
+		return x;
+	},
+	
+	// Pane References
+	current: null,
+	content: null, // This Should Be Set Externally
+	
+	hasPanes: function(){return this.current != null;},
+	
+	reset: function(){
+		var t = this.current;
+		var c = this.content;
+		this.current = null;
+		var callback = null;
+		if(arguments.length > 0){
+			callback = arguments[0];
+		}
+		if(t != null){
+			t.pane.hide("slide", {direction: "down"}, this.settings.duration, function(){
+				c.empty();
+				if(callback){
+					callback();
+				}
 			});
+		}
+	},
+	
+	// Text that is used in the UI.  Can be overridden on init.
+	text:{
+		pane:{
+			confirm$reset: "Are you sure you want to clear out the current workspace?"
 		},
-		
-		// Logout Method
-		logout: function(){
-			url = this.basepath + "/logout";
-			options = {};
-			options["message"] = this.text.logout.message;
-			options["onok"] = function() {document.location = url;};
-			options["title"] = this.text.logout.title;
-			options["oklabel"] = this.text.logout.ok;
-			this.confirm(options);
+		logout: {
+			title: "Confirm Logout",
+			ok: "Logout",
+			message: "Are you sure you want to end this session?"
 		},
-		
-		// Utility Methods
-		util: {
-			mapped: function(m, k, d){
-				if(m != null && m[k] != null){
-					return m[k];
-				}
-				return d;
-			},
-			mapped$rq: function(m, k){
-				if(m != null && m[k] != null){
-					return m[k];
-				}
-				throw "The '" + k + "' option is required.";
-			},
-			map: function(m){
-				if(m == null) return {};
-				return m;
-			},
-			nothing: function(){},
-			getin: function(map){
-				var value = map;
-				if(arguments.length > 1){
-					for(var i = 1; i < arguments.length; i++){
-						value = value[arguments[i]];
-						if(value == null){
-							return null;
-						}
+		label: {
+			cancel: "Cancel",
+			ok: "OK",
+			confirm: "Confirm"
+		}
+	},
+	
+	settings: {
+		duration: 500	// The duration of a transition between slides.
+	},
+	
+	// Confirm Method
+	confirm: function(options){
+		var m = this.util.mapped$rq(options, "message");
+		var of = this.util.mapped$rq(options, "onok");
+		var t = this.util.mapped(options, "title", this.text.label.confirm);
+		var h = this.util.mapped(options, "height", "auto");
+		var ol = this.util.mapped(options, "oklabel", this.text.label.ok);
+		var cl = this.util.mapped(options, "cancellabel", this.text.label.cancel);
+		var cf = this.util.mapped(options, "oncancel", function(){$( this ).dialog( "close" );});
+		this.confirmDialog.text(m);
+
+		var buts = {};
+		buts[ol] = function (){of(); $(this).dialog( "close" )};
+		buts[cl] = cf;
+		this.confirmDialog.dialog({
+			title: t,
+			resizable: false,
+			height: h,
+			modal: true,
+			buttons: buts
+		});
+	},
+	
+	// Logout Method
+	logout: function(){
+		url = this.basepath + "/logout";
+		options = {};
+		options["message"] = this.text.logout.message;
+		options["onok"] = function() {document.location = url;};
+		options["title"] = this.text.logout.title;
+		options["oklabel"] = this.text.logout.ok;
+		this.confirm(options);
+	},
+	
+	// Utility Methods
+	util: {
+		mapped: function(m, k, d){
+			if(m != null && m[k] != null){
+				return m[k];
+			}
+			return d;
+		},
+		mapped$rq: function(m, k){
+			if(m != null && m[k] != null){
+				return m[k];
+			}
+			throw "The '" + k + "' option is required.";
+		},
+		map: function(m){
+			if(m == null) return {};
+			return m;
+		},
+		nothing: function(){},
+		getin: function(map){
+			var value = map;
+			if(arguments.length > 1){
+				for(var i = 1; i < arguments.length; i++){
+					value = value[arguments[i]];
+					if(value == null){
+						return null;
 					}
 				}
-				return value;
 			}
-		},
+			return value;
+		}
+	},
+	
+	// Starts a new stack of panes.  Clears all existing panes out and starts a new stack.
+	stack: function(url, params, options){
+		var pushfx = function(){PaneManager.push(url, params, options)};
 		
-		// Starts a new stack of panes.  Clears all existing panes out and starts a new stack.
-		stack: function(url, params, options){
-			var pushfx = function(){PaneManager.push(url, params, options)};
-			
-			if(this.hasPanes()){
-				this.confirm({
-					onok: function(){PaneManager.reset(pushfx)}, 
-					message: this.text.pane.confirm$reset});
-			}
-			else{
-				pushfx();
-			}
-		},
+		if(this.hasPanes()){
+			this.confirm({
+				onok: function(){PaneManager.reset(pushfx)}, 
+				message: this.text.pane.confirm$reset});
+		}
+		else{
+			pushfx();
+		}
+	},
+	
+	// Adds a new pane to the current stack.
+	push: function(url, params, options){
+		options = this.util.map(options);
+		params = this.util.map(params);
+		var request = {
+			url: url,
+			params: params,
+			options: options
+		}
+		var fullUrl = this.getUrl(url, params);
 		
-		// Adds a new pane to the current stack.
-		push: function(url, params, options){
-			options = this.util.map(options);
-			params = this.util.map(params);
-			var request = {
-				url: url,
-				params: params,
-				options: options
-			}
-			var fullUrl = this.getUrl(url, params);
+		var settings = {
+				dataType: "html",
+				success: function(data, status, xhr){
+					PaneManager.onsuccess(data, request, status, xhr);
+				},
+				error: function(data, status, xhr){
+					PaneManager.onfailure(data, request, status, xhr);
+				}
+		}
+		if(options != null && options.ajax != null){
+			settings = $.extend(settings, options['ajax']);
+		}
+		$.ajax(fullUrl, settings);
+	},
+	
+	// Processes a successful retrieve of a pane.
+	onsuccess: function(data, request, status, xhr){
+		// Create The Pane - Expects that any prepane processing has already been done.
+		var pane = {request: request, cache: {}};
+		pane.refresh = function(){PaneManager.refresh({pane: pane})};
+		if(this.current != null){
+			pane.previous = this.current;
+			$(this.current.pane).hide("slide", {direction: "left"}, this.settings.duration);
+		}
+		
+		$(this.content).append("<div class='pane' style='display:none;'></div>");
+		pane.pane = $(content).children().last();
+		pane.pane.html(data);
+		pane.pane.show("slide", {direction: "right"}, this.settings.duration);
+		this.current = pane;
+	},
+	
+	// When content is refreshed for a pane.
+	onrefresh: function(data, target, status, xhr){
+		target.pane.empty();
+		target.pane.html(data);
+	},
+	
+	// Processes a failed request for a pane.
+	onfailure: function(data, request, status, xhr){
+		alert("Failed: " + data);
+	},
+	
+	// Removes the current pane from the stack, making the previous pane the current one.
+	// onpop, postpop
+	pop: function(options){
+		options = this.util.map(options);
+		var poppane = this.current;
+		
+		if(poppane){
+			var previous = poppane.previous;
 			
+			// Define The Post Hide Current Function
+			if(poppane.request.options.onpop){
+				if(false === poppane.request.options.onpop(options, poppane, previous)){
+					return;
+				}
+			}
+			
+			// Poppin Is A Go
+			this.current = null;
+			var postHide = function(){
+				poppane.pane.remove();
+			};
+			poppane.pane.hide("slide", {direction: "right"}, this.settings.duration, postHide);
+			
+			// Define The Show Previous Function
+			if(previous){
+				this.current = previous;
+				if(poppane.request.options.postpop){
+					poppane.request.options.postpop(options, poppane, previous);
+				}
+				//PaneManager.applyBehaviors();
+				previous.pane.show("slide", {direction: "left"}, this.settings.duration);
+			}
+		}
+	},
+	
+	// Refreshes the current pane in the stack.
+	refresh: function(options){
+		options = this.util.map(options);
+		target = this.util.mapped(options, "pane", this.current);
+		if(target){
+			var fullUrl = this.getUrl(target.request.url, target.request.params);
 			var settings = {
 					dataType: "html",
 					success: function(data, status, xhr){
-						PaneManager.onsuccess(data, request, status, xhr);
+						PaneManager.onrefresh(data, target, status, xhr);
 					},
 					error: function(data, status, xhr){
-						PaneManager.onfailure(data, request, status, xhr);
+						PaneManager.onfailure(data, target.request, status, xhr);
 					}
 			}
 			if(options != null && options.ajax != null){
 				settings = $.extend(settings, options['ajax']);
 			}
 			$.ajax(fullUrl, settings);
-		},
-		
-		// Processes a successful retrieve of a pane.
-		onsuccess: function(data, request, status, xhr){
-			// Create The Pane - Expects that any prepane processing has already been done.
-			var pane = {request: request, cache: {}};
-			pane.refresh = function(){PaneManager.refresh({pane: pane})};
-			if(this.current != null){
-				pane.previous = this.current;
-				$(this.current.pane).hide("slide", {direction: "left"}, this.settings.duration);
-			}
-			
-			$(this.content).append("<div class='pane' style='display:none;'></div>");
-			pane.pane = $(content).children().last();
-			pane.pane.html(data);
-			pane.pane.show("slide", {direction: "right"}, this.settings.duration);
-			this.current = pane;
-			window.history.pushState(request,'',request.url);
-		},
-		
-		// When content is refreshed for a pane.
-		onrefresh: function(data, target, status, xhr){
-			target.pane.empty();
-			target.pane.html(data);
-		},
-		
-		// When content is refreshed for a pane.
-		onrefresh: function(data, target, status, xhr){
-			target.pane.empty();
-			target.pane.html(data);
-		},
-		
-		// Processes a failed request for a pane.
-		onfailure: function(data, request, status, xhr){
-			alert("Failed: " + data);
-		},
-		
-		// Removes the current pane from the stack, making the previous pane the current one.
-		// onpop, postpop
-		pop: function(options){
-			options = this.util.map(options);
-			var poppane = this.current;
-			
-			if(poppane){
-				var previous = poppane.previous;
-				
-				// Define The Post Hide Current Function
-				if(poppane.request.options.onpop){
-					if(false === poppane.request.options.onpop(options, poppane, previous)){
-						return;
-					}
-				}
-				
-				// Poppin Is A Go
-				this.current = null;
-				var postHide = function(){
-					poppane.pane.remove();
-				};
-				poppane.pane.hide("slide", {direction: "right"}, this.settings.duration, postHide);
-				
-				// Define The Show Previous Function
-				if(previous){
-					this.current = previous;
-					if(poppane.request.options.postpop){
-						poppane.request.options.postpop(options, poppane, previous);
-					}
-					previous.pane.show("slide", {direction: "left"}, this.settings.duration);
-				}
-			}
-		},
-		
-		// Refreshes the current pane in the stack.
-		refresh: function(options){
-			options = this.util.map(options);
-			target = this.util.mapped(options, "pane", this.current);
-			if(target){
-				var fullUrl = this.getUrl(target.request.url, target.request.params);
-				var settings = {
-						dataType: "html",
-						success: function(data, status, xhr){
-							PaneManager.onrefresh(data, target, status, xhr);
-						},
-						error: function(data, status, xhr){
-							PaneManager.onfailure(data, target.request, status, xhr);
-						}
-				}
-				if(options != null && options.ajax != null){
-					settings = $.extend(settings, options['ajax']);
-				}
-				$.ajax(fullUrl, settings);
-			}
-		},
-		
-		// Provides a way to cache values specifically on the pane.  When a pane goes out of scope/popped so does the cache.
-		cache: function(){
-			if(arguments.length == 0){
-				return this.current.cache;
-			}
-			else if(arguments.length == 1){
-				return this.current.cache[arguments[0]]
-			}
-			else{
-				for(var i = 0 ; (i+1) < arguments.length; i=i+2){
-					this.current.cache[arguments[i]] = arguments[i+1];
-				}
-				return this.current.cache;
-			}
 		}
-		
+	},
+	
+	// Provides a way to cache values specifically on the pane.  When a pane goes out of scope/popped so does the cache.
+	cache: function(){
+		if(arguments.length == 0){
+			return this.current.cache;
+		}
+		else if(arguments.length == 1){
+			var keys = arguments[0].split("#");
+			var value = this.current.cache;
+			for(var i = 0; i < keys.length; i++){
+				var key = keys[i];
+				value = value[key];
+				if(value == null) return null;
+			}
+			return value;
+		}
+		else{
+			for(var i = 0 ; (i+1) < arguments.length; i=i+2){
+				this.current.cache[arguments[i]] = arguments[i+1];
+			}
+			return this.current.cache;
+		}
+	},
+	
+	on: function(type, selector, method){
+		this.content.on(type, selector, method);
+	}
 };

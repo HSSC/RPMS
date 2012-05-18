@@ -4,6 +4,10 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-admin.config :as config]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
+            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
+            [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
+            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
             [sandbar.stateful-session :as sess]
             [noir.validation :as val]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
@@ -20,22 +24,14 @@
   [ctx]
   (let [orgs (get-organizations ctx)]
     (layout/render ctx "Organizations"
-      [:div#org-func.controls
-       [:div#new-org "+"]
-       [:div#edit-org "Edit"]
-       [:div#add-admin "Add Administrator"]
-       [:div.done-button.ui-state-error "Done"]]
-      [:div.scroll-container
-      [:div#org-list
+      (container/scrollbox (selectlist/selectlist 
         (for [x orgs]
-          [:div.organization {:data-org-id (:id x)}
-  ;         mf
-            [:h3 (:name x)]
-            [:ul
-              [:li "Protocol-label: " (:protocol-label x)]
-              [:li "Location-label" (:location-label x)]
-              [:li "Code: " (:code x)]]])]]
-              [:script {:src "/js/org.js"}])))
+          {:label (:name x) :data x})))
+      (actions/actions 
+           (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
+           (actions/details-button {:url "/view/user/super/new" :params {:organization :selected#id} :label "Add Super"})
+           (actions/new-button {:url "/view/organization/add"})
+           (actions/pop-button)))))
 
 (defn with-error [key & content]
   (let [err (seq (val/get-errors key))]
@@ -47,27 +43,21 @@
 (defn create-fields [{:keys [name code protocol-label location-label]}]
   (list
     (with-error :name
-      (form/label "name" "Name")
-      (form/text-field "name" name))
+      (formui/input-text {:name :name :label "Name" :value name}))
     (with-error :code
-      (form/label "code" "Code")
-      (form/text-field "code" code))
+      (formui/input-text {:name :code :label "Code" :value code}))
     (with-error :location-label
-      (form/label "protocol-label" "Protocol Label")
-      (form/text-field "protocol-label" protocol-label))
+      (formui/input-text {:name :protocol-label :label "Protocol Label" :value protocol-label}))
     (with-error :location-label
-      (form/label "location-label" "Location Label")
-      (form/text-field "location-label" location-label))))
+      (formui/input-text {:name :location-label :label "Location Label" :value location-label}))))
 
 (defn get-view-organization-add
   [ctx]
   (layout/render ctx "Create Organization"
-    [:div#add-form-status.ui-state-error]
-    [:form#add-org-form
-      (create-fields {})
-      [:div.save-button "Save"]
-      [:div.cancel-button "Save"]
-      [:script {:src "/js/org-add.js"}]]))
+                 (container/scrollbox (formui/dataform (create-fields {})))
+                 (actions/actions 
+                   (actions/save-jquery-button {:method :post :url "/api/organization/add"})
+                   (actions/pop-button))))
 
 (defn validate-add-org
   [{:keys [name code protocol-label location-label]}]
@@ -79,12 +69,11 @@
   (if-let [org-id (-> ctx :query-params :organization)]
     (let [org (service/get-organization org-id)]
       (layout/render ctx "Edit Organization"
-        ;[:pre (with-out-str (pprint ctx) (pprint org))]
-        [:div#edit-form-status.ui-state-error]
-        (form/form-to [:post (str "/api/organization/edit?organization=" org-id)]
-           (create-fields org)
-           [:div#save-button "Save"])
-           [:script {:src "/js/org-edit.js"}]))))
+                 (container/scrollbox (formui/dataform (create-fields org)))
+                 (actions/actions 
+                   (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id} :label "SaveNew"})
+                   (actions/save-jquery-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
+                   (actions/pop-button))))))
 
 (defn ajax-status
   [{valid :valid}]

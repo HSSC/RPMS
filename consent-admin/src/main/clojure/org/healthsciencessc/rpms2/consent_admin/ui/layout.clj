@@ -1,6 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
   (require [org.healthsciencessc.rpms2.process-engine.path :as path]
-           [org.healthsciencessc.rpms2.consent-admin.ui.jquery :as jquery]
            [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
            [hiccup.page :as page]
            [hiccup.core :as hcup]
@@ -27,8 +26,7 @@
   [:div#footer.footer 
     [:span#footerbrand "Research Permissions Management System"]
     [:span#footerorg [:a {:href "http://www.healthsciencessc.org" :target "_blank"} "Health Sciences of South Carolina" ]]
-    [:span#footerversion "Version 2.0.0-SNAPSHOT"]
-    (jquery/center-on :#footerorg :#footer)])
+    [:span#footerversion "Version 2.0.0-SNAPSHOT"]])
 
 (defn- leftbar
   "Creates the default header that is used for the application"

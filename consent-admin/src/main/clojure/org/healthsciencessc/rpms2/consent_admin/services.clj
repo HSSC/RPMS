@@ -27,10 +27,25 @@
    :content-type "application/clojure" ;; tells our services to serve the Right Stuff
    :throw-exceptions false})
 
+(defn- failure-handler
+  "Simple handler that returns the body if the status is 200"
+  [resp]
+  (if (not= (:status resp) 200)
+    resp))
+
+
+(defn- meta-failure-handler
+  "Simple handler that attaches error and response information as metadata to a returned map if request is unsuccessful."
+  [message]
+  (fn [resp]
+    (if (not= (:status resp) 200)
+      (with-meta {} {:response resp :message message :body (:body resp)}))))
+
 (defn- handle-response
   "Handle the response from all requests."
   [resp handlers]
   (or (first (drop-while (complement identity) (map #(% resp) handlers)))
+      (failure-handler resp)
       (:body resp)))
 
 ;; The HTTP Request Functions
