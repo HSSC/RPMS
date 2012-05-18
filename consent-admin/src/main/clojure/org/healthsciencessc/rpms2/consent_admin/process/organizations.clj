@@ -9,14 +9,12 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
             [sandbar.stateful-session :as sess]
-            [noir.validation :as val]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
             [hiccup.core :as html]
             [hiccup.element :as elem]
             [hiccup.form :as form]
             [ring.util.response :as rutil])
   (:use [clojure.pprint]
-;        [org.healthsciencessc.rpms2.consent-admin.mf :only (mf)]
         [org.healthsciencessc.rpms2.consent-admin.services :only (get-organizations)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
@@ -33,23 +31,12 @@
            (actions/new-button {:url "/view/organization/add"})
            (actions/pop-button)))))
 
-(defn with-error [key & content]
-  (let [err (seq (val/get-errors key))]
-    (if err
-      (list [:div.form-error err]
-        content)
-      content)))
-
 (defn create-fields [{:keys [name code protocol-label location-label]}]
   (list
-    (with-error :name
-      (formui/input-text {:name :name :label "Name" :value name}))
-    (with-error :code
+      (formui/input-text {:name :name :label "Name" :value name})
       (formui/input-text {:name :code :label "Code" :value code}))
-    (with-error :location-label
-      (formui/input-text {:name :protocol-label :label "Protocol Label" :value protocol-label}))
-    (with-error :location-label
-      (formui/input-text {:name :location-label :label "Location Label" :value location-label}))))
+      (formui/input-text {:name :protocol-label :label "Protocol Label" :value protocol-label})
+      (formui/input-text {:name :location-label :label "Location Label" :value location-label}))
 
 (defn get-view-organization-add
   [ctx]
@@ -58,11 +45,6 @@
                  (actions/actions 
                    (actions/save-jquery-button {:method :post :url "/api/organization/add"})
                    (actions/pop-button))))
-
-(defn validate-add-org
-  [{:keys [name code protocol-label location-label]}]
-  (val/rule (< 2 (count name)) [:name "Organization name needs to be greater than two characters"])
-  (val/rule (< 0 (count code)) [:code "Code needs to be present"]))
 
 (defn get-view-organization-edit
   [ctx]
@@ -83,10 +65,6 @@
 
 (defn post-api-organization-add
   [ctx]
-;;  (validate-add-org (:body-params ctx))
-;;  (if (val/errors?)
-;;    (process/dispatch "get-add-organization" ctx)
-;;    (do
   (let [org (select-keys (:body-params ctx)
                          [:name :code :location-label])
         resp (service/add-organization org)]
@@ -94,15 +72,10 @@
 
 (defn post-api-organization-edit
   [ctx]
-;;  (validate-add-org (:body-params ctx))
-;;  (if (val/errors?)
-;;    (process/dispatch "get-edit-organization" ctx)
-;;    (do
   (let [keys (select-keys (:body-params ctx)
                               [:name :code :protocol-label :location-label])
         resp (service/edit-organization (-> ctx :query-params :organization) keys)]
     (ajax-status resp)))
-        ;;(process/dispatch "get-view-organizations" ctx))))
 
 (def process-defns
   [{:name "get-view-organizations"
