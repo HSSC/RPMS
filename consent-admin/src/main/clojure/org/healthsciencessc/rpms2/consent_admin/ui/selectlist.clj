@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.selectlist
-  (use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
+  (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
 
 (defn- selectitemlist
   [{label :label data :data}]

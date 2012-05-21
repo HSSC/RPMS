@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
-  (require [org.healthsciencessc.rpms2.process-engine.path :as path]
+  (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
            [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
            [hiccup.page :as page]
            [hiccup.core :as hcup]

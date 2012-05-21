@@ -29,7 +29,7 @@
             {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
-             (actions/details-button {:url "/view/user/super/new" :params {:organization :selected#id} :label "Add Super"})
+;             (actions/details-button {:url "/view/user/super/new" :params {:organization :selected#id} :label "Add Super"})
              (actions/new-button {:url "/view/organization/add"})
              (actions/pop-button))))))
 

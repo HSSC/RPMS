@@ -1,8 +1,8 @@
 ;; Provides the configuration of the admin
 (ns org.healthsciencessc.rpms2.consent-admin.config
-  (use [org.healthsciencessc.rpms2.consent-domain.props :only [slurp-config]])
-  (use [org.healthsciencessc.rpms2.consent-domain.sniff :only [sniff]])
-  (use [clojure.string :only (split blank?)]))
+  (:use [org.healthsciencessc.rpms2.consent-domain.props :only [slurp-config]]
+        [org.healthsciencessc.rpms2.consent-domain.sniff :only [sniff]]
+        [clojure.string :only (split blank?)]))
 
 ;; Defines the var that holds the configuration value map.
 (def config (slurp-config "consent-admin.props" (sniff "RPMSPKEY")))

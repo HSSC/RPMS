@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.navigation
-  (require [sandbar.stateful-session :as sess]
-           [org.healthsciencessc.rpms2.consent-domain.roles :as roles]))
+  (:require [sandbar.stateful-session :as sess]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]))
 
 (defn- use?
   "Checks to see if a structure can be rendered into a navigation group or item."

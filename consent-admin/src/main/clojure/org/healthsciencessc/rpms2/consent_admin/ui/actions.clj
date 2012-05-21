@@ -1,6 +1,6 @@
 ;; Provides helper functions for generating certain jquery scripts on the browser.
 (ns org.healthsciencessc.rpms2.consent-admin.ui.actions
-  (use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
+  (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
 
 ;; Define Methods for Creating an actionsx
 (defn actions

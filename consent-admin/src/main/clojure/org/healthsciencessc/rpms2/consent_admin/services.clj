@@ -17,7 +17,7 @@
 (defn- full-url
   "Creates the absolute URL to the services using the configured path to services."
   [url params]
-  (.toString (hutil/url (:services.url config) url params))) 
+  (.toString (hutil/url (:services.url config) url params)))
 
 (defn- credentials
   "Creats a map of all the header items needed for basic authentication."
@@ -58,7 +58,7 @@
 (defn- DO
   "Performs the actual http request, applying any handlers that are needed."
   [method url settings handlers]
-  (try 
+  (try
     (handle-response (method url settings) handlers)
     (catch Exception e
       ;; Handle Some What The Fudge Situations
@@ -68,32 +68,32 @@
 (defn- GET
   "Makes a get request to the server"
   [url params & handlers]
-  (DO client/get 
-      (full-url url params) 
-      (merge (credentials) (defaults)) 
+  (DO client/get
+      (full-url url params)
+      (merge (credentials) (defaults))
       handlers))
 
 (defn- POST
   "Makes a post request to the server"
   [url params form body & handlers]
-  (DO client/post 
-      (full-url url params) 
+  (DO client/post
+      (full-url url params)
       (merge {:body body :form-params form} (credentials) (defaults))
       handlers))
 
 (defn- PUT
   "Makes a put request to the server"
   [url params form body & handlers]
-  (DO client/put 
-      (full-url url params) 
+  (DO client/put
+      (full-url url params)
       (merge {:body body :form-params form} (credentials) (defaults))
       handlers))
 
 (defn- DELETE
   "Makes a delete request to the server"
   [url params form body & handlers]
-  (DO client/delete 
-      (full-url url params) 
+  (DO client/delete
+      (full-url url params)
       (merge {:body body :form-params form} (credentials) (defaults))
       handlers))
 
@@ -102,23 +102,48 @@
 (defn authenticate
   "Calls the authentication process within the consent services."
   [username password]
-  (DO client/get 
+  (DO client/get
         (full-url "/security/authenticate" {})
-        (merge (credentials {:username username :password password}) (defaults)) 
+        (merge (credentials {:username username :password password}) (defaults))
         [(fn [r] (if (= 200 (:status r))
                  (assoc (:body r)
                         :password password)
                  {:invalid-auth true}))]))
 
 ;; Domain utilities
+
+;; LOCATIONS
 (defn get-locations
   [_]
   (GET "/security/locations" {}))
 
+(defn get-location
+  [id]
+  (GET "/security/location" {:location id}))
+
+(defn add-location
+  [org-id o]
+  (PUT "/security/location"
+        nil
+        nil
+        (with-out-str (prn o))))
+
+(defn edit-location
+  [id o]
+  (POST "/security/location"
+        {:location id}
+        nil
+        (with-out-str (prn o))))
+
+;; USERS
 (defn get-users
   [_]
   (GET "/security/users" {}))
-(comment
+
+(defn get-user
+  [id]
+  (GET "/security/user" {:user id}))
+
 (defn add-user
   [org-id o]
   (PUT "/security/user"
@@ -129,10 +154,11 @@
 (defn edit-user
   [id o]
   (POST "/security/user"
-        {:user id} 
+        {:user id}
         nil
         (with-out-str (prn o))))
-)
+
+;; ORGANIZATIONS
 (defn get-organizations
   [_]
   (GET "/security/organizations" {}))
@@ -147,10 +173,57 @@
 (defn edit-organization
   [id o]
   (POST "/security/organization"
-        {:organization id} 
+        {:organization id}
         nil
         (with-out-str (prn o))))
- 
+
 (defn get-organization
   [id]
   (GET "/security/organization" {:organization id}))
+
+
+;; ROLES
+(defn get-roles
+  [_]
+  (GET "/security/roles" {}))
+
+(defn get-role
+  [id]
+  (GET "/security/role" {:role id}))
+
+(defn add-role
+  [org-id o]
+  (PUT "/security/role"
+        nil
+        nil
+        (with-out-str (prn o))))
+
+(defn edit-role
+  [id o]
+  (POST "/security/role"
+        {:role id}
+        nil
+        (with-out-str (prn o))))
+
+;; GROUPS
+(defn get-groups
+  [_]
+  (GET "/security/groups" {}))
+
+(defn get-group
+  [id]
+  (GET "/security/group" {:group id}))
+
+(defn add-group
+  [org-id o]
+  (PUT "/security/group"
+        nil
+        nil
+        (with-out-str (prn o))))
+
+(defn edit-group
+  [id o]
+  (POST "/security/group"
+        {:group id}
+        nil
+        (with-out-str (prn o))))
