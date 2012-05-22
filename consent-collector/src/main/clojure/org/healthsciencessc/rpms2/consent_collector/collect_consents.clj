@@ -77,10 +77,7 @@
   (list (let [s (:type c) 
         ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
         wname (str ns (:type c))
-        _ (println "wname is " wname)
-        fn (resolve (symbol wname )) 
-        _ (println "fn is " fn)
-        ]
+        fn (resolve (symbol wname )) ]
       [:span.control-type (:type c) ]
       (if fn [:div [:div c ] (fn c) ]
         [:div "Unrecognized control " 
@@ -122,9 +119,6 @@
   [f]
   (let [pname (get-in f [:collect-start])
         cur-page (first (filter #(= (:name %) pname ) (:contains f) )) ] 
-    ;;(debug "f " f)
-    ;;(debug "get-first-page contains " (:contains f))
-    ;;(debug "get-first-page curr page is " cur-page)
     cur-page))
 
 (defn- show-current-form 
@@ -171,15 +165,6 @@
              ))
    )])
 
-
-(defn- section-title
-  []
-  (let [s (session-get :collect-consent-status)]
-    [:div 
-     (debug "section title " (pprint-str s) )
-     [:p "State: Page "  (:current-page s) ]
-     ]))
-
 (defn- continue-form
   [ctx]
 )
@@ -192,9 +177,9 @@
     [:div
      [:h1 "Collect consents - # to be filled: "  
         (count (session-get :protocols-to-be-filled-out))  ]
-     (section-title)
+
+     ;; This is a summary of the forms
      (show-current-form (:form (session-get :collect-consent-status)) )
-     ;;(show-meta (session-get :needed-meta-data))
      (helper/post-form "/collect/consents/" 
                        [:div "Begin Collect Consent process" ]
                        (helper/standard-submit-button {:value "Continue" 
@@ -246,9 +231,7 @@
                   (merge s {:state :in-form 
                             :page next-page }) )
           (helper/myredirect "/collect/consents"))
-      (helper/rpms2-page 
-         [:div "NO MORE PAGES " ]
-      :title (form-title (:form s) )))))
+       (helper/myredirect "/view/unlock"))))
  
 (defn- perform-start-collection
   "Prepare to start collecting consents.
@@ -257,10 +240,12 @@
   [ctx]
 
   (let [s (session-get :collect-consent-status)
-        form (get-in s [:form :form]) ]
+        f (get-in s [:form :form]) ]
     (session-put! :collect-consent-status 
                   (merge s {:state :in-form 
-                            :page (get-first-page form)}) )
+                            :page (get-named-page f (get-in f [:collect-start]))
+                           ;; :page (get-first-page f)
+                            }) )
     (helper/myredirect "/collect/consents")))
 
 (defn- perform-finished-collection
@@ -290,5 +275,4 @@
     :else
           (perform-other ctx)
    )))
-
 

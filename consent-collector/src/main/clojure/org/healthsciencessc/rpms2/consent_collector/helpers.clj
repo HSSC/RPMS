@@ -144,9 +144,10 @@
   [:div.header {:data-role "header" } 
      [:div.ui-grid-b 
          [:div.ui-block-a 
-          "COLLECT CONSENTS " (:state (session-get :collect-consent-status))
-           ;;" Page: " (:current-page (session-get :collect-consent-status)) 
-         ]
+          (list (let [s (:state (session-get :collect-consent-status))]
+             "COLLECT CONSENTS " (:state s)
+           #_(if-let [p (:name (:page s))] 
+            " Page: " p))) ]
          [:div.ui-block-b.title title ]
          [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
      [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ]) 

@@ -2,7 +2,11 @@
   (:require
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
-  (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
+  (:use [sandbar.stateful-session :only [session-get 
+                                         session-put! 
+                                         session-delete-key!
+                                         flash-get 
+                                         flash-put! ]])
   (:use [clojure.tools.logging :only (debug warn info error)])
   (:use [clojure.string :only (split)])
   (:use [clojure.pprint :only (pprint)])
@@ -46,14 +50,15 @@
   [langs]
 
   [:fieldset {:data-role "controlgroup" }
-     ;;[:legend "Select language: " ]
-     [:div.sectionlegend "Select language:" ]
+     ;;[:legend "Select Language: " ]
+     [:div.sectionlegend "Select Language:" ]
         (list (for [l langs] 
            (list [:input (merge {:type "radio" 
-                   :name (:name l)
-                   :id (:name l)
-                   :value (:name l)
-                   } (if (= "English" (:name l)) {:checked "checked" } {})) ]
+                                 :name "sp-language" 
+                                 :id (:name l)
+                                 :value (:name l)
+                                } 
+                                (if (= "English" (:name l)) {:checked "checked" } {})) ]
                    [:label {:for (:name l) } (:name l) ]  ))) ])
 
 
@@ -62,7 +67,7 @@
   [plist]
 
   [:fieldset {:data-role "controlgroup" }
-     [:div.sectionlegend "Select Protocols:" ]
+     [:div.sectionlegend "Select Protocol(s):" ]
      (list (for [p plist]
         (list (let [ cbname (str "cb-" (:protocol-id p)) ]
                    (list (if (:required p) 
@@ -153,6 +158,9 @@
       (do 
         ;; do not want to reperform the search.
         (debug "GO BACK LAST: " (session-get :last-page))
+        (session-delete-key! :patient-id)
+        (session-delete-key! :patient-name)
+        (session-delete-key! :encounter-id)
         (helper/myredirect "/view/select/consenter"))
       (perform-select-protocols ctx)))
 

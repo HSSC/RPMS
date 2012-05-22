@@ -6,6 +6,7 @@
             						  [login :as login]
             						  [select-location  :as select-location] 
             						  [select-lockcode  :as select-lockcode] 
+            						  [select-unlockcode  :as select-unlockcode] 
             						  [select-consenter :as select-consenter] 
             						  [search-consenter :as search-consenter] 
             						  [search-results :as search-results] 
@@ -51,6 +52,9 @@
                 {:name "get-view-select-lock-code"  :runnable-fn active-session?  :run-fn select-lockcode/view :run-if-false goto-login-page  }
                 {:name "post-view-select-lock-code" :runnable-fn active-session?  :run-fn select-lockcode/perform :run-if-false goto-login-page } 
 
+                {:name "get-view-unlock"  :runnable-fn active-session?  :run-fn select-unlockcode/view :run-if-false goto-login-page  }
+                {:name "post-view-unlock" :runnable-fn active-session?  :run-fn select-unlockcode/perform :run-if-false goto-login-page } 
+
                 {:name "get-view-select-location"  :runnable-fn active-session?  :run-fn select-location/view :run-if-false goto-login-page }
                 {:name "post-view-select-location" :runnable-fn active-session?  :run-fn select-location/perform :run-if-false goto-login-page }
 
@@ -76,6 +80,9 @@
 
                 {:name "get-collect-consents" :runnable-fn active-session?  :run-fn collect-consents/view :run-if-false goto-login-page }
                 {:name "post-collect-consents" :runnable-fn active-session?  :run-fn collect-consents/perform :run-if-false goto-login-page }
+
+                {:name "get-review-consents" :runnable-fn active-session?  :run-fn collect-consents/view :run-if-false goto-login-page }
+                {:name "post-review-consents" :runnable-fn active-session?  :run-fn collect-consents/perform :run-if-false goto-login-page }
 
                 {:name "get-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
                 {:name "post-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
