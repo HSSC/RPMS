@@ -41,24 +41,13 @@
           :class "custom"
           } (if selected {:checked "checked" } {}))) 
 
-(defn- selected-cb
-  [orig rr]
-  (list (let [cbname (str "cb-" (:protocol-id rr)) ]
-     (if (:required orig) 
-         (list 
-           [:input (merge (checkbox-map cbname true) {:disabled "disabled"}) ]
-           [:label {:for cbname } (:name orig) ]))
-        (list
-           [:input  (checkbox-map cbname (:select-by-default orig)) ]
-           [:label {:for cbname } (:name orig) ] )))) 
-
 (defn- select-language
   "Displays radio buttons to select language."
   [langs]
 
   [:fieldset {:data-role "controlgroup" }
      ;;[:legend "Select language: " ]
-     [:div.sectionlegend "Select language: " ]
+     [:div.sectionlegend "Select language:" ]
         (list (for [l langs] 
            (list [:input (merge {:type "radio" 
                    :name (:name l)
@@ -73,7 +62,7 @@
   [plist]
 
   [:fieldset {:data-role "controlgroup" }
-     [:div.sectionlegend "Select Protocols" ]
+     [:div.sectionlegend "Select Protocols:" ]
      (list (for [p plist]
         (list (let [ cbname (str "cb-" (:protocol-id p)) ]
                    (list (if (:required p) 
@@ -88,7 +77,7 @@
     (helper/post-form "/view/select/protocols"
       [:div 
        (list 
-         (let [protlist  (dsa/get-protocols)
+         (let [protlist (dsa/get-protocols)
                publist (dsa/get-published-protocols) ]
            (do
                  (session-put! :published-protocols publist)
@@ -128,21 +117,8 @@
   TODO: each item in the list is a vector, that should be flattened "
   [orig]
   (let [publist (flatten orig)]
-  ;;(debug "NNN 144 All published protocols " (count (session-get :published-protocols)) " " (pprint (session-get :published-protocols)))
- ;; (debug "NNN 145-A FINDING META DATA ORIG " (count orig) orig )
-  ;;(debug "NNN 145-B FINDING META DATA FLAT " (count publist) publist )
-  ;;(debug "\n\nNNN FINDING META DATA ITEMS IN " publist)
   (distinct (flatten (map (fn [n] (do 
-                 ;; n is a list, we want the map in the list
-                   ;;(debug "NNN 149 meta " (first n) )
-                   (debug "NNN 149-B meta " n )
-                   ;;(debug "NNN 150 meta " (get-in (first n) [:meta-items]))
-                   ;;(debug "NNN 151-A meta " (pprint-str (:meta-items (first n))))
-                   (debug "NNN 151-B meta " (pprint-str (:meta-items n)))
                    (get-in n  [:meta-items]))) (flatten publist) )))))
-
-
-
 
 (defn- is-go-back?
   "Returns true if the current request represents go-back"
@@ -166,7 +142,6 @@
     (session-put! :protocols-to-be-filled-out protocols-to-be-filled-out)
     (session-put! :current-step "Form-1-Page-1")
 
-    ;;(flash-put! :header (str "Protocols to be filled out " (pprint-str needed) " Num meta " (count metadata))) 
     (debug "Protocols to be filled out " (pprint-str needed) " Num meta " (count metadata)) 
     (helper/myredirect "/view/meta-data"))) 
 
@@ -181,4 +156,4 @@
         (helper/myredirect "/view/select/consenter"))
       (perform-select-protocols ctx)))
 
-(debug! perform)
+;;(debug! perform)

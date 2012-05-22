@@ -115,7 +115,7 @@ input:required:invalid, input:focus:invalid
 .confirm-selection { font-size: 1.2em; display: block; text-align: center; }
 
 div.innerform { 
-	xborder: 1px solid gray; 
+	border: 1px solid gray; 
 	margin: 5px; padding: 5px; border-radius: 15px; 
 	-moz-border-radius: 15px; margin: 50px; 
 	}
@@ -163,7 +163,7 @@ div.innerform {
 	width: 100%;
 }
 
-.header .title { font-size: 1.2em; text-align: center; } 
+.header .title { font-size: 1.2em; text-align: center; line-height: 1.5em; } 
 
 /* 3rd column of header */
 .header .ui-grid-b .ui-block-c { text-align: right; }
@@ -181,7 +181,8 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 .search-results li { margin: 0; padding: 0px; padding-bottom: 20px; line-height: 2em; font-weight: bold; }
 .search-results li .secondary { font-size: .8em; xpadding-left: 15px; line-height: 1em; }
 
-.sectionlegend { text-align: left; font-size: 1.2em; }
+.sectionlegend { text-align: left; font-size: 1.2em; line-height: 1.5em;
+	padding-top: 15px; }
 
 /* grid f: 33/66*/
 .ui-grid-f .ui-block-a { 
@@ -264,4 +265,8 @@ ul.select-protocol-list  li.odd {
 	vertical-align: middle;
 	width: 250px;
 	text-align: right; }
+
+
+div.control { border: thin solid navy; padding 5px; }
+.control-type { font-weight: bold; color: navy; }
 

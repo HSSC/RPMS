@@ -70,7 +70,7 @@
   []
 
   [:div.valueimportantblock {:data-role "fieldcontain" } 
-  [:label {:for "who-is-signing" } "Who is signing the consent" ]
+  [:label {:for "who-is-signing" :class "labeldim" } "Who is signing the consent" ]
   [:select { :name "who-is-signing"  :id "who-is-signing" }
    [:option {:value "consenter" } "Consenter" ]
    [:option {:value "consenter-rep" } "Consenter Representative" ] ]])
@@ -82,19 +82,24 @@
     (helper/post-form "/view/meta-data"
      (list 
        [:div.left "Enter the following information:" ]
-       (emit-hardcoded-items)
+       ;;(emit-hardcoded-items)
        (for [item (flash-get :needed-meta-data)]
             (emit-item item)))
      (helper/standard-submit-button 
         { :value (i18n :meta-data-form-submit-button) } ))
     :title (i18n :hdr-metadata)))
 
+(defn- get-collect-start-page
+  [f]
+  (debug "get-collect " (:collect-start f))
+  (:collect-start f))
+
 (defn perform
   "Save meta data and prepare to enter the data."
   [ctx]
   (debug "Saving meta data and preparing to enter the data.")
 
-  (session-put! :current-form (dsa/sample-form))
-  (session-put! :current-page 0)
-  (session-put! :current-section 1)
-  (helper/myredirect "/collect/consents"))
+  (let [form (dsa/sample-form)
+        m {:form form :state :begin :current-page-name (get-collect-start-page form) }]
+    (session-put! :collect-consent-status m)
+    (helper/myredirect "/collect/consents")))

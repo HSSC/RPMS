@@ -26,6 +26,7 @@
 	        (do 
 		   (session-put! :patient-id patient-id)
 		   (session-put! :patient-name patient-name)
+		   (session-put! :encounter-id "EncounterID 123")
 		   (session-put! :patient-encounter-date patient-encounter-date)
     		   (helper/myredirect "/view/select/protocols")))
 	   (do

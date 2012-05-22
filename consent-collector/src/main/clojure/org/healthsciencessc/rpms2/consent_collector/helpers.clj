@@ -127,6 +127,45 @@
       t  (if type-value (i18n type-value) "text") ]
     (println "t is " t)))
 
+
+(defn- logout-form
+  []
+  [:form {:method "POST" :action (absolute-path "/view/logout") }
+           [:input {:type "submit" 
+                    :name "logout-btn" 
+                    :data-role "button"
+                    :data-inline "true"
+                    :data-theme "a"
+                    :data-mini "true"
+                    :value "Logout" } ]])
+
+(defn- header-collect-consents
+  [title]
+  [:div.header {:data-role "header" } 
+     [:div.ui-grid-b 
+         [:div.ui-block-a 
+          "COLLECT CONSENTS " (:state (session-get :collect-consent-status))
+           ;;" Page: " (:current-page (session-get :collect-consent-status)) 
+         ]
+         [:div.ui-block-b.title title ]
+         [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
+     [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ]) 
+
+(defn- header-standard
+  [title]
+  [:div.header {:data-role "header" } 
+     [:div.ui-grid-b 
+        [:div.ui-block-a ]
+        [:div.ui-block-b.title title ]
+        [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
+     [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ] )
+
+(defn- header
+  [title]
+  (if (session-get :collect-consent-status) 
+      (header-collect-consents title)
+      (header-standard title)))
+
 (defn- footer
   []
   [:div.footer {:data-role "footer" :data-theme "c" } 
@@ -140,16 +179,6 @@
       [:div.ui-block-c (if-let [p (session-get :encounter-id)]
                                (str "EncounterID: " p)) ] ]])
 
-(defn- logout-form
-  []
-  [:form {:method "POST" :action (absolute-path "/view/logout") }
-           [:input {:type "submit" 
-                    :name "logout-btn" 
-                    :data-role "button"
-                    :data-inline "true"
-                    :data-theme "a"
-                    :data-mini "true"
-                    :value "Logout" } ]])
 
 (defn rpms2-page
   "Emits a standard RPMS2 page."
@@ -176,7 +205,8 @@
      ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
-      [:div.header {:data-role "header" } 
+     (header title)
+      #_[:div.header {:data-role "header" } 
          [:div.ui-grid-b 
             [:div.ui-block-a ]
             [:div.ui-block-b.title title ]
