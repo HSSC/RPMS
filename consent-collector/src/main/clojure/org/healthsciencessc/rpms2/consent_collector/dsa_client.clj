@@ -201,51 +201,6 @@
   []
   (rand-int 1000000000))
 
-(defn generate-meta-data-items
- []
- (list
-
-{ :id (id) :name "additional-guarantor" :description "Additional guarantor" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "referring-doctor" :description "Date admitted" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "referring-doctor-city" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "primary-care-physician" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "primary-care-physician-city" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "attending-physician" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "advanced-directives-given" :description "" :data-type "yes-no" :organization "MYORG" }
-{ :id (id) :name "admission-date" :description "Date admitted" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "form-signer" :description "Signer" :data-type "choice - patient or patient rep" :organization "MYORG" }
-
-  )
-)
-
-#_(defn generate-protocol
-  [prototype]
-  { :name  (:name prototype)
-    :description (if (:description prototype) (:description prototype) "description for protocol")
-    :protocol-id "generated protocol-id"
-    :code "description for protocol"
-    :required (if (:required prototype) (:required prototype) false )
-    :select-by-default (if 
-	(:select-by-default prototype) 
-	(:select-by-default prototype) false )
-    :organization "description for protocol"
-    :location "description for protocol"
-  })
-
-(def get-protocol-metadata
-  {
-   "P0001" (list :meta-a :meta-b  "one" "two") 
-   "P0002" (list :meta-b "one" "two") 
-   "P0003" (list :meta-a :meta-c "one" "two") 
-   "P0004" (list :meta-d "one" "two") 
-  })
-
-(defn get-protocols-version
-  [protocols]
-  ;;for each protocol, collect the meta data fields into a set
-  ;;return the set
-  {}
-)
 
 (def consenter-field-defs { 
   :first-name          { :required true :i18n-name "first-name" }
@@ -410,45 +365,6 @@
   []
   (rand-int 1000000000))
 
-(defn generate-meta-data-items
- []
- (list
-
-{ :id (id) :name "additional-guarantor" :description "Additional guarantor" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "referring-doctor" :description "Date admitted" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "referring-doctor-city" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "primary-care-physician" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "primary-care-physician-city" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "attending-physician" :description "" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "advanced-directives-given" :description "" :data-type "yes-no" :organization "MYORG" }
-{ :id (id) :name "admission-date" :description "Date admitted" :data-type "string" :organization "MYORG" }
-{ :id (id) :name "form-signer" :description "Signer" :data-type "choice - patient or patient rep" :organization "MYORG" }
-
-  )
-)
-
-#_(defn generate-protocol
-  [prototype]
-  { :name  (:name prototype)
-    :description (if (:description prototype) (:description prototype) "description for protocol")
-    :protocol-id "generated protocol-id"
-    :code "description for protocol"
-    :required (if (:required prototype) (:required prototype) false )
-    :select-by-default (if 
-	(:select-by-default prototype) 
-	(:select-by-default prototype) false )
-    :organization "description for protocol"
-    :location "description for protocol"
-  })
-
-(def get-protocol-metadata
-  {
-   "P0001" (list :meta-a :meta-b  "one" "two") 
-   "P0002" (list :meta-b "one" "two") 
-   "P0003" (list :meta-a :meta-c "one" "two") 
-   "P0004" (list :meta-d "one" "two") 
-  })
-
 (defn get-protocols-version
   [protocols]
   ;;for each protocol, collect the meta data fields into a set
@@ -515,9 +431,9 @@
 :meta-items [
 {:uri "urn:gurantor" :name "Guarantor", :organization "BLAH", :default-value "Mr Smith", :description "This person is the guarantor", :data-type "string"} 
 
-{:uri "urn:referring-doctor" :name "Referring Doctor", :organization "BLAH 2", :default-value "Dr Refer Ranger", :description "The referring doctor for this patient", :data-type "xsd:string"} 
+{:mdid "MI002" :uri "urn:referring-doctor" :name "Referring Doctor", :organization "BLAH 2", :default-value "Dr Refer Ranger", :description "The referring doctor for this patient", :data-type "xsd:string"} 
 
-{:uri "urn:primary-care-physician" :name "Primary Care Physician", :organization "BLAH 3", :default-value "Dr Primary Person", :description "The primary care physician for this patient", :data-type "xsd:string"} 
+{:mdid "MI001" :uri "urn:primary-care-physician" :name "Primary Care Physician", :organization "BLAH 3", :default-value "Dr Primary Person", :description "The primary care physician for this patient", :data-type "xsd:string"} 
 
 {:uri "urn:admission-date" :name "Admission Date", :organization "BLAH 4", :default-value "today", :description "The date the patient was admitted for this consent", :data-type "xsd:date"}
              ]
@@ -591,13 +507,262 @@
      :description "Tricare stuff" } ))
 
 
+(def metadata-map
+    { 
+        :MI001 { :mdid "MI001" :label "Primary Care Physician", :value "Dr. Bob Smith" },
+        :MI002 { :mdid "MI002" :label "Refering Physician", :value "Dr. Bob Jones" }
+    }
+)
+
+(def policy-map
+  { :P00001 { :title "Your Permission Is Needed",
+         :text ["I, Bob R. Smith, consent to and authorize medical treatment and diagnostic procedures which may be ordered by my doctors and performed by MUSC Medical Center (\"The Hospital\"). I consent to have blood drawn and to be tested for infectious diseases, including but not limited to: syphilis, AIDS, hepatitis, and testing for drugs if my doctor orders these tests."],
+          :media  "http://obis-vac-stg.mdc.musc.edu/videos/bodpod.mp4" 
+           } ,
+    :P00003  {
+       :title "Your Agreement to Pay for Treatment",
+       :text [
+"I assign and transfer to The Hospital and / or my doctors all rights, and interest in benefits I may have under any insurance policy I may have, including but not limited to hospitalization, medical, third party liability insurance coverage, workers compensation benefits, or benefits paid by Medicare or Medicaid. This assignment is intended to include any interest in benefits that I may have relating to this date of service as well as any prior dates of service. I direct that any insurance company or other party make payment of such benefits to The Hospital or my doctor. I authorize The Hospital and / or my doctor to collect benefits from any responsible third party through whatever means may be deemed necessary, and to endorse benefit checks made payable directly to me.", 
+
+              "I understand that by signing below, I promise to pay all Hospital and doctor charges at the standard rates and terms of The Hospital or doctor including all charges not covered by my insurance or any other party. I promise to pay the patient's account at the rates stated in The Hospital's price list (known as the \"Charge Master\") and / or the doctor's fee schedule in effect on the date the charge is processed for the services provided. I understand that there will be a separate charge for the doctor and other professional services, but understand that The Hospital may bill for some professional fees.",
+"I understand that The Hospital files insurance as a courtesy to me, and agree that I am responsible for payment of my bill, including any charges that are denied by my insurance or any other responsible party. I understand that care that is experimental as determined by my insurance company may not be covered and that I will be responsible for those charges. I agree that if this account is not paid, it may be turned over to a collection agency or attorney, and I must pay the amount due plus all costs of collection, including reasonable attorney's fees.", 
+
+              "I understand that if I am unable to pay my bills, I may speak with a Financial Counselor to determine whether I qualify for assistance or for a discount. I may call (843) 792-2311 for information or questions about my hospital bill and (843) 792-6200 for information about my doctor bill."]
+    },
+   :P00004 {
+:title "Retention / Disposal and Use of Blood, Body Fluids, or Tissue",
+:text [ 
+     "I understand and agree that any blood, body fluids or tissues normally removed from my body by MUSC in the course of any diagnostic procedures, surgery, or medical treatment that would otherwise be disposed of may be retained and used for research, including research on the genetic material (DNA) or other information contained in those tissues or specimens. I acknowledge that such research by MUSC may result in new inventions that may have commercial value and I understand that there are no plans to compensate me should this occur, regardless of the value of any such invention. I understand that any research using these leftover specimens or tissues will be done in a way that will not identify me.", 
+"I also understand that if I do not want research to be done using my leftover blood, body fluids or tissue, I need to check the box shown below. If I have questions, I should call (843) 792-8300."]
+	},
+
+  :P00005 {
+	:title "Permission to Contact for Research Studies",
+	:text [
+"I agree to be contacted about future research studies at MUSC for which I may be eligible. I understand that if I do not want to be contacted about future research studies, I need to check the box shown below."]
+	},
+  :P00006 {
+	:title "Admission Photographs",
+	:text [
+"I agree that my photograph may be taken for purposes of identifying me, or providing treatment to me. This photograph may become part of my medical record and may be disclosed if copies of my medical record are disclosed."]
+	},
+   :P00007 {
+	:title "Responsibility for Personal Items",
+	:text [
+"I understand that The Hospital is not responsible for valuable items which I bring with me. I understand it is my responsibility to send any valuable items (such as medications, money, jewelry, electronics, etc.) home for safe keeping. Any items left at the hospital in excess of 30 days will be disposed of."]
+    },
+  :P00008 {
+	:title "I received a copy of the MUSC Notice of Privacy Practices.",
+	:text ["I received a copy of the MUSC Notice of Privacy Practices."]
+   },
+   :P00009 {
+	:title "Consent and Certifications",
+	:text [
+"I certify that I have read or have had read to me this consent and agree to its terms. I also certify that I am the patient, or am duly authorized by the patient, or am duly appointed to sign this agreement. I accept and understand its terms."]
+    } 
+   }  	
+)
+
+(defn get-policy
+  [p]
+  (get policy-map (keyword p)))
+
+(defn get-metadata
+  [p]
+  (debug "METADATA " p " IS " (get metadata-map (keyword p)))
+  (get metadata-map (keyword p)))
+
 (defn sample-form 
   []
   
   {:form 
+   ;;{:policies policy-map }
    {:header 
     {:title "Consent For Medical Treatment"}, 
-    :contains [{:type "page", :name "page1", :title "Consent To Treat Me", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "MedicalTreatmentText", :policy "P00001", :render-title true, :render-text true, :render-media true} {:type "policy-choice-buttons", :name "MedicalTreatmentChoiceButtons", :policy "P00001", :true-label "I Agree", :false-label "I do not agree"}]} {:type "section", :name "section2", :contains [{:type "text", :name "ReferringDoctorText", :title "Release of Information to My Referring Doctor", :text ["If either of these are not correct, please press the corresponding change button."]}]} {:type "section", :name "section3", :contains [{:type "data-change", :name "flagThemDoctors", :meta-items ["MI002" "MI001"]}]}], :next "page2"} {:type "page", :name "page2", :title "Consent To Pay", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PaymentText", :policy "P00003"} {:type "policy-choice-buttons", :name "PaymentChoiceButtons", :policy "P00003", :true-label "I Agree", :false-label "I do not agree"}]}], :previous "page1", :next "page3"} {:type "page", :name "page3", :title "Tissue Retention Disposal", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "TissueText", :policy "P00004"} {:type "policy-checkbox", :name "TissueCheckbox", :policy "P00004", :label "I DO NOT agree to have my tissue or blood used for future research studies.", :checked-value false, :unchecked-value true}]}], :previous "page2", :next "page4"} {:type "page", :name "page4", :title "Permission to Contact", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PermissionText", :policy "P00005"} {:type "policy-checkbox", :name "PermissionCheckbox", :policy "P00005", :label "I DO NOT agree to be contacted for future research studies.", :checked-value false, :unchecked-value true}]}], :previous "page3", :next "page5"} {:type "page", :name "page5", :title "Photographs", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PhotographText", :policy "P00006"} {:type "policy-choice-buttons", :name "PhotographChoiceButtons", :policy "P00006", :true-label "I Agree", :false-label "I do not agree"}]}], :previous "page4", :next "page6"} {:type "page", :name "page6", :title "PersonalItems", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PersonalItemsText", :policy "P00007"} {:type "policy-button", :name "PersonalItemsButton", :policy "P00007", :label "I Understand", :action-value true}]}], :previous "page5", :next "page7"} 
+    :contains [
+               {:type "page", :name "page1", :title "Consent To Treat Me", 
+                :contains [
+                           {:type "section", :name "section1", 
+                            :contains [{:type "policy-text", 
+                                        :name "MedicalTreatmentText", 
+                                        :policy "P00001", 
+                                        :render-title true, 
+                                        :render-text true, 
+                                        :render-media true} 
+                                       {:type "policy-choice-buttons", 
+                                        :name "MedicalTreatmentChoiceButtons", 
+                                        :policy "P00001", 
+                                        :true-label "I Agree", 
+                                        :false-label "I do not agree"}]} 
+                           {:type "section", 
+                            :name "section2", 
+                            :contains [
+                                       {:type "text", 
+                                        :name "ReferringDoctorText", 
+                                        :title "Release of Information to My Referring Doctor", 
+                                        :text ["If either of these are not correct, please press the corresponding change button."]}]} 
+                           {:type "section", 
+                            :name "section3", 
+                            :contains [{:type "data-change", 
+                                        :name "flagThemDoctors", 
+                                        :meta-items ["MI002" "MI001"]}]}], 
+                :next "page2"} 
+               {:type "page", :name "page2", 
+                                :title "Consent To Pay", 
+                                :contains [{:type "section", 
+                                            :name "section1", 
+                                            :contains [
+                                                       {:type "policy-text", 
+                                                        :name "PaymentText", 
+                                                        :policy "P00003"} 
+                                                       {:type "policy-choice-buttons", 
+                                                        :name "PaymentChoiceButtons", 
+                                                        :policy "P00003", 
+                                                        :true-label "I Agree", :false-label "I do not agree"}]}], 
+                                :previous "page1", 
+                                :next "page3"} 
+               {:type "page", 
+                :name "page3", 
+                :title "Tissue Retention Disposal", 
+                :contains [{:type "section", :name "section1", 
+                            :contains [{:type "policy-text", 
+                                        :name "TissueText", 
+                                        :policy "P00004"} 
+                                       {:type "policy-checkbox", 
+                                        :name "TissueCheckbox", 
+                                        :policy "P00004", 
+                                        :label "I DO NOT agree to have my tissue or blood used for future research studies.", 
+                                        :checked-value false, 
+                                        :unchecked-value true}]}], 
+                :previous "page2", :next "page4"} 
+               {:type "page", 
+                :name "page4", 
+                :title "Permission to Contact", 
+                :contains [
+                           {:type "section", 
+                            :name "section1", 
+                            :contains [
+                                       {:type "policy-text", 
+                                        :name "PermissionText", 
+                                        :policy "P00005"} 
+                                       {:type "policy-checkbox", 
+                                        :name "PermissionCheckbox", 
+                                        :policy "P00005", 
+                                        :label "I DO NOT agree to be contacted for future research studies.", 
+                                        :checked-value false, 
+                                        :unchecked-value true}]}], 
+                :previous "page3", 
+                :next "page5"} 
+               {:type "page", 
+                :name "page5", 
+                :title "Photographs", 
+                :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PhotographText", :policy "P00006"} {:type "policy-choice-buttons", :name "PhotographChoiceButtons", :policy "P00006", :true-label "I Agree", :false-label "I do not agree"}]}], :previous "page4", :next "page6"} {:type "page", :name "page6", :title "PersonalItems", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PersonalItemsText", :policy "P00007"} {:type "policy-button", :name "PersonalItemsButton", :policy "P00007", :label "I Understand", :action-value true}]}], :previous "page5", :next "page7"} 
+               {:type "page", :name "page7", :title "Copy of Privacy Practices", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PrivacyPracticesText", :policy "P00008"} {:type "policy-choice-buttons", :name "PrivacyPracticesChoiceButtons", :policy "P00008", :true-label "I Agree", :false-label "I do not agree"}]}], :previous "page6", :next "page8"} {:type "page", :name "page8", :title "Consent Certifications", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "ConsentText", :policy "P00009", :render-title false} {:type "policy-choice-buttons", :name "ConsentChoiceButtons", :policy "P00009", :true-label "I Agree", :false-label "I do not agree"}]} {:type "section", :name "section2", :contains [{:type "signature", :name "consenter", :endorsement "E00001", :clear-label "Clear"}]}], :previous "page7", :next "page9"}], 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          :footer
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          {:title 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ["Patient Name: Bob R. Smith"]}, 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          :collect-start "page1", 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    :summary-start "summary1"}} 
+
+               )
+
+
+(defn sample-form-2
+  []
+  
+  {:form 
+   {:header 
+    {:title "2 Consent For Medical Treatment"}, 
+    :contains [
+               {:type "page", :name "page1", :title "Consent To Treat Me", 
+                :contains [
+                           {:type "section", :name "section1", 
+                            :contains [{:type "policy-text", 
+                                        :name "MedicalTreatmentText", 
+                                        :policy "P00001", 
+                                        :render-title true, 
+                                        :render-text true, 
+                                        :render-media true} 
+                                       {:type "policy-choice-buttons", 
+                                        :name "MedicalTreatmentChoiceButtons", 
+                                        :policy "P00001", 
+                                        :true-label "I Agree", 
+                                        :false-label "I do not agree"}]} 
+                           {:type "section", 
+                            :name "section2", 
+                            :contains [
+                                       {:type "text", 
+                                        :name "ReferringDoctorText", 
+                                        :title "Release of Information to My Referring Doctor", 
+                                        :text ["If either of these are not correct, please press the corresponding change button."]}]} 
+                           {:type "section", 
+                            :name "section3", 
+                            :contains [{:type "data-change", 
+                                        :name "flagThemDoctors", 
+                                        :meta-items ["MI002" "MI001"]}]}], 
+                :next "page2"} 
+               {:type "page", :name "page2", 
+                                :title "Consent To Pay", 
+                                :contains [{:type "section", 
+                                            :name "section1", 
+                                            :contains [
+                                                       {:type "policy-text", 
+                                                        :name "PaymentText", 
+                                                        :policy "P00003"} 
+                                                       {:type "policy-choice-buttons", 
+                                                        :name "PaymentChoiceButtons", 
+                                                        :policy "P00003", 
+                                                        :true-label "I Agree", :false-label "I do not agree"}]}], 
+                                :previous "page1", 
+                                :next "page3"} 
+               {:type "page", 
+                :name "page3", 
+                :title "Tissue Retention Disposal", 
+                :contains [{:type "section", :name "section1", 
+                            :contains [{:type "policy-text", 
+                                        :name "TissueText", 
+                                        :policy "P00004"} 
+                                       {:type "policy-checkbox", 
+                                        :name "TissueCheckbox", 
+                                        :policy "P00004", 
+                                        :label "I DO NOT agree to have my tissue or blood used for future research studies.", 
+                                        :checked-value false, 
+                                        :unchecked-value true}]}], 
+                :previous "page2", :next "page4"} 
+               {:type "page", 
+                :name "page4", 
+                :title "Permission to Contact", 
+                :contains [
+                           {:type "section", 
+                            :name "section1", 
+                            :contains [
+                                       {:type "policy-text", 
+                                        :name "PermissionText", 
+                                        :policy "P00005"} 
+                                       {:type "policy-checkbox", 
+                                        :name "PermissionCheckbox", 
+                                        :policy "P00005", 
+                                        :label "I DO NOT agree to be contacted for future research studies.", 
+                                        :checked-value false, 
+                                        :unchecked-value true}]}], 
+                :previous "page3", 
+                :next "page5"} 
+               {:type "page", 
+                :name "page5", 
+                :title "Photographs", 
+                :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PhotographText", :policy "P00006"} {:type "policy-choice-buttons", :name "PhotographChoiceButtons", :policy "P00006", :true-label "I Agree", :false-label "I do not agree"}]}], :previous "page4", :next "page6"} {:type "page", :name "page6", :title "PersonalItems", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PersonalItemsText", :policy "P00007"} {:type "policy-button", :name "PersonalItemsButton", :policy "P00007", :label "I Understand", :action-value true}]}], :previous "page5", :next "page7"} 
                {:type "page", :name "page7", :title "Copy of Privacy Practices", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "PrivacyPracticesText", :policy "P00008"} {:type "policy-choice-buttons", :name "PrivacyPracticesChoiceButtons", :policy "P00008", :true-label "I Agree", :false-label "I do not agree"}]}], :previous "page6", :next "page8"} {:type "page", :name "page8", :title "Consent Certifications", :contains [{:type "section", :name "section1", :contains [{:type "policy-text", :name "ConsentText", :policy "P00009", :render-title false} {:type "policy-choice-buttons", :name "ConsentChoiceButtons", :policy "P00009", :true-label "I Agree", :false-label "I do not agree"}]} {:type "section", :name "section2", :contains [{:type "signature", :name "consenter", :endorsement "E00001", :clear-label "Clear"}]}], :previous "page7", :next "page9"}], 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           

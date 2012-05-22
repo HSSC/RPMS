@@ -104,6 +104,7 @@
   "Remove session data"
   []
   ;(destroy-session!)
+  (debug "remove-session-data")
   (doseq [k [ :patient-id 
             :patient-name 
             :patient-encounter-date 
@@ -191,31 +192,21 @@
     "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
-     ;;"http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" 
-     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" 
-      )
+     "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" )
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
      ;;"http://code.jquery.com/jquery-1.6.4.min.js"
-     ;;"http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"
-     "http://code.jquery.com/jquery-1.6.4.min.js"
+     "http://code.jquery.com/jquery-1.7.1.min.js"
      "http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"
      (absolute-path "app.js"))
      ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
-     (header title)
-      #_[:div.header {:data-role "header" } 
-         [:div.ui-grid-b 
-            [:div.ui-block-a ]
-            [:div.ui-block-b.title title ]
-            [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
-         [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ]
+      (header title)
       [:div#content {:data-role "content" :data-theme "d" } content]
-      (footer)
-     ]])] 
+      (footer) ]])] 
       (debug "Page: " title " is\n" (pprint-str resp) "\n\n")
       resp))
 
@@ -228,6 +219,16 @@
 	     [:div.ui-block-a col1-content ]
 	     [:div.ui-block-b col2-content ]]
         :title title ))
+
+
+(defn radio-btn
+  [group-name btn-name]
+
+  (list [:input {:type "radio" 
+                 :name group-name
+                 :id btn-name 
+                 :value btn-name } ]
+        [:label {:for btn-name } btn-name ] ))
 
 (defn emit-field
   "Emits a field definition. 
@@ -251,7 +252,6 @@
            :placeholder (i18n-placeholder-for form-name normalized-field)
           }
 
-       _ (debug "AAA FIELD NAME ORIG " field " defaults " default-values " defaults for this field " (get default-values (keyword field)))
        ;; should also verify that is a valid value
        m  (merge mx 
             ;;(if (= "readonly" augment) {:readonly ""} {})

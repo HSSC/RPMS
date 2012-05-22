@@ -5,7 +5,7 @@
             [org.healthsciencessc.rpms2.consent-collector.test.factories :as factories]
             [net.cgrand.enlive-html :as en])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]])
-  (:use [sandbar.stateful-session :only (session-get)])
+  (:use [sandbar.stateful-session :only (session-get session-put!)])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.java.io]) 
   (:use [clojure.pprint]) 
@@ -16,6 +16,7 @@
              [select-location :as select-location]
              [select-consenter :as select-consenter]
              [search-consenter :as search-consenter]
+             [collect-consents :as collect-consents]
              [select-protocol :as select-protocol]
              [metadata :as metadata]
              [create-consenter :as create-consenter]
@@ -145,6 +146,11 @@
   (with-open [wrtr (writer filename :append false)]
     (.write wrtr page)))
 
+#_(defn- spit-html
+  [page filename]
+  true
+)
+
 (deftest select-protocols-view-test
   "Verify that /view/select/protocol screen renders."
   (let [html (select-protocol/view {})
@@ -156,6 +162,60 @@
          [[:form (en/attr= :action "/view/select/protocols")]]
          #_[[:input (en/attr= :name "first-name")]]
          #_[[:input (en/attr= :name "last-name")]]
+         )))
+
+
+(deftest select-metadata-view-test
+  "Verify that /view/meta-data renders."
+
+
+(comment
+;; {:name Guarantor, :organization BLAH, :default-value Mr Smith, :uri urn:gurantor, 
+;;   :description "This person is the guarantor", :data-type string} 
+;; {:mdid MI002, :name Referring Doctor, :organization BLAH 2, :default-value Dr Refer Ranger, 
+;;  :uri urn:referring-doctor, :description The referring doctor for this patient, :data-type xsd:string} 
+;; {:mdid MI001, :name Primary Care Physician, :organization BLAH 3, :default-value Dr Primary Person, 
+;;  :uri urn:primary-care-physician, :description The primary care physician for this patient, :data-type xsd:string} 
+;; {:name Admission Date, :organization BLAH 4, :default-value today, :uri urn:admission-date, 
+;;  :description The date the patient was admitted for this consent, :data-type xsd:date})
+)
+
+  (session-put! :needed-meta-data (list (:MI001 dsa/metadata-map) 
+                                        (:MI002 dsa/metadata-map) ))
+  (let [html (metadata/view {})
+        _ (spit-html html "select_metadata.html")
+        [form] (en/select (en/html-snippet html)
+                          [[:form (en/attr= :action "/view/meta-data")]])]
+    (is form)
+    (are [sel] (is (not (empty? (en/select form sel))))
+         [[:form (en/attr= :action "/view/meta-data")]]
+         )))
+
+(deftest metadata-tests
+  (testing "Testing metadata submissions"
+    (are [doc parms path in-session?]
+         (testing doc
+          (session-put! :needed-meta-data (list (:MI001 dsa/metadata-map) 
+                                                (:MI002 dsa/metadata-map) ))
+           (-> 
+                  {:body-params parms}
+               metadata/perform
+               (redirects? path)
+               (is))
+           #_(is (= (if in-session? lockcode nil)
+                  (session-get :lockcode)))
+                  )
+         "Valid metadata" {:mdid "MI001" :MI001 "Dr Primary Care Physician Test" } "/collect/consents" true)))
+
+(deftest collect-consents-view-test
+  "Verify that /collect/consents screen renders."
+  (let [html (collect-consents/view {})
+        ;; _ (spit-html html "collect_consents.html")
+        [form] (en/select (en/html-snippet html)
+                          [[:form (en/attr= :action "/collect/consents")]])]
+    (is form)
+    (are [sel] (is (not (empty? (en/select form sel))))
+         [[:form (en/attr= :action "/collect/consents")]]
          )))
 
 

@@ -13,15 +13,14 @@
 
 (defn perform 
   [ { {:keys [lockcode]} :body-params } ]
-  (debug "select_unlockcode/perform lockcode is "  lockcode)
+  (debug "select_unlockcode/perform lockcode is "  lockcode " expected "
+         (session-get :lockcode) )
   (if (= lockcode (session-get :lockcode))
     (do
       (flash-put! :header "Unlocked. Go to Review" )
       (session-delete-key! :lockcode )
-      (session-put! :consent-stats :in-review )
       (helper/myredirect "/review/consents"))
     (do
-      (session-delete-key! :lockcode)
       (info "Invalid lockcode " lockcode)
       (flash-put! :header (i18n :flash-invalid-lockcode))
       (helper/myredirect "/view/unlock"))))
@@ -32,8 +31,13 @@
   (helper/rpms2-page 
     (helper/post-form "/view/unlock" 
         (list [:div.left (i18n :unlock-code-form-enter-lock-code ) ]
-              [:input {:id "lockcode" :name "lockcode" :type "number" 
-                       :required "" :length 4 :min 0 :max "9999" 
+              [:input {:id "lockcode" 
+                       :name "lockcode" 
+                       :type "number" 
+                       :required "" 
+                       :length 4 
+                       :min 0 
+                       :max "9999" 
                        :placeholder (i18n :unlock-code-form-enter-lock-code-placeholder) } ])
         (helper/standard-submit-button {
                    :value (i18n "unlock-code-form-submit-button") 

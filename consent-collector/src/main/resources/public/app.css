@@ -2,22 +2,14 @@
 @media only screen and (device-width: 768px) {
 	#outer { width: 720px; height; 290px; xbackground-color: #ffcc66; 
 		xborder: thin solid red; }
-	#content { width: 750px; height: 300px; 
-		background-color: #ccffff; xborder: 10px solid #66ffff; }
 }
 
 
 @media only screen and (min-device-width: 481px) 
 and (max-device-width: 1024px) and (orientation:portrait) {
-
 	/* PORTRAIT */
-	#outer { xbackground-color: pink ; height: 490px; width: 455px; xborder: thin solid green; }
-
-	#content { xbackground-color: white /* pink /* #ffffcc /*yellowish*/;  /* ipad 1024x768*/
-		height: 760px; width: 740px; xborder: thin solid #cc0099; }
-
-	#subouter { background-color: orange; height: 200px; width: 475px; border: thin solid #3399ff; } }
-
+	#content { height: 815px; xborder: 5px solid #cc0099; }
+}
 
 @media only screen and (min-device-width: 481px) 
 and (max-device-width: 1024px) and (orientation:landscape) {
@@ -172,7 +164,7 @@ div.innerform {
 /* footer */
 .footer .ui-grid-b .ui-block-b { text-align: center; }
 .footer .ui-grid-b .ui-block-c { text-align: right; }
-.footer .ui-grid-b { margin-left: 5px; padding: 10px; background-color: white; font-size: .8em; color: #333333; }
+.footer .ui-grid-b { margin-left: 5px; padding: 5px; background-color: white; font-size: .8em; color: #333333; height: 20px; }
 
 /* Styles for the Search Results */ 
 .user-selected { background-color: #0000A0 ; color: white ; }
@@ -267,6 +259,13 @@ ul.select-protocol-list  li.odd {
 	text-align: right; }
 
 
-div.control { border: thin solid navy; padding 5px; }
+div.control { xborder: thin solid navy; xpadding 5px; }
+div.control .text { font-size: 1.1em; color: #222222; margin-bottom: 1em; padding-below: 10px; }
+div.control h1 text { font-size: 1.2em; font-weight: bold; color: navy; margin-botton: 1em; }
+
 .control-type { font-weight: bold; color: navy; }
+
+div.finished1 { margin: 15px; }
+div.finished2 { margin: 15px; }
+div.finished3 { font-size: 2em; font-weight: bold; margin: 20px;}
 

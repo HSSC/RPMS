@@ -15,8 +15,9 @@
        
 (defn perform
    "Save location, then go to /view/select/lock-code"
-   [{{:keys [location]} :body-params } ]
+   [{{:keys [location]} :body-params :as ctx } ]
 
+   (debug "select-location/perform: " ctx)
    (if (or (empty? location) 
            (= nil location))
         (do (flash-put! :header (i18n "select-location-form-location-required"))
@@ -35,10 +36,14 @@
          [:fieldset {:data-role "controlgroup" }
  	  [:div.left (i18n :select-location-form-location-label) ]
           (for [l locs-names] 
+              (list (helper/radio-btn "location" l)))
+
+          #_(for [l locs-names] 
 	    (let [rbname (str "radio-choice-" l)]
-	      [:div	
-                [:input {:name "location" :id rbname :type "radio" :value l :data-theme "c" } ]
-	        [:label {:for rbname } l ]  ]
+[:div	
+[:input {:name "xlocation" :id rbname :type "radio" :value l :data-theme "c" } ]
+[:label {:for rbname } l ]  
+]
 	)) ])
 
         (helper/standard-submit-button { 

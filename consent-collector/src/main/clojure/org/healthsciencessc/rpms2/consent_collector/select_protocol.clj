@@ -109,7 +109,6 @@
                           (map (fn [n] (split n #"-")))
                           (map last)) 
         resp  (flatten (conj required-ids selected-ids)) ]
-        (debug "NNN needed-protocol-ids RETURNING " resp)
         resp))
 
 (defn- my-find-published
@@ -142,13 +141,16 @@
   (let [needed (needed-protocol-ids (:body-params ctx))
         protocols-to-be-filled-out  (map my-find-published needed)
         metadata (find-meta-data-items protocols-to-be-filled-out)]
-    (session-put! :needed-meta-data metadata)
-    (flash-put! :needed-meta-data metadata)
-    (session-put! :protocols-to-be-filled-out protocols-to-be-filled-out)
-    (session-put! :current-step "Form-1-Page-1")
+    (do
+      (session-put! :needed-meta-data metadata)
+      (session-put! :protocols-to-be-filled-out protocols-to-be-filled-out)
+      (session-put! :current-step "Form-1-Page-1")
 
-    (debug "Protocols to be filled out " (pprint-str needed) " Num meta " (count metadata)) 
-    (helper/myredirect "/view/meta-data"))) 
+      (debug "perform Needed Protocols " (pprint-str needed) 
+             " Num meta " (count metadata) 
+             " needed-meta-data "  (pprint-str metadata))
+
+      (helper/myredirect "/view/meta-data")))) 
 
 (defn perform
   "Either go back or go forward. Go back to the search results page"
