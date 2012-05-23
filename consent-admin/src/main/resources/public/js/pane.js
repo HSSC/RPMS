@@ -300,6 +300,19 @@ var PaneManager = {
 		}
 	},
 	
+	// Merges a value in the cache with an existing one.  The value is expected to be an object/hash.
+	merge: function(key, value){
+		if(key != null && value != null){
+			var val = this.cache(key);
+			if(val != null ){
+				value = $.extend(val, value);
+			}
+			this.cache(key, value);
+			return value;
+		}
+		return null;
+	},
+	
 	on: function(type, selector, method){
 		this.content.on(type, selector, method);
 	}

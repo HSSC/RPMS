@@ -5,7 +5,3 @@
 ;; Tests that the config is loaded as a map.
 (deftest test-config
   (is (map? config)))
-
-;; Tests that the bootstrap-locations function returns a sequence of values.
-(deftest test-bootstrap-locations
-  (is (sequential? (bootstrap-locations))))

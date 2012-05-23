@@ -42,18 +42,6 @@
            (actions/save-button {:method :post :url "/api/protocol" :params {:protocol :selected#id}})
            (actions/pop-button))))
 
-(defn view-protocol-versions
-  "Generates a view that shows a list of the available versions of a protocol."
-  [ctx]
-  (layout/render ctx "Protocol Version"
-                 (container/scrollbox (selectlist/selectlist {:label "Version A [retired]" :data {:id 1 :code "prot1"}}
-                                       {:label "Version B [published]" :data {:id 2 :code "prot2"}}
-                                       {:label "Version C [draft]" :data {:id 3 :code "prot3"}}))
-                 (actions/actions 
-                   (actions/details-button {:url "/view/protocol" :params {:protocol :selected#id}})
-                   (actions/new-button {:url "/view/protocol/version/new"})
-                   (actions/pop-button))))
-
 (defn view-protocol-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
@@ -81,11 +69,6 @@
    {:name "get-view-protocol"
     :runnable-fn (constantly true)
     :run-fn view-protocol}
-   
-   ;; Generates the view for a specific protocol version.
-   {:name "get-view-protocol-versions"
-    :runnable-fn (constantly true)
-    :run-fn view-protocol-versions}
    
    ;; Generates the view for creating a protocol.
    {:name "get-view-protocol-new"

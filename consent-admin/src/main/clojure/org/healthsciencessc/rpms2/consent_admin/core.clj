@@ -5,7 +5,8 @@
                        [response :as response]]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [sandbar.stateful-session :as sandbar]
-            [ring.middleware.content-type :as content-type])
+            [ring.middleware.content-type :as content-type]
+            [org.healthsciencessc.rpms2.consent-admin.process.init :as processes])
   (:use [compojure.core]
         [compojure.handler]
         [hiccup.middleware]
@@ -47,4 +48,4 @@
 (defn init 
   "Initializes the application when it is first started up"
   []
-  (pe/load-processes (first (bootstrap-locations))))
+  (pe/bootstrap-addons "/rpms/admin/bootstrap.clj"))
