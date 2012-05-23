@@ -7,15 +7,14 @@
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-services.seed :as seed]
             [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.process-engine.web-service :as process-ws]))
+            [org.healthsciencessc.rpms2.process-engine.web-service :as process-ws]
+            [org.healthsciencessc.rpms2.consent-services.default-processes.init :as proc-init]))
 
 (defn ws-init
   []
   (data/connect! (config/conf "neo4j-db-path"))
-  (seed/setup-default-schema!)
-  (seed/seed-base-org!)
-  (seed/seed-example-org!)
-  (process/load-processes config/default-process-class-path))
+  (seed/seed)
+  (process/bootstrap-addons))
 
 (defn ws-destroy
   []
@@ -27,7 +26,7 @@
        (do
          (reset! process/default-processes [])
          (reset! process/custom-processes [])
-         (process/load-processes config/default-process-class-path))
+         (process/bootstrap-addons))
        "Done")
   (GET "/reseed-db"
           []

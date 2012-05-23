@@ -1,8 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.config
-  (:require [org.healthsciencessc.rpms2.consent-domain.props :as props]))
+  (:use [org.healthsciencessc.rpms2.consent-domain.props :only [slurp-config]]
+        [org.healthsciencessc.rpms2.consent-domain.sniff :only [sniff]]))
 
 (def conf
-  (props/slurp-config "consent-services.props"))
-
-(def default-process-class-path
-  "default_processes")
+  (slurp-config "consent-services.props" (sniff "RPMSPKEY")))

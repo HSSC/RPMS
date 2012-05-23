@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-domain.core
-  (:use [slingshot.slingshot :only (throw+)]))
+  (:use [org.healthsciencessc.rpms2.consent-domain types]
+        [slingshot.slingshot :only (throw+)]))
 
 (def base
   {:id {:persisted false}
@@ -13,14 +14,14 @@
    :suffix {:persisted true}})
 
 (def default-data-defs
-  {"organization" {:attributes
+  {organization {:attributes
                    (merge base
                           {:name {:required true :persisted true}
                            :code {:persisted true}
                            :location-label {:persisted true}
                            :protocol-label {:persisted true}})}
 
-   "user" {:attributes (merge base
+   user {:attributes (merge base
                               person
                               {:username {:persisted true :required true}
                                :password {:omit true :persisted true :required true :validation (fn [password] (< 5 (count password)))}})
@@ -29,27 +30,28 @@
                        {:type :has-many :related-to "role-mapping"}
                        {:type :has-many-through :related-to "role-mapping" :relation-path ["group"]}]}
 
-   "role" {:attributes (merge base
+   role {:attributes (merge base
                               {:name {:persisted true :required true}
                                :code {:persisted true}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
-   "language" {:attributes (merge base
+   language {:attributes (merge base
                                   {:name {:persisted true :required true}
                                    :code {:persisted true}})
                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
-   "location" {:attributes (merge base
+   location {:attributes (merge base
                                   {:name {:persisted true}
                                    :code {:persisted true}
                                    :protocol-label {:persisted true}})
                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
-   "group" {:attributes (merge base
+   group {:attributes (merge base
                                {:name {:persisted true}})
-            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
+            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                        {:type :has-many :related-to "role-mapping"}]}
 
-   "consenter" {:attributes (merge base
+   consenter {:attributes (merge base
                                    person
                                    {:consenter-id {:persisted true :required true}
                                     :gender {:persisted true :required true}
@@ -58,14 +60,14 @@
                 :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
                             {:type :belongs-to :related-to "location" :relationship :in-location}]}
 
-   "role-mapping" {:attributes base
+   role-mapping {:attributes base
                    :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit true}
                                {:type :belongs-to :related-to "group" :relationship :has-group :omit true}
                                {:type :belongs-to :related-to "role" :relationship :has-role}
                                {:type :belongs-to :related-to "organization" :relationship :has-organization}
                                {:type :belongs-to :related-to "location" :relationship :has-location}]}
 
-   "meta-item" {:attributes (merge base
+   meta-item {:attributes (merge base
                                    {:name {:persisted true}}
                                    {:description {:persisted true}}
                                    {:uri {:persisted true}}
@@ -73,26 +75,26 @@
                                    {:default-value {:persisted true}})
                 :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
-   "policy" {:attributes (merge base
+   policy {:attributes (merge base
                                 {:name {:persisted true}}
                                 {:description {:persisted true}}
                                 {:uri {:persisted true}}
                                 {:code {:persisted true}})
              :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
-   "policy-defintion" {:attributes (merge base
+   policy-definition {:attributes (merge base
                                           {:name {:persisted true}}
                                           {:description {:persisted true}}
                                           {:code {:persisted true}})
                        :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
-   "form" {:attributes (merge base
+   form {:attributes (merge base
                               {:name {:persisted true}}
                               {:code {:persisted true}})
            :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
                        {:type :has-many :related-to "widget"}]}
 
-   "widget" {:attributes (merge base
+   widget {:attributes (merge base
                                 {:name {:persisted true}}
                                 {:type {:persisted true}})
              :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}

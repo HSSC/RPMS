@@ -1,10 +1,11 @@
 (ns org.healthsciencessc.rpms2.consent-services.test.domain-utils
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils]
+        [org.healthsciencessc.rpms2.consent-domain.types]
         [clojure.test]))
 
 (def test-role-mappings
-  [{:location {:name "Test"} :role {:name "Admin" :code "admin"} :organization {:name "Foo"}}
-   {:location {:name "Test2"} :role {:name "Super Admin" :code "sadmin"} :organization {:name "Foo"}}])
+  [{:location {:name "Test"} :role {:name "Admin" :code code-role-admin} :organization {:name "Foo"}}
+   {:location {:name "Test2"} :role {:name "Super Admin" :code code-role-superadmin } :organization {:name "Foo"}}])
 
 (deftest finds-code-in-codes-coll
   (is (code-in-codes? "foo" '("bar" "foo" "baz"))))
@@ -15,8 +16,8 @@
 (deftest finds-role-codes
   (let [role-codes (get-role-codes test-role-mappings)]
     (is (= 2 (count role-codes)))
-    (is (code-in-codes? "admin" role-codes))
-    (is (code-in-codes? "sadmin" role-codes))))
+    (is (code-in-codes? code-role-admin role-codes))
+    (is (code-in-codes? code-role-superadmin role-codes))))
 
 (deftest is-super-admin
   (is (super-admin? {:username "foo" :role-mappings test-role-mappings})))

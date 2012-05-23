@@ -1,0 +1,3 @@
+# The neo4j-db-path property identifies the base folder that NEO4J will store all of the data.
+# The path must be absolute from the root of the operating system.
+neo4j-db-path=/data/rpms2

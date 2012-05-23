@@ -1,4 +1,5 @@
-(ns org.healthsciencessc.rpms2.consent-domain.roles)
+(ns org.healthsciencessc.rpms2.consent-domain.roles
+  (:use [org.healthsciencessc.rpms2.consent-domain types]))
 
 (defn- submap-of?
   [smallmap bigmap]
@@ -35,33 +36,33 @@
 
 (defn superadmin?
   [user & constraints]
-  (apply has-role? user {:code "sadmin"} constraints))
+  (apply has-role? user {:code code-role-superadmin} constraints))
 
 (defn admin?
   [user & constraints]
-  (apply has-role? user {:code "admin"} constraints))
+  (apply has-role? user {:code code-role-admin} constraints))
 
 (defn consent-manager?
   [user & constraints]
-  (apply has-role? user {:code "manage"} constraints))
+  (apply has-role? user {:code code-role-consentmanager} constraints))
 
 (defn consent-collector?
   [user & constraints]
-  (apply has-role? user {:code "collect"} constraints))
+  (apply has-role? user {:code code-role-collector} constraints))
 
 (defn protocol-designer?
   [user & constraints]
-  (apply has-role? user {:code "design"} constraints))
+  (apply has-role? user {:code code-role-designer} constraints))
 
 (defn system?
   [user & constraints]
-  (apply has-role? user {:code "csys"} constraints))
+  (apply has-role? user {:code code-role-externalsystem} constraints))
 
 
 (defn consent-collector-mappings
   [user & constraints]
-  (apply get-role-mappings user :role {:code "collect"} constraints))
+  (apply get-role-mappings user :role {:code code-role-collector} constraints))
 
 (defn protocol-designer-mappings
   [user & constraints]
-  (apply get-role-mappings user :role {:code "design"} constraints ))
+  (apply get-role-mappings user :role {:code code-role-designer} constraints ))

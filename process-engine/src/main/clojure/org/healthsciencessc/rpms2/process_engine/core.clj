@@ -101,6 +101,15 @@
   (load-from-jars dir)
   (load-from-classpath dir))
 
+(defn bootstrap-addons
+  "Provides a way to bootstrap all of the resources matching a specific path into the clojure compiler."
+  ([] (bootstrap-addons "/rpms/bootstrap.clj"))
+  ([resource]
+    (let [cl (clojure.lang.RT/baseLoader)
+          resources (enumeration-seq(.getResources cl resource))]
+      (doseq [url resources]
+        (load-reader (java.io.InputStreamReader. (.openStream url)))))))
+
 (defn dispatch
   "Public function to find and execute the correct process based on name and context"
   [name params]

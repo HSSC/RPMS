@@ -1,10 +1,6 @@
-(ns org.healthsciencessc.rpms2.consent-services.domain-utils)
+(ns org.healthsciencessc.rpms2.consent-services.domain-utils
+  (:use [org.healthsciencessc.rpms2.consent-domain.types]))
 
-(def super-admin-role-code
-  "sadmin")
-
-(def admin-role-code
-  "admin")
 
 (defn code-in-codes?
   [code codes]
@@ -20,11 +16,11 @@
 
 (defn super-admin?
   [user]
-  (has-role? user super-admin-role-code))
+  (has-role? user code-role-superadmin))
 
 (defn admin?
   [user]
-  (has-role? user admin-role-code))
+  (has-role? user code-role-admin))
 
 (defn some-kind-of-admin?
   [user]
