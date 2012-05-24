@@ -111,7 +111,7 @@
 
 (defn neighbors-by-type
   "Gets all adjacent nodes of the given type to the given node"
-  [node type & extra-rels]
+  [node type extra-rels]
   (let [{:keys [dir rel]} (domain/get-directed-relationship (get-type node) type schema)]
     (if (and dir rel)
       (neo/traverse node
@@ -192,6 +192,11 @@
   (let [{:keys [related-to relation-path]} relation
         path (conj relation-path related-to)]
     (vec (map #(node->record % related-to) (walk-types-path node path)))))
+
+(defmethod get-related-obj :many-to-many
+  [record node relation]
+  (let [{related-to :related-to} relation]
+    (vec (map #(node->record % related-to) (walk-types-path node (vector related-to))))))
 
 (defn add-relations
   [record node relations]

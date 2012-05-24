@@ -22,6 +22,8 @@
 (def consent "consent")
 (def consent-meta "consent-meta")
 (def consent-endorsement "consent-endorsement")
+(def protocol "protocol")
+(def protocol-version "protocol-version")
 
 ;; COMMON CODES USED THROUGHOUT THE APPLICATION.  IDENTIFIES UNIQUENESS WITHIN METADATA.
 
