@@ -28,7 +28,8 @@
   "Authenticates a username password combination with the consent services applicaiton."
   [ctx username password]
   (if-let [user (services/authenticate username password)]
-    (sess/session-put! :user user)))
+    (if-not (= :invalid user)
+      (sess/session-put! :user user))))
 
 (defn generate-login-page
   ""
@@ -40,6 +41,7 @@
 (defn do-login
   ""
   [ctx]
+  (sess/session-delete-key! :user)
   (authenticate ctx (get-in ctx [:body-params :username])
                     (get-in ctx [:body-params :password]))
   (if (security/is-authenticated?)

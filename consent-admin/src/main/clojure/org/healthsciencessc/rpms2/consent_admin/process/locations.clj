@@ -23,7 +23,7 @@
   (let [locations (service/get-locations ctx)]
     (if (service/service-error? locations)
       (ajax/error (meta locations))
-      (layout/render ctx "locations"
+      (layout/render ctx "Locations"
         (container/scrollbox
           (selectlist/selectlist
             (for [x locations]
@@ -62,7 +62,7 @@
     (let [location (service/get-location location-id)]
       (if (service/service-error? location)
         (ajax/error (meta location))
-        (layout/render ctx "Edit Organization"
+        (layout/render ctx "Edit Location"
                    (container/scrollbox (formui/dataform (render-location-fields location)))
                    (actions/actions
                      (actions/save-button {:method :post :url "/api/location/edit" :params {:location location-id}})

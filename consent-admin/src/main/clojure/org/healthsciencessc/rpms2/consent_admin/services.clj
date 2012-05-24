@@ -1,7 +1,9 @@
 (ns org.healthsciencessc.rpms2.consent-admin.services
   (:require [clj-http.client :as client]
             [sandbar.stateful-session :as sess]
+            [org.healthsciencessc.rpms2.consent-domain.types :as domain]
             [clojure.pprint :as pp]
+            [clojure.stacktrace :as st]
             [hiccup.util :as hutil])
   (:use [org.healthsciencessc.rpms2.consent-admin.config]
         [clojure.data.json :only (json-str read-json)]))
@@ -62,7 +64,7 @@
     (handle-response (method url settings) handlers)
     (catch Exception e
       ;; Handle Some What The Fudge Situations
-      (.printStackTrace e)
+      (st/print-stack-trace e)
       nil)))
 
 (defn- GET
@@ -103,12 +105,12 @@
   "Calls the authentication process within the consent services."
   [username password]
   (DO client/get
-        (full-url "/security/authenticate" {})
-        (merge (credentials {:username username :password password}) (defaults))
-        [(fn [r] (if (= 200 (:status r))
+      (full-url "/security/authenticate" {})
+      (merge (credentials {:username username :password password}) (defaults))
+      [(fn [r] (if (= 200 (:status r))
                  (assoc (:body r)
                         :password password)
-                 {:invalid-auth true}))]))
+                 :invalid))]))
 
 ;; Domain utilities
 
@@ -122,18 +124,18 @@
   (GET "/security/location" {:location id}))
 
 (defn add-location
-  [org-id o]
+  [l]
   (PUT "/security/location"
         nil
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn l))))
 
 (defn edit-location
-  [id o]
+  [id l]
   (POST "/security/location"
         {:location id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn l))))
 
 ;; USERS
 (defn get-users
@@ -145,18 +147,19 @@
   (GET "/security/user" {:user id}))
 
 (defn add-user
-  [org-id o]
+  [u]
   (PUT "/security/user"
         nil
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn u))))
+
 
 (defn edit-user
-  [id o]
+  [id u]
   (POST "/security/user"
         {:user id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn u))))
 
 ;; ORGANIZATIONS
 (defn get-organizations
@@ -168,7 +171,8 @@
   (PUT "/security/organization"
        nil
        nil
-       (with-out-str (prn o))))
+       (with-out-str (prn o)))
+  (add-location {:name (str "Default Location - " (:name o))}))
 
 (defn edit-organization
   [id o]
@@ -184,7 +188,7 @@
 
 ;; ROLES
 (defn get-roles
-  [_]
+  []
   (GET "/security/roles" {}))
 
 (defn get-role
@@ -192,18 +196,18 @@
   (GET "/security/role" {:role id}))
 
 (defn add-role
-  [org-id o]
+  [r]
   (PUT "/security/role"
         nil
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn r))))
 
 (defn edit-role
-  [id o]
+  [id r]
   (POST "/security/role"
         {:role id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn r))))
 
 ;; GROUPS
 (defn get-groups
@@ -215,15 +219,41 @@
   (GET "/security/group" {:group id}))
 
 (defn add-group
-  [org-id o]
+  [g]
   (PUT "/security/group"
         nil
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn g))))
 
 (defn edit-group
-  [id o]
+  [id g]
   (POST "/security/group"
         {:group id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn g))))
+
+(defn add-role-to-user
+  [u r])
+
+(defn add-role-to-group
+  [g r])
+
+(defn add-admin
+  [u]
+  (let [org-id (:id (:organization u))
+        admin-id (-> (filter #(= (:code %)
+                             domain/code-role-admin)
+                             (get-roles))
+                   first
+                   :id)
+        usr-resp (add-user u)]
+    (if (:id usr-resp)
+      (let [role-params {:user (:id usr-resp)
+                         :role admin-id
+                         :organization org-id}]
+            (PUT "/security/userrole"
+               role-params
+               nil
+               nil))
+      usr-resp)))  ;; pass this back directly
+

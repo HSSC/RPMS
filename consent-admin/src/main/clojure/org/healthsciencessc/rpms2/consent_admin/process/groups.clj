@@ -62,7 +62,7 @@
     (let [group (service/get-group group-id)]
       (if (service/service-error? group)
         (ajax/error (meta group))
-        (layout/render ctx "Edit Organization"
+        (layout/render ctx "Edit Group"
                    (container/scrollbox (formui/dataform (render-group-fields group)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/group/edit" :params {:group group-id}})

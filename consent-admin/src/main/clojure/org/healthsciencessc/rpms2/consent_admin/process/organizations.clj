@@ -15,7 +15,8 @@
             [hiccup.element :as elem]
             [hiccup.form :as form]
             [ring.util.response :as rutil])
-  (:use [clojure.pprint])
+  (:use [clojure.pprint]
+        [org.healthsciencessc.rpms2.consent-domain.types :only (code-base-org)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (defn layout-organizations
@@ -25,11 +26,11 @@
       (ajax/error (meta orgs))
       (layout/render ctx "Organizations"
         (container/scrollbox (selectlist/selectlist 
-          (for [x orgs]
+          (for [x (remove #(= code-base-org (:name %)) orgs)]
             {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
-;             (actions/details-button {:url "/view/user/super/new" :params {:organization :selected#id} :label "Add Super"})
+             (actions/details-button {:url "/view/user/add" :params {:organization :selected#id} :label "Add Administrator"})
              (actions/new-button {:url "/view/organization/add"})
              (actions/pop-button))))))
 

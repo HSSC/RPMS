@@ -20,7 +20,7 @@
 
 (defn layout-roles
   [ctx]
-  (let [roles (service/get-roles ctx)]
+  (let [roles (service/get-roles)]
     (if (service/service-error? roles)
       (ajax/error (meta roles))
       (layout/render ctx "Roles"
@@ -50,7 +50,7 @@
 
 (defn get-view-role-add
   [ctx]
-  (layout/render ctx "Create role"
+  (layout/render ctx "Create Role"
                  (container/scrollbox (formui/dataform (render-role-fields)))
                  (actions/actions 
                    (actions/save-button {:method :post :url "/api/role/add"})
@@ -62,7 +62,7 @@
     (let [role (service/get-role role-id)]
       (if (service/service-error? role)
         (ajax/error (meta role))
-        (layout/render ctx "Edit Organization"
+        (layout/render ctx "Edit Role"
                    (container/scrollbox (formui/dataform (render-role-fields role)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/role/edit" :params {:role role-id}})

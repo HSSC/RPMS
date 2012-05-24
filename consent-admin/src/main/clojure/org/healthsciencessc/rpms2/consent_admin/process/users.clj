@@ -33,8 +33,8 @@
             (for [x users]
               {:label (format-name x) :data x})))
         (actions/actions 
-             (actions/details-button {:url "/view/user/edit" :params {:user :selected#id}})
-             (actions/details-button {:url "/view/role/addto" :params {:user :selected#id} :label "Add/Change roles"})
+             (actions/details-button {:url "/view/user/edit" :params {:user :selected#id} :label "Edit User"})
+             (actions/details-button {:url "/view/role/addto" :params {:user :selected#id} :label "Add or Change Roles"})
              (actions/new-button {:url "/view/user/add"})
              (actions/pop-button))))))
 
@@ -61,11 +61,15 @@
 
 (defn get-view-user-add
   [ctx]
+  (let [org (:organization (:query-params ctx))
+        persist-params {:method :post :url "/api/user/add"}
+        persist-params (if org
+                         (assoc persist-params :params {:organization org}))]
   (layout/render ctx "Create User"
                  (container/scrollbox (formui/dataform (render-user-fields)))
-                 (actions/actions 
-                   (actions/save-button {:method :post :url "/api/user/add"})
-                   (actions/pop-button))))
+                 (actions/actions
+                   (actions/save-button persist-params)
+                   (actions/pop-button)))))
 
 (defn get-view-user-edit
   [ctx]
@@ -73,7 +77,7 @@
     (let [user (service/get-user user-id)]
       (if (service/service-error? user)
         (ajax/error (meta user))
-        (layout/render ctx "Edit Organization"
+        (layout/render ctx "Edit User"
                    (container/scrollbox (formui/dataform (render-user-fields user)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/user/edit" :params {:user user-id}})
@@ -81,9 +85,14 @@
 
 (defn post-api-user-add
   [ctx]
-  (let [user (select-keys (:body-params ctx)
-                          (map :name user-fields))
-        resp (service/add-user user)]
+  (let [org-id (or (:organization (:query-params ctx))
+                   (:id (:organization (sess/session-get :user))))
+        user-to-add (-> (:body-params ctx)
+                      (select-keys (map :name user-fields))
+                      (assoc :organization {:id org-id}))
+        resp (if (:organization (:query-params ctx))
+               (service/add-admin user-to-add)
+               (service/add-user user-to-add))]
     (if (service/service-error? resp)
       (ajax/error (meta resp))
       (ajax/success resp))))

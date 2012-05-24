@@ -11,7 +11,7 @@
 (defn details-button
   [{url :url params :params label :label}]
   [:div.action.details-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
-   {:data-url url  :data-map (to-attr-value params)} [:span.ui-button-text (or label "Details")]])
+   {:data-url url  :data-map (to-attr-value params)} [:span.ui-button-text (or label "Edit")]])
 
 ;;
 (defn save-button
