@@ -24,10 +24,11 @@
                    (flash-put! :header (i18n :flash-search-consenter-results-no-selection ) )
 	   	   (helper/myredirect "/view/select/consenter"))
 	        (do 
-		   (session-put! :patient-id patient-id)
-		   (session-put! :patient-name patient-name)
-		   (session-put! :encounter-id (str "1239" (rand-int 1000)))
-		   (session-put! :patient-encounter-date patient-encounter-date)
+                   (helper/set-patient 
+		    {:patient-id patient-id
+		     :patient-name patient-name
+		     :encounter-id (str "#EN1239" (rand-int 1000))
+		     :patient-encounter-date patient-encounter-date})
     		   (helper/myredirect "/view/select/protocols")))
 	   (do
 	    	(session-delete-key! :patient-id)

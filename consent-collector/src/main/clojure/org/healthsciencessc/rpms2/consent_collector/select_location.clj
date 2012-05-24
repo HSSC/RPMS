@@ -17,7 +17,7 @@
    "Save location, then go to /view/select/lock-code"
    [{{:keys [location]} :body-params :as ctx } ]
 
-   (debug "select-location/perform: " ctx)
+   (debug "select-location/perform: " location " ctx " ctx)
    (if (or (empty? location) 
            (= nil location))
         (do (flash-put! :header (i18n "select-location-form-location-required"))
@@ -28,29 +28,17 @@
 
 
 (defn- select-location-form
-  "Display the select location form."
+  "Display select location form."
   [locs-names]
   (helper/rpms2-page 
     (helper/post-form "/view/select/location"
-      (list
-         [:fieldset {:data-role "controlgroup" }
- 	  [:div.left (i18n :select-location-form-location-label) ]
-          (for [l locs-names] 
-              (list (helper/radio-btn "location" l)))
-
-          #_(for [l locs-names] 
-	    (let [rbname (str "radio-choice-" l)]
-[:div	
-[:input {:name "xlocation" :id rbname :type "radio" :value l :data-theme "c" } ]
-[:label {:for rbname } l ]  
-]
-	)) ])
-
-        (helper/standard-submit-button { 
-                    :value (i18n "select-location-form-submit-button") 
-                    :name "select-location-submit-button" } ))
-
-    :title (i18n :hdr-select-location)))
+      [:fieldset {:data-role "controlgroup" }
+        [:div.left (str "Available " (helper/org-location-label) "(s)") ]
+        (map (fn [l] (helper/radio-btn "location" l)) (distinct locs-names))]
+      (helper/standard-submit-button { 
+                :value (str "Select " (helper/org-location-label))
+                :name "select-location" } ))
+    :title (str "Select " (helper/org-location-label))))
 
 (defn view 
   "Based on the number of authorized locations for logged in user: 
@@ -67,10 +55,10 @@
               (= nil (first locs-names))
               (empty? locs-names))
           (helper/myredirect "/view/not-authorized")
-          (if (= (count locs-names) 1)  
-          (let [l (first locs-data)]
-            (session-put! :org-location l)
-            (session-put! :location (first locs-names))
-            (session-put! :org-name (get-in (first locs-data) [:organization :name])) 
-            (helper/myredirect "/view/select/lock-code"))
-            (select-location-form locs-names)))))
+          (if (= (count (distinct locs-names)) 1)  
+              (let [l (first locs-data)]
+                (session-put! :org-location l)
+                (session-put! :location (first locs-names))
+                (session-put! :org-name (get-in (first locs-data) [:organization :name])) 
+               (helper/myredirect "/view/select/lock-code"))
+             (select-location-form locs-names)))))

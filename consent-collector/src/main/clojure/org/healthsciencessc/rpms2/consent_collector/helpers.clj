@@ -51,9 +51,40 @@
   (myredirect path))
 
 (defn username
+  "Extracts the username from the currently logged in user."
   []
   (let [u (session-get :user)]
         (if u (:username u) nil)))
+
+(defn current-org-id
+  "Extracts the org-id from the currently logged in user.
+  Maybe we should use the org associated with the user record
+  instead of the location"
+  []
+  (get-in (session-get :org-location) [:organization :id]))
+  ;;(get-in (session-get :user) [:organization :id]))
+
+(defn custom-site-label
+  "Returns the location label, which is taken from the user's location
+  if available; otherwise this is taken from the organization."
+  [lname]
+  (let [u (session-get :user)
+        l (session-get :org-location)
+        loc-specific (get-in l [:location lname ])
+        org-specific (get-in u [:organization lname ])]
+    (if (= nil loc-specific) org-specific loc-specific)))
+
+(defn org-location-label
+  "Returns the location label, which is taken from the user's location
+  if available; otherwise this is taken from the organization."
+  []
+  (custom-site-label :location-label))
+
+(defn org-protocol-label
+  "Returns the protocol label, which is taken from the user's location
+  if available; otherwise this is taken from the organization."
+  []
+  (custom-site-label :protocol-label))
 
 (defn standard-submit-button 
   "Standard submit button.  :name and :value should be define plus optionally other."
@@ -100,6 +131,19 @@
       (debug "post-form " (pprint retval)) retval)) 
 
 
+(defn collect-consent-form 
+  [path body & submit-buttons ]
+
+  (let [retval [:div.collect-consent-form
+     [:form {:action (mypath path) 
+             :method "POST" 
+             :data-ajax "false" 
+             :data-theme "a" } 
+      [:div body ] 
+      [:div.submit-area submit-buttons ] ]]] 
+      (debug "collect-consent-form " (pprint retval)) retval)) 
+
+
 (defn remove-session-data
   "Remove session data"
   []
@@ -143,14 +187,13 @@
 (defn- header-collect-consents
   [title]
   [:div.header {:data-role "header" } 
-     [:div.ui-grid-b 
-         [:div.ui-block-a 
+     [:div.ui-grid-i 
+         [:div.ui-block-aa 
           (list (let [s (:state (session-get :collect-consent-status))]
              "COLLECT CONSENTS " (:state s)
-           #_(if-let [p (:name (:page s))] 
-            " Page: " p))) ]
-         [:div.ui-block-b.title title ]
-         [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
+                )) ]
+         [:div.ui-block-bb.title title ]
+         [:div.ui-block-cc (if-let [u (session-get :user)] (logout-form))]] 
      [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ]) 
 
 (defn- header-standard
@@ -232,7 +275,7 @@
 
 (defn emit-field
   "Emits a field definition. 
-  Two variations - with or without a map containing default values."
+  Two variations - with or without map containing default values."
 
   ([field-def form-name field ]  
     (emit-field field-def form-name field {}))
@@ -270,3 +313,13 @@
                      (i18n-label-for form-name normalized-field) ]
             [:input m ]]))))
 
+
+
+(defn set-patient
+  "Saves the patient info in the session."
+  [m]
+
+  (session-put! :patient-id (:patient-id m))
+  (session-put! :patient-name (:patient-name m))
+  (session-put! :encounter-id (:encounter-id m))
+  (session-put! :patient-encounter-date (:patient-encounter-date m)))

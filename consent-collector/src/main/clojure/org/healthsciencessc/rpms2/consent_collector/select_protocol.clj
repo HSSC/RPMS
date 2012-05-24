@@ -50,7 +50,6 @@
   [langs]
 
   [:fieldset {:data-role "controlgroup" }
-     ;;[:legend "Select Language: " ]
      [:div.sectionlegend "Select Language:" ]
         (list (for [l langs] 
            (list [:input (merge {:type "radio" 
@@ -63,17 +62,16 @@
 
 
 
-(defn- select-protocol-control
-  [plist]
+(defn- protocol-item
+  "Checkbox for a protocol"
+  [p]
 
-  [:fieldset {:data-role "controlgroup" }
-     [:div.sectionlegend "Select Protocol(s):" ]
-     (list (for [p plist]
-        (list (let [ cbname (str "cb-" (:protocol-id p)) ]
-                   (list (if (:required p) 
-                             [:input (merge (checkbox-map cbname true) {:disabled "disabled"}) ]
-                             [:input  (checkbox-map cbname (:select-by-default p)) ])
-                          [:label {:for cbname } (:name p) ])))))])
+ (let [ nm (str "cb-" (:protocol-id p)) ]
+   (list 
+     (if (:required p) 
+      [:input (merge (checkbox-map nm true) {:disabled "disabled"}) ]
+      [:input  (checkbox-map nm (:select-by-default p)) ])
+     [:label {:for nm } (:name p) ])))
 
 (defn view 
   "Form to select protocols." 
@@ -88,14 +86,16 @@
                  (session-put! :published-protocols publist)
                  (session-put! :protocols protlist)
                (list  
-                 (select-protocol-control protlist)
+                 [:fieldset {:data-role "controlgroup" }
+                    [:div.sectionlegend (str "Select " (helper/org-protocol-label) "(s):") ]
+                    (map protocol-item protlist)]
                  (select-language (dsa/get-languages) )))
         ))]
       [:div.centered {:data-role "fieldcontain" }
        (helper/standard-submit-button { :value "Back" :name :go-back })
        (helper/standard-submit-button { :value "Continue" :name "select-protocols-form"  })
       ])
-    :title (i18n :hdr-select-protocols)))
+    :title (str "Select " (helper/org-protocol-label)) ))
 
 (defn- needed-protocol-ids
   "Returns protocol ids that need to be filled out.  This is the required
@@ -133,8 +133,7 @@
   (not (empty? goback)) ))
 
 (defn- perform-select-protocols
-  "If the back button was pressed, then go back to previous page.
-  Once protocols are selected, identify required meta-data items
+  "Once protocols are selected, identify required meta-data items
   and go to the meta-data page."
 
   [ctx]

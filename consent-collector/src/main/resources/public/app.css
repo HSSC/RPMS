@@ -206,7 +206,7 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 
 .ui-grid-g .ui-block-a {  width: 10%; xborder: thin solid red; }
 .ui-grid-g .ui-block-b {  width: 60%; color: #ccccff; background-color: #ffffcc; border: thin dashed  blue; }
-.ui-grid-g .ui-block-c {  width: 30%; border: thin solid green ; }
+.ui-grid-g .ui-block-c {  width: 30%; xborder: thin solid green ; }
 
 
 /* grid h: 66/33 */
@@ -231,6 +231,20 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 }
 
 .ui-grid-h .ui-block-a { clear: left; }
+
+
+/* Grid for consent collector header */
+.ui-grid-i {  width: 100%; border: thin solid black; }
+.ui-grid-i .ui-block-a {  clear: left; }
+
+.ui-block-aa, .ui-block-bb, .ui-block-cc, .ui-block-k { 
+	margin: 0; padding: 0; border: 0; float: left; min-height: 1px; }
+.ui-grid-i .ui-block-aa {  width: 10%; }
+.ui-grid-i .ui-block-bb {  width: 80%; }
+.ui-grid-i .ui-block-cc {  width: 10%; }
+
+.header .ui-grid-i .ui-block-b.title { text-align: center; }
+
 
 ul.select-protocol-list  { list-style: none; }
 ul.select-protocol-list  li {  width: 100%; display: block; }
@@ -259,13 +273,20 @@ ul.select-protocol-list  li.odd {
 	text-align: right; }
 
 
-div.control { xborder: thin solid navy; xpadding 5px; }
-div.control .text { font-size: 1.1em; color: #222222; margin-bottom: 1em; padding-below: 10px; }
-div.control h1 text { font-size: 1.2em; font-weight: bold; color: navy; margin-botton: 1em; }
-
 .control-type { font-weight: bold; color: navy; }
 
 div.finished1 { margin: 15px; }
 div.finished2 { margin: 15px; }
 div.finished3 { font-size: 2em; font-weight: bold; margin: 20px;}
 
+.debug { background: yellow; color: black; font-weight: bold; }
+
+div.section { xborder: thick solid purple; margin-bottom: 10px; padding-bottom: 5px; clear: left; }
+div.render-media { border: 1px solid silver ; padding: 10px ; margin-bottom: 5px; }
+
+div.control h1.title { font-size: 1.1em; font-weight: bold; }
+div.control h1.title { font-size: 1.1em; font-weight: bold; }
+
+div.control > .title { font-size: 1.1em; font-weight: bold; }
+
+div.control > .text { padding-bottom: 10px; }

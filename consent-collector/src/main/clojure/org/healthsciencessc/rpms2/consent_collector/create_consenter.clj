@@ -55,6 +55,11 @@
                  "/view/login")
 
             :else
-                 (do (session-put! :patient-name (str (:first-name parms) " " (:last-name parms)) )
+                 (do 
+                   (helper/set-patient 
+		    {:patient-id (str "#P" (rand-int 100))
+		     :patient-name (str (:first-name parms) " " (:last-name parms) )
+		     :encounter-id (str "#CN1239" (rand-int 1000))
+		     :patient-encounter-date "2012-06-01" })
                      (helper/myredirect  "/view/select/protocols")))))
 

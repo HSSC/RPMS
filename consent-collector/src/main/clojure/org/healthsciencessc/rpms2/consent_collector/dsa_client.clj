@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-collector.dsa-client
   (:require [clojure.string :as s]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
+            [org.healthsciencessc.rpms2.consent-collector.helpers :as helper]
             [clj-http.client :as http])
   (:import org.apache.http.auth.MalformedChallengeException
            org.apache.http.client.ClientProtocolException)
@@ -14,8 +15,7 @@
 
 (def ^:dynamic *dsa-auth* nil)
 
-;; we need a list of the required fields based on what is in 
-;; consent domain
+;; need required fields from consent domain
 (def consenter-search-fields  [:first-name
                                :last-name
                                :consenter-id
@@ -64,6 +64,7 @@
                                         :dob
                                         :zipcode ])
 
+
 (defn- generate-create-consenter-required-fields
   "Add the required fields to our list of required fields, to make sure we get everything.
   Note: currently (2012-05-16)  consent-domain is not adding first-name last-name but this app is requiring those"
@@ -84,71 +85,53 @@
                   (str (no-slashes dsa-url) "/" (no-slashes path)) 
                   (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/" (no-slashes path)))))
 
-;; TODO - find out why the auth isn't working right (we shouldn't
-;; be getting this exception)
-(defn- request
-  "like http/request but doesn't crash on failed auth"
-  [req]
-  (try+ 
-    (do
-      (debug (str "request REQ: " req))
-      (let [resp (http/request  req )]
-        (debug (str "DSA RESPONSE: " resp))
-        (debug (str "DSA RESPONSE(pretty): " (pprint resp)))
-        resp))
-    (catch ClientProtocolException e
-      ;; TODO -- check if cause is a MalformedChallengeException
-      (do 
-        (error (str "ClientProtocol Exception " req " FAILED " (.getMessage e) )) 
-        {:status 401}))
-    (catch java.net.UnknownHostException ex
-        ;; we want to define flash message here
-        (do 
-           (debug "UNKNOWN HOST " ex)
-           {:status 500 :error-message (str "Unknown host: " ex) }))
-    (catch slingshot.ExceptionInfo ex
-      (do (error "SLINGSHOT EXCEPTION" ex)
-        {:status 403  :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
+(defn- request 
+  [r]
+  (try+
+      (let [resp (http/request r)]
+        (debug "calling: " r)
+        resp)
+      (catch Exception e (debug "calling: " r " exception " e))
+      (catch Object e (debug "calling: " r " object " e))
+      (finally "after request " r )))
 
-    (catch Exception ex 
-      (do 
-        (debug "SOME OTHER ERROR: " ex)
-        {:status 500 :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
-    (catch Object obj 
-      (do 
-        (error "==http request failed --> " (pprint obj))
-        {:status (:status obj) :body (print-str "OBJ INVALID REQUEST - see logs for details" )}))))
-
-;; where to catch exceptions
-;;  java.net.UnknownHostException
 (defn dsa-call
   [process-name arguments]
   (let [[_ method path-dashes] 
         (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
         method (keyword method),
         path (s/replace path-dashes "-" "/")
+        dumper (fn [resp] 
+                 (spit (str "last_" (name process-name) ".txt") resp) resp)
         maybe-parse-json
         (fn [{:keys [content-type status body headers] :as resp}]
-          (if (= 403 status) 
+          (debug "maybe-parse-json " resp)
+          (spit "lastresponse.txt"  resp)
+          (debug "maybe-parse-json BODY IS " body)
+          (if (= nil body) 
+              (assoc resp :json {})
+              (assoc resp :json body) )
+          #_(if (= 403 status) 
               (do (println "FORBIDDEN") {:status 403} )
             (if (= 200 status)
-              (try 
-                (assoc resp :json (read-json body))
-                (catch Exception ex (do (debug "WARNING: BODY IS NOT JSON " body ) resp) ))
-              resp))) ]
+                (assoc resp :json body) 
+              resp))
+          ) ]
     
-    ;; try catch here?
     (-> (if (= :get method)
           (if (empty? arguments)
             {}
             {:query-params arguments})
-          {:body (json-str arguments) })
+          ;;{:body (json-str arguments) })
+          {:body (pr-str arguments) })
         (assoc :request-method method
                :basic-auth *dsa-auth* 
-               ; :content-type "text/clojure"
-               :content-type "application/json"
+               :as :clojure
+               :content-type "application/clojure"
+               :throw-exceptions false
                :url (build-url path) )
-        request
+        request  
+        dumper
         maybe-parse-json
       )))
 
@@ -178,10 +161,15 @@
 (defn dsa-search-consenters
   "Search consenters."
 
-  [params org-id]
-  (let [consenter-params (remove-blank-vals
-                          (select-keys params consenter-search-fields)) ]
-      (dsa-call :get-consent-consenters (assoc consenter-params :organization org-id))))
+  [params xorg-id]
+  (let [ org-id (helper/current-org-id)
+        m (remove-blank-vals (select-keys params consenter-search-fields))]
+      (dsa-call :get-consent-consenters  m
+                 ;;(assoc m :organization org-id)
+                )))
+
+
+
 
 (defn dsa-create-consenter
   "Create a consenter."
@@ -228,142 +216,8 @@
                                         :dob
                                         :zipcode ])
 
-(defn- generate-create-consenter-required-fields
-  "Add the required fields to our list of required fields, to make sure we get everything.
-  Note: currently (2012-05-16)  consent-domain is not adding first-name last-name but this app is requiring those"
-  []
-  (distinct (flatten (merge my-create-consenter-required-fields (get-consent-domain-required-consenter-fields)))))
-
-(def create-consenter-required-fields (generate-create-consenter-required-fields))
-(debug "GENERATED create-consenter-required-fields ==> " create-consenter-required-fields)
-
-(defn- no-slashes [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
-
-(defn- build-url 
-   "Builds url for DSA for given path."
-   [path]
-   (let [ dsa-url (config "rpms2.dsa.url") ]
-      no-slashes (fn [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
-      (if dsa-url 
-                  (str (no-slashes dsa-url) "/" (no-slashes path)) 
-                  (str "http://obis-rpms-neodb-dev.mdc.musc.edu:8080/" (no-slashes path)))))
-
-;; TODO - find out why the auth isn't working right (we shouldn't
-;; be getting this exception)
-(defn- request
-  "like http/request but doesn't crash on failed auth"
-  [req]
-  (try+ 
-    (do
-      (debug (str "request REQ: " req))
-      (let [resp (http/request  req )]
-        (debug (str "DSA RESPONSE: " resp))
-        (debug (str "DSA RESPONSE(pretty): " (pprint resp)))
-        resp))
-    (catch ClientProtocolException e
-      ;; TODO -- check if cause is a MalformedChallengeException
-      (do 
-        (error (str "ClientProtocol Exception " req " FAILED " (.getMessage e) )) 
-        {:status 401}))
-    (catch java.net.UnknownHostException ex
-        ;; we want to define flash message here
-        (do 
-           (debug "UNKNOWN HOST " ex)
-           {:status 500 :error-message (str "Unknown host: " ex) }))
-    (catch slingshot.ExceptionInfo ex
-      (do (error "SLINGSHOT EXCEPTION" ex)
-        {:status 403  :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
-
-    (catch Exception ex 
-      (do 
-        (debug "SOME OTHER ERROR: " ex)
-        {:status 500 :body (pr-str "INVALID REQUEST " ex " request: "  req)}))
-    (catch Object obj 
-      (do 
-        (error "==http request failed --> " (pprint obj))
-        {:status (:status obj) :body (print-str "OBJ INVALID REQUEST - see logs for details" )}))))
-
 ;; where to catch exceptions
 ;;  java.net.UnknownHostException
-(defn dsa-call
-  [process-name arguments]
-  (let [[_ method path-dashes] 
-        (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
-        method (keyword method),
-        path (s/replace path-dashes "-" "/")
-        maybe-parse-json
-        (fn [{:keys [content-type status body headers] :as resp}]
-          (if (= 403 status) 
-              (do (println "FORBIDDEN") {:status 403} )
-            (if (= 200 status)
-              (try 
-                (assoc resp :json (read-json body))
-                (catch Exception ex (do (debug "WARNING: BODY IS NOT JSON " body ) resp) ))
-              resp))) ]
-    
-    ;; try catch here?
-    (-> (if (= :get method)
-          (if (empty? arguments)
-            {}
-            {:query-params arguments})
-          {:body (json-str arguments) })
-        (assoc :request-method method
-               :basic-auth *dsa-auth* 
-               ; :content-type "text/clojure"
-               :content-type "application/json"
-               :url (build-url path) )
-        request
-        maybe-parse-json
-      )))
-
-(defn authenticate
-  "Call security/authenticate userid password"
-  [user-id password]
-  (binding [*dsa-auth* [user-id password]]
-    (dsa-call :get-security-authenticate {})))
-
-(defn- remove-blank-vals
-  "Given a map, removes all key/val pairs for which the value
-  is blank."
-  [m]
-  (into {}
-        (for [[k v] m :when (not (s/blank? v))]
-          [k v])))
-
-(defn- has-all-required-fields 
-  "Given a map, ensures all required fields are there. 
-  Returns a list of missing fields."
-  [m required-fields]
-
-  (if (= (count (select-keys m required-fields)) (count required-fields))
-    nil
-    (pr-str "All of these are required: " required-fields)))
-
-(defn dsa-search-consenters
-  "Search consenters."
-
-  [params org-id]
-  (let [consenter-params (remove-blank-vals
-                          (select-keys params consenter-search-fields)) ]
-      (dsa-call :get-consent-consenters (assoc consenter-params :organization org-id))))
-
-(defn dsa-create-consenter
-  "Create a consenter."
-  [params]
-  (debug "dsa-create-consenter " params )
-  (let [p (remove-blank-vals (select-keys params create-consenter-fields)) 
-        invalid (has-all-required-fields p create-consenter-required-fields)]
-      (if invalid 
-          (do (debug "INVALID - CANNOT CREATE " p  " invalid msg " invalid)
-              {:status 409 :body 
-               (i18n :create-consenter-form-validation-failed) })
-          (do (debug "dsa-create-consenter P = " p  " count " (count p))
-              (dsa-call :put-consent-consenter p) ))))
-      
-
-(defn- id
-  []
-  (rand-int 1000000000))
 
 (defn get-protocols-version
   [protocols]
@@ -571,6 +425,63 @@
   [p]
   (debug "METADATA " p " IS " (get metadata-map (keyword p)))
   (get metadata-map (keyword p)))
+
+
+
+
+(def lewis-blackman-form
+{
+:policies {:P00001 {:title "Your Acknowledgement Is Needed",:text [ "I understand that MUSC is an academic medical center providing healthcare, teaching, and research. I also understand that I may be cared for by physicians and other healthcare providers in training. My care will be supervised by an attending physician and staff. The information related to the health care I receive may be used for training or for scientific study purposes. I understand that if information contained in my health care record is used for such purposes, precautions will be taken to carefully preserve my anonymity. I also understand that pictures or other recordings may be made for purposes of my treatment or for educational purposes.", "In addition, I understand that if I have questions about my medical care I can speak to my attending physician, nurse, resident, or medical student. In addition, I can contact my attending physician or the House Services Coordinator through the operator at 792-8080 (2-8080 from the bedside phone).","I acknowledge that I have received a copy of the brochure entitled \"Medical University of South Carolina, An Academic Medical Center of Excellence\" explaining the role of residents and students in my care."]}}
+
+
+
+    :meta-items {
+        :MI001 {
+            :label "Admission Date",
+            :value "05-24-2012" 
+        },
+
+	:MI002 {
+            :label "Gaurantor",
+            :value "Medical Services Foundation" 
+        },
+    },    
+
+:endorsements {:E00001 {:label "Signature of Consenter", :endorsement "the base64/png encoded signature value."}}
+
+:form {
+:header { :title "Lewis Blackman Hospital Patient Safety Act Acknowledgement" },
+:contains [{ 
+:type "page",
+:name "page1",
+:title "Acknowledgement", 
+:contains [{ :type "section",
+:name "section1",
+:contains [
+{:type "text",
+:name "info",
+:title "Verify Information",
+:text ["Verify the information below and use corresponding change button to correct as needed."]
+},	
+{ :type "data-change", :name "", :meta-items ["MI001", "MI002"] } ] },
+{ :type "section",
+:name "section2",
+:contains [{ :type "policy-text",
+:name "Acknowledge",
+:policy "P00001",
+:render-title false,  
+:render-text true    },
+{ :type "signature",  
+:name "Sign Here", 
+:endorsement "E00001", 
+:clear-label "Clear" }]
+}],}],
+:footer { :title ["Patient Name: Bob R. Smith"] }, 
+:collect-start "page1", 
+:summary-start "summary1"
+}}
+  )
+
 
 (defn sample-form 
   []
@@ -790,3 +701,4 @@
          (warn "WARNING: no value for property " propname " configured")))
 
 (debug! get-published-protocols)
+(debug! dsa-search-consenters)

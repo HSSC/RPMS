@@ -10,6 +10,9 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
+(def ^:const ^:private COLLECT_START_PAGE :collect-start)
+(def ^:const ^:private REVIEW_START_PAGE :summary-start)
+
 (defn signature
   [c]
   [:div.control.signature "Your signature is requested: " 
@@ -36,15 +39,15 @@
      (list 
        (if (and (not (= (:render-title c) false)) 
                 (:title policy))
-           [:div [:h1.text (:title policy)]])
+           [:div [:h1.title (:title policy)]])
 
      ;; Display text if :render-text is missing or true and policy has text
        (if (and (not (= (:render-text c) false))
                 (:text policy))
-           (list (for [tt (:text policy)] [:div.text tt ])))
+             (map (fn [tt] [:div.text tt ]) (:text policy)))
 
      (if (not (= (:render-media c) false)) 
-       [:div "Render media controls here" ]) ))) ])
+       [:div.render-media "Render media controls here" ]) ))) ])
 
 (defn policy-choice-buttons
   "Creates two buttons that allow you to opt in or opt out of one or more
@@ -52,8 +55,9 @@
   [c]
   [:div.control.policy-choice-buttons 
     [:fieldset {:data-role "controlgroup" }
+      (helper/radio-btn (:name c) (:true-label c)) 
       (helper/radio-btn (:name c) (:false-label c))
-      (helper/radio-btn (:name c) (:true-label c)) ]
+     ]
    ])
 
 (defn data-change
@@ -92,8 +96,8 @@
 
 (defn text
   [c]
-  [:div.control 
-   (if (:title c) [:h1 (:title  c) ])
+  [:div.control.text
+   (if (:title c) [:h1.title (:title c) ])
    (list (for [t (:text c)] [:p t ])) ])
 
 (defn policy-checkbox
@@ -127,18 +131,25 @@
        (if-let [b (config "verbose-collect-consents")]
            [:pre (pprint-str c)])))
 
+(defn- process-section
+  "Display section in a div"
+  [s]
+  [:div.section (map process-control (:contains s)) ])
+
 (defn- display-page
+  "Displays sections." 
+
   [p]
 
   (if (= nil p) 
     [:h1 "Unable to show page - missing page " 
-     (if-let [pn  (:page-name (session-get :collect-consent-status)) ]
-         [:span.standout pn ])]
-    [:div.left
-     [:h1.left (:title p) ] 
-     (list (for [section (:contains p)]
-       (list (for [c (:contains section) ]
-               (list (process-control c)))))) ]))
+         (if-let [pn (:page-name (session-get :collect-consent-status)) ]
+             [:span.standout pn ]) ])
+    [:div
+      (if-let [b (config "verbose-collect-consents")]
+        [:h1.left (:title p) ] )
+       [:div (map process-section (:contains p)) ]
+     ])
 
 (defn- form-title
   [f]
@@ -166,7 +177,7 @@
        (helper/post-form "/collect/consents"
            [:div 
               [:div.finished1 "Thank You! " ]
-              [:div.finished2 "Your selected protocols are complete." ]
+              [:div.finished2 (str "Your selected " (helper/org-protocol-label) "s are complete.") ]
               [:div.finished3 "Return the device to the clerk." ] ]
            (helper/standard-submit-button {:value "Continue" :name "next" })) 
        :title "Consents Complete" )))
@@ -177,29 +188,80 @@
   (debug "capture data " ctx)
 )
 
-(defn view 
-   "Displays collect consents message."
+(defn- init-form-fields
+  [form which-section n ]
+
+  (debug "KKK init-form-fields A " (get-named-page form (which-section form)))
+  (debug "KKK init-form-fields PAGE " (which-section form))
+  (debug "KKK init-form-fields B " n " " which-section " FORM " form)
+  ;; would be getting the nth form  instead of passing the form
+  (let [p (get-named-page form (which-section form))]
+    {:form form
+     :state :begin 
+     :page p
+     :page-name (:name p)
+     :current-form-number (+ n 1) 
+    }))
+
+(defn- get-next-form
+  "Returns the nth form." 
+  [n numforms]
+
+  (if (and (< n numforms) 
+           (< n 2)) ;; for now we only have two sample forms
+
+      (do (debug "get-next-form: n = " n " Returning lewis black form" )
+           dsa/lewis-blackman-form)
+      nil))
+
+(defn- advance-to-next-form
+  []
+
+  (let [s (session-get :collect-consent-status)]
+    (if-let [next-form (get-next-form (+ 1 (:current-form-number s)) (:num-forms s))]
+        (let [updated (merge s (init-form-fields (:form next-form) COLLECT_START_PAGE (:current-form-number s)))]
+          (do
+            (debug "198 next-form " (pprint-str updated))
+            (session-put! :collect-consent-status updated )
+            updated))
+          nil)
+    ))
+
+(defn- initialize-capture-data-process
+  []
+
+  (let [form (dsa/sample-form)
+        m {:form (:form form)
+           :state :begin 
+           :page (get-consent-start-page (:form (dsa/sample-form)) )
+           :model {}
+           :current-form-number 0
+
+           ;; this is a list of the actual forms
+           ;;  :list-of-forms (session-get :protocols-to-be-filled-out)
+           :num-forms (count (session-get :protocols-to-be-filled-out))
+          }]
+   (session-put! :collect-consent-status m )
+   (debug "192 initialize-capture-data-process " (pprint-str m))))
+
+(defn show-page
+   "Collect and review consents proceesses. Displays current page"
   [ctx]
 
-  ;; first time here, initialize :collect-consent-status map
+  ;; first time here, initialize 
   (if-let [s (session-get :collect-consent-status)]
-    (do 
-        (debug "266 PAGE " (pprint-str (:page s)) 
-               " STATE " (pprint-str (:state s)))
-        (debug "266 ALREADY INITIALIZED ALL " (pprint-str s)))
-    (do (session-put! :collect-consent-status 
-             {:form (:form (dsa/sample-form))
-              :state :begin 
-              :page (get-consent-start-page (:form (dsa/sample-form)) )
-              :model {}
-              })
-        (debug "274 INITIALIZED " (pprint-str (session-get :collect-consent-status)))
-      )) 
+    (debug "202 view PAGE " (pprint-str (:page s)) " STATE " (pprint-str (:state s)) " ALL " (pprint-str s))
+    (initialize-capture-data-process)) 
 
   (let [s (session-get :collect-consent-status)]
     (helper/rpms2-page 
-       (helper/post-form "/collect/consents"
-           [:div (display-page (:page s)) ]
+       (helper/collect-consent-form "/collect/consents"
+           [:div 
+            (if-let [b (config "verbose-collect-consents")]
+              [:div.debug "DEBUG Page name " (:name (:page s))  
+                 " current form " (:current-form-number s) " num forms " (:num-forms s) ])
+            (display-page (:page s)) 
+            ]
            [:div
            (if (:previous (:page s))
               (helper/standard-submit-button {:value "Previous" :name "previous" }))
@@ -207,6 +269,11 @@
            ]) 
        :title (form-title (:form s) ))))
 
+(defn view 
+   "Collect and review consents processes. Displays current page"
+  [ctx]
+   
+  (show-page ctx))
 
 (defn- update-session
   [m]
@@ -214,41 +281,46 @@
        (session-put! :collect-consent-status (merge s m))))
 
 (defn perform
-  "Collect consents.
-  TODO: See if next or previous page was submitted previous page."
+  "Collect consents. "
 
   [{parms :body-params :as ctx}]
 
-  (debug "perform BTN CTX " ctx)
-  (debug "perform BTN PARMS " parms)
-  (debug "perform BTN PREVIOUS? " (:previous parms))
-  (debug "perform BTN DONE? " (:done parms))
   (let [s (session-get :collect-consent-status)
         form (:form s) 
         nxt (if-let [nxt (:next (:page s))] (get-named-page form nxt) nil) 
-        prev (if-let [nxt (:previous (:page s))] (get-named-page form nxt) nil)]
+        prev (if-let [nxt (:previous (:page s))] (get-named-page form nxt) nil) ]
 
-    (debug "258 perform-in-form nxt " nxt)
+    (debug "258 perform nxt " nxt)
     (capture-data ctx)
 
     ;; see if previous or continue was pressed
     ;; either go to the next page or show end of collection page
-    (if (and (:previous parms)
-             prev)
+    (cond 
+
+      ;; if previous button pressed and prev page available
+      (and (:previous parms)
+           prev)
       (do (debug "Going to previous page: " (:name prev))
           (update-session {:page prev :page-name (:name prev) })
-          (helper/myredirect "/collect/consents"))
+          (show-page {} )) ;; (helper/myredirect "/collect/consents"))
 
-      (if nxt 
+      ;; if next page available
+      nxt 
         (do 
           (debug "Going to next page: " (:name nxt))
           (update-session {:page nxt :page-name (:name nxt) })
           (helper/myredirect "/collect/consents"))
 
-      ;; the next page, set current page to start of review 
-      (if (:review-confirmed s)
-         (helper/myredirect "/view/unlock")
-         (do (update-session {:page (get-named-page form (:summary-start form))
-                              :page-name (:summary-start form)
-                              :review-confirmed :true } )
-             (view-finished ctx)))))))
+      ;; At the end of the current form, so set current page to start of next form,
+      ;; or if there are none, set current page to start of review 
+      (advance-to-next-form)
+          (helper/myredirect "/collect/consents")
+
+     (:review-confirmed s)
+          (helper/myredirect "/view/unlock")
+
+     :else
+          (do (update-session {:page (get-named-page form (:summary-start form))
+                               :page-name (:summary-start form)
+                               :review-confirmed :true } )
+             (view-finished ctx)))))

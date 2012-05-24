@@ -46,7 +46,7 @@
   subsequent display.  Displays results and/or an appropriate flash message."
 
    [ctx]
-   (let [org-id (get-in (session-get :org-location) [:organization :id])
+   (let [org-id  (helper/current-org-id)
           response  (dsa/dsa-search-consenters (ctx :body-params) org-id)
           status (:status response)
           results (:json response) ]
