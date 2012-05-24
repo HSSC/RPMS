@@ -1,9 +1,8 @@
 // Initialize the logout dialog
 $(function(){
-	PaneManager.confirmDialog = $("#dialog");
-	PaneManager.confirmDialog.hide();
-	PaneManager.content = $("#content");
-		
+	PaneManager.initDialog($("#dialog"));
+	PaneManager.initContent($("#content"));
+	
 	// Register Events
 	// Register Event - Click Details Actions
 	PaneManager.on("click", ".details-action", function(event){
@@ -26,6 +25,7 @@ $(function(){
 		var target = RPMS.findTarget(event, "div.save-action");
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
+		var holdOnSave = RPMS.get(target, "data-holdonsave");
 		var fullUrl = PaneManager.getUrl(url, params, false);
 		var method = RPMS.get(target, "data-method");
 		var body = RPMS.getDataMap();
@@ -33,42 +33,21 @@ $(function(){
 		var settings = {
 				data: body,
 				type: method,
-				dataType: "json",
+				dataType: "text",
 				success: function(data, status, xhr){
-					$("div#progress").dialog("close");
+					RPMS.endProgress();
 					PaneManager.cache("changed", true);
+					if(holdOnSave == null){
+						PaneManager.current.pane.find(".done-action").trigger("click");
+					}
 				},
 				error: function(data, status, xhr){
-					$("div#progress").dialog("close");
+					RPMS.endProgress();
+					alert("Failed!");
 				}
 		}
+		RPMS.startProgress();
 		$.ajax(fullUrl, settings);
-		$("div#progress").dialog({
-			title: "Saving",
-			resizable: false,
-			height: h,
-			modal: true
-		});
-	});
-	
-	// Register Event - Click New Action
-	PaneManager.on("click", ".save-jquery-action", function(event){
-		var target = RPMS.findTarget(event, "div.save-jquery-action");
-		var url = RPMS.get(target, "data-url");
-		var params = RPMS.getParamMap(target, "data-map");
-		var fullUrl = PaneManager.getUrl(url, params, false);
-		var method = RPMS.get(target, "data-method");
-		var form = RPMS.getForm();
-		
-		var options = {
-			url: fullUrl,
-			target: "#progress-dialog",
-			type: method
-		};
-		
-		form.ajaxSubmit(options);
-		$("#progress-dialog").show();
-		setTimeout(function() {PaneManager.pop({})}, 1500);
 	});
 	
 	// Register Event - Click Done Button
@@ -137,15 +116,38 @@ var RPMS = {
 	},
 	getDataMap: function(){
 		var form = RPMS.getForm();
-		if(form == null || form.length == 0){
-			return;
-		}
+		var elements = form.serializeArray();
 		var data = {};
-		var inputs = form.find(":input");
-		for(var i = 0; i < inputs.length; i++){
-			var input = inputs[i];
-			data[input.name] = input.value;
+		for(var i = 0; i < elements.length; i++){
+			var e = elements[i]
+			data[e.name] = e.value;
 		}
 		return data;
+	},
+	startProgress: function(){
+		this.pause();
+		if(this.progress == null){
+			var imgUrl = PaneManager.getUrl("/image/loader.gif", {}, false);
+			this.progress = $("<img src='" + imgUrl + "' class='progress' />");
+			$("body").append(this.progress);
+		}
+		this.progress.show();
+		this.progress.position({of: this.lightBox});
+	},
+	endProgress: function(){
+		this.progress.hide();
+		this.continue();
+	},
+	pause: function(){
+		if(this.lightBox == null){
+			this.lightBox = $("<div class='ui-widget-overlay' />");
+			$("body").append(this.lightBox);
+		}
+		this.lightBox.show();
+	},
+	continue: function(){
+		if(this.lightBox != null){
+			this.lightBox.hide();
+		}
 	}
 }

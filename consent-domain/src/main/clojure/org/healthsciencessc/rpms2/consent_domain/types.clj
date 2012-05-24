@@ -20,8 +20,8 @@
 (def widget "widget")
 (def encounter "encounter")
 (def consent "consent")
-(def consent "consent-meta")
-(def consent "consent-endorsement")
+(def consent-meta "consent-meta")
+(def consent-endorsement "consent-endorsement")
 
 ;; COMMON CODES USED THROUGHOUT THE APPLICATION.  IDENTIFIES UNIQUENESS WITHIN METADATA.
 

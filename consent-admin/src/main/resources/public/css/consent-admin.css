@@ -258,6 +258,6 @@ div.action{
 	margin: 2em;
 }
 
-#progress-dialog{
-	display: none;
+img.progress{
+	position: absolute;
 }

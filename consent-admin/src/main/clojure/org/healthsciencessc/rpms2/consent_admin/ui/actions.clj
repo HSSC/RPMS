@@ -14,19 +14,10 @@
    {:data-url url  :data-map (to-attr-value params)} [:span.ui-button-text (or label "Details")]])
 
 ;;
-(defn save-new-button
+(defn save-button
   [{method :method url :url params :params label :label}]
   [:div.action.save-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
    {:data-method method :data-url url :data-map (to-attr-value params)} [:span.ui-button-text (or label "Save")]])
-
-;;
-(defn save-button
-  [{method :method url :url params :params label :label}]
-  (list
-    [:div.action.save-jquery-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
-      {:data-method method :data-url url :data-map (to-attr-value params) :data-target "#progress-dialog"}
-      [:span.ui-button-text (or label "Save")]]
-    [:div#progress-dialog]))
 
 ;;
 (defn new-button

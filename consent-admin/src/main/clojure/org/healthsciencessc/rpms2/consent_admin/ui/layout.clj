@@ -12,9 +12,7 @@
       [:h3#headertitle "Consent Management - Administration"]
       [:ul#loginstat.headerlist
         [:li#current-user.first [:span {:onclick "PaneManager.stack(\"/view/profile\", {}, {})"} (get (sess/session-get :user) :username)]]
-        [:li#logout [:span {:onclick "PaneManager.logout();"} "Logout"]]
-        [:div#dialog  "Are you sure you want to end this session?"]
-        [:div#progress [:img {:src "/image/loader.gif"}] ]]])
+        [:li#logout [:span {:onclick "PaneManager.logout();"} "Logout"]]]])
 
 (defn- header-no-session
   "Creates the default header that is used for the application"
@@ -23,11 +21,12 @@
  
 (defn- footer
   "Creates the default header that is used for the application"
-  []
+  [ctx]
   [:div#footer.footer 
     [:span#footerbrand "Research Permissions Management System"]
     [:span#footerorg [:a {:href "http://www.healthsciencessc.org" :target "_blank"} "Health Sciences of South Carolina" ]]
-    [:span#footerversion "Version 2.0.0-SNAPSHOT"]])
+    [:span#footerversion "Version 2.0.0-SNAPSHOT"]
+    [:div#dialog  "Are you sure you want to end this session?"]])
 
 (defn- leftbar
   "Creates the default header that is used for the application"
@@ -36,20 +35,23 @@
 
 (defn- body
   "Creates the default layout that is used for the application"
-  [elements]
-  [:body [:div#page.page
+  [ctx elements]
+  [:body 
+    (if (not= (:path-info ctx) "/view/home")
+      [:script (str "PaneManager.triggerOnInit(\"" (:path-info ctx) "\", {},{});")])
+    [:div#page.page
                (header)
                (leftbar)
                [:div#content.content elements]
-               (footer)]])
+               (footer ctx)]])
 
 (defn- body-no-session
   "Creates the default layout that is used for the application"
-  [elements]
+  [ctx elements]
   [:body [:div#page.page
                (header-no-session)
                [:div#content.content elements]
-               (footer)]])
+               (footer ctx)]])
 
 (defn- head
   "Creates the head section of the page."
@@ -63,23 +65,22 @@
     (page/include-js "/js/jquery-1.7.2.min.js"
                      "/js/jquery-ui-1.8.19.custom.min.js"
                      "/js/pane.js"
-                     "/js/jquery.form.js"
                      "/js/consent-admin.js")
-    [:script (str "PaneManager.basepath = \"" (:context ctx) "\";")]])
+    [:script (str "PaneManager.initBasePath(\"" (:context ctx) "\");")]])
 
 (defn- layout 
   ""
   [ctx elements]
   (page/html5
     (head ctx)
-    (body elements)))
+    (body ctx elements)))
 
 (defn- layout-no-session
   ""
   [ctx elements]
   (page/html5
     (head ctx)
-    (body-no-session elements)))
+    (body-no-session ctx elements)))
 
 (defn- pane
   "Creates a structure representing a pane.  Accepts a request context, title, and pane content and returns the appropriate structure."

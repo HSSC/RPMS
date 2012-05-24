@@ -18,6 +18,36 @@
 var PaneManager = {
 	// Request References/Methods
 	basepath: null, // The base path to prepend to URL.  Typically, this is just the contextPath of the application
+	content: null, // The element where all content goes.
+	confirmDialog: null, // The dialog to use for informing/questioning user.
+	
+	initContent: function(content){
+		this.content = content;
+		this.content.empty();
+		var r = this.initRequest;
+		if(r != null){
+			this.stack(r.url, r.params, r.options);
+		}
+		this.initialized = true;
+	},
+	
+	initDialog: function(dialog){
+		this.confirmDialog = dialog;
+		dialog.hide();
+	},
+	
+	initBasePath: function(path){
+		this.basepath = path;
+	},
+	
+	triggerOnInit: function(url, params, options){
+		if(this.initialized){
+			this.stack(url, params, options);
+		}
+		else{
+			this.initRequest = {url: url, params: params, options: options};
+		}
+	},
 	
 	getUrl: function(x, ps, pane){
 		if(pane == null){
@@ -42,7 +72,6 @@ var PaneManager = {
 	
 	// Pane References
 	current: null,
-	content: null, // This Should Be Set Externally
 	
 	hasPanes: function(){return this.current != null;},
 	
