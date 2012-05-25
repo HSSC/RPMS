@@ -12,6 +12,7 @@
            [java.util UUID]))
 
 (declare node->record)
+(declare create-node-with-default-relationships)
 
 (def schema domain/default-data-defs)
 
@@ -105,9 +106,10 @@
   (neo/create-rel! from type to))
 
 (defn- get-node-by-index [type id]
-  (-> (neo-index type :nodes)
-      (.get "id" id)
-      .getSingle))
+  (if id
+    (-> (neo-index type :nodes)
+        (.get "id" id)
+        .getSingle)))
 
 (defn neighbors-by-type
   "Gets all adjacent nodes of the given type to the given node"
@@ -144,6 +146,13 @@
       (index-node (neo-index type :nodes) "id" (:id node-props) node)
       node)))
 
+(defn find-or-create-node
+  [type id props]
+  (let [node (get-node-by-index type id)]
+    (if node
+      node
+      (create-node-with-default-relationships type props nil))))
+
 (defn update-node-props
   [type id data]
   "Returns the node"
@@ -174,9 +183,9 @@
   (fn [record node relation] (:type relation)))
 
 (defmethod get-related-obj :belongs-to
-  [record node {:keys [relationship related-to]}]
+  [record node {:keys [relationship related-to omit-rels]}]
   (if-let [parent-node (find-parent node relationship)]
-    (when parent-node (node->record parent-node related-to :add-rels false))))
+    (when parent-node (node->record parent-node related-to :omit-rels omit-rels))))
 
 (defmethod get-related-obj :has-many
   [record node relation]
@@ -198,7 +207,7 @@
   (let [{related-to :related-to} relation]
     (vec (map #(node->record % related-to) (walk-types-path node (vector related-to))))))
 
-(defn add-relations
+(defn add-related-records
   [record node relations]
   (reduce
    (fn [record-map relation]
@@ -213,15 +222,15 @@
    relations))
 
 (defn node->record
-  [node type & {:keys [add-rels] :or {add-rels true}}]
+  [node type & {:keys [omit-rels] :or {omit-rels false}}]
   (let [props (neo/props node)
         relations (domain/record-relations type schema)]
     (if (:active props)
       (domain/validate-record
        (let [record (assoc props :record-type type)]
-         (if add-rels
-           (add-relations record node relations)
-           record))
+         (if omit-rels
+           record
+           (add-related-records record node relations)))
        type
        schema))))
 
@@ -253,30 +262,44 @@
               :to other-node)))
       (throw (IllegalArgumentException. "Bad relation")))))
 
-(defn validate-domain-relations
+(defn create-domain-relations
   [type props]
-  (for [{:keys [related-to relationship] :as relation}
-        (domain/get-parent-relations type schema)
-        :let [rel-key (domain/get-relation-name relation)]
-        :when (get props rel-key)]
-    {:from :self
-     :to (get-node-by-index related-to (get-in props [rel-key :id]))
-     :rel-type relationship}))
-
-(defn get-raw-nodes
-  [type]
-  (map neo/props (find-all-instance-nodes type)))
+  (for [{:keys [related-to relationship can-create-parent] :as relation} (domain/get-parent-relations type schema)
+        :let [rel-key (domain/get-relation-name relation)
+              parent-data (rel-key props)]
+        :when parent-data]
+    (let [parent-id (:id parent-data)
+          parent-node (if can-create-parent
+                        (find-or-create-node related-to parent-id parent-data)
+                        (get-node-by-index related-to parent-id))]
+      {:from :self
+       :to parent-node
+       :rel-type relationship})))
 
 (defn create-node-with-default-relationships
   [node-type node-properties extra-relationships]
   (let [rels (concat [{:from :self
                        :to (find-record-type-node node-type)
                        :rel-type :kind-of}]
-                     (validate-domain-relations node-type node-properties)
+                     (create-domain-relations node-type node-properties)
                      (map validate-relation extra-relationships))
         node (create-node node-type node-properties)]
     (create-edges node rels)
     node))
+
+(defn get-raw-nodes
+  [type]
+  (map neo/props (find-all-instance-nodes type)))
+
+(defn add-type-to-children
+  "Adds a :record-type key to the children of record with their type"
+  [type record]
+  (let [child-relations (domain/get-child-relations type schema)
+        rels (for [relation child-relations]
+               [(domain/get-relation-name relation) (:related-to relation)])
+        children-by-rel (select-keys record (map first rels))]
+    (flatten (for [rel rels]
+               (map #(assoc % :record-type (second rel)) ((first rel) children-by-rel))))))
 
 ;; Public API
 (defn find-all
@@ -328,24 +351,24 @@
 
 (defn create-records
   [type props]
-  (let [parent-rel (domain/get-parent-relationship type type schema)
-        child-rel (domain/get-child-relationship type type schema)
-        record-tree (zip/zipper (fn [node] (not (empty? (child-rel node))))
-                                (fn [node] (child-rel node))
-                                (fn [node children] (assoc node child-rel children))
-                                props)]
+  (let [record-tree (zip/zipper (fn [node] (not (empty? (add-type-to-children (:record-type node) node))))
+                                (fn [node] (add-type-to-children (:record-type node) node))
+                                (fn [node children] node)
+                                (assoc props :record-type type))]
     (neo/with-tx
       (loop [loc record-tree]
         (if (zip/end? loc)
           (let [root-id (get-in (zip/root loc) [:neo-data :id])]
             (find-record type root-id))
           (let [parent-loc (zip/up loc)
-                parent-data (if parent-loc (:neo-data (zip/node parent-loc)))
+                parent-node (if parent-loc (zip/node parent-loc))
+                parent-type (:record-type parent-node)
                 child-node (zip/node loc)
-                neo-data (if parent-data
-                           (assoc child-node parent-rel parent-data)
-                           child-node)
-                record (node->record (create-node-with-default-relationships type neo-data nil) type)]
+                child-type (:record-type child-node)
+                relation (domain/get-parent-relation parent-type child-type schema)
+                rel-name (if relation (domain/get-relation-name relation))
+                neo-data (if rel-name (assoc child-node rel-name (:neo-data parent-node)) child-node)
+                record (node->record (create-node-with-default-relationships child-type neo-data nil) child-type)]
             (recur
              (zip/next (zip/replace loc (assoc child-node :neo-data record))))))))))
 

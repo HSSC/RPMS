@@ -111,7 +111,7 @@
                 (filter (partial = "Published") (data/find-children "location" loc "protocol"))))
     :run-if-false forbidden-fn}
    
-   {:name "get-protocol-version-published-meta"
+   {:name "get-protocol-versions-published-meta"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])]
                      (role/protocol-designer? user)))

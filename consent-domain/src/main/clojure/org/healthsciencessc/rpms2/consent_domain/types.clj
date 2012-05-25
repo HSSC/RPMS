@@ -18,12 +18,14 @@
 (def endorsement "endorsement")
 (def form "form")
 (def widget "widget")
+(def widget-property "widget-property")
 (def encounter "encounter")
 (def consent "consent")
 (def consent-meta "consent-meta")
 (def consent-endorsement "consent-endorsement")
 (def protocol "protocol")
 (def protocol-version "protocol-version")
+(def text-i18n "text-i18n")
 
 ;; COMMON CODES USED THROUGHOUT THE APPLICATION.  IDENTIFIES UNIQUENESS WITHIN METADATA.
 
