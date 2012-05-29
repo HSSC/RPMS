@@ -58,8 +58,9 @@
                          current-user-org-id (get-in current-user [:organization :id])
                          user (:body-params params)
                          user-org-id (get-in user [:organization :id])]
-                     (or (super-admin? user)
-                         (and (admin? user) (= current-user-org-id user-org-id)))))
+                     (or (super-admin? current-user)
+                         (and (admin? current-user)
+                              (= current-user-org-id user-org-id)))))
     :run-fn (fn [params]
               (let [user-data (:body-params params)
                     unhashed-pwd (:password user-data)
