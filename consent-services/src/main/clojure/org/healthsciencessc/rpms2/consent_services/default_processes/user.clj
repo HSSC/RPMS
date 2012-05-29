@@ -77,8 +77,12 @@
                               (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
     :run-fn (fn [params]
               (let [user-id (get-in params [:query-params :user])
-                    user-data (:body-params params)]
-                (data/update "user" user-id user-data)))
+                    user-data (:body-params params)
+                    password (:password user-data)
+                    record-data (if password
+                                  (assoc user-data :password (auth/hash-password password))
+                                  user-data)]
+                (data/update "user" user-id record-data)))
     :run-if-false forbidden-fn}
 
    {:name "delete-security-user"
