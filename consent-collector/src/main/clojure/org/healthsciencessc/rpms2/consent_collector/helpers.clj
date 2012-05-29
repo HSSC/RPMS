@@ -182,16 +182,28 @@
                     :data-inline "true"
                     :data-theme "a"
                     :data-mini "true"
+                    :data-ajax "false" 
                     :value "Logout" } ]])
+
+
+
+(defn- cancel-form
+  []
+  [:form {:method "GET" :action (absolute-path "/view/select/consenter") }
+           [:input {:type "submit" 
+                    :name "cancel-btn" 
+                    :data-role "button"
+                    :data-inline "true"
+                    :data-theme "a"
+                    :data-mini "true"
+                    :data-ajax "false" 
+                    :value "Cancel" } ]])
 
 (defn- header-collect-consents
   [title]
   [:div.header {:data-role "header" } 
      [:div.ui-grid-i 
-         [:div.ui-block-aa 
-          (list (let [s (:state (session-get :collect-consent-status))]
-             "COLLECT CONSENTS " (:state s)
-                )) ]
+         [:div.ui-block-aa (cancel-form) ]
          [:div.ui-block-bb.title title ]
          [:div.ui-block-cc (if-let [u (session-get :user)] (logout-form))]] 
      [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ]) 
@@ -314,6 +326,10 @@
             [:input m ]]))))
 
 
+(defn clear-consents
+  "Remove any in-progress consent information."
+  []
+  (session-delete-key! :collect-consent-status))
 
 (defn set-patient
   "Saves the patient info in the session."

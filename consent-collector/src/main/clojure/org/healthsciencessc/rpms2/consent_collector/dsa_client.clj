@@ -101,21 +101,11 @@
         (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
         method (keyword method),
         path (s/replace path-dashes "-" "/")
-        dumper (fn [resp] 
-                 (spit (str "last_" (name process-name) ".txt") resp) resp)
         maybe-parse-json
         (fn [{:keys [content-type status body headers] :as resp}]
-          (debug "maybe-parse-json " resp)
-          (spit "lastresponse.txt"  resp)
-          (debug "maybe-parse-json BODY IS " body)
           (if (= nil body) 
               (assoc resp :json {})
               (assoc resp :json body) )
-          #_(if (= 403 status) 
-              (do (println "FORBIDDEN") {:status 403} )
-            (if (= 200 status)
-                (assoc resp :json body) 
-              resp))
           ) ]
     
     (-> (if (= :get method)
@@ -131,7 +121,6 @@
                :throw-exceptions false
                :url (build-url path) )
         request  
-        dumper
         maybe-parse-json
       )))
 

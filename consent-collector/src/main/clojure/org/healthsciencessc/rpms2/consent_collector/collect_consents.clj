@@ -302,19 +302,19 @@
            prev)
       (do (debug "Going to previous page: " (:name prev))
           (update-session {:page prev :page-name (:name prev) })
-          (show-page {} )) ;; (helper/myredirect "/collect/consents"))
+          (show-page {} )) 
 
       ;; if next page available
       nxt 
         (do 
           (debug "Going to next page: " (:name nxt))
           (update-session {:page nxt :page-name (:name nxt) })
-          (helper/myredirect "/collect/consents"))
+          (show-page {} )) 
 
       ;; At the end of the current form, so set current page to start of next form,
       ;; or if there are none, set current page to start of review 
       (advance-to-next-form)
-          (helper/myredirect "/collect/consents")
+          (show-page {} ) 
 
      (:review-confirmed s)
           (helper/myredirect "/view/unlock")
