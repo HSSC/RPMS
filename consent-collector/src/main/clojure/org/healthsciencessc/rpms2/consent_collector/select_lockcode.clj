@@ -41,4 +41,7 @@
         (helper/standard-submit-button {
                    :value (i18n "lock-code-form-submit-button") 
                    :name "lock-code-form-submit-button" } ))
-   :title (i18n :hdr-select-lockcode))) 
+   :title (i18n :hdr-select-lockcode)
+   :cancel-btn (if (> (count (helper/authorized-locations)) 1)
+                    (helper/cancel-form "/view/select/location") "" ) 
+    )) 

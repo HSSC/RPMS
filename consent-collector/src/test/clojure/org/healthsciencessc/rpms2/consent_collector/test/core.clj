@@ -78,14 +78,6 @@
          (re-find (re-pattern msg))
          (is))))
 
-(deftest authorized-locations-test
-  (let [user (factories/user-with-roles-and-locations
-               ["Consent Collector" "foo"
-                "Party Thrower"     "bar"
-                "Consent Collector" "baz"])
-        locs (select-location/authorized-locations user)]
-    (= #{"foo" "baz"} (->> locs (map :name) set))))
-
 ;;======================================
 ;; Test Select Lock Code 
 ;; Cases: 

@@ -5,14 +5,6 @@
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
-(defn authorized-locations
-  [user]
-  (debug "authorized-locations " (helper/username))
-  (->> user
-        :role-mappings
-        (filter (comp #{"Consent Collector"} :name :role))
-             (map :location)))
-       
 (defn perform
    "Save location, then go to /view/select/lock-code"
    [{{:keys [location]} :body-params :as ctx } ]
@@ -20,7 +12,7 @@
    (debug "select-location/perform: " location " ctx " ctx)
    (if (or (empty? location) 
            (= nil location))
-        (do (flash-put! :header (i18n "select-location-form-location-required"))
+        (do (flash-put! :header (str (helper/org-location-label) " is required"))
             (helper/myredirect "/view/select/location")) 
         (do 
            (session-put! :location location)
@@ -49,7 +41,7 @@
 
      Pivotal Tracker: https://www.pivotaltracker.com/story/show/26014553"
   [_]
-  (let [locs-data (authorized-locations (session-get :user))
+  (let [locs-data (helper/authorized-locations)
           locs-names (map :name locs-data)]
       (if (or (= nil locs-names) 
               (= nil (first locs-names))

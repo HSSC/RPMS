@@ -71,7 +71,9 @@
        (helper/rpms2-page-two-column
          (display-search-items-column results)
          (verify-section)
-         (i18n :hdr-search-consenter-results)))))
+         (i18n :hdr-search-consenter-results)
+         (helper/cancel-form "/view/select/consenter" )
+         ))))
 
 (defn view
   [ctx]

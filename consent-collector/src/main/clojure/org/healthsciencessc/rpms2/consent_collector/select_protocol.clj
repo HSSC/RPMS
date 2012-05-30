@@ -95,7 +95,9 @@
        (helper/standard-submit-button { :value "Back" :name :go-back })
        (helper/standard-submit-button { :value "Continue" :name "select-protocols-form"  })
       ])
-    :title (str "Select " (helper/org-protocol-label)) ))
+    :title (str "Select " (helper/org-protocol-label)) 
+    :cancel-btn (helper/cancel-form "/view/select/consenter")
+    ))
 
 (defn- needed-protocol-ids
   "Returns protocol ids that need to be filled out.  This is the required
@@ -153,15 +155,13 @@
 
 (defn perform
   "Either go back or go forward. Go back to the search results page"
-  [ ctx ] 
+  [ctx] 
 
   (if (is-go-back? ctx )
       (do 
         ;; do not want to reperform the search.
         (debug "GO BACK LAST: " (session-get :last-page))
-        (session-delete-key! :patient-id)
-        (session-delete-key! :patient-name)
-        (session-delete-key! :encounter-id)
+        (helper/clear-patient)
         (helper/myredirect "/view/select/consenter"))
       (perform-select-protocols ctx)))
 

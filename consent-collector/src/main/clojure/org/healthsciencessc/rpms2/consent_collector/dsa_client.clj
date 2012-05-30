@@ -689,5 +689,5 @@
      (if dsa-url (debug "using " propname " value of " dsa-url)
          (warn "WARNING: no value for property " propname " configured")))
 
-(debug! get-published-protocols)
+;;(debug! get-published-protocols)
 (debug! dsa-search-consenters)

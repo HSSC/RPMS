@@ -156,6 +156,15 @@ div.innerform {
 }
 
 .header .title { font-size: 1.2em; text-align: center; line-height: 1.5em; } 
+.header { background-color: black; color: white; } 
+
+#consent-header !important { 
+	background-color: black; color: white; 
+	min-height: 36px; height: 100%; width: 100%; 
+	margin: 0; padding: 0; float: left; 
+} 
+
+#consent-header > .title { text-align: center; }
 
 /* 3rd column of header */
 .header .ui-grid-b .ui-block-c { text-align: right; }
@@ -234,8 +243,15 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 
 
 /* Grid for consent collector header */
-.ui-grid-i {  width: 100%; border: thin solid black; }
+.ui-grid-i {  width: 100%; border: thin solid black; 
+	background-color: black; color: white; 
+}
 .ui-grid-i .ui-block-a {  clear: left; }
+.ui-grid-i .ui-block-aa {  clear: left; 
+ background-color: black; color: white; 
+}
+.ui-grid-i .ui-block-bb {  background-color: black; color: white; }
+.ui-grid-i .ui-block-cc {  background-color: black; color: white; }
 
 .ui-block-aa, .ui-block-bb, .ui-block-cc, .ui-block-k { 
 	margin: 0; padding: 0; border: 0; float: left; min-height: 1px; }
@@ -244,6 +260,7 @@ ul.search-results { list-style: none; margin: 0; padding: 0; }
 .ui-grid-i .ui-block-cc {  width: 10%; }
 
 .header .ui-grid-i .ui-block-b.title { text-align: center; }
+.ui-block-bb.title { text-align: center; }
 
 
 ul.select-protocol-list  { list-style: none; }

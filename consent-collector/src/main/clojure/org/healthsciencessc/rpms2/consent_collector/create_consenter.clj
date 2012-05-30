@@ -25,7 +25,9 @@
            (helper/submit-button "create-consenter-form" 
              (i18n "create-consenter-form-submit-button" ) "create-consenter") ]))
 
-     :title (i18n :hdr-create-consenter)))
+     :title (i18n :hdr-create-consenter)
+     :cancel-btn (helper/cancel-form "/view/select/consenter" )
+    ))
 
 (defn perform
   "Saves consenter and if successful, goes to /view/select/protocol.

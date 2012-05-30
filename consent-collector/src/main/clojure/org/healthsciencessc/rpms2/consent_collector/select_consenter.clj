@@ -23,12 +23,9 @@
         (for [s dsa/consenter-search-fields]
           (list 
             (helper/emit-field 
-              (dissoc 
-                (dissoc (dsa/consenter-field-defs s) :required) :default-value)
+              (dissoc (dsa/consenter-field-defs s) :required :default-value)
               :search-consenters-form (name s) 
-              ;(flash-get :search-params)
-              (session-get :search-params)
-              ))))
+              (session-get :search-params) ))))
 
      [:div.centered  {:data-role "fieldcontain" } 
           (helper/standard-submit-button { :value (i18n "search-consenters-form-submit-button")
@@ -38,7 +35,10 @@
                                            :name "create-consenters" } )
 
      ]) 
-    :title (i18n :hdr-search-consenters)))
+    :title (i18n :hdr-search-consenters)
+    :cancel-btn (if (> (count (helper/authorized-locations)) 1)
+                    (helper/cancel-form "/view/select/location") "" ) 
+    ))
 
 
 (defn- perform-search
@@ -60,7 +60,8 @@
          (do 
             (session-put! :search-results results)
             (helper/myredirect "/view/search/consenters"))
-         (if (= status 404) 
+         (if (or (= status 404) 
+                 (= status nil))
             (helper/flash-and-redirect 
                 (i18n :flash-search-consenter-results-no-matches)
                 "/view/select/consenter")

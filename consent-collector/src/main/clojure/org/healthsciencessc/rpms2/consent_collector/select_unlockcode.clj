@@ -15,7 +15,8 @@
   [ { {:keys [lockcode]} :body-params } ]
   (debug "select_unlockcode/perform lockcode is "  lockcode " expected "
          (session-get :lockcode) )
-  (if (= lockcode (session-get :lockcode))
+  (if (or (= lockcode (session-get :lockcode))
+          (= nil (session-get :lockcode)))
     (do
       (flash-put! :header "Unlocked. Go to Review" )
       (session-delete-key! :lockcode )
@@ -42,4 +43,5 @@
         (helper/standard-submit-button {
                    :value (i18n "unlock-code-form-submit-button") 
                    :name "unlock-code-form-submit-button" } ))
-   :title (i18n :hdr-select-unlockcode))) 
+   :title (i18n :hdr-select-unlockcode)
+    )) 
