@@ -15,8 +15,8 @@
                          (and (admin? user)
                               (cond
                                org-id (data/belongs-to? "user" (:id user) "organization" org-id)
-                               loc-id (data/belongs-to? "location" loc-id "organization" org-id))
-                              :else true))))
+                               loc-id (data/belongs-to? "location" loc-id "organization" org-id)
+                              :else true)))))
     :run-fn (fn [params]
               (let [user (get-in params [:session :current-user])
                     user-org-id (get-in user [:organization :id])

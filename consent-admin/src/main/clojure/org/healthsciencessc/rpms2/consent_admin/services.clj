@@ -114,6 +114,11 @@
 
 ;; Domain utilities
 
+(defn merge-with-curr-org
+  [m]
+  (assoc m :organization 
+         (:organization (sess/session-get :user))))
+
 ;; LOCATIONS
 (defn get-locations
   [_]
@@ -128,7 +133,7 @@
   (PUT "/security/location"
         nil
         nil
-        (with-out-str (prn l))))
+        (with-out-str (prn (merge-with-curr-org l)))))
 
 (defn edit-location
   [id l]
@@ -203,7 +208,7 @@
   (PUT "/security/role"
         nil
         nil
-        (with-out-str (prn r))))
+        (with-out-str (prn (merge-with-curr-org r)))))
 
 (defn edit-role
   [id r]
@@ -226,7 +231,7 @@
   (PUT "/security/group"
         nil
         nil
-        (with-out-str (prn g))))
+        (with-out-str (prn (merge-with-curr-org g)))))
 
 (defn edit-group
   [id g]
@@ -243,8 +248,7 @@
 
 (defn add-admin
   [u]
-  (let [org-id (:id (:organization u))
-        admin-id (-> (filter #(= (:code %)
+  (let [admin-id (-> (filter #(= (:code %)
                              domain/code-role-admin)
                              (get-roles))
                    first

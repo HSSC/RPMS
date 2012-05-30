@@ -33,7 +33,6 @@
         (actions/actions 
              (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
              (actions/details-button {:label "Delete" :url "/view/organization/delete" :params {:organization :selected#id}})
-             (actions/details-button {:url "/view/user/add" :params {:organization :selected#id} :label "Add Administrator"})
              (actions/new-button {:label "New" :url "/view/organization/add"})
              (actions/pop-button))))))
 
@@ -82,6 +81,7 @@
         (layout/render ctx "Edit Organization"
                    (container/scrollbox (formui/dataform (create-fields org)))
                    (actions/actions 
+                     (actions/details-button {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
                      (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
                      (actions/pop-button)))))))
 
@@ -107,6 +107,13 @@
   [{:name "get-view-organizations"
     :runnable-fn (constantly true)
     :run-fn  layout-organizations}
+   {:name "get-view-organization"
+    :runnable-fn (constantly true)
+    :run-fn #(process/dispatch "get-view-organization-edit"  ;; I'm so ashamed
+                               (assoc-in %
+                                         [:query-params :organization]
+                                         (get-in (sess/session-get :user)
+                                                 [:organization :id])))}
    {:name "get-view-organization-add"
     :runnable-fn (constantly true)
     :run-fn get-view-organization-add}

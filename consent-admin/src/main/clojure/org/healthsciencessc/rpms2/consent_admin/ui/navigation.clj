@@ -62,8 +62,8 @@
 (def groupings 
   [
     {:group "Organization" :use? admin-or-super?
-      :items [{:url "/view/organizations" :label "All Organizations" :use? super? }
-              {:url "/view/organization" :label "Settings"}
+      :items [{:url "/view/organizations" :label "Manage All Organizations" :use? super?}
+              {:url "/view/organization" :label "Organization Settings"}
               {:url "/view/locations" :label "Locations"}]}
     {:group "Security" :use? admin-or-super?
       :items [{:url "/view/users" :label "Users"}
