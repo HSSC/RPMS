@@ -29,14 +29,18 @@
                                                :user user
                                                :location {:id loc-id}})
                   (let [loc-ids (map :id (data/find-children "organization" (:id user-org) "location"))]
-                    (doall (map #(data/create "role-mapping" {:organization user-org
-                                                       :role {:id role-id}
-                                                       :user user
-                                                       :location {:id %}})
-                         loc-ids))))
+                    (if (empty? loc-ids)
+                      (data/create "role-mapping" {:organization user-org
+                                                   :role {:id role-id}
+                                                   :user user})
+                      (doall (map #(data/create "role-mapping" {:organization user-org
+                                                                :role {:id role-id}
+                                                                :user user
+                                                                :location {:id %}})
+                                  loc-ids)))))
                 (data/find-record "user" user-id)))
     :run-if-false forbidden-fn}
-   
+
    {:name "delete-security-userrole"
     :runnable-fn (fn [params]
                    (let [current-user (get-in params [:session :current-user])
