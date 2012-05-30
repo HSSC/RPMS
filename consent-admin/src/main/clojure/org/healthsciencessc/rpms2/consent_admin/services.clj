@@ -175,8 +175,7 @@
   (PUT "/security/organization"
        nil
        nil
-       (with-out-str (prn o)))
-  (add-location {:name (str "Default Location - " (:name o))}))
+       (with-out-str (prn o))))
 
 (defn edit-organization
   [id o]
@@ -253,8 +252,7 @@
         usr-resp (add-user u)]
     (if (:id usr-resp)
       (let [role-params {:user (:id usr-resp)
-                         :role admin-id
-                         :organization org-id}]
+                         :role admin-id}]
             (PUT "/security/userrole"
                role-params
                nil

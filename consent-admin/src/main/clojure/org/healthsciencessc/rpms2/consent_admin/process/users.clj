@@ -65,7 +65,7 @@
         persist-params {:method :post :url "/api/user/add"}
         persist-params (if org
                          (assoc persist-params :params {:organization org}))]
-  (layout/render ctx "Create User"
+  (layout/render ctx (if org "Create Admin" "Create User")
                  (container/scrollbox (formui/dataform (render-user-fields)))
                  (actions/actions
                    (actions/save-button persist-params)
