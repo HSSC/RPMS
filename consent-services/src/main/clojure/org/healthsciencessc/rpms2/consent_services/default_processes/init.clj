@@ -10,6 +10,7 @@
             [org.healthsciencessc.rpms2.consent-services.default-processes.role]
             [org.healthsciencessc.rpms2.consent-services.default-processes.user-group]
             [org.healthsciencessc.rpms2.consent-services.default-processes.user]
+            [org.healthsciencessc.rpms2.consent-services.default-processes.user-role]
             [org.healthsciencessc.rpms2.consent-services.default-processes.widget]
             [org.healthsciencessc.rpms2.consent-services.default-processes.protocol]
             [org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version]))

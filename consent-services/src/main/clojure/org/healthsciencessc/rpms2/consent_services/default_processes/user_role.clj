@@ -33,11 +33,11 @@
                                                :user {:id user-id}
                                                :location {:id loc-id}})
                   (let [loc-ids (map :id (data/find-children "organization" org-id "location"))]
-                    (map #(data/create "role-mapping" {:organization {:id org-id}
+                    (doall (map #(data/create "role-mapping" {:organization {:id org-id}
                                                        :role {:id role-id}
                                                        :user {:id user-id}
                                                        :location {:id %}})
-                         loc-ids)))
+                         loc-ids))))
                 (data/find-record "user" user-id)))
     :run-if-false forbidden-fn}
    
