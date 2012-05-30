@@ -26,12 +26,15 @@
       (ajax/error (meta orgs))
       (layout/render ctx "Organizations"
         (container/scrollbox (selectlist/selectlist 
-          (for [x (remove #(= code-base-org (:name %)) orgs)]
+          (for [x (->> orgs
+                    (remove #(= code-base-org (:code %)))
+                    (sort-by :name))]
             {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
+             (actions/details-button {:label "Delete" :url "/view/organization/delete" :params {:organization :selected#id}})
              (actions/details-button {:url "/view/user/add" :params {:organization :selected#id} :label "Add Administrator"})
-             (actions/new-button {:url "/view/organization/add"})
+             (actions/new-button {:label "New" :url "/view/organization/add"})
              (actions/pop-button))))))
 
 (defn create-fields [{:keys [name code protocol-label location-label]}]
@@ -48,6 +51,27 @@
                  (actions/actions 
                    (actions/save-button {:method :post :url "/api/organization/add"})
                    (actions/pop-button))))
+
+(defn get-view-organization-delete
+  [ctx]
+  (let [org-id (:organization (:query-params ctx))]
+    (layout/render ctx "Delete Organization"
+                   (container/scrollbox 
+                     [:h1.confirm "This is dangerous, please confirm deleting."])
+                   (actions/actions 
+                     (actions/save-button {:label "Delete Organization"
+                                           :method :post
+                                           :params {:organization org-id}
+                                           :url "/api/organization/delete"})
+                     (actions/pop-button)))))
+
+(defn post-api-organization-delete
+  [ctx]
+  (let [org-id (:organization (:query-params ctx))
+        resp (service/delete-organization org-id)]
+    (if (service/service-error? resp)
+      (ajax/error (meta resp))
+      (ajax/success resp))))
 
 (defn get-view-organization-edit
   [ctx]
@@ -89,9 +113,15 @@
    {:name "get-view-organization-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-organization-edit}
+   {:name "get-view-organization-delete"
+    :runnable-fn (constantly true)
+    :run-fn get-view-organization-delete}
    {:name "post-api-organization-edit"
     :runnable-fn (constantly true)
     :run-fn post-api-organization-edit}
+   {:name "post-api-organization-delete"
+    :runnable-fn (constantly true)
+    :run-fn post-api-organization-delete}
    {:name "post-api-organization-add"
     :runnable-fn (constantly true)
     :run-fn post-api-organization-add}

@@ -162,6 +162,10 @@
         (with-out-str (prn u))))
 
 ;; ORGANIZATIONS
+(defn delete-organization
+  [id]
+  (DELETE "/security/organization" {:organization id} nil nil))
+
 (defn get-organizations
   [_]
   (GET "/security/organizations" {}))
