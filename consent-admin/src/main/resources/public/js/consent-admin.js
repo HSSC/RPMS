@@ -53,6 +53,31 @@ $(function(){
 		$.ajax(fullUrl, settings);
 	});
 	
+	// Register Event - Click Delete Actions
+	PaneManager.on("click", ".delete-action", function(event){
+		var target = RPMS.findTarget(event, "div.delete-action");
+		var url = RPMS.get(target, "data-url");
+		var params = RPMS.getParamMap(target, "data-map");
+		
+		var settings = {
+				data: body,
+				type: method,
+				dataType: "text",
+				success: function(data, status, xhr){
+					RPMS.endProgress();
+					PaneManager.cache("changed", true);
+				},
+				error: function(xhr, status, text){
+					RPMS.endProgress();
+					RPMS.inform("Error Encountered", "Failed to delete data.");
+				}
+		}
+		RPMS.startProgress();
+		RPMS.confirm({title: "Confirm Delete", 
+			message: "Are you sure you want to delete this item?", 
+			onconfirm: function(){$.ajax(fullUrl, settings)}});
+	});
+	
 	// Register Event - Click Done Button
 	PaneManager.on("click", ".done-action", function(event){
 		var target = RPMS.findTarget(event, "div.done-action");

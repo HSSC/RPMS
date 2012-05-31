@@ -25,6 +25,11 @@
   [:div.action.new-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
    {:data-url url :data-map (to-attr-value params)} [:span.ui-button-text (or label "Add")]])
 
+;;
+(defn delete-button
+  [{url :url params :params label :label}]
+  [:div.action.delete-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
+   {:data-url url  :data-map (to-attr-value params)} [:span.ui-button-text (or label "Delete")]])
 
 (defn pop-button
   ([] (pop-button {}))
