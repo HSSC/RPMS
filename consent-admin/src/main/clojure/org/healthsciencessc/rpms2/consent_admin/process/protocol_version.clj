@@ -1,6 +1,7 @@
 ;; Provides the configuration of the protocol managemant UIs.
 (ns org.healthsciencessc.rpms2.consent-admin.process.protocol-version
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
+            [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
@@ -67,12 +68,12 @@
   [
    ;; Generates the view for a specific protocol version.
    {:name "get-view-protocol-versions"
-    :runnable-fn (constantly true)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user)
     :run-fn view-protocol-versions}
    
    ;; Generates the view for creating a protocol.
    {:name "get-view-protocol-version-new"
-    :runnable-fn (constantly true)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user)
     :run-fn view-protocol-version-new}
    ])
 

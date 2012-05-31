@@ -103,6 +103,11 @@ var PaneManager = {
 			ok: "Logout",
 			message: "Are you sure you want to end this session?"
 		},
+		error: {
+			title: "Failure Occurred",
+			message: "An error occured while processing the request.  Please inform your application administrator.",
+			close: "Close"
+		},
 		label: {
 			cancel: "Cancel",
 			ok: "OK",
@@ -211,8 +216,8 @@ var PaneManager = {
 				success: function(data, status, xhr){
 					PaneManager.onsuccess(data, request, status, xhr);
 				},
-				error: function(data, status, xhr){
-					PaneManager.onfailure(data, request, status, xhr);
+				error: function(xhr, status, thrown){
+					PaneManager.onfailure($.parseJSON(xhr.responseText), request, status, xhr);
 				}
 		}
 		if(options != null && options.ajax != null){
@@ -246,7 +251,28 @@ var PaneManager = {
 	
 	// Processes a failed request for a pane.
 	onfailure: function(data, request, status, xhr){
-		alert("Failed: " + data);
+		if(this.errorDialog == null){
+			this.errorDialog = $("<div class='dialog errordialog'/>");
+			this.errorDialog.appendTo($("body"));
+		}
+		var message = this.text.error.message;
+		if(data != null){
+			if(data.message != null){
+				message = data.message;
+			}
+			else if (typeof data == "string"){
+				message = data;
+			}
+		}
+		this.errorDialog.text(message);
+		var buts = {};
+		buts[this.text.error.close] = function (){$(this).dialog( "close" )};
+		this.errorDialog.dialog({
+			title: this.text.error.title,
+			resizable: false,
+			modal: true,
+			buttons: buts
+		});
 	},
 	
 	// Removes the current pane from the stack, making the previous pane the current one.

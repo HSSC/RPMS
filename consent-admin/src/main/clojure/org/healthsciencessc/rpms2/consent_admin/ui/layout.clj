@@ -1,9 +1,10 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
   (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
-           [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
-           [hiccup.page :as page]
-           [hiccup.core :as hcup]
-           [sandbar.stateful-session :as sess]))
+            [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
+            [hiccup.page :as page]
+            [hiccup.core :as hcup]
+            [sandbar.stateful-session :as sess]
+            [clojure.data.json :as json]))
 
 (defn- header
   "Creates the default header that is used for the application"
@@ -37,7 +38,7 @@
   "Creates the default layout that is used for the application"
   [ctx elements]
   [:body 
-    (if (not= (:path-info ctx) "/view/home")
+    (if (not-any? #(= (:path-info ctx) %) ["/view/home" "/security/login" "/login"])
       [:script (str "PaneManager.triggerOnInit(\"" (:path-info ctx) "\", {},{});")])
     [:div#page.page
                (header)
@@ -69,14 +70,14 @@
     [:script (str "PaneManager.initBasePath(\"" (:context ctx) "\");")]])
 
 (defn- layout 
-  ""
+  "Generates the standard layout when in a validated session."
   [ctx elements]
   (page/html5
     (head ctx)
     (body ctx elements)))
 
 (defn- layout-no-session
-  ""
+  "Generates the standard layout when not in a validated session."
   [ctx elements]
   (page/html5
     (head ctx)
@@ -101,3 +102,24 @@
       (pane ctx title elements)
     :else
       (layout ctx elements)))
+
+(defn- error-html
+  [error]
+  (or (:message error)
+      "An Error Happened.  Darnit."))
+
+(defn- pane-error
+  [error]
+  {:status (or (:status error) 500)
+   :headers (or (:headers error) {"Content-Type" "application/json"})
+   :body (json/json-str (or (:body error) {:message (or (:message error) "Requested process failed to complete.")}))})           
+
+(defn render-error
+  [ctx error]
+  (cond
+    (not (sess/session-get :user))
+      (layout-no-session (error-html error))
+    (= (get-in ctx [:query-params :view-mode]) "pane")
+      (pane-error error)
+    :else
+      (layout (error-html error))))

@@ -41,9 +41,12 @@ $(function(){
 						PaneManager.current.pane.find(".done-action").trigger("click");
 					}
 				},
-				error: function(data, status, xhr){
+				error: function(xhr, status, text){
 					RPMS.endProgress();
-					alert("Failed!");
+					var body = $.parseJSON(xhr.responseText);
+					var message = "Failed to save data.";
+					
+					RPMS.inform("Error Encountered", "");
 				}
 		}
 		RPMS.startProgress();
@@ -86,6 +89,9 @@ var RPMS = {
 	},
 	
 	get: function(element, attribute){
+		if(attribute.indexOf("data-") != 0){
+			attribute = "data-" + attribute;
+		}
 		return element[0].getAttribute(attribute);
 	},
 	
@@ -123,6 +129,37 @@ var RPMS = {
 			data[e.name] = e.value;
 		}
 		return data;
+	},
+	inform: function(options){
+		if(this.informDialog == null){
+			this.informDialog = $("<div class='dialog' />");
+			this.informDialog.appendTo($("body"));
+		}
+		this.informDialog.text(options.message);
+		var buts = {};
+		buts["Close"] = function (){$(this).dialog( "close" ); if(options.onclose) options.onclose();};
+		this.informDialog.dialog({
+			title: options.title,
+			resizable: false,
+			modal: true,
+			buttons: buts
+		});
+	},
+	confirm: function(options){
+		if(this.confirmDialog == null){
+			this.confirmDialog = $("<div class='dialog' />");
+			this.confirmDialog.appendTo($("body"));
+		}
+		this.confirmDialog.text(options.message);
+		var buts = {};
+		buts["Proceed"] = function (){$(this).dialog( "close" ); if(options.onconfirm) options.onconfirm();};
+		buts["Cancel"] = function (){$(this).dialog( "close" ); if(options.oncancel) options.oncancel();};
+		this.confirmDialog.dialog({
+			title: options.title,
+			resizable: false,
+			modal: true,
+			buttons: buts
+		});
 	},
 	startProgress: function(){
 		this.pause();

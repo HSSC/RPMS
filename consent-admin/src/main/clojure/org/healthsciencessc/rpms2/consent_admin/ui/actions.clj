@@ -21,9 +21,9 @@
 
 ;;
 (defn new-button
-  [{url :url label :label}]
+  [{url :url params :params label :label}]
   [:div.action.new-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
-   {:data-url url} [:span.ui-button-text (or label "Add")]])
+   {:data-url url :data-map (to-attr-value params)} [:span.ui-button-text (or label "Add")]])
 
 
 (defn pop-button

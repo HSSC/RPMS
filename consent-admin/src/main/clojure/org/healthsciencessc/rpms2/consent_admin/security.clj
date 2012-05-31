@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-admin.security
-  (:require [org.healthsciencessc.rpms2.consent-admin.security :as security]
+  (:require ;;[org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.process-engine.path :as path]
             [ring.util.response :as response]
             [sandbar.stateful-session :as sandbar])
@@ -21,3 +21,11 @@
       (handler request)
       (response/redirect (path/root-link request "/login")))))
 
+(defn current-user
+  "Method used to get the current user for the request.  Multi interface allows for use in common runnables functions."
+  ([_] (sandbar/session-get :user)))
+
+(defn current-org
+  "Obtains the organization from the current user.  If out of session returns nil."
+  [_]
+  (:organization (current-user)))

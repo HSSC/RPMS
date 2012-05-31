@@ -15,15 +15,11 @@ label, input {
 	display: block;
 	padding: .3em 0 .3em 0;
 	margin: .3em auto 0 auto;
-	width: 100%;
 }
 
-
-
 /*
- * Styling for the generic layout of the applicaiton. 
+ * Styling for the generic layout of the application. 
  */
-
 div.page {
 	background-color: #F5F8F9;
 	position: absolute;
@@ -261,3 +257,57 @@ div.action{
 img.progress{
 	position: absolute;
 }
+
+/*
+ * Styling for forms
+ */
+div.dataform{
+	width: 100%	
+}
+
+div.form-control-wrapper{
+	
+}
+
+div.form-text{
+	
+}
+
+label.text{
+	width: 100%;
+}
+
+input.text{
+	width: 100%;
+}
+
+div.form-password{
+	
+}
+
+input.password{
+	width: 100%;
+}
+
+div.form-checkbox{
+	margin: .25em;
+}
+
+label.checkbox{
+	float: left;
+	margin-left: .25em;
+}
+
+input.checkbox{
+	float: left;
+	margin-top: .5em;
+}
+
+div.form-select{
+	
+}
+
+select.single-select{
+	
+}
+

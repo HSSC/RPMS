@@ -44,7 +44,7 @@
         (with-meta coll m)))))
 
 (def ^:private failure-handler
-  (meta-failure-handler {} "Something went wrong..."))
+  (meta-failure-handler {} "Failed to get a valid response from the consent services module."))
 
 (defn- handle-response
   "Handle the response from all requests.
@@ -262,4 +262,30 @@
                nil
                nil))
       usr-resp)))  ;; pass this back directly
+
+;; PROTOCOLS
+(defn get-protocols
+  "Gets all of the available protocols within a location."
+  [location-id]
+  (GET "/protocols" {:location location-id}))
+
+(defn get-protocol
+  "Gets a single protocol by it's ID."
+  [protocol-id]
+  (GET "/protocol" {:protocol protocol-id}))
+
+(defn add-protocol
+  "Adds a new protocol to a location."
+  [location-id data]
+  (PUT "/protocol" {:location location-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn update-protocol
+  "Updates a protocol with data changes."
+  [protocol-id data]
+  (POST "/protocol"
+        {:protocol protocol-id}
+        nil
+        (with-out-str (prn data))))
 
