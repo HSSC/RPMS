@@ -16,6 +16,7 @@
    "Returns form to search consenter and a button to create consenter"
   [ctx]
 
+  (helper/clear-patient)
   (helper/clear-consents)
   (helper/rpms2-page 
     (helper/post-form "/view/select/consenter" 

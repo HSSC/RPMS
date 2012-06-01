@@ -27,7 +27,14 @@
                     :value (:clear-label c)
                     :name (str "signature-btn-" (:name c))
                    } ]
-     ] ])
+     ] 
+   
+   [:h1 "Signature pad" ]
+     [:div {:class "sig sigWrapper" }
+       [:canvas {:class "pad" :width "198" :height "55" }  ]
+       [:input {:type "hidden" :width "output" :class "output" }  ]
+     ]
+   ])
 
 
 
@@ -402,7 +409,6 @@
              (pprint-str (get-matching-btns parms "signature-btn-")) "]")
            "/collect/consents")
 
-
       (has-any? parms "meta-data-btn-")
       (helper/flash-and-redirect 
           (str "[Thank you for pressing that meta-data button " 
@@ -425,7 +431,7 @@
       ;; At end of current form, set current page to start of next form,
       ;; or if there are none, set current page to start of review 
       (advance-to-next-form)
-      (show-page {} ) 
+      (helper/myredirect "/collect/consents")
 
      (:review-confirmed s)
           (helper/myredirect "/view/unlock")

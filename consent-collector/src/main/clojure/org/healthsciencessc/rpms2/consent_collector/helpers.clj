@@ -79,14 +79,14 @@
   (let [u (session-get :user)
         l (session-get :org-location)
         loc-specific (get-in l [:location label-nm ])
-        org-specific (get-in u [:organization label-nm ])]
-    (do
-      (debug "custom-site-label label ", label-nm " defaultval " defaultval, " u " u, " l " l, " loc spec ", loc-specific " org-specific ", org-specific)
-      (if (= nil loc-specific) 
-      (if (= nil org-specific) 
-        defaultval 
-        org-specific)
-      loc-specific))))
+        org-specific (get-in u [:organization label-nm ])
+        retval (if (empty? loc-specific) 
+                   (if (empty? org-specific) 
+                       defaultval 
+                       org-specific)
+                   loc-specific) ]
+      (debug "custom-site-label |", label-nm "|" defaultval, "|u|" u, "|l|" l, " loc spec ", loc-specific " org-specific ", org-specific " RETURNING " retval)
+    retval))
 
 (defn org-location-label
   "Returns the location label, which is taken from the user's location
@@ -253,13 +253,19 @@
     "<meta name=\"apple-mobile-web-app-capable\" contents=\"yes\" />"
     (hpage/include-css 
      (absolute-path "app.css")
-     (absolute-path "jquery.mobile-1.1.0.min.css" ))
+     (absolute-path "jquery.mobile-1.1.0.min.css" )
+     (absolute-path "jquery.signaturepad.css" )
+     )
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
     (hpage/include-js 
      (absolute-path "jquery-1.7.1.min.js")
      (absolute-path "jquery.mobile-1.1.0.min.js")
+      ;; see http://thomasjbradley.ca/lab/signature-pad/
+     (absolute-path "flashcanvas.js")
+     (absolute-path "jquery.signaturepad.js")
+     (absolute-path "json2.js")
      (absolute-path "app.js")
       ) ]
    [:body 
@@ -457,6 +463,11 @@
                          (debug "init-consents EXCEPTION Ex " e)
                          (println "init-consents EXCEPTION Ex " e)
                          (.printStackTrace e))))))
+
+(defn init-review
+  []
+  (debug "init-review")
+)
 
 (defn clear-patient
   []

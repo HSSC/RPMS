@@ -17,14 +17,10 @@
          (session-get :lockcode) )
   (if (or (= lockcode (session-get :lockcode))
           (= nil (session-get :lockcode)))
-    (do
-      (flash-put! :header "Unlocked. Go to Review" )
-      (session-delete-key! :lockcode )
-      (helper/myredirect "/review/consents"))
-    (do
-      (info "Invalid lockcode " lockcode)
-      (flash-put! :header (i18n :flash-invalid-lockcode))
-      (helper/myredirect "/view/unlock"))))
+    (do (session-delete-key! :lockcode )
+        (helper/init-review)
+        (helper/flash-and-redirect  "Unlocked." "/review/consents"))
+    (helper/flash-and-redirect :flash-invalid-lockcode "/view/unlock")))
 
 (defn view 
   "Displays form for entering lockcode."

@@ -691,3 +691,4 @@
 
 ;;(debug! get-published-protocols)
 (debug! dsa-search-consenters)
+(debug! authenticate)

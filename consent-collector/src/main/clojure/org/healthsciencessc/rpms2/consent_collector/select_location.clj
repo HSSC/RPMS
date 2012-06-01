@@ -22,6 +22,7 @@
 (defn- select-location-form
   "Display select location form."
   [locs-names]
+  (helper/clear-patient)
   (helper/rpms2-page 
     (helper/post-form "/view/select/location"
       [:fieldset {:data-role "controlgroup" }
