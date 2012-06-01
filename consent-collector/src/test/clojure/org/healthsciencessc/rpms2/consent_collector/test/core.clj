@@ -175,7 +175,7 @@
   (session-put! :needed-meta-data (list (:MI001 dsa/metadata-map) 
                                         (:MI002 dsa/metadata-map) ))
   (let [html (metadata/view {})
-        _ (spit-html html "select_metadata.html")
+        ;_ (spit-html html "select_metadata.html")
         [form] (en/select (en/html-snippet html)
                           [[:form (en/attr= :action "/view/meta-data")]])]
     (is form)
