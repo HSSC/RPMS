@@ -18,7 +18,7 @@
   [c m]
   [:div.control.signature "Your signature is requested: " 
     [:div "Guarantor " (:name c)]
-    [:div [:input { :type "textarea"  } ] "Endorsement " (:endorsement c) ]
+    #_[:div [:input { :type "textarea"  } ] "Endorsement " (:endorsement c) ]
     [:div 
        [:input { :type "submit" 
                     :data-theme "a"
@@ -30,7 +30,7 @@
      ] 
    
    [:h1 "Signature pad" ]
-     [:div {:class "sig sigWrapper" }
+     [:div {:class "sig sigWrapper ccsig" }
        [:canvas {:class "pad" :width "198" :height "55" }  ]
        [:input {:type "hidden" :width "output" :class "output" }  ]
      ]
@@ -222,12 +222,11 @@
 
 (defn- view-finished
   [ctx]
-  (flash-put! :header "Finished collecting consents.")
   (let [s (session-get :collect-consent-status)]
     (helper/rpms2-page 
-       (helper/post-form "/collect/consents"
-           [:div 
-              [:div.finished1 "Thank You! " ]
+       (helper/collect-consent-form "/collect/consents"
+           [:div.centered 
+              [:div.finished1 "Thank You!" ]
               [:div.finished2 (str "Your selected " (helper/org-protocol-label) "s are complete.") ]
               [:div.finished3 "Return the device to the clerk." ] ]
            (helper/standard-submit-button {:value "Continue" :name "next" })) 

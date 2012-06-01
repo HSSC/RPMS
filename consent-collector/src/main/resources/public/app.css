@@ -292,9 +292,9 @@ ul.select-protocol-list  li.odd {
 
 .control-type { font-weight: bold; color: navy; }
 
-div.finished1 { margin: 15px; }
-div.finished2 { margin: 15px; }
-div.finished3 { font-size: 2em; font-weight: bold; margin: 20px;}
+div.finished1 { margin: 15px; text-align: center; }
+div.finished2 { margin: 15px; text-align: center; }
+div.finished3 { xfont-size: 1.5em; xfont-weight: bold; margin: 20px;text-align: center; }
 
 .debug { background: yellow; color: black; font-weight: bold; }
 
@@ -307,3 +307,5 @@ div.control h1.title { font-size: 1.1em; font-weight: bold; }
 div.control > .title { font-size: 1.1em; font-weight: bold; }
 
 div.control > .text { padding-bottom: 10px; }
+
+div.ccsig { border: thin solid navy; background-color: pink; }

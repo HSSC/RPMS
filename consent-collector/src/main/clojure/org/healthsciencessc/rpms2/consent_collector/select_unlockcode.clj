@@ -19,7 +19,7 @@
           (= nil (session-get :lockcode)))
     (do (session-delete-key! :lockcode )
         (helper/init-review)
-        (helper/flash-and-redirect  "Unlocked." "/review/consents"))
+        (helper/flash-and-redirect  "Unlocked. Review consents unimplemented" "/view/unimplemented"))
     (helper/flash-and-redirect :flash-invalid-lockcode "/view/unlock")))
 
 (defn view 
