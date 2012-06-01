@@ -3,8 +3,8 @@
                                                        [web-service :as ws]]
             [ring.util [codec :as codec]
                        [response :as response]]
-            [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [sandbar.stateful-session :as sandbar]
+            [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [ring.middleware.content-type :as content-type]
             [org.healthsciencessc.rpms2.consent-admin.process.init :as processes])
   (:use [compojure.core]

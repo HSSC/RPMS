@@ -32,7 +32,6 @@
             {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
-             (actions/details-button {:label "Delete" :url "/view/organization/delete" :params {:organization :selected#id}})
              (actions/new-button {:label "New" :url "/view/organization/add"})
              (actions/pop-button))))))
 
@@ -51,20 +50,7 @@
                    (actions/save-button {:method :post :url "/api/organization/add"})
                    (actions/pop-button))))
 
-(defn get-view-organization-delete
-  [ctx]
-  (let [org-id (:organization (:query-params ctx))]
-    (layout/render ctx "Delete Organization"
-                   (container/scrollbox 
-                     [:h1.confirm "This is dangerous, please confirm deleting."])
-                   (actions/actions 
-                     (actions/save-button {:label "Delete Organization"
-                                           :method :post
-                                           :params {:organization org-id}
-                                           :url "/api/organization/delete"})
-                     (actions/pop-button)))))
-
-(defn post-api-organization-delete
+(defn delete-api-organization
   [ctx]
   (let [org-id (:organization (:query-params ctx))
         resp (service/delete-organization org-id)]
@@ -82,6 +68,7 @@
                    (container/scrollbox (formui/dataform (create-fields org)))
                    (actions/actions 
                      (actions/details-button {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
+                     (actions/delete-button {:label "Delete" :url "/api/organization" :params {:organization org-id} :message "Are you sure you want to delete this organization?"})
                      (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
                      (actions/pop-button)))))))
 
@@ -120,15 +107,12 @@
    {:name "get-view-organization-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-organization-edit}
-   {:name "get-view-organization-delete"
+   {:name "delete-api-organization"
     :runnable-fn (constantly true)
-    :run-fn get-view-organization-delete}
+    :run-fn delete-api-organization}
    {:name "post-api-organization-edit"
     :runnable-fn (constantly true)
     :run-fn post-api-organization-edit}
-   {:name "post-api-organization-delete"
-    :runnable-fn (constantly true)
-    :run-fn post-api-organization-delete}
    {:name "post-api-organization-add"
     :runnable-fn (constantly true)
     :run-fn post-api-organization-add}

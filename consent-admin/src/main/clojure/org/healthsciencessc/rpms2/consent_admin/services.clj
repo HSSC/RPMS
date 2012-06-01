@@ -142,6 +142,10 @@
         nil
         (with-out-str (prn l))))
 
+(defn delete-location
+  [id]
+  (DELETE "/security/location" {:location id} nil nil))
+
 ;; USERS
 (defn get-users
   [_]
@@ -158,6 +162,9 @@
         nil
         (with-out-str (prn u))))
 
+(defn delete-user
+  [id]
+  (DELETE "/security/user" {:user id} nil nil))
 
 (defn edit-user
   [id u]
@@ -217,6 +224,10 @@
         nil
         (with-out-str (prn r))))
 
+(defn delete-role
+  [id]
+  (DELETE "/security/role" {:role id} nil nil))
+
 ;; GROUPS
 (defn get-groups
   [_]
@@ -225,6 +236,10 @@
 (defn get-group
   [id]
   (GET "/security/group" {:group id}))
+
+(defn delete-group
+  [id]
+  (DELETE "/security/group" {:group id} nil nil))
 
 (defn add-group
   [g]

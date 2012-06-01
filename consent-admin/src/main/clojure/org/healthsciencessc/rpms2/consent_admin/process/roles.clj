@@ -30,7 +30,6 @@
               {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/role/edit" :params {:role :selected#id}})
-             (actions/details-button {:url "/view/role/add" :params {:role :selected#id} :label "Change Roles"})
              (actions/new-button {:url "/view/role/add"})
              (actions/pop-button))))))
 
@@ -66,7 +65,16 @@
                    (container/scrollbox (formui/dataform (render-role-fields role)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/role/edit" :params {:role role-id}})
+                     (actions/delete-button {:url "/api/role" :params {:role role-id}})
                      (actions/pop-button)))))))
+
+(defn delete-api-role
+  [ctx]
+  (let [role (:role (:query-params ctx))
+        resp (service/delete-role role)]
+    (if (service/service-error? resp)
+      (ajax/error (meta resp))
+      (ajax/success resp))))
 
 (defn post-api-role-add
   [ctx]
@@ -94,6 +102,9 @@
    {:name "get-view-role-add"
     :runnable-fn (constantly true)
     :run-fn get-view-role-add}
+   {:name "delete-api-role"
+    :runnable-fn (constantly true)
+    :run-fn delete-api-role}
    {:name "get-view-role-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-role-edit}

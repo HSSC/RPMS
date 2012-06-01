@@ -62,9 +62,8 @@
 (defn get-view-user-add
   [ctx]
   (let [org (:organization (:query-params ctx))
-        persist-params {:method :post :url "/api/user/add"}
-        persist-params (if org
-                         (assoc persist-params :params {:organization org}))]
+        org-param (if org {:organization org})
+        persist-params (merge {:method :post :url "/api/user/add"} org-param)]
   (layout/render ctx (if org "Create Admin" "Create User")
                  (container/scrollbox (formui/dataform (render-user-fields)))
                  (actions/actions
@@ -81,6 +80,7 @@
                    (container/scrollbox (formui/dataform (render-user-fields user)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/user/edit" :params {:user user-id}})
+                     (actions/delete-button {:url "/api/user" :params {:user user-id}})
                      (actions/pop-button)))))))
 
 (defn post-api-user-add
@@ -107,6 +107,14 @@
       (ajax/error (meta resp))
       (ajax/success resp))))
 
+(defn delete-api-user
+  [ctx]
+  (let [user (:user (:query-params ctx))
+        resp (service/delete-user user)]
+    (if (service/service-error? resp)
+      (ajax/error (meta resp))
+      (ajax/success resp))))
+
 (def process-defns
   [{:name "get-view-users"
     :runnable-fn (constantly true)
@@ -114,6 +122,9 @@
    {:name "get-view-user-add"
     :runnable-fn (constantly true)
     :run-fn get-view-user-add}
+   {:name "delete-api-user"
+    :runnable-fn (constantly true)
+    :run-fn delete-api-user}
    {:name "get-view-user-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-user-edit}

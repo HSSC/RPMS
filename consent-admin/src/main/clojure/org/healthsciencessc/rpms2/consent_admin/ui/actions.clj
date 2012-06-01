@@ -27,9 +27,9 @@
 
 ;;
 (defn delete-button
-  [{url :url params :params label :label}]
+  [{url :url params :params label :label msg :message}]
   [:div.action.delete-action.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only 
-   {:data-url url  :data-map (to-attr-value params)} [:span.ui-button-text (or label "Delete")]])
+   {:data-url url  :data-map (to-attr-value params) :data-confirm msg} [:span.ui-button-text (or label "Delete")]])
 
 (defn pop-button
   ([] (pop-button {}))

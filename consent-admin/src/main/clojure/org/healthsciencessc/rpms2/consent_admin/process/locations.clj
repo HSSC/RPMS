@@ -56,15 +56,6 @@
                    (actions/save-button {:method :post :url "/api/location/add"})
                    (actions/pop-button))))
 
-(defn get-view-location-delete
-  [ctx]
-  (layout/render ctx "Delete Location"
-                 ;; FIXME  Call a confimation dialog instead
-                 (container/scrollbox [:h1.status "Location Deleted"])
-                 (actions/actions
-                   ;(actions/save-button {:method :post :url "/api/location/add"})
-                   (actions/pop-button))))
-
 (defn get-view-location-edit
   [ctx]
   (if-let [location-id (-> ctx :query-params :location)]
@@ -75,8 +66,19 @@
                    (container/scrollbox (formui/dataform (render-location-fields location)))
                    (actions/actions
                      (actions/save-button {:method :post :url "/api/location/edit" :params {:location location-id}})
+                     (actions/delete-button {:url "/api/location" :params {:location location-id}})
                      (actions/details-button {:label "Delete" :url "/view/location/delete" :params {:location location-id}})
                      (actions/pop-button)))))))
+
+
+(defn delete-api-location
+  [ctx]
+  (let [loc-id (:location (:query-params ctx))
+        resp (service/delete-location loc-id)]
+    (if (service/service-error? resp)
+      (ajax/error (meta resp))
+      (ajax/success resp))))
+
 
 (defn post-api-location-add
   [ctx]
@@ -107,9 +109,9 @@
    {:name "get-view-location-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-location-edit}
-   {:name "get-view-location-delete"
+   {:name "delete-api-location"
     :runnable-fn (constantly true)
-    :run-fn get-view-location-delete}
+    :run-fn delete-api-location}
    {:name "post-api-location-edit"
     :runnable-fn (constantly true)
     :run-fn post-api-location-edit}

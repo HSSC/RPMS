@@ -66,7 +66,16 @@
                    (container/scrollbox (formui/dataform (render-group-fields group)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/group/edit" :params {:group group-id}})
+                     (actions/delete-button {:url "/api/group" :params {:group group-id}})
                      (actions/pop-button)))))))
+
+(defn delete-api-group
+  [ctx]
+  (let [group (:group (:query-params ctx))
+        resp (service/delete-group group)]
+    (if (service/service-error? resp)
+      (ajax/error (meta resp))
+      (ajax/success resp))))
 
 (defn post-api-group-add
   [ctx]
@@ -94,6 +103,9 @@
    {:name "get-view-group-add"
     :runnable-fn (constantly true)
     :run-fn get-view-group-add}
+   {:name "delete-api-group"
+    :runnable-fn (constantly true)
+    :run-fn delete-api-group}
    {:name "get-view-group-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-group-edit}

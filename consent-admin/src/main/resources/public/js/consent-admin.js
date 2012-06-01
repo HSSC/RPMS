@@ -56,8 +56,11 @@ $(function(){
 		var target = RPMS.findTarget(event, "div.delete-action");
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
+		
 		var hold = RPMS.get(target, "data-holdonsuccess");
 		var fullUrl = PaneManager.getUrl(url, params, false);
+		
+		var confirmmsg = RPMS.get(target, "data-confirm");
 		
 		var settings = {
 				type: "delete",
@@ -77,7 +80,7 @@ $(function(){
 		}
 		RPMS.startProgress();
 		RPMS.confirm({title: "Confirm Delete", 
-			message: "Are you sure you want to delete this item?", 
+			message: confirmmsg || "Are you sure you want to delete this item?", 
 			onconfirm: function(){$.ajax(fullUrl, settings)}});
 	});
 	
