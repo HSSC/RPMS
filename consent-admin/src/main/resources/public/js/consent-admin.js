@@ -25,7 +25,7 @@ $(function(){
 		var target = RPMS.findTarget(event, "div.save-action");
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
-		var holdOnSave = RPMS.get(target, "data-holdonsave");
+		var hold = RPMS.get(target, "data-holdonsuccess");
 		var fullUrl = PaneManager.getUrl(url, params, false);
 		var method = RPMS.get(target, "data-method");
 		var body = RPMS.getDataMap();
@@ -37,16 +37,14 @@ $(function(){
 				success: function(data, status, xhr){
 					RPMS.endProgress();
 					PaneManager.cache("changed", true);
-					if(holdOnSave == null){
+					if(hold == null){
 						PaneManager.current.pane.find(".done-action").trigger("click");
 					}
 				},
 				error: function(xhr, status, text){
 					RPMS.endProgress();
-					var body = $.parseJSON(xhr.responseText);
-					var message = "Failed to save data.";
-					
-					RPMS.inform("Error Encountered", "");
+					var message = RPMS.responseMessage(xhr, "Failed to save data.");
+					RPMS.inform({title: "Error Encountered", message: message});
 				}
 		}
 		RPMS.startProgress();
@@ -58,18 +56,23 @@ $(function(){
 		var target = RPMS.findTarget(event, "div.delete-action");
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
+		var hold = RPMS.get(target, "data-holdonsuccess");
+		var fullUrl = PaneManager.getUrl(url, params, false);
 		
 		var settings = {
-				data: body,
-				type: method,
+				type: "delete",
 				dataType: "text",
 				success: function(data, status, xhr){
 					RPMS.endProgress();
 					PaneManager.cache("changed", true);
+					if(hold == null){
+						PaneManager.current.pane.find(".done-action").trigger("click");
+					}
 				},
 				error: function(xhr, status, text){
 					RPMS.endProgress();
-					RPMS.inform("Error Encountered", "Failed to delete data.");
+					var message = RPMS.responseMessage(xhr, "Failed to delete data.");
+					RPMS.inform({title: "Error Encountered", message: message});
 				}
 		}
 		RPMS.startProgress();
@@ -113,11 +116,21 @@ var RPMS = {
 		return value;
 	},
 	
-	get: function(element, attribute){
+	get: function(target, attribute, defaultValue){
 		if(attribute.indexOf("data-") != 0){
 			attribute = "data-" + attribute;
 		}
-		return element[0].getAttribute(attribute);
+		var value = null;
+		if(target.getAttribute){
+			value = target.getAttribute(attribute);
+		}
+		else if(target.attr){
+			value = target.attr(attribute);
+		} 
+		if(value == null){
+			return defaultValue;
+		}
+		return value;
 	},
 	
 	mapToParams: function(map){
@@ -145,14 +158,37 @@ var RPMS = {
 	getForm: function(){
 		return PaneManager.current.pane.find("form").first();
 	},
-	getDataMap: function(){
-		var form = RPMS.getForm();
-		var elements = form.serializeArray();
+	getDataMap: function(changes){
 		var data = {};
-		for(var i = 0; i < elements.length; i++){
-			var e = elements[i]
-			data[e.name] = e.value;
-		}
+		var form = RPMS.getForm();
+		var inputs = form.find(":input");
+		inputs.each(function(i, e){
+			var name = e.name;
+			var origValue = RPMS.get(e, "data-value");
+			var value = null;
+			if(e.tagName.toLowerCase() == "input" && e.type.toLowerCase() == "checkbox"){
+				var checkVal = RPMS.get(e, "data-checked-value", true);
+				var uncheckVal = RPMS.get(e, "data-checked-value", false);
+				if(e.checked){
+					value = checkVal;
+				}
+				else{
+					value = uncheckVal;
+				}
+			}
+			else{
+				value = $(e).val();
+			}
+			if(changes != true || value != origValue){
+				data[name] = value;
+			}
+		});
+		
+		//var elements = form.serializeArray();
+		//for(var i = 0; i < elements.length; i++){
+		//	var e = elements[i]
+		//	data[e.name] = e.value;
+		//}
 		return data;
 	},
 	inform: function(options){
@@ -211,5 +247,14 @@ var RPMS = {
 		if(this.lightBox != null){
 			this.lightBox.hide();
 		}
+	},
+	responseMessage: function(xhr, ifnull){
+		if(xhr && xhr.responseText){
+			var body = $.parseJSON(xhr.responseText);
+			if(body && body.message){
+				return body.message;
+			}
+		}
+		return ifnull;
 	}
 }
