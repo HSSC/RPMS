@@ -70,7 +70,7 @@
           (other-field (:name item) item)))
 
 (defn view 
-  "Returns meta data form"
+  "Returns Consenter Information ( meta data ) form"
   [ctx]
   (rpms2-page 
     (helper/post-form "/view/meta-data"
@@ -79,7 +79,8 @@
             (list (emit-item item)))))
        (helper/standard-submit-button 
         { :value (i18n :meta-data-form-submit-button) } ))
-    :title (i18n :hdr-metadata)))
+    :title (i18n :hdr-metadata)
+    :cancel-btn (helper/cancel-form "/view/select/consenter")))
 
 (defn perform
   "Save meta data and prepare to enter the data."

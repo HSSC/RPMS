@@ -469,6 +469,11 @@
   (debug "init-review")
 )
 
+(defn clear-location
+  []
+  (session-delete-key! :location)
+)
+
 (defn clear-patient
   []
 
