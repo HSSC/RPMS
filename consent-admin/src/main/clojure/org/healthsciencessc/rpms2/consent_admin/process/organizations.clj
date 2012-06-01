@@ -88,7 +88,7 @@
 (defn post-api-organization-add
   [ctx]
   (let [org (select-keys (:body-params ctx)
-                         [:name :code :location-label])
+                         [:name :code :protocol-label :location-label])
         resp (service/add-organization org)]
     (if (service/service-error? resp)
       (ajax/error (meta resp))
