@@ -3,6 +3,7 @@
             [sandbar.stateful-session :as sess]
             [org.healthsciencessc.rpms2.consent-domain.types :as domain]
             [clojure.pprint :as pp]
+            [clojure.string :as str]
             [clojure.stacktrace :as st]
             [hiccup.util :as hutil])
   (:use [org.healthsciencessc.rpms2.consent-admin.config]
@@ -168,10 +169,13 @@
 
 (defn edit-user
   [id u]
-  (POST "/security/user"
-        {:user id}
-        nil
-        (with-out-str (prn u))))
+  (let [password (:password u)
+        user (if (or (nil? password) (str/blank? password))
+               (dissoc u :password))]
+    (POST "/security/user"
+          {:user id}
+          nil
+          (with-out-str (prn user)))))
 
 ;; ORGANIZATIONS
 (defn delete-organization
