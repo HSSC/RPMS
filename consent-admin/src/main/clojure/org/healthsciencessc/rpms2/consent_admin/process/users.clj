@@ -25,7 +25,7 @@
 
 (defn layout-users
   [ctx]
-  (let [users (service/get-users ctx)]
+  (let [users (sort-by #(vec (map % [:last-name :first-name])) (service/get-users ctx))]
     (if (service/service-error? users)
       (ajax/error (meta users))
       (layout/render ctx "Users"
@@ -35,7 +35,6 @@
               {:label (format-name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/user/edit" :params {:user :selected#id} :label "Edit User"})
-             (actions/details-button {:url "/view/role/addto" :params {:user :selected#id} :label "Add or Change Roles"})
              (actions/new-button {:url "/view/user/add"})
              (actions/pop-button))))))
 
@@ -81,6 +80,7 @@
                    (container/scrollbox (formui/dataform (render-user-fields user)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/user/edit" :params {:user user-id}})
+                     (actions/details-button {:url "/view/role/addto" :params {:user user-id} :label "Add or Change Roles"})
                      (actions/delete-button {:url "/api/user" :params {:user user-id}})
                      (actions/pop-button)))))))
 

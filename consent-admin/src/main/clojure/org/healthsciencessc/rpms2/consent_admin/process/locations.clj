@@ -20,7 +20,7 @@
 
 (defn layout-locations
   [ctx]
-  (let [locations (service/get-locations ctx)]
+  (let [locations (sort-by :name (service/get-locations ctx))]
     (if (service/service-error? locations)
       (ajax/error (meta locations))
       (layout/render ctx "Locations"
@@ -36,13 +36,17 @@
 (def ^:const location-fields
   (let [text-fields [:name "Location name"
                      :code "Code"
-                     :protocol-label "Protocol Label" ]]
+                     :protocol-label "Protocol Label"]]
     (map #(zipmap [:name :label] %)
          (partition 2 text-fields))))
 
+(defn default-protocol-label []
+  (get-in (sess/session-get :user)
+    [:organization :protocol-label]))
+
 (defn render-location-fields
   "Create some field boxes from a map of [kw text-label]"
-  ([] (render-location-fields {}))
+  ([] (render-location-fields {:protocol-label (default-protocol-label)}))
   ([location]
     (map formui/record->editable-field
          (repeat location)
@@ -65,9 +69,9 @@
         (layout/render ctx "Edit Location"
                    (container/scrollbox (formui/dataform (render-location-fields location)))
                    (actions/actions
-                     (actions/save-button {:method :post :url "/api/location/edit" :params {:location location-id}})
-                     (actions/delete-button {:url "/api/location" :params {:location location-id}})
                      (actions/details-button {:label "Delete" :url "/view/location/delete" :params {:location location-id}})
+                     (actions/delete-button {:url "/api/location" :params {:location location-id}})
+                     (actions/save-button {:method :post :url "/api/location/edit" :params {:location location-id}})
                      (actions/pop-button)))))))
 
 
