@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-services.data
   (:use [clojure.set :only (difference)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [borneo.core :as neo]
@@ -16,7 +17,9 @@
 
 (def schema domain/default-data-defs)
 
-(def default-rel {:has-default :out})
+(def default-rel :has-default)
+(def directed-default-rel
+  {default-rel :out})
 
 (defn connect!
   [path]
@@ -276,12 +279,33 @@
        :to parent-node
        :rel-type relationship})))
 
+(defn create-default-vaule-realtions
+  [type props]
+  (let [default-org (first (filter #(= types/code-base-org (:code (neo/props %))) (find-all-instance-nodes "organization")))
+        default-org-id (if default-org (:id (neo/props default-org)))]
+    (cond
+     (and (= "organization" type) default-org)
+     (let [default-val-nodes (reduce (fn [nodes type] (concat nodes (children-nodes-by-type default-org type)))
+                                     []
+                                     domain/default-value-types)]
+       (for [node default-val-nodes]
+         {:from :self
+          :to node
+          :rel-type default-rel}))
+     (and (= default-org-id (get-in props [:organization :id])) (some (partial = type) domain/default-value-types))
+     (let [non-default-orgs (filter #(not= default-org-id (:id (neo/props %))) (find-all-instance-nodes "organization"))]
+       (for [org non-default-orgs]
+         {:from org
+          :to :self
+          :rel-type default-rel})))))
+
 (defn create-node-with-default-relationships
   [node-type node-properties extra-relationships]
   (let [rels (concat [{:from :self
                        :to (find-record-type-node node-type)
                        :rel-type :kind-of}]
                      (create-domain-relations node-type node-properties)
+                     (create-default-vaule-realtions node-type node-properties)
                      (map validate-relation extra-relationships))
         node (create-node node-type node-properties)]
     (create-edges node rels)
@@ -323,7 +347,7 @@
      (find-related-records start-type start-id relation-path true))
   ([start-type start-id relation-path include-defaults]
      (let [start-node (get-node-by-index start-type start-id)
-           nodes (walk-types-path start-node relation-path (if include-defaults default-rel))]
+           nodes (walk-types-path start-node relation-path (if include-defaults directed-default-rel))]
        (map #(node->record % (last relation-path)) nodes))))
 
 (defn find-children
@@ -332,7 +356,7 @@
   ([parent-type parent-id child-type include-defaults]
      (let [parent-node (get-node-by-index parent-type parent-id)]
        (map #(node->record % child-type)
-            (children-nodes-by-type parent-node child-type (if include-defaults default-rel))))))
+            (children-nodes-by-type parent-node child-type (if include-defaults directed-default-rel))))))
 
 (defn belongs-to?
   ([child-type child-id parent-type parent-id]

@@ -136,6 +136,9 @@
                                  {:value {:persisted true}})
               :relations [{:type :belongs-to :related-to "language" :relationship :in-language}]}})
 
+(def default-value-types
+  ["role" "policy"])
+
 (defn get-relations
   "Returns all the relation maps for a given type"
   [type data-defs]
