@@ -16,7 +16,8 @@
             [hiccup.form :as form]
             [ring.util.response :as rutil])
   (:use [clojure.pprint])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+  (:import [java.io PrintWriter]
+    [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (defn format-name
   [{:keys [first-name last-name middle-name]}]
@@ -62,7 +63,7 @@
 (defn get-view-user-add
   [ctx]
   (let [org (:organization (:query-params ctx))
-        org-param (if org {:organization org})
+        org-param (if org {:params {:organization org}})
         persist-params (merge {:method :post :url "/api/user/add"} org-param)]
   (layout/render ctx (if org "Create Admin" "Create User")
                  (container/scrollbox (formui/dataform (render-user-fields)))
