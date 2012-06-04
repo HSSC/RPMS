@@ -112,6 +112,13 @@
                     :relations [{:type :belongs-to :related-to "widget" :relationship :has-widget :omit true}
                                 {:type :belongs-to :related-to "language" :relationship :in-language}]}
 
+   endorsement {:attributes (merge base
+                                   {:name {:persisted true}
+                                    :code {:persisted true}
+                                    :uri {:persisted true}})
+                :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
+                            {:type :belongs-to :related-to "text-i18n" :relationship :has-label :name :label :can-create-parent true}]}
+   
    protocol {:attributes (merge base
                                 {:name {:persisted true}}
                                 {:description {:persisted true}}
@@ -137,7 +144,7 @@
               :relations [{:type :belongs-to :related-to "language" :relationship :in-language}]}})
 
 (def default-value-types
-  ["role" "policy"])
+  ["role" "policy" "language"])
 
 (defn get-relations
   "Returns all the relation maps for a given type"
