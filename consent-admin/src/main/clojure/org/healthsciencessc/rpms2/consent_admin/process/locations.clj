@@ -69,7 +69,6 @@
         (layout/render ctx "Edit Location"
                    (container/scrollbox (formui/dataform (render-location-fields location)))
                    (actions/actions
-                     (actions/details-button {:label "Delete" :url "/view/location/delete" :params {:location location-id}})
                      (actions/delete-button {:url "/api/location" :params {:location location-id}})
                      (actions/save-button {:method :post :url "/api/location/edit" :params {:location location-id}})
                      (actions/pop-button)))))))
