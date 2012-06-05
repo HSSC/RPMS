@@ -61,8 +61,8 @@
                           {:type :belongs-to :related-to "location" :relationship :in-location}]}
 
    role-mapping {:attributes base
-                 :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit true}
-                             {:type :belongs-to :related-to "group" :relationship :has-group :omit true}
+                 :relations [{:type :belongs-to :related-to "user" :relationship :has-user :omit-rels true}
+                             {:type :belongs-to :related-to "group" :relationship :has-group :omit-rels true}
                              {:type :belongs-to :related-to "role" :relationship :has-role}
                              {:type :belongs-to :related-to "organization" :relationship :has-organization}
                              {:type :belongs-to :related-to "location" :relationship :has-location}]}

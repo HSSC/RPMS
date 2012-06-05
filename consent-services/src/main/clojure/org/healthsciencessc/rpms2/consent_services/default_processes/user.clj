@@ -24,16 +24,20 @@
     :runnable-fn (fn [params]
                    (let [current-user (get-in params [:session :current-user])
                          current-user-org-id (get-in current-user [:organization :id])
-                         org-id (get-in params [:query-params :organization])]
+                         org-id (get-in params [:query-params :organization])
+                         group-id (get-in params [:query-params :group])]
                      (or (super-admin? current-user)
                          (and (admin? current-user)
-                              (if org-id (data/belongs-to? "user" (:id current-user) "organization" org-id) true)))))
+                              (if org-id (data/belongs-to? "user" (:id current-user) "organization" org-id) true)
+                              (if group-id (data/belongs-to? "user" (:id current-user) "group" group-id) true)))))
     :run-fn (fn [params]
               (let [user (get-in params [:session :current-user])
                     user-org-id (get-in user [:organization :id])
-                    org-id (get-in params [:query-params :organization])]
+                    org-id (get-in params [:query-params :organization])
+                    group-id (get-in params [:query-params :group])]
                 (cond
                  org-id (data/find-children "organization" org-id "user")
+                 group-id (data/find-children "group" group-id "user")
                  :else (cond
                         (super-admin? user) (data/find-all "user")
                         (admin? user) (data/find-children "organization" user-org-id "user")))))
