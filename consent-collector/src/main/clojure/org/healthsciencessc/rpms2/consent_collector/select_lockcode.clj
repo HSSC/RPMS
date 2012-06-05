@@ -17,7 +17,7 @@
   Sets flash message if lock code is invalid."
 
   [ { {:keys [lockcode]} :body-params } ]
-  (debug "select_lockcode/perform lockcode is "  lockcode)
+  ;(debug "select_lockcode/perform lockcode is "  lockcode)
   (if (valid-lock-code? lockcode) 
     (do
       (session-put! :lockcode lockcode)

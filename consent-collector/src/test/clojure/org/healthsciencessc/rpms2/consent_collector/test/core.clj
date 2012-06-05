@@ -5,6 +5,7 @@
             [org.healthsciencessc.rpms2.consent-collector.test.factories :as factories]
             [net.cgrand.enlive-html :as en])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]])
+  (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [sandbar.stateful-session :only (session-get session-put!)])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.java.io]) 
@@ -34,6 +35,13 @@
    (map? resp)
    (= (resp :status) 302)
    (= (get-in resp [:headers "Location"]) location)))
+
+
+(defn- dbg-spit-html
+  [page filename]
+  (if-let [b (config "test-emit-html")]
+    (with-open [wrtr (writer filename :append false)]
+      (.write wrtr page))))
 
 (deftest get-login-test
   (testing "Test that login maps to view/login, with a 302 status."
@@ -106,22 +114,25 @@
          "Bad length" "123" "/view/select/lock-code" false
          "No lock code" nil "/view/select/lock-code" false)))
 
-#_(deftest view-select-consenter-test
+(deftest view-select-consenter-test
   (let [html (select-consenter/view {})]
     (are [sel] (page-has? html sel)
-         [[:form (en/attr= :action "/view/search/consenters")]]
-         [[:form (en/attr= :action "/view/create/consenter")]])))
+         [[:form (en/attr= :action "/view/select/consenter")]])))
 
-#_(deftest view-search-consenters-test
-  (with-redefs [search-consenter/search-consenters
-                (constantly {:status 200
-                             :json [{:first-name "FOO" :last-name "BAR"}
-                                    {:first-name "BAZ" :last-name "BAM"}]})]
-    (let [html (search-consenter/get-view {})]
+(deftest view-search-consenters-test-no-results
+    (testing "Test that view search consenters with a 302 status."
+      (is (redirects? (search-consenter/view {}) "/view/select/consenter"))))
+
+(deftest view-search-consenters-test-with-results
+  (testing "Test that Search results are in displayed on the page."
+    (session-put! :search-results [{:first-name "FirstName-FOO" :last-name "Lastname-BAR"}
+                                   {:first-name "FirstName-BAZ" :last-name "Lastname-BAM"}])
+    (let [html (search-consenter/view {})
+        _ (dbg-spit-html html "search-consenter-with-results.html") ]
       (are [text] (page-has-text? html text)
-           "FOO BAR"
-           "BAZ BAM"))))
-
+           "FirstName-FOO Lastname-BAR"
+           "FirstName-BAZ Lastname-BAM"))))
+    
 (deftest view-create-consenter-test
   (let [html (create-consenter/view {})
         [form] (en/select (en/html-snippet html)
@@ -132,21 +143,10 @@
          [[:input (en/attr= :name "first-name")]]
          [[:input (en/attr= :name "last-name")]])))
 
-
-(defn- spit-html
-  [page filename]
-  (with-open [wrtr (writer filename :append false)]
-    (.write wrtr page)))
-
-#_(defn- spit-html
-  [page filename]
-  true
-)
-
 (deftest select-protocols-view-test
   "Verify that /view/select/protocol screen renders."
   (let [html (select-protocol/view {})
-        ;;_ (spit-html html "select_protocol.html")
+        _ (dbg-spit-html html "select_protocol.html")
         [form] (en/select (en/html-snippet html)
                           [[:form (en/attr= :action "/view/select/protocols")]])]
     (is form)
@@ -155,7 +155,6 @@
          #_[[:input (en/attr= :name "first-name")]]
          #_[[:input (en/attr= :name "last-name")]]
          )))
-
 
 (deftest select-metadata-view-test
   "Verify that /view/meta-data renders."
@@ -175,7 +174,7 @@
   (session-put! :needed-meta-data (list (:MI001 dsa/metadata-map) 
                                         (:MI002 dsa/metadata-map) ))
   (let [html (metadata/view {})
-        ;_ (spit-html html "select_metadata.html")
+        _ (dbg-spit-html html "select_metadata.html")
         [form] (en/select (en/html-snippet html)
                           [[:form (en/attr= :action "/view/meta-data")]])]
     (is form)

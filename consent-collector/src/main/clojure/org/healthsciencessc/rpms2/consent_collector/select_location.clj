@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-collector.select-location
   (:require [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa])
   (:require [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
+  (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
@@ -10,25 +11,32 @@
    [{{:keys [location]} :body-params :as ctx } ]
 
    (debug "select-location/perform: " location " ctx " ctx)
-   (if (or (empty? location) 
-           (= nil location))
-        (do (flash-put! :header (str (helper/org-location-label) " is required"))
-            (helper/myredirect "/view/select/location")) 
-        (do 
-           (session-put! :location location)
-           (helper/myredirect "/view/select/lock-code"))))
+
+   (if (empty? location)
+       (helper/flash-and-redirect 
+          (str (helper/org-location-label) " is required")
+               "/view/select/location") 
+       (let [rmapping (:role-mappings (session-get :user))
+             t1 (filter #(= location (get-in % [:location :name])) rmapping)
+             selected-loc (:location (first t1)) ]
+          (do
+            (session-put! :org-location selected-loc)
+            (session-put! :location location)
+            (helper/myredirect "/view/select/lock-code")))))
 
 
 (defn- select-location-form
   "Display select location form."
-  [locs-names]
+  [locs-names locs-data]
   (helper/clear-patient)
   (helper/clear-location)
   (helper/rpms2-page 
     (helper/post-form "/view/select/location"
       [:fieldset {:data-role "controlgroup" }
         [:div.left (str "Available " (helper/org-location-label) "(s)") ]
-        (map (fn [l] (helper/radio-btn "location" l)) (distinct locs-names))]
+        (map (fn [l] (helper/radio-btn "location" l )) (distinct locs-names))
+      ]
+
       (helper/standard-submit-button { 
                 :value (str "Select " (helper/org-location-label))
                 :name "select-location" } ))
@@ -55,4 +63,4 @@
                 (session-put! :location (first locs-names))
                 (session-put! :org-name (get-in (first locs-data) [:organization :name])) 
                (helper/myredirect "/view/select/lock-code"))
-             (select-location-form locs-names)))))
+             (select-location-form locs-names locs-data)))))
