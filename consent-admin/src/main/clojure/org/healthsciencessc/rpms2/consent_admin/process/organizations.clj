@@ -68,7 +68,7 @@
                    (container/scrollbox (formui/dataform (create-fields org)))
                    (actions/actions 
                      (actions/details-button {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
-                     (actions/delete-button {:label "Delete" :url "/api/organization" :params {:organization org-id} :message "Are you sure you want to delete this organization?"})
+                     (actions/delete-button {:label "Delete" :url "/api/organization" :params {:organization org-id} :confirm "Are you sure you want to delete this organization?"})
                      (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
                      (actions/pop-button)))))))
 

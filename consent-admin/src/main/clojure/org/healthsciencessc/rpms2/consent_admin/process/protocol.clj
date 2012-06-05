@@ -14,6 +14,7 @@
             [hiccup.core :as hcup]
             [clojure.data.json :as json]
             [ring.util.response :as rutil])
+  (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (def ^:const fields [{:name :name :label "Protocol Name"}
@@ -34,9 +35,13 @@
           (container/scrollbox (selectlist/selectlist (for [protocol protocols]
                                                         {:label (:name protocol) :data protocol})))
           (actions/actions 
-           (actions/details-button {:url "/view/protocol" :params {:location location :protocol :selected#id}})
-           (actions/new-button {:url "/view/protocol/new" :params {:location location}})
-           (actions/pop-button)))))
+            (actions/push-action 
+                           {:url "/view/protocol" :params {:location location :protocol :selected#id}
+                            :label "Details/Edit"})
+            (actions/push-action 
+                           {:url "/view/protocol/new" :params {:location location}
+                            :label "New"})
+           (actions/back-action)))))
     ;; Handle Error
     (layout/render-error ctx {:message "A location is required."})))
 
@@ -48,35 +53,42 @@
           location-id (get-in ctx [:query-params :location])]
       (if (not= location-id (get-in protocol [:location :id]))
         (layout/render-error ctx {:message "Location provided must match the location of the protocol requested."})
-        (layout/render 
-          ctx "Protocol" (container/scrollbox (form/dataform (form/render-fields fields protocol))
-          (actions/actions
-            (actions/details-button
-              {:url "/view/protocol/versions" :params {:protocol protocol-id} :label "Versions"})
-            (actions/save-button
-              {:method :post :url "/api/protocol" :params {:protocol protocol-id :location location-id}})
-            (actions/pop-button))))))
+        (layout/render ctx (str "Protocol: " (:name protocol))
+                       (container/scrollbox (form/dataform (form/render-fields fields protocol)))
+                       (actions/actions
+                         (actions/push-action 
+                           {:url "/view/protocol/versions" :params {:protocol protocol-id} :label "Versions"})
+                         (actions/ajax-action 
+                           {:method :post :url "/api/protocol" :params {:protocol protocol-id :location location-id}
+                            :label "Save" :action-on-success ".back-action" :include-data :true})
+                         (actions/ajax-action 
+                           {:method :delete :url "/api/protocol" :params {:protocol protocol-id :location location-id}
+                            :label "Delete" :action-on-success ".back-action"})
+                         (actions/back-action)))))
     ;; Handle Error
     (layout/render-error ctx {:message "A location and protocol are required."})))
 
 (defn view-protocol-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
-  (let [location (get-in ctx [:query-params :location])]
+  (let [location-id (get-in ctx [:query-params :location])]
     (layout/render ctx "Create Protocol"
-                   (container/scrollbox (form/dataform (form/render-fields fields)))
+                   (container/scrollbox (form/dataform (form/render-fields fields {:required true})))
                    (actions/actions 
-                     (actions/save-button {:method :post :url "/api/protocol" :params {:location location}})
-                     (actions/pop-button)))))
+                     (actions/ajax-action 
+                       {:method :put :url "/api/protocol" :params {:location location-id}
+                        :label "Create" :action-on-success ".back-action" :include-data :true})
+                     (actions/back-action)))))
 
 (defn api-add-protocol
   "Adds a new protocol to a location."
   [ctx]
   (if-let [location-id (get-in ctx [:query-params :location])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
-          location-role (first (roles/protocol-designer-mappings :location {:id location-id}))
+          user (security/current-user)
+          location-role (first (roles/protocol-designer-mappings user :location {:id location-id}))
           location (:location location-role)
-          protocol (assoc body :organization (:organization location) :location location)
+          protocol (assoc body :organization (:organization user) :location location)
           resp (services/add-protocol protocol)]
       ;; Handle Error or Success
       (if (services/service-error? resp)
@@ -86,7 +98,7 @@
     (ajax/error {:message "A location is required."})))
 
 (defn api-update-protocol
-  "Adds a new protocol to a location."
+  "Updates a protocol."
   [ctx]
   (if-let [protocol-id (get-in ctx [:query-params :protocol])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
@@ -96,38 +108,56 @@
         (ajax/save-failed (meta resp))
         (ajax/success resp)))
     ;; Handle Bad Request
-    (ajax/error {:message "A location is required."})))
+    (ajax/error {:message "A protocol is required."})))
+
+(defn api-delete-protocol
+  "Deletes a protocol."
+  [ctx]
+  (if-let [protocol-id (get-in ctx [:query-params :protocol])]
+    (let [resp (services/delete-protocol protocol-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (ajax/error (meta resp))
+        (ajax/success resp)))
+    ;; Handle Bad Request
+    (ajax/error {:message "A protocol is required."})))
 
 (def process-defns
   [
    ;; Generates the view for the protocol list in a location.
    {:name "get-view-protocol-location"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
     :run-fn view-protocol-location
     :run-if-false ajax/forbidden}
    
    ;; Generates the view for a specific protocol.
    {:name "get-view-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
     :run-fn view-protocol
     :run-if-false ajax/forbidden}
    
    ;; Generates the view for creating a protocol.
    {:name "get-view-protocol-new"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
     :run-fn view-protocol-new
     :run-if-false ajax/forbidden}
    
    ;; Generates the api service for creating a protocol.
    {:name "put-api-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
     :run-fn api-add-protocol
     :run-if-false ajax/forbidden}
    
    ;; Generates the api service for creating a protocol.
    {:name "post-api-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user)
+    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
     :run-fn api-update-protocol
+    :run-if-false ajax/forbidden}
+   
+   ;; Generates the api service for creating a protocol.
+   {:name "delete-api-protocol"
+    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :run-fn api-delete-protocol
     :run-if-false ajax/forbidden}
    ])
 

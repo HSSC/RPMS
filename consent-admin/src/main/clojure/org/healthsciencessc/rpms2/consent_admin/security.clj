@@ -23,9 +23,9 @@
 
 (defn current-user
   "Method used to get the current user for the request.  Multi interface allows for use in common runnables functions."
-  ([_] (sandbar/session-get :user)))
+  ([& ignore] (sandbar/session-get :user)))
 
 (defn current-org
   "Obtains the organization from the current user.  If out of session returns nil."
-  [_]
+  [& ignore]
   (:organization (current-user)))

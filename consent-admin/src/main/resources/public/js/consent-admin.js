@@ -3,42 +3,55 @@ $(function(){
 	PaneManager.initDialog($("#dialog"));
 	PaneManager.initContent($("#content"));
 	
-	// Register Events
-	// Register Event - Click Details Actions
-	PaneManager.on("click", ".details-action", function(event){
-		var target = RPMS.findTarget(event, "div.details-action");
-		var url = RPMS.get(target, "data-url");
-		var params = RPMS.getParamMap(target, "data-map");
-		PaneManager.push(url, params, {postpop: function(o,p,c){c.refresh()}});
+	// Register Events	
+	// Register Event - Select List Item
+	PaneManager.on("click", ".selectlistitem", function(event){
+		var target = RPMS.findTarget(event, ".selectlistitem");
+		var data = RPMS.getObject(target, "data-item");
+		PaneManager.cache("selected", data);
+		target.parent().children().removeClass("selected");
+		target.addClass("selected");
 	});
-	
-	// Register Event - Click New Action
-	PaneManager.on("click", ".new-action", function(event){
-		var target = RPMS.findTarget(event, "div.new-action");
+
+	// Register Event - Click Generic Push Action
+	PaneManager.on("click", ".push-action", function(event){
+		var target = RPMS.findTarget(event, "div.push-action");
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
-		PaneManager.push(url, params, {postpop: function(o,p,c){c.refresh()}});
+		var confirm = RPMS.getObject(target, "data-confirm");
+		var action = function(){PaneManager.push(url, params, {postpop: function(o,p,c){c.refresh()}});}
+		
+		if(confirm != null){
+			RPMS.confirm({title: confirm.title, 
+				message: confirm.message, 
+				onconfirm: action});
+		}
+		else{
+			action();
+		}
 	});
-	
-	// Register Event - Click New Action
-	PaneManager.on("click", ".save-action", function(event){
-		var target = RPMS.findTarget(event, "div.save-action");
-		var url = RPMS.get(target, "data-url");
-		var params = RPMS.getParamMap(target, "data-map");
-		var hold = RPMS.get(target, "data-holdonsuccess");
-		var fullUrl = PaneManager.getUrl(url, params, false);
+
+	// Register Event - Click Generic Push Action
+	PaneManager.on("click", ".ajax-action", function(event){
+		var target = RPMS.findTarget(event, "div.ajax-action");
+		
 		var method = RPMS.get(target, "data-method");
-		var body = RPMS.getDataMap();
+		var url = RPMS.get(target, "data-url");
+		var params = RPMS.getParamMap(target, "data-map");
+		var fullUrl = PaneManager.getUrl(url, params, false);
+		
+		var confirm = RPMS.getObject(target, "data-confirm");
+		var includeData = RPMS.getBoolean(target, "data-include-data");
+		var actionOnSuccess = RPMS.get(target, "data-action-on-success");
 		
 		var settings = {
-				data: body,
+				data: includeData ? RPMS.getDataMap() : null ,
 				type: method,
 				dataType: "text",
 				success: function(data, status, xhr){
 					RPMS.endProgress();
-					PaneManager.cache("changed", true);
-					if(hold == null){
-						PaneManager.current.pane.find(".done-action").trigger("click");
+					if(actionOnSuccess != null){
+						RPMS.doAction(actionOnSuccess);
 					}
 				},
 				error: function(xhr, status, text){
@@ -47,57 +60,27 @@ $(function(){
 					RPMS.inform({title: "Error Encountered", message: message});
 				}
 		}
-		RPMS.startProgress();
-		$.ajax(fullUrl, settings);
-	});
-	
-	// Register Event - Click Delete Actions
-	PaneManager.on("click", ".delete-action", function(event){
-		var target = RPMS.findTarget(event, "div.delete-action");
-		var url = RPMS.get(target, "data-url");
-		var params = RPMS.getParamMap(target, "data-map");
 		
-		var hold = RPMS.get(target, "data-holdonsuccess");
-		var fullUrl = PaneManager.getUrl(url, params, false);
-		
-		var confirmmsg = RPMS.get(target, "data-confirm");
-		
-		var settings = {
-				type: "delete",
-				dataType: "text",
-				success: function(data, status, xhr){
-					RPMS.endProgress();
-					PaneManager.cache("changed", true);
-					if(hold == null){
-						PaneManager.current.pane.find(".done-action").trigger("click");
-					}
-				},
-				error: function(xhr, status, text){
-					RPMS.endProgress();
-					var message = RPMS.responseMessage(xhr, "Failed to delete data.");
-					RPMS.inform({title: "Error Encountered", message: message});
-				}
+		var action = function(){
+			RPMS.startProgress();
+			$.ajax(fullUrl, settings);
 		}
-		RPMS.startProgress();
-		RPMS.confirm({title: "Confirm Delete", 
-			message: confirmmsg || "Are you sure you want to delete this item?", 
-			onconfirm: function(){$.ajax(fullUrl, settings)}});
+		
+		if(confirm != null){
+			RPMS.confirm({title: confirm.title, 
+				message: confirm.message, 
+				onconfirm: action});
+		}
+		else{
+			action();
+		}
 	});
 	
-	// Register Event - Click Done Button
-	PaneManager.on("click", ".done-action", function(event){
-		var target = RPMS.findTarget(event, "div.done-action");
+	// Register Event - Click Back Button
+	PaneManager.on("click", ".back-action", function(event){
+		var target = RPMS.findTarget(event, "div.back-action");
 		var params = RPMS.getParamMap(target, "data-map");
 		PaneManager.pop(params);
-	});
-	
-	// Register Event - Select List Item
-	PaneManager.on("click", ".selectlistitem", function(event){
-		var target = RPMS.findTarget(event, ".selectlistitem");
-		var data = RPMS.getObject(target, "data-item");
-		PaneManager.cache("selected", data);
-		target.parent().children().removeClass("selected");
-		target.addClass("selected");
 	});
 });
 
@@ -136,6 +119,17 @@ var RPMS = {
 		return value;
 	},
 	
+	getBoolean: function(target, attribute, defaultValue){
+		if(attribute.indexOf("data-") != 0){
+			attribute = "data-" + attribute;
+		}
+		var val = RPMS.get(target, attribute, defaultValue);
+		if(val != null && (val == true || val == "true" || val == attribute)){
+			return true;
+		}
+		return false;
+	},
+	
 	mapToParams: function(map){
 		var params = {};
 		if(map){
@@ -171,7 +165,7 @@ var RPMS = {
 			var value = null;
 			if(e.tagName.toLowerCase() == "input" && e.type.toLowerCase() == "checkbox"){
 				var checkVal = RPMS.get(e, "data-checked-value", true);
-				var uncheckVal = RPMS.get(e, "data-checked-value", false);
+				var uncheckVal = RPMS.get(e, "data-unchecked-value", false);
 				if(e.checked){
 					value = checkVal;
 				}
@@ -186,12 +180,6 @@ var RPMS = {
 				data[name] = value;
 			}
 		});
-		
-		//var elements = form.serializeArray();
-		//for(var i = 0; i < elements.length; i++){
-		//	var e = elements[i]
-		//	data[e.name] = e.value;
-		//}
 		return data;
 	},
 	inform: function(options){
@@ -259,5 +247,17 @@ var RPMS = {
 			}
 		}
 		return ifnull;
+	},
+	doAction: function(action){
+		if(PaneManager[action] != null){
+			PaneManager[action]();
+			return;
+		}
+		
+		var buttons = PaneManager.current.pane.find(action);
+		if(buttons.length > 0){
+			buttons.trigger("click");
+			return;
+		}
 	}
 }

@@ -2,21 +2,48 @@
 (ns org.healthsciencessc.rpms2.consent-domain.runnable
   (:require [org.healthsciencessc.rpms2.consent-domain.roles :as roles]))
 
+;; Helper functions to check if a location is accessible for a user.
+(defn can-collect-location-id
+  [user location-id]
+  (roles/consent-collector? user :location {:id location-id}))
+
+(defn can-collect-location
+  [user location]
+  (can-collect-location-id user (:id location)))
+
+;; Helper functions to check if a protocol/version/location is accessible for a user.
+(defn can-design-location-id
+  [user location-id]
+  (roles/protocol-designer? user :location {:id location-id}))
+
+(defn can-design-location
+  [user location]
+  (can-design-location-id user (:id location)))
+
+(defn can-design-protocol
+  [user protocol]
+  (can-design-location user (:location protocol)))
+
+(defn can-design-protocol-version
+  [user protocol-version]
+  (can-design-protocol user (:protocol protocol-version)))
+
+;; Functions that generate functions used in runnable statements.
 (defn gen-designer-location-check
   "Creates a runnable? function that checks if a user is a protocol designer for a specific location."
-  [userfn]
+  [userfn path-to-location]
   (fn [ctx]
     (let [user (userfn ctx)
-          locationid (get-in ctx [:query-params :location])]
-    (roles/protocol-designer? user :location {:id locationid}))))
+          location-id (get-in ctx path-to-location)]
+      (can-design-location-id user location-id))))
 
 (defn gen-collector-location-check
   "Creates a runnable? function that checks if a user is a consent collector for a specific location."
-  [userfn]
+  [userfn path-to-location]
   (fn [ctx]
     (let [user (userfn ctx)
-          locationid (get-in ctx [:query-params :location])]
-    (roles/consent-collector? user :location {:id locationid}))))
+          location-id (get-in ctx path-to-location)]
+      (can-collect-location-id user location-id))))
 
 (defn gen-super-or-admin
   "Creates a runnable? function that checks if a user is a super admin or an admin"
@@ -27,10 +54,10 @@
 
 (defn gen-super-or-admin-by-org
   "Creates a runnable? function that checks if a user is a super admin or an admin for an optional organziation."
-  [userfn]
+  [userfn path-to-organization]
   (fn [ctx]
     (let [user (userfn ctx)
-          orgid (get-in ctx [:query-params :organization])
+          orgid (get-in ctx path-to-organization)
           userorgid (get-in user [:organization :id])]
       (or (roles/superadmin? user)
           (and (roles/admin? user) 

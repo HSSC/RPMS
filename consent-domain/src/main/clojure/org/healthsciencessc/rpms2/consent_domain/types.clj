@@ -37,3 +37,20 @@
 (def code-role-designer "!design!")
 (def code-role-consentmanager "!manage!")
 (def code-role-externalsystem "!csys!")
+
+;; STANDARD PROTOCOL VERSION STATUSES
+(def status-draft "Draft")
+(def status-published "Published")
+(def status-retired "Retired")
+
+(defn draft?
+  [protocol-version]
+  (= status-draft (:status protocol-version)))
+
+(defn published?
+  [protocol-version]
+  (= status-published (:status protocol-version)))
+
+(defn retired?
+  [protocol-version]
+  (= status-retired (:status protocol-version)))

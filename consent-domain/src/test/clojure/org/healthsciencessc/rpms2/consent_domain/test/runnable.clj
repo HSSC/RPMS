@@ -20,8 +20,8 @@
   roles/test-collector)
 
 (deftest test-gen-collector-location-check
-  (let [designerfn (gen-collector-location-check get-test-designer)
-        collectorfn (gen-collector-location-check get-test-collector)
+  (let [designerfn (gen-collector-location-check get-test-designer [:query-params :location])
+        collectorfn (gen-collector-location-check get-test-collector [:query-params :location])
         ctx {:query-params {:location (:id roles/test-loc)}}
         badctx {:query-params {:location "NOTAGUID"}}]
     (is (collectorfn ctx))
@@ -29,8 +29,8 @@
     (is (not (designerfn ctx)))))
 
 (deftest test-gen-designer-location-check
-  (let [designerfn (gen-designer-location-check get-test-designer)
-        collectorfn (gen-designer-location-check get-test-collector)
+  (let [designerfn (gen-designer-location-check get-test-designer [:query-params :location])
+        collectorfn (gen-designer-location-check get-test-collector [:query-params :location])
         ctx {:query-params {:location (:id roles/test-loc)}}
         badctx {:query-params {:location "NOTAGUID"}}]
     (is (designerfn ctx))
@@ -49,8 +49,8 @@
     (is (not (collectorfn ctx)))))
 
 (deftest test-super-or-admin-by-org
-  (let [superfn (gen-super-or-admin-by-org get-test-super)
-        adminfn (gen-super-or-admin-by-org get-test-admin)
+  (let [superfn (gen-super-or-admin-by-org get-test-super [:query-params :organization])
+        adminfn (gen-super-or-admin-by-org get-test-admin [:query-params :organization])
         ctx {:query-params {:organization (:id roles/test-org)}}
         basectx {:query-params {:organization (:id roles/test-baseorg)}}]
     (is (superfn {}))

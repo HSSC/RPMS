@@ -113,7 +113,7 @@
 			<version>0.1.2</version>
 		</dependency>
 		
-		<!-- Loggin Dependencies -->
+		<!-- Logging Dependencies -->
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>tools.logging</artifactId>

@@ -22,17 +22,19 @@
 
 (defn input-checkbox
   "Generates a checkbox input."
-  [{name :name checked-value :checked-value unchecked-value :unchecked-value
-    default-checked :default-checked value :value label :label classes :classes}]
-  (let [checked-value (or checked-value true)
-        unchecked-value (or unchecked-value false)
-        default-checked (or default-checked false)
-        value (or value (if default-checked checked-value unchecked-value))
+  [{name :name 
+    label :label 
+    classes :classes :as options}]
+  (let [clean (fn [& all] (str (first (remove nil? all))))
+        checked-value (clean (:checked-value options) true)
+        unchecked-value (clean (:unchecked-value options) false)
+        default-checked (first (remove nil? [(:default-checked options) false]))
+        value (clean (:value options) (if default-checked checked-value unchecked-value))
         checked (= value checked-value)
-        props {:type :checkbox  :name name
-                      :data-checked-value checked-value
-                      :data-unchecked-value unchecked-value
-                      :value value}]
+        props {:type :checkbox  
+               :name name
+               :data-checked-value checked-value
+               :data-unchecked-value unchecked-value}]
   [(tag-class :div.form-control-wrapper.form-checkbox classes)
     [(tag-class :input.checkbox classes) (if checked (assoc props :checked :checked) props)]
     [(tag-class :label.checkbox classes) {:for name}] label]))

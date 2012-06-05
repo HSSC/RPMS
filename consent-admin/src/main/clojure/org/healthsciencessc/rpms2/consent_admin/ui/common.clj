@@ -26,5 +26,5 @@
   ([tag & classes]
     (let [cls (remove nil? (flatten classes))]
     (if (not= 0 (count cls))
-      (apply smooshkw (cons tag (map dotit (flatten classes))))
+      (apply smooshkw (cons tag (map dotit cls)))
       tag))))

@@ -19,7 +19,8 @@
                         {:name {:required true :persisted true}
                          :code {:persisted true}
                          :location-label {:persisted true}
-                         :protocol-label {:persisted true}})}
+                         :protocol-label {:persisted true}
+                         :consenter-label {:persisted true}})}
 
    user {:attributes (merge base
                             person
@@ -43,7 +44,8 @@
    location {:attributes (merge base
                                 {:name {:persisted true}
                                  :code {:persisted true}
-                                 :protocol-label {:persisted true}})
+                                 :protocol-label {:persisted true}
+                                 :consenter-label {:persisted true}})
              :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
    group {:attributes (merge base

@@ -295,10 +295,19 @@
 
 (defn add-protocol
   "Adds a new protocol to a location."
-  [location-id data]
-  (PUT "/protocol" {:location location-id}
+  [data]
+  (PUT "/protocol"
+        nil
         nil
         (with-out-str (prn data))))
+
+(defn delete-protocol
+  "Deletes a new protocol from a location."
+  [protocol-id]
+  (DELETE "/protocol"
+        {:protocol protocol-id}
+        nil
+        nil))
 
 (defn update-protocol
   "Updates a protocol with data changes."
@@ -307,4 +316,41 @@
         {:protocol protocol-id}
         nil
         (with-out-str (prn data))))
+
+
+;; PROTOCOLS
+(defn get-protocol-versions
+  "Gets all of the available protocol versions for a protocol."
+  [protocol-id]
+  (GET "/protocol/versions" {:protocol protocol-id}))
+
+(defn get-protocol-version
+  "Gets a single protocol version by it's ID."
+  [protocol-version-id]
+  (GET "/protocol/version" {:version protocol-version-id}))
+
+(defn add-protocol-version
+  "Adds a new protoco version to a protocol."
+  [data]
+  (PUT "/protocol/version"
+        nil
+        nil
+        (with-out-str (prn data))))
+
+(defn delete-protocol-version
+  "Deletes a new protocol version from a protocol."
+  [protocol-id]
+  (DELETE "/protocol/version"
+        {:version protocol-id}
+        nil
+        nil))
+
+(defn update-protocol-version
+  "Updates a protocol version with data changes."
+  [protocol-id data]
+  (POST "/protocol/version"
+        {:version protocol-id}
+        nil
+        (with-out-str (prn data))))
+
 

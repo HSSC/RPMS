@@ -15,6 +15,11 @@
   (if-let [user (sess/session-get :user)]
     (or (roles/superadmin? user)(roles/admin? user))
     false))
+  
+(defn- admin?
+  "Checks if the current user is an administrator."
+  []
+  (roles/admin? (sess/session-get :user)))
 
 (defn- super?
   "Checks if the current user is a super administrator."
@@ -63,9 +68,9 @@
   [
     {:group "Organization" :use? admin-or-super?
       :items [{:url "/view/organizations" :label "Manage All Organizations" :use? super?}
-              {:url "/view/organization" :label "Organization Settings"}
-              {:url "/view/locations" :label "Locations"}]}
-    {:group "Security" :use? admin-or-super?
+              {:url "/view/organization" :label "Organization Settings" :use? admin?}
+              {:url "/view/locations" :label "Locations" :use? admin?}]}
+    {:group "Security" :use? admin?
       :items [{:url "/view/users" :label "Users"}
               {:url "/view/groups" :label "Groups"}
               {:url "/view/roles" :label "Roles"}]}

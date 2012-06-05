@@ -217,7 +217,19 @@ var PaneManager = {
 					PaneManager.onsuccess(data, request, status, xhr);
 				},
 				error: function(xhr, status, thrown){
-					PaneManager.onfailure($.parseJSON(xhr.responseText), request, status, xhr);
+					var body;
+					try{
+						body = $.parseJSON(xhr.responseText);
+					}
+					catch(e){
+						if(xhr.status == 404){
+							body = {message: "Unable to find process matching '" + fullUrl + "'"};
+						}
+						else{
+							body = {message: "Unable to execute process matching '" + fullUrl + "'"};
+						}
+					}
+					PaneManager.onfailure(body, request, status, xhr);
 				}
 		}
 		if(options != null && options.ajax != null){
