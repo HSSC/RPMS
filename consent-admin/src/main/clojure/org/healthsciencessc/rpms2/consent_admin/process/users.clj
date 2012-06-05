@@ -34,7 +34,7 @@
             (for [x users]
               {:label (format-name x) :data x})))
         (actions/actions 
-             (actions/details-button {:url "/view/user/edit" :params {:user :selected#id} :label "Edit User"})
+             (actions/details-button {:url "/view/user/edit" :params {:user :selected#id}})
              (actions/new-button {:url "/view/user/add"})
              (actions/pop-button))))))
 
