@@ -25,7 +25,7 @@
       (ajax/error (meta roles))
       (layout/render ctx "Roles"
         (container/scrollbox
-          (selectlist/selectlist 
+          (selectlist/selectlist {:action :.detail-action}
             (for [x roles]
               {:label (:name x) :data x})))
         (actions/actions 

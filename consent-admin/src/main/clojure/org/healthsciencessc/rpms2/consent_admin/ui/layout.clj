@@ -26,8 +26,7 @@
   [:div#footer.footer 
     [:span#footerbrand "Research Permissions Management System"]
     [:span#footerorg [:a {:href "http://www.healthsciencessc.org" :target "_blank"} "Health Sciences of South Carolina" ]]
-    [:span#footerversion "Version 2.0.0-SNAPSHOT"]
-    [:div#dialog  "Are you sure you want to end this session?"]])
+    [:span#footerversion "Version 2.0.0-SNAPSHOT"]])
 
 (defn- leftbar
   "Creates the default header that is used for the application"
@@ -62,12 +61,15 @@
          [:title "RPMS Administration"]
     (page/include-css "/css/clean.css"
                       "/css/redmond/jquery-ui-1.8.19.custom.css"
+                      "/css/dialog.css"
                       "/css/consent-admin.css")
     (page/include-js "/js/jquery-1.7.2.min.js"
                      "/js/jquery-ui-1.8.19.custom.min.js"
+                     "/js/utils.js"
+                     "/js/dialog.js"
                      "/js/pane.js"
                      "/js/consent-admin.js")
-    [:script (str "PaneManager.initBasePath(\"" (:context ctx) "\");")]])
+    [:script (str "Utils.Url.initBasePath(\"" (:context ctx) "\");")]])
 
 (defn- layout 
   "Generates the standard layout when in a validated session."

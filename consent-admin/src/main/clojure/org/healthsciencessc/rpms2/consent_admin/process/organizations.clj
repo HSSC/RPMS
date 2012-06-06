@@ -25,7 +25,7 @@
     (if (service/service-error? orgs)
       (ajax/error (meta orgs))
       (layout/render ctx "Organizations"
-        (container/scrollbox (selectlist/selectlist 
+        (container/scrollbox (selectlist/selectlist {:action :.detail-action}
           (for [x (->> orgs
                     (remove #(= code-base-org (:code %)))
                     (sort-by :name))]

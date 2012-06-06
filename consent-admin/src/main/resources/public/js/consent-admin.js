@@ -1,16 +1,28 @@
 // Initialize the logout dialog
 $(function(){
-	PaneManager.initDialog($("#dialog"));
 	PaneManager.initContent($("#content"));
 	
 	// Register Events	
-	// Register Event - Select List Item
+	// Register Event - Click Select List Item
 	PaneManager.on("click", ".selectlistitem", function(event){
 		var target = RPMS.findTarget(event, ".selectlistitem");
 		var data = RPMS.getObject(target, "data-item");
 		PaneManager.cache("selected", data);
 		target.parent().children().removeClass("selected");
 		target.addClass("selected");
+	});
+	
+	// Register Event - Double Click Select List Item
+	PaneManager.on("dblclick", ".selectlistitem", function(event){
+		var target = RPMS.findTarget(event, ".selectlistitem");
+		var action = RPMS.get(target, "data-action");
+		if(action != null){
+			var data = RPMS.getObject(target, "data-item");
+			PaneManager.cache("selected", data);
+			target.parent().children().removeClass("selected");
+			target.addClass("selected");
+			RPMS.doAction(action);
+		}
 	});
 
 	// Register Event - Click Generic Push Action
@@ -19,12 +31,16 @@ $(function(){
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
 		var confirm = RPMS.getObject(target, "data-confirm");
-		var action = function(){PaneManager.push(url, params, {postpop: function(o,p,c){c.refresh()}});}
+		var action = function(){
+			Dialog.Progress.start();
+			PaneManager.push(url, params, {postpop: function(o,p,c){c.refresh()}});
+			}
 		
 		if(confirm != null){
-			RPMS.confirm({title: confirm.title, 
+			Dialog.confirm({title: confirm.title, 
 				message: confirm.message, 
-				onconfirm: action});
+				onconfirm: action,
+				oncancel: Dialog.Progress.end});
 		}
 		else{
 			action();
@@ -38,7 +54,7 @@ $(function(){
 		var method = RPMS.get(target, "data-method");
 		var url = RPMS.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
-		var fullUrl = PaneManager.getUrl(url, params, false);
+		var fullUrl = Utils.Url.render(url, params);
 		
 		var confirm = RPMS.getObject(target, "data-confirm");
 		var includeData = RPMS.getBoolean(target, "data-include-data");
@@ -49,25 +65,25 @@ $(function(){
 				type: method,
 				dataType: "text",
 				success: function(data, status, xhr){
-					RPMS.endProgress();
+					Dialog.Progress.end();
 					if(actionOnSuccess != null){
 						RPMS.doAction(actionOnSuccess);
 					}
 				},
 				error: function(xhr, status, text){
-					RPMS.endProgress();
+					Dialog.Progress.end();
 					var message = RPMS.responseMessage(xhr, "Failed to save data.");
-					RPMS.inform({title: "Error Encountered", message: message});
+					Dialog.inform({title: "Error Encountered", message: message});
 				}
 		}
 		
 		var action = function(){
-			RPMS.startProgress();
+			Dialog.Progress.start();
 			$.ajax(fullUrl, settings);
 		}
 		
 		if(confirm != null){
-			RPMS.confirm({title: confirm.title, 
+			Dialog.confirm({title: confirm.title, 
 				message: confirm.message, 
 				onconfirm: action});
 		}
@@ -182,63 +198,7 @@ var RPMS = {
 		});
 		return data;
 	},
-	inform: function(options){
-		if(this.informDialog == null){
-			this.informDialog = $("<div class='dialog' />");
-			this.informDialog.appendTo($("body"));
-		}
-		this.informDialog.text(options.message);
-		var buts = {};
-		buts["Close"] = function (){$(this).dialog( "close" ); if(options.onclose) options.onclose();};
-		this.informDialog.dialog({
-			title: options.title,
-			resizable: false,
-			modal: true,
-			buttons: buts
-		});
-	},
-	confirm: function(options){
-		if(this.confirmDialog == null){
-			this.confirmDialog = $("<div class='dialog' />");
-			this.confirmDialog.appendTo($("body"));
-		}
-		this.confirmDialog.text(options.message);
-		var buts = {};
-		buts["Proceed"] = function (){$(this).dialog( "close" ); if(options.onconfirm) options.onconfirm();};
-		buts["Cancel"] = function (){$(this).dialog( "close" ); if(options.oncancel) options.oncancel();};
-		this.confirmDialog.dialog({
-			title: options.title,
-			resizable: false,
-			modal: true,
-			buttons: buts
-		});
-	},
-	startProgress: function(){
-		this.pause();
-		if(this.progress == null){
-			var imgUrl = PaneManager.getUrl("/image/loader.gif", {}, false);
-			this.progress = $("<img src='" + imgUrl + "' class='progress' />");
-			$("body").append(this.progress);
-		}
-		this.progress.show();
-		this.progress.position({of: this.lightBox});
-	},
-	endProgress: function(){
-		this.progress.hide();
-		this.continue();
-	},
-	pause: function(){
-		if(this.lightBox == null){
-			this.lightBox = $("<div class='ui-widget-overlay' />");
-			$("body").append(this.lightBox);
-		}
-		this.lightBox.show();
-	},
-	continue: function(){
-		if(this.lightBox != null){
-			this.lightBox.hide();
-		}
-	},
+	
 	responseMessage: function(xhr, ifnull){
 		if(xhr && xhr.responseText){
 			var body = $.parseJSON(xhr.responseText);
@@ -260,4 +220,4 @@ var RPMS = {
 			return;
 		}
 	}
-}
+};

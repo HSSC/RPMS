@@ -32,7 +32,7 @@
       (ajax/error (meta locations))
       (layout/render ctx (render-label "s")
         (container/scrollbox
-          (selectlist/selectlist
+          (selectlist/selectlist {:action :.detail-action}
             (for [x locations]
               {:label (:name x) :data x})))
         (actions/actions

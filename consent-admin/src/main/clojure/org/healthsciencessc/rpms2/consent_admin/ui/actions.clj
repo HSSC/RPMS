@@ -70,7 +70,7 @@ prior to calling the server, and the execution of a client-side action when the 
 
 ;;
 (defn details-button[options]
-  (push-action (merge {:label "Edit"} options)))
+  (push-action (merge {:label "Edit" :classes :.detail-action} options)))
 
 ;;
 (defn delete-button

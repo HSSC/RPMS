@@ -44,7 +44,7 @@
         (rutil/not-found (:message (meta versions)))
         (layout/render ctx (render-label protocol " Versions")
                        (container/scrollbox 
-                         (selectlist/selectlist
+                         (selectlist/selectlist {:action :.detail-action}
                            (for [version versions]
                              {:label (str "Version " (version-name version))
                               :data version})))

@@ -25,14 +25,14 @@
       (ajax/error (meta groups))
       (layout/render ctx "Groups"
         (container/scrollbox
-          (selectlist/selectlist 
+          (selectlist/selectlist {:action :.detail-action}
             (for [x groups]
               {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/group/edit" :params {:group :selected#id}})
              (actions/details-button {:url "/view/group/add" :params {:group :selected#id} :label "Change Groups"})
              (actions/new-button {:url "/view/group/add"})
-             (actions/pop-button))))))
+             (actions/back-action))))))
 
 (def ^:const group-fields
   (let [text-fields [:name "Group name"
@@ -54,7 +54,7 @@
                  (container/scrollbox (formui/dataform (render-group-fields)))
                  (actions/actions 
                    (actions/save-button {:method :post :url "/api/group/add"})
-                   (actions/pop-button))))
+                   (actions/back-action))))
 
 (defn get-view-group-edit
   [ctx]
@@ -67,7 +67,7 @@
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/group/edit" :params {:group group-id}})
                      (actions/delete-button {:url "/api/group" :params {:group group-id}})
-                     (actions/pop-button)))))))
+                     (actions/back-action)))))))
 
 (defn delete-api-group
   [ctx]

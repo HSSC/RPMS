@@ -17,9 +17,7 @@
 
 var PaneManager = {
 	// Request References/Methods
-	basepath: null, // The base path to prepend to URL.  Typically, this is just the contextPath of the application
 	content: null, // The element where all content goes.
-	confirmDialog: null, // The dialog to use for informing/questioning user.
 	
 	initContent: function(content){
 		this.content = content;
@@ -30,16 +28,7 @@ var PaneManager = {
 		}
 		this.initialized = true;
 	},
-	
-	initDialog: function(dialog){
-		this.confirmDialog = dialog;
-		dialog.hide();
-	},
-	
-	initBasePath: function(path){
-		this.basepath = path;
-	},
-	
+		
 	triggerOnInit: function(url, params, options){
 		if(this.initialized){
 			this.stack(url, params, options);
@@ -49,25 +38,8 @@ var PaneManager = {
 		}
 	},
 	
-	getUrl: function(x, ps, pane){
-		if(pane == null){
-			pane = true;
-		}
-		ps = this.util.map(ps);
-		if(this.basepath != null && x.indexOf(this.basepath) != 0){
-			x = this.basepath + x;
-		}
-		if(pane){
-			ps["view-mode"] = "pane";
-		}
-		var con = "?";
-		if(x.indexOf(con) > 0){
-			con = "&";
-		}
-		if(ps != null && !$.isEmptyObject(ps)){
-			x = x + con + $.param(ps);
-		}
-		return x;
+	getUrl: function(x, ps){
+		return Utils.Url.render(x, {"view-mode": "pane"}, ps);
 	},
 	
 	// Pane References
@@ -119,71 +91,15 @@ var PaneManager = {
 		duration: 500	// The duration of a transition between slides.
 	},
 	
-	// Confirm Method
-	confirm: function(options){
-		var m = this.util.mapped$rq(options, "message");
-		var of = this.util.mapped$rq(options, "onok");
-		var t = this.util.mapped(options, "title", this.text.label.confirm);
-		var h = this.util.mapped(options, "height", "auto");
-		var ol = this.util.mapped(options, "oklabel", this.text.label.ok);
-		var cl = this.util.mapped(options, "cancellabel", this.text.label.cancel);
-		var cf = this.util.mapped(options, "oncancel", function(){$( this ).dialog( "close" );});
-		this.confirmDialog.text(m);
-
-		var buts = {};
-		buts[ol] = function (){of(); $(this).dialog( "close" )};
-		buts[cl] = cf;
-		this.confirmDialog.dialog({
-			title: t,
-			resizable: false,
-			height: h,
-			modal: true,
-			buttons: buts
-		});
-	},
-	
 	// Logout Method
 	logout: function(){
-		url = this.basepath + "/logout";
-		options = {};
-		options["message"] = this.text.logout.message;
-		options["onok"] = function() {document.location = url;};
-		options["title"] = this.text.logout.title;
-		options["oklabel"] = this.text.logout.ok;
-		this.confirm(options);
-	},
-	
-	// Utility Methods
-	util: {
-		mapped: function(m, k, d){
-			if(m != null && m[k] != null){
-				return m[k];
-			}
-			return d;
-		},
-		mapped$rq: function(m, k){
-			if(m != null && m[k] != null){
-				return m[k];
-			}
-			throw "The '" + k + "' option is required.";
-		},
-		map: function(m){
-			if(m == null) return {};
-			return m;
-		},
-		nothing: function(){},
-		getin: function(map){
-			var value = map;
-			if(arguments.length > 1){
-				for(var i = 1; i < arguments.length; i++){
-					value = value[arguments[i]];
-					if(value == null){
-						return null;
-					}
-				}
-			}
-			return value;
-		}
+		var options = {
+				message: this.text.logout.message,
+				title: this.text.logout.title,
+				confirm: this.text.logout.ok,
+				onconfirm: function() {document.location = Utils.Url.render("/logout");}
+		};
+		Dialog.confirm(options);
 	},
 	
 	// Starts a new stack of panes.  Clears all existing panes out and starts a new stack.
@@ -191,9 +107,10 @@ var PaneManager = {
 		var pushfx = function(){PaneManager.push(url, params, options)};
 		
 		if(this.hasPanes()){
-			this.confirm({
-				onok: function(){PaneManager.reset(pushfx)}, 
-				message: this.text.pane.confirm$reset});
+			Dialog.confirm({
+					onconfirm: function(){PaneManager.reset(pushfx)}, 
+					message: this.text.pane.confirm$reset
+				});
 		}
 		else{
 			pushfx();
@@ -202,8 +119,9 @@ var PaneManager = {
 	
 	// Adds a new pane to the current stack.
 	push: function(url, params, options){
-		options = this.util.map(options);
-		params = this.util.map(params);
+		Dialog.Progress.start();
+		options = Utils.Map.map(options);
+		params = Utils.Map.map(params);
 		var request = {
 			url: url,
 			params: params,
@@ -253,20 +171,19 @@ var PaneManager = {
 		pane.pane.html(data);
 		pane.pane.show("slide", {direction: "right"}, this.settings.duration);
 		this.current = pane;
+		Dialog.Progress.end();
 	},
 	
 	// When content is refreshed for a pane.
 	onrefresh: function(data, target, status, xhr){
 		target.pane.empty();
 		target.pane.html(data);
+		Dialog.Progress.end();
 	},
 	
 	// Processes a failed request for a pane.
 	onfailure: function(data, request, status, xhr){
-		if(this.errorDialog == null){
-			this.errorDialog = $("<div class='dialog errordialog'/>");
-			this.errorDialog.appendTo($("body"));
-		}
+		Dialog.Progress.end();
 		var message = this.text.error.message;
 		if(data != null){
 			if(data.message != null){
@@ -276,21 +193,18 @@ var PaneManager = {
 				message = data;
 			}
 		}
-		this.errorDialog.text(message);
-		var buts = {};
-		buts[this.text.error.close] = function (){$(this).dialog( "close" )};
-		this.errorDialog.dialog({
+		
+		Dialog.error({
+			message: message, 
 			title: this.text.error.title,
-			resizable: false,
-			modal: true,
-			buttons: buts
+			close: this.text.error.close
 		});
 	},
 	
 	// Removes the current pane from the stack, making the previous pane the current one.
 	// onpop, postpop
 	pop: function(options){
-		options = this.util.map(options);
+		options = Utils.Map.map(options);
 		var poppane = this.current;
 		
 		if(poppane){
@@ -324,8 +238,8 @@ var PaneManager = {
 	
 	// Refreshes the current pane in the stack.
 	refresh: function(options){
-		options = this.util.map(options);
-		target = this.util.mapped(options, "pane", this.current);
+		options = Utils.Map.map(options);
+		target = Utils.Map.mapped(options, "pane", this.current);
 		if(target){
 			var fullUrl = this.getUrl(target.request.url, target.request.params);
 			var settings = {

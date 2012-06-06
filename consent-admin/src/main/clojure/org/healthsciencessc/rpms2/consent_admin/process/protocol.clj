@@ -24,7 +24,7 @@
                      {:name :code :label "Code"}
                      {:name :required :label "Required" :type :checkbox}
                      {:name :select-by-default :label "Selected By Default" :type :checkbox}])
-(defn render-label
+(defn- render-label
   "Helper function to generate labels using the appropriate text for protocols."
   [location & addons]
   (let [user (security/current-user)
@@ -41,12 +41,14 @@
       (if (meta protocols)
         (rutil/not-found (:message (meta protocols)))
         (layout/render ctx (render-label location " List")
-          (container/scrollbox (selectlist/selectlist (for [protocol protocols]
-                                                        {:label (:name protocol) :data protocol})))
+          (container/scrollbox 
+            (selectlist/selectlist {:action :.detail-action}
+              (for [protocol protocols]
+                {:label (:name protocol) :data protocol})))
           (actions/actions 
             (actions/push-action 
                            {:url "/view/protocol" :params {:location location-id :protocol :selected#id}
-                            :label "Details/Edit"})
+                            :label "Details/Edit" :classes :.detail-action})
             (actions/push-action 
                            {:url "/view/protocol/new" :params {:location location-id}
                             :label "New"})

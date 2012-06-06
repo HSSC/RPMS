@@ -1,0 +1,11 @@
+#dialog{
+	font-size: 1.0em;
+}
+
+div#progress{
+	display: none;
+}
+
+img.progress{
+	position: absolute;
+}

@@ -30,7 +30,7 @@
       (ajax/error (meta users))
       (layout/render ctx "Users"
         (container/scrollbox
-          (selectlist/selectlist 
+          (selectlist/selectlist {:action :.detail-action}
             (for [x users]
               {:label (format-name x) :data x})))
         (actions/actions 
