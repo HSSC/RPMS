@@ -353,4 +353,23 @@
         nil
         (with-out-str (prn data))))
 
+(defn publish-protocol-version
+  "Updates a protocol version with data changes."
+  [protocol-version-id]
+  (POST "/protocol/publish"
+        {:version protocol-version-id}
+        nil
+        nil))
+
+(defn retire-protocol-version
+  "Updates a protocol version with data changes."
+  [protocol-version-id]
+  (POST "/protocol/retire"
+        {:version protocol-version-id}
+        nil
+        nil))
+
+
+
+
 

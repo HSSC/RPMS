@@ -29,3 +29,8 @@
 (defn forbidden-fn
   [_]
   {:status 403})
+
+(defn current-user
+  "Function used to get the current user from the request context.  Used for providing a user fetcher to runnable functions."
+  [ctx]
+  (get-in ctx [:session :current-user]))

@@ -35,12 +35,13 @@
              (actions/new-button {:label "New" :url "/view/organization/add"})
              (actions/pop-button))))))
 
-(defn create-fields [{:keys [name code protocol-label location-label]}]
+(defn create-fields [{:keys [name code protocol-label location-label consenter-label]}]
   (list
       (formui/input-text {:name :name :label "Name" :value name})
       (formui/input-text {:name :code :label "Code" :value code})
       (formui/input-text {:name :protocol-label :label "Protocol Label" :value protocol-label})
-      (formui/input-text {:name :location-label :label "Location Label" :value location-label})))
+      (formui/input-text {:name :location-label :label "Location Label" :value location-label})
+      (formui/input-text {:name :consenter-label :label "Consenter Label" :value consenter-label})))
 
 (defn get-view-organization-add
   [ctx]
@@ -75,7 +76,7 @@
 (defn post-api-organization-add
   [ctx]
   (let [org (select-keys (:body-params ctx)
-                         [:name :code :protocol-label :location-label])
+                         [:name :code :protocol-label :location-label :consenter-label])
         resp (service/add-organization org)]
     (if (service/service-error? resp)
       (ajax/error (meta resp))
@@ -84,7 +85,7 @@
 (defn post-api-organization-edit
   [ctx]
   (let [keys (select-keys (:body-params ctx)
-                              [:name :code :protocol-label :location-label])
+                              [:name :code :protocol-label :location-label :consenter-label])
         resp (service/edit-organization (-> ctx :query-params :organization) keys)]
     (if (service/service-error? resp)
       (ajax/error (meta resp))

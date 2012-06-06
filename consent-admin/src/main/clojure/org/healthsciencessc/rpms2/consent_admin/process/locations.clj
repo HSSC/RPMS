@@ -9,6 +9,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
+            [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [sandbar.stateful-session :as sess]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
             [hiccup.core :as html]
@@ -18,12 +19,18 @@
   (:use [clojure.pprint])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
+(defn- render-label
+  [& addons]
+  (let [org (security/current-org)
+        label (tenancy/label-for-location nil org)]
+    (str label (apply str addons))))
+
 (defn layout-locations
   [ctx]
   (let [locations (sort-by :name (service/get-locations ctx))]
     (if (service/service-error? locations)
       (ajax/error (meta locations))
-      (layout/render ctx "Locations"
+      (layout/render ctx (render-label "s")
         (container/scrollbox
           (selectlist/selectlist
             (for [x locations]
@@ -34,9 +41,10 @@
              (actions/pop-button))))))
 
 (def ^:const location-fields
-  (let [text-fields [:name "Location name"
+  (let [text-fields [:name "Name"
                      :code "Code"
-                     :protocol-label "Protocol Label"]]
+                     :protocol-label "Protocol Label"
+                     :consenter-label "Consenter Label"]]
     (map #(zipmap [:name :label] %)
          (partition 2 text-fields))))
 
@@ -54,7 +62,7 @@
 
 (defn get-view-location-add
   [ctx]
-  (layout/render ctx "Create Location"
+  (layout/render ctx (str "Create " (render-label))
                  (container/scrollbox (formui/dataform (render-location-fields)))
                  (actions/actions
                    (actions/save-button {:method :post :url "/api/location/add"})
@@ -66,7 +74,7 @@
     (let [location (service/get-location location-id)]
       (if (service/service-error? location)
         (ajax/error (meta location))
-        (layout/render ctx "Edit Location"
+        (layout/render ctx (str "Edit " (render-label))
                    (container/scrollbox (formui/dataform (render-location-fields location)))
                    (actions/actions
                      (actions/delete-button {:url "/api/location" :params {:location location-id}})

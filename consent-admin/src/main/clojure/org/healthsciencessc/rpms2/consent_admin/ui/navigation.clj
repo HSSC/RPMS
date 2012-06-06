@@ -1,5 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.navigation
   (:require [sandbar.stateful-session :as sess]
+            [org.healthsciencessc.rpms2.consent-admin.security :as security]
+            [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]))
 
 (defn- use?
@@ -41,6 +43,20 @@
   [item]
   [:li.navitem [:a {:href "#" :onclick (str "PaneManager.stack('" (:url item) "', {}, {})") } (:label item)]])
 
+(defn- location-item-generator
+  "Item generator that checks if there is a replacement label for 'Location'"
+  [item]
+  (let [user (security/current-user)
+        label (str (tenancy/label-for-location nil (:organization user)) (:label item))]
+    [:li.navitem [:a {:href "#" :onclick (str "PaneManager.stack('" (:url item) "', {}, {})") } label]]))
+
+(defn- consenter-item-generator
+  "Item generator that checks if there is a replacement label for 'Consenter'"
+  [item]
+  (let [user (security/current-user)
+        label (str (tenancy/label-for-consenter nil (:organization user)) (:label item))]
+    [:li.navitem [:a {:href "#" :onclick (str "PaneManager.stack('" (:url item) "', {}, {})") } label]]))
+
 (defn- protocol-location-item-generator
   "Checks if the current user is an administrator or super administrator."
   [item]
@@ -64,17 +80,32 @@
                              ((:generator item) item)
                              (default-item-generator item))))]]))
 
+
+(defn- protocols-group-generator
+  "Generates the output of a the Protocols group record."
+  [group]
+  (let [user (security/current-user)
+        label (str (tenancy/label-for-protocol nil (:organization user)) (:group group))]
+    (list [:h4.navlabel [:a {:href "#"} label]] 
+          [:div.navpanel
+           [:ul.navlist (for [item (:items group)]
+                          (if (use? item)
+                            (if (:generator item)
+                              ((:generator item) item)
+                              (default-item-generator item))))]])))
+
 (def groupings 
   [
     {:group "Organization" :use? admin-or-super?
       :items [{:url "/view/organizations" :label "Manage All Organizations" :use? super?}
               {:url "/view/organization" :label "Organization Settings" :use? admin?}
-              {:url "/view/locations" :label "Locations" :use? admin?}]}
+              {:url "/view/locations" :label "s" :use? admin? :generator location-item-generator}]}
     {:group "Security" :use? admin?
       :items [{:url "/view/users" :label "Users"}
               {:url "/view/groups" :label "Groups"}
               {:url "/view/roles" :label "Roles"}]}
-    {:group "Protocols" :use? designer?
+    ;; Following is for the Protocol group.
+    {:group "s" :use? designer? :generator protocols-group-generator
       :items [{:url "/view/protocol/location" :label "Locations" :generator protocol-location-item-generator}]}
     {:group "Library" :use? designer?
       :items [{:url "/view/policy/definitions" :label "Policy Definitions"}
@@ -82,7 +113,7 @@
               {:url "/view/metaitems" :label "Meta Items"}
               {:url "/view/widgets" :label "Widgets"}]}
     {:group "Management" :use? manager?
-      :items [{:url "/view/consenter/history" :label "Consenter History"}
+      :items [{:url "/view/consenter/history" :label " History" :generator consenter-item-generator}
               {:url "/view/audit" :label "Audit"}]}
   ])
 

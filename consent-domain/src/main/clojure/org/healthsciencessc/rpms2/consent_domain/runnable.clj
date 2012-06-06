@@ -29,6 +29,20 @@
   (can-design-protocol user (:protocol protocol-version)))
 
 ;; Functions that generate functions used in runnable statements.
+(defn gen-designer-check
+  "Creates a runnable? function that checks if a user is a protocol designer for a specific location."
+  [userfn]
+  (fn [ctx]
+    (let [user (userfn ctx)]
+      (roles/protocol-designer? user))))
+
+(defn gen-collector-check
+  "Creates a runnable? function that checks if a user is a consent collector for a specific location."
+  [userfn]
+  (fn [ctx]
+    (let [user (userfn ctx)]
+      (roles/consent-collector? user))))
+
 (defn gen-designer-location-check
   "Creates a runnable? function that checks if a user is a protocol designer for a specific location."
   [userfn path-to-location]

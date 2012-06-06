@@ -11,35 +11,44 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
             [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [hiccup.core :as hcup]
             [clojure.data.json :as json]
             [ring.util.response :as rutil])
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def ^:const fields [{:name :name :label "Protocol Name"}
+(def ^:const fields [{:name :name :label "Name"}
                      {:name :description :label "Description"}
-                     {:name :protocol-id :label "Protocol ID"}
+                     {:name :protocol-id :label "External ID"}
                      {:name :code :label "Code"}
                      {:name :required :label "Required" :type :checkbox}
                      {:name :select-by-default :label "Selected By Default" :type :checkbox}])
+(defn render-label
+  "Helper function to generate labels using the appropriate text for protocols."
+  [location & addons]
+  (let [user (security/current-user)
+        org (:organization user)
+        label (tenancy/label-for-protocol location org)]
+    (str label (apply str addons))))
 
 (defn view-protocol-location
   "Generates a view that shows all of the protocols available within a location."
   [ctx]
-  (if-let [location (get-in ctx [:query-params :location])]
-    (let [protocols (services/get-protocols location)]
+  (if-let [location-id (get-in ctx [:query-params :location])]
+    (let [protocols (services/get-protocols location-id)
+          location (if (first protocols) (:location (first protocols)) (services/get-location location-id))]
       (if (meta protocols)
         (rutil/not-found (:message (meta protocols)))
-        (layout/render ctx "Protocol List"
+        (layout/render ctx (render-label location " List")
           (container/scrollbox (selectlist/selectlist (for [protocol protocols]
                                                         {:label (:name protocol) :data protocol})))
           (actions/actions 
             (actions/push-action 
-                           {:url "/view/protocol" :params {:location location :protocol :selected#id}
+                           {:url "/view/protocol" :params {:location location-id :protocol :selected#id}
                             :label "Details/Edit"})
             (actions/push-action 
-                           {:url "/view/protocol/new" :params {:location location}
+                           {:url "/view/protocol/new" :params {:location location-id}
                             :label "New"})
            (actions/back-action)))))
     ;; Handle Error
@@ -50,10 +59,11 @@
   [ctx]
   (if-let [protocol-id (get-in ctx [:query-params :protocol])]
     (let [protocol (services/get-protocol protocol-id)
-          location-id (get-in ctx [:query-params :location])]
+          location (:location protocol)
+          location-id (:id location)]
       (if (not= location-id (get-in protocol [:location :id]))
         (layout/render-error ctx {:message "Location provided must match the location of the protocol requested."})
-        (layout/render ctx (str "Protocol: " (:name protocol))
+        (layout/render ctx (render-label location ": " (:name protocol))
                        (container/scrollbox (form/dataform (form/render-fields fields protocol)))
                        (actions/actions
                          (actions/push-action 
@@ -71,8 +81,9 @@
 (defn view-protocol-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
-  (let [location-id (get-in ctx [:query-params :location])]
-    (layout/render ctx "Create Protocol"
+  (let [location-id (get-in ctx [:query-params :location])
+        location (services/get-location location-id)]
+    (layout/render ctx (str "Create " (render-label location))
                    (container/scrollbox (form/dataform (form/render-fields fields {:required true})))
                    (actions/actions 
                      (actions/ajax-action 

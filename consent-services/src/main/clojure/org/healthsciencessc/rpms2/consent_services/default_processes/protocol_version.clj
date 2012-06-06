@@ -1,9 +1,10 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
+  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn current-user)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-domain.roles :as role]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-services.default-processes.protocol :as protocol])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
@@ -71,51 +72,45 @@
    {:name "post-protocol-publish"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         protocol-version-id (get-in params [:query-params :version])]
-                     (and (role/protocol-designer? user)
-                          (data/belongs-to? "protocol-version" protocol-version-id "organization" user-org-id))))
+                         protocol-version-id (get-in params [:query-params :version])
+                         protocol-version (data/find-record types/protocol-version protocol-version-id)
+                         protocol-id (get-in protocol-version [:protocol :id])]
+                     (and (protocol/user-is-designer-for-protocol user protocol-id)
+                          (types/draft? protocol-version))))
     :run-fn (fn [params]
               (let [protocol-version-id (get-in params [:query-params :version])
                     protocol-version (data/find-record "protocol-version" protocol-version-id)
                     protocol-id (get-in protocol-version [:protocol :id])
                     versions (data/find-children "protocol" protocol-id "protocol-version")
                     published-versions (filter types/published? versions)]
-                (do
-                  (map (fn [version]
-                         (data/update "protocol-version" (:id version) (assoc version :status types/status-retired)))
-                       published-versions)
-                  (data/update "protocol-version" protocol-version-id (assoc protocol-version :status types/status-published)))))
+                (doseq [published-version published-versions]
+                  (data/update types/protocol-version (:id published-version) {:status types/status-retired}))
+                (data/update types/protocol-version protocol-version-id (assoc protocol-version :status types/status-published))))
     :run-if-false forbidden-fn}
 
-   {:name "post-protocol-publish"
+   {:name "post-protocol-retire"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         protocol-version-id (get-in params [:query-params :version])]
-                     (and (role/protocol-designer? user)
-                          (data/belongs-to? "protocol-version" protocol-version-id "organization" user-org-id))))
+                         protocol-version-id (get-in params [:query-params :version])
+                         protocol-version (data/find-record types/protocol-version protocol-version-id)
+                         protocol-id (get-in protocol-version [:protocol :id])]
+                     (and (protocol/user-is-designer-for-protocol user protocol-id)
+                          (types/published? protocol-version))))
     :run-fn (fn [params]
               (let [protocol-version-id (get-in params [:query-params :version])
-                    protocol-version (data/find-record "protocol-version" protocol-version-id)]
-                (data/update "protocol-version" protocol-version-id (assoc protocol-version :status types/status-retired))))
+                    protocol-version (data/find-record types/protocol-version protocol-version-id)]
+                (data/update types/protocol-version protocol-version-id (assoc protocol-version :status types/status-retired))))
     :run-if-false forbidden-fn}
 
    {:name "get-protocol-versions-published"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org (get-in user [:organization :id])
-                         loc (get-in params [:query-params :loc])]
-                     (and (role/protocol-designer? user) (data/belongs-to? "location" loc "organization" user-org))))
+    :runnable-fn (runnable/gen-collector-location-check current-user [:query-params :location])
     :run-fn (fn [params]
               (let [loc (get-in params [:query-params :location])]
-                (filter (partial = "Published") (data/find-children "location" loc "protocol"))))
+                (filter (partial = types/status-published) (data/find-children types/location loc types/protocol))))
     :run-if-false forbidden-fn}
    
    {:name "get-protocol-versions-published-meta"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])]
-                     (role/protocol-designer? user)))
+    :runnable-fn (runnable/gen-collector-check current-user)
     :run-fn (fn [params]
               (let [ids (get-in params [:query-params :version])]
                 (distinct (if (coll? ids)
