@@ -3,6 +3,7 @@
             [sandbar.stateful-session :as sess]
             [org.healthsciencessc.rpms2.consent-domain.types :as domain]
             [clojure.pprint :as pp]
+            [clojure.set :as set]
             [clojure.string :as str]
             [clojure.stacktrace :as st]
             [hiccup.util :as hutil])
@@ -241,6 +242,13 @@
   [id]
   (GET "/security/group" {:group id}))
 
+(defn get-group-members
+  [gid]
+  (let [group-members (GET "/security/users" {:group gid})
+        all-users (get-users nil)]
+   {:in group-members :out (apply set/difference 
+                                  (map set [all-users group-members]))}))
+
 (defn delete-group
   [id]
   (DELETE "/security/group" {:group id} nil nil))
@@ -264,6 +272,22 @@
 
 (defn add-role-to-group
   [g r])
+
+(defn add-group-member
+  [g u]
+  (PUT "/security/usergroup"
+    {:group g
+     :user u}
+    nil
+    nil))
+
+(defn remove-group-member
+  [g u]
+  (DELETE "/security/usergroup"
+    {:group g
+     :user u}
+    nil
+    nil))
 
 (defn add-admin
   [u]
