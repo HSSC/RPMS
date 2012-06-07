@@ -29,7 +29,7 @@
                      (or (super-admin? current-user)
                          (and (admin? current-user)
                               (if org-id (data/belongs-to? "user" (:id current-user) "organization" org-id) true)
-                              (if group-id (data/belongs-to? "user" (:id current-user) "group" group-id) true)))))
+                              (if group-id (data/belongs-to? "group" group-id "organization" current-user-org-id) true)))))
     :run-fn (fn [params]
               (let [user (get-in params [:session :current-user])
                     user-org-id (get-in user [:organization :id])
