@@ -55,6 +55,15 @@
         [:option {:value data
                   :selected selected} label])]])
 
+(defn multiselect
+  [{:keys [label name items]}]
+  ;; wrap this so that it doesn't disappear
+  (list
+    [:label {:for name} label]
+    [:select {:multiple true :name name}
+     (for [{:keys [value label]} items]
+       [:option {:value value} label])]))
+
 (defmulti edit-field :type)
 
 (defmethod edit-field :text

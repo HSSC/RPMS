@@ -69,7 +69,8 @@ prior to calling the server, and the execution of a client-side action when the 
   (push-action (merge {:label "Add"} options)))
 
 ;;
-(defn details-button[options]
+(defn details-button
+  [options]
   (push-action (merge {:label "Edit" :classes :.detail-action} options)))
 
 ;;

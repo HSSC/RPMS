@@ -6,8 +6,10 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.stacktrace :as st]
+            [clojure.java.io :as io]
             [hiccup.util :as hutil])
   (:use [org.healthsciencessc.rpms2.consent-admin.config]
+        [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]
         [clojure.data.json :only (json-str read-json)]))
 
 ;; Request And Response Support
@@ -123,7 +125,7 @@
 
 ;; LOCATIONS
 (defn get-locations
-  [_]
+  []
   (GET "/security/locations" {}))
 
 (defn get-location
@@ -267,11 +269,85 @@
         nil
         (with-out-str (prn g))))
 
-(defn add-role-to-user
-  [u r])
+(defn filter-direct-roles
+  [m filter-key]
+  (update-in m [:role-mappings]
+             #(vec (filter filter-key %))))
 
-(defn add-role-to-group
-  [g r])
+(defn fetch-assignee
+  [type id]
+  (case type
+    :user (get-user id)
+    :group (get-group id)))
+
+(defn get-assigned-roles 
+  [id type]
+  {:pre [(or (= type :user)
+             (= type :group))]}
+  (-> (fetch-assignee type id)
+    (filter-direct-roles type)
+    :role-mappings))
+
+(defn- add-rolemapping-helper [assignee-id
+                 assignee-type
+                 role-id
+                 loc-id]
+  (let [location (if loc-id
+                   {:location loc-id})
+        qry-params (merge 
+                     {assignee-type assignee-id
+                      :role role-id}
+                     location)]
+    (case assignee-type
+      :user
+      (PUT "/security/userrole"
+           qry-params nil nil)
+      :group
+      (PUT "/security/grouprole"
+           qry-params nil nil))))
+
+(defn add-rolemapping
+  "location key is optional, assignee-type is a :user or :group"
+  [{:keys [assignee-id
+           assignee-type
+           role-id
+           loc-id]}]
+  {:pre [(and role-id assignee-id
+              (or (= assignee-type :user)
+                  (= assignee-type :group)))]}
+  (let [assignee (-> (fetch-assignee assignee-type assignee-id)
+                   (filter-direct-roles assignee-type))
+        redundant-role? (if loc-id   ;; this checks that the user/group doesn't already have that role
+                          #(has-role? % {:id role-id} :location {:id loc-id})
+                          #(has-role? % {:id role-id}))]
+    (if-not (redundant-role? assignee)
+      (add-rolemapping-helper assignee-id assignee-type role-id loc-id))))
+
+(defn remove-rolemapping
+  [{:keys [assignee-id
+           assignee-type
+           role
+           location]
+    :as remove-params}]
+  (let [location (if location
+                   {:location location})
+        qry-params (merge {:role role
+                           (keyword assignee-type) assignee-id}
+                          location)]
+  #_(with-open [w (io/writer "/tmp/remove-role")]
+    (binding [*out* w]
+      (prn qry-params)
+      (flush)))
+    (let [a-type (keyword assignee-type)]
+      (case a-type
+        :user
+        (DELETE "/security/userrole" 
+                qry-params
+                nil nil)
+        :group
+        (DELETE "/security/grouprole" 
+                qry-params
+                nil nil)))))
 
 (defn add-group-member
   [g u]
@@ -392,8 +468,4 @@
         {:version protocol-version-id}
         nil
         nil))
-
-
-
-
 

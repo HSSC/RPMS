@@ -15,7 +15,8 @@
             [hiccup.element :as elem]
             [hiccup.form :as form]
             [ring.util.response :as rutil])
-  (:use [clojure.pprint])
+  (:use [clojure.pprint]
+        [clojure.java.io :as io])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (defn layout-roles
@@ -95,6 +96,106 @@
       (ajax/error (meta resp))
       (ajax/success resp))))
 
+(defn add-roles-helper [roles locations assignee-type assignee-id]
+  (let [mappings (if (or (nil? locations)      ;; Zero locations selected, add to all locations
+                         (= 0 (count locations)))
+                   (for [r roles]
+                     {:role-id r :assignee-type (keyword assignee-type) :assignee-id assignee-id})
+                   (for [r roles l locations]
+                     {:role-id r :loc-id l :assignee-type (keyword assignee-type) :assignee-id assignee-id}))
+        response-seq (doall (map service/add-rolemapping mappings))]  ;; force evaluation with doall
+    (let [first-failure (some service/service-error? response-seq)]
+      first-failure
+      :success)))
+
+(defn post-api-role-assign
+  [ctx]
+  (let [{locations (keyword "location[]")       ;; MULTISELECTS result in this crazy post param syntax "name[]"
+         roles (keyword "role[]")} (:body-params ctx)  ;; if only one thing is selected, you get a string, >1 it's a vector.  annoying
+        {assignee-type :assignee-type
+         assignee-id :assignee-id}  (:query-params ctx)
+        locations (if (string? locations) [locations] locations)
+        roles (if (string? roles) [roles] roles)]
+    (if (= (count roles) 0)
+      (ajax/error {:message "Please select at least one role."})
+      (do 
+        (let [resp (add-roles-helper roles locations assignee-type assignee-id)]
+          (if (not= :success resp)
+            (ajax/error {:message "One or more roles not successfully assigned."})
+            (ajax/success "")))))))
+
+(defn rolechooser
+  [{:keys [roles locations]}]
+  (let [roles (for [x (sort-by :name roles)]
+                {:value (:id x)
+                 :label (:name x)})
+        locations (for [x (sort-by :name locations)]
+                    {:value (:id x)
+                     :label (:name x)})]
+    (list
+      (formui/multiselect {:label "Roles" :name "role" :items roles})
+      (formui/multiselect {:label "Locations" :name "location" :items locations}))))
+
+(defn get-view-roles-assign
+  [ctx]
+  (if-let [{qry-params :query-params} ctx] 
+    (let [post-params (merge 
+                        {:params (select-keys qry-params
+                                              [:assignee-id :assignee-type])}
+                        {:url "/api/role/assign"
+                         :method :post})]
+      (layout/render ctx "Assign Role"
+                     (container/scrollbox (formui/dataform 
+                                            (rolechooser {:roles (service/get-roles) :locations (service/get-locations)})))
+                     (actions/actions 
+                       (actions/save-button post-params)
+                       (actions/pop-button))))))
+
+(defn ->friendly-name
+  [rm]
+  (if (:location rm)
+    (format "%s in %s"
+            (:name (:role rm))
+            (:name (:location rm)))
+    (:name (:role rm))))
+
+(defn delete-api-rolemapping
+  [{prms :query-params}]
+  (let [resp (service/remove-rolemapping prms)]
+    (if (service/service-error? resp)
+      (ajax/error (meta resp))
+      (ajax/success resp))))
+
+(defn get-view-roles-show
+  [ctx]
+  (if-let [{{:keys [assignee-id assignee-type]} :query-params} ctx]
+    (let [rolemappings (service/get-assigned-roles assignee-id (keyword assignee-type))
+          delete-params {:params {:assignee-type assignee-type
+                                  :assignee-id assignee-id
+                                  :location :selected#location#id
+                                  :role :selected#role#id}
+                         :method :delete
+                         :url "/api/rolemapping"}
+          add-params {:url "/view/roles/assign"
+                      :params {:assignee-type assignee-type
+                               :assignee-id assignee-id}}
+          locations (service/get-locations)]
+      (if (service/service-error? rolemappings)
+        (ajax/error (meta rolemappings))
+        (layout/render ctx "Assigned Roles"
+                       (container/scrollbox
+                         (selectlist/selectlist {}
+                                                (for [x (->> rolemappings
+                                                          (map #(assoc % :friendly-name 
+                                                                       (->friendly-name %)))
+                                                          (sort-by :friendly-name))]
+                                                  {:label (:friendly-name x)
+                                                   :data x})))
+                       (actions/actions 
+                         (actions/new-button add-params)
+                         (actions/delete-button delete-params)
+                         (actions/pop-button)))))))
+
 (def process-defns
   [{:name "get-view-roles"
     :runnable-fn (constantly true)
@@ -102,15 +203,27 @@
    {:name "get-view-role-add"
     :runnable-fn (constantly true)
     :run-fn get-view-role-add}
+   {:name "get-view-roles-show"
+    :runnable-fn (constantly true)
+    :run-fn get-view-roles-show}
+   {:name "get-view-roles-assign"
+    :runnable-fn (constantly true)
+    :run-fn get-view-roles-assign}
    {:name "delete-api-role"
     :runnable-fn (constantly true)
     :run-fn delete-api-role}
+   {:name "delete-api-rolemapping"
+    :runnable-fn (constantly true)
+    :run-fn delete-api-rolemapping}
    {:name "get-view-role-edit"
     :runnable-fn (constantly true)
     :run-fn get-view-role-edit}
    {:name "post-api-role-edit"
     :runnable-fn (constantly true)
     :run-fn post-api-role-edit}
+   {:name "post-api-role-assign"
+    :runnable-fn (constantly true)
+    :run-fn post-api-role-assign}
    {:name "post-api-role-add"
     :runnable-fn (constantly true)
     :run-fn post-api-role-add}

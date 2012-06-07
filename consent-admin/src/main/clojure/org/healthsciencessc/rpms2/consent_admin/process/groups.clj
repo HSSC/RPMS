@@ -74,7 +74,7 @@
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/group/edit" :params {:group group-id}})
                      (actions/details-button {:url "/view/group/members" :params {:group group-id} :label "Members"})
-                     (actions/details-button {:url "/view/role/addto" :params {:group group-id} :label "Add or Change Roles"})
+                     (actions/details-button {:url "/view/roles/show" :params {:assignee-type :group :assignee-id group-id} :label "Roles"})
                      (actions/delete-button {:url "/api/group" :params {:group group-id}})
                      (actions/back-action)))))))
 

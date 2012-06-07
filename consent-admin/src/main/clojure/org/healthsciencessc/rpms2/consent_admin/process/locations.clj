@@ -27,7 +27,7 @@
 
 (defn layout-locations
   [ctx]
-  (let [locations (sort-by :name (service/get-locations ctx))]
+  (let [locations (sort-by :name (service/get-locations))]
     (if (service/service-error? locations)
       (ajax/error (meta locations))
       (layout/render ctx (render-label "s")

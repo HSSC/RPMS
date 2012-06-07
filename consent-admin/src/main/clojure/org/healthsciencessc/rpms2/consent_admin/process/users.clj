@@ -80,7 +80,7 @@
                    (container/scrollbox (formui/dataform (render-user-fields user)))
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/user/edit" :params {:user user-id}})
-                     (actions/details-button {:url "/view/role/addto" :params {:user user-id} :label "Add or Change Roles"})
+                     (actions/details-button {:url "/view/roles/show" :params {:assignee-type :user :assignee-id user-id} :label "Roles"})
                      (actions/delete-button {:url "/api/user" :params {:user user-id}})
                      (actions/pop-button)))))))
 
