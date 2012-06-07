@@ -74,6 +74,7 @@
                    (actions/actions 
                      (actions/save-button {:method :post :url "/api/group/edit" :params {:group group-id}})
                      (actions/details-button {:url "/view/group/members" :params {:group group-id} :label "Members"})
+                     (actions/details-button {:url "/view/role/addto" :params {:group group-id} :label "Add or Change Roles"})
                      (actions/delete-button {:url "/api/group" :params {:group group-id}})
                      (actions/back-action)))))))
 
@@ -83,27 +84,27 @@
     (layout/render ctx "Members"
                    (userlist in)
                    (actions/actions
-                     (actions/details-button {:label "Add User..."
+                     (actions/details-button {:label "Add Member..."
                                               :url "/view/group/adduser"
                                               :params {:group group-id}})
-                     (actions/delete-button {:label "Remove Selected User"
+                     (actions/delete-button {:label "Remove Member"
                                              :url "/api/group/member"
                                              :params {:user :selected#id
                                                       :group group-id}})
-                     (actions/pop-button)))))
+                     (actions/back-action)))))
 
 (defn get-view-group-adduser [ctx]
   (let [group-id (-> ctx :query-params :group)
            {out :out :as all} (service/get-group-members group-id)]
-    (layout/render ctx "Members"
-                   (userlist out)
+    (layout/render ctx "Add Member"
+                   (userlist (sort-by #(vec (map % [:last-name :first-name])) out))
                    (actions/actions
-                     (actions/save-button {:label "Add Selected User"
+                     (actions/save-button {:label "Add Member"
                                            :method :put
                                            :url "/api/group/member"
                                            :params {:group group-id
                                                     :user :selected#id}})
-                     (actions/pop-button)))))
+                     (actions/back-action)))))
 
 (defn delete-api-group
   [ctx]
