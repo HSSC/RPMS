@@ -27,7 +27,7 @@
       (layout/render ctx "Groups"
         (container/scrollbox
           (selectlist/selectlist {:action :.detail-action}
-            (for [x groups]
+            (for [x (sort-by :name groups)]
               {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/group/edit" :params {:group :selected#id}})
@@ -36,7 +36,7 @@
 
 (defn userlist [users]
   (container/scrollbox
-    (selectlist/selectlist
+    (selectlist/selectlist {:action :.detail-action}
       (for [u users]
         {:label (format-name u)
          :data u}))))
@@ -57,7 +57,7 @@
 
 (defn get-view-group-add
   [ctx]
-  (layout/render ctx "Create group"
+  (layout/render ctx "Create Group"
                  (container/scrollbox (formui/dataform (render-group-fields)))
                  (actions/actions 
                    (actions/save-button {:method :post :url "/api/group/add"})
@@ -79,11 +79,11 @@
 
 (defn get-view-group-members [ctx]
   (let [group-id (-> ctx :query-params :group)
-        {in :in} (service/get-group-members group-id)]
+        {in :in :as all} (service/get-group-members group-id)]
     (layout/render ctx "Members"
                    (userlist in)
                    (actions/actions
-                     (actions/details-button {:label "Add User"
+                     (actions/details-button {:label "Add User..."
                                               :url "/view/group/adduser"
                                               :params {:group group-id}})
                      (actions/delete-button {:label "Remove Selected User"
@@ -94,7 +94,7 @@
 
 (defn get-view-group-adduser [ctx]
   (let [group-id (-> ctx :query-params :group)
-           {out :out} (service/get-group-members group-id)]
+           {out :out :as all} (service/get-group-members group-id)]
     (layout/render ctx "Members"
                    (userlist out)
                    (actions/actions

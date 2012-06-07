@@ -25,7 +25,7 @@
 
 (defn layout-users
   [ctx]
-  (let [users (sort-by #(vec (map % [:last-name :first-name])) (service/get-users ctx))]
+  (let [users (sort-by #(vec (map % [:last-name :first-name])) (service/get-users))]
     (if (service/service-error? users)
       (ajax/error (meta users))
       (layout/render ctx "Users"

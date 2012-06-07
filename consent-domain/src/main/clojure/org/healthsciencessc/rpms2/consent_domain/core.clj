@@ -49,7 +49,8 @@
              :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}]}
 
    group {:attributes (merge base
-                             {:name {:persisted true}})
+                             {:name {:persisted true}
+                              :code {:persisted true}})
           :relations [{:type :belongs-to :related-to "organization" :relationship :owned-by}
                       {:type :has-many :related-to "role-mapping"}]}
 

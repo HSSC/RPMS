@@ -150,7 +150,7 @@
 
 ;; USERS
 (defn get-users
-  [_]
+  []
   (GET "/security/users" {}))
 
 (defn get-user
@@ -245,7 +245,7 @@
 (defn get-group-members
   [gid]
   (let [group-members (GET "/security/users" {:group gid})
-        all-users (get-users nil)]
+        all-users (get-users)]
    {:in group-members :out (apply set/difference 
                                   (map set [all-users group-members]))}))
 
