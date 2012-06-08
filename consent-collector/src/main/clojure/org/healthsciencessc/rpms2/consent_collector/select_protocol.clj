@@ -143,9 +143,9 @@
         protocols-to-be-filled-out  (map my-find-published needed)
         metadata (find-meta-data-items protocols-to-be-filled-out)]
     (do
+      (session-put! :needed-protocol-ids needed-protocol-ids)
       (session-put! :needed-meta-data metadata)
       (session-put! :protocols-to-be-filled-out protocols-to-be-filled-out)
-      (session-put! :current-step "Form-1-Page-1")
 
       (debug "perform Needed Protocols " (pprint-str needed) 
              " Num meta " (count metadata) 

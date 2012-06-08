@@ -1,4 +1,5 @@
-(ns org.healthsciencessc.rpms2.consent-collector.collect-consents
+(ns ^{:doc "Collect consents - collects information from forms." }
+  org.healthsciencessc.rpms2.consent-collector.collect-consents
   (:require
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
@@ -9,16 +10,45 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
-(def ^:const ^:private COLLECT_START_PAGE :collect-start)
-(def ^:const ^:private REVIEW_START_PAGE :summary-start)
+(defn- dbg
+  "Displays m only if verbose debugging is enabled."
+  [m]
+
+  (if-let [b (config "verbose-collect-consents")]
+    [:div.debug m ]))
+
+(defn- sigpad
+  "Emits signature pad control.  
+  The signature is processed by it's own form and part of the standard
+  collect consents form. "
+  []
+
+  [:div.sigpad-control#signature-pad-item
+   [:h1 "Endorsement" ]
+  [:form.sigPad {:method "POST" :data-ajax "false" }
+      #_[:label {:for "name"} "Print your name" ]
+      #_[:input {:type "text" :name "name" :id "name" :class "name" } "Print your name" ]
+      #_[:p.typeItDesc "Review your signature" ]
+      [:p.drawItDesc "Draw your signature" ]
+   [:ul.sigNav
+    #_[:li.typeIt [:a {:href "#type-it"} "Type" ] ]
+    #_[:li.drawIt [:a {:href "#draw-it"} "Draw It" ] ]
+    [:li.clearButton [:a {:href "#clear"} "Clear" ] ]
+    ]
+     [:div {:class "sig sigWrapper ccsig" }
+      [:div.typed ] 
+       [:canvas {:class "pad" :width "198" :height "55" }  ]
+       [:input {:type "hidden" :name "output" :class "output" }  ]
+     ]
+   ]])
 
 (defn signature
   "Emits data for the signature widget. A map with the widgets state is passed
    to use in rendering the widget."
   [c m]
-  [:div.control.signature "Your signature is requested: " 
+  [:div.control.signature#signature-id "Your signature is requested: " 
     [:div "Guarantor " (:name c)]
-    #_[:div [:input { :type "textarea"  } ] "Endorsement " (:endorsement c) ]
+    (dbg (str "Endorsement " (:endorsement c)))
     [:div 
        [:input { :type "submit" 
                     :data-theme "a"
@@ -26,17 +56,7 @@
                     :data-inline "true"
                     :value (:clear-label c)
                     :name (str "signature-btn-" (:name c))
-                   } ]
-     ] 
-   
-   [:h1 "Signature pad" ]
-     [:div {:class "sig sigWrapper ccsig" }
-       [:canvas {:class "pad" :width "198" :height "55" }  ]
-       [:input {:type "hidden" :width "output" :class "output" }  ]
-     ]
-   ])
-
-
+                   } ] ]])
 
 (defn- true-or-not-specified? 
   [v]
@@ -65,12 +85,6 @@
      (if (not (= (:render-media c) false)) 
        [:div.render-media "Render media controls here" ]) ))) ])
 
-(defn- dbg
-  [m]
-
-  (if-let [b (config "verbose-collect-consents")]
-    [:div.debug m ]))
-
 (defn- lookup-data
   [c]
   (get (session-get :model-data) (keyword (:name c)) ))
@@ -95,14 +109,21 @@
                             })])
 
 (defn data-change
-  [c _]
+  "Displays meta-data item and a flag if it has been selected for change."
+  [c m]
   [:div.control.data-change
-   (list (for [t (:meta-items c)] 
+   (list 
+     (dbg [:div.debug "DATA CHANGE M IS " (pprint-str m) 
+           " MODEL DATA IS " (session-get :model-data) ])
+     (for [t (:meta-items c)] 
            (list
-             (let [md (dsa/get-metadata t)]
+             (let [md (dsa/get-metadata t)
+                   data-name (str "meta-data-btn-" (:mdid md))
+                   model-data (session-get :model-data)
+                   data-value ( (keyword data-name) model-data ) ]
                   [:div.ui-grid-b
-                    [:div.ui-block-a (:label md) ]
-                    [:div.ui-block-b (:value md) ]  
+                    [:div.ui-block-a.metadata (:label md) ]
+                    [:div.ui-block-b.metadata (:value md) (if data-value [:span.changed data-value])]  
                           ;; note should use the value
                           ;; they entered previously 
                     [:div.ui-block-c 
@@ -111,7 +132,7 @@
                                     :data-role "button"
                                     :data-inline "true"
                                     :value "Change"
-                                    :name (str "meta-data-btn-" (:mdid md))
+                                    :name data-name 
                                    } ]
                     ]
                    ]))))
@@ -121,9 +142,9 @@
   [c _]
   [:div.control 
   [:input { :type "submit" 
-            :data-theme "a"
+            :data-theme "d"
             :data-role "button"
-            :data-inline "true"
+            ;; :data-inline "true"
             :name (str "action-btn-" (:label c))
             :value (:label c)
            } ]
@@ -139,66 +160,51 @@
   "Display the checkbox.  Remember the state of the checkbox."
   [c m]
   [:div.control 
-    (dbg (str "policy-checkbox-buttons m=" (pprint-str m)
+    (dbg (str "policy-checkbox " (pprint-str m)
               " lookup data [" (lookup-data c) "]"))
     (helper/checkbox-group {:name (:name c) :label (:label c) :value (lookup-data c) }) ])
 
-(defn meta-items
-  "TODO: Remember the state of the checkbox."
-  [c m]
-  [:div.control "ME Items" 
-   [:div "the items are " (:meta-items) ] ])
-
-(defn- show-meta
-  [md]
-  [:p "Meta data "  [:pre (pprint-str md) ]] )
-
 (defn- process-control
+  "Displays the widget c by invoking the method with the widget's type.
+  This method takes the control (c) and the model data associated with that 
+  control."
   [c]
 
   (list 
     (let [ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
-              wname (str ns (:type c))
-              fn (resolve (symbol wname)) 
-              ;; lookup this widget in the data model and pass the value
-              wmodel (helper/lookup-widget-by-name (:name c))
-              ]
-              (list
-                 ;(debug "process-control " fn " ==> " c)
-                 (if fn 
-                     [:div 
-
-                      (if-let [b (config "verbose-collect-consents")]
-                        [:div.debug "Name: " (:name c) " WM " wmodel ])
-
-                      [:div c ] (fn c wmodel) 
-                     ]
-                     [:div "Unrecognized control " 
-                        [:span.control-type  (:type c) ] c ])
-          
-       (if-let [b (config "verbose-collect-consents")]
-           [:div.debug  "name: " (:name c)  " WM " wmodel " " [:pre (pprint-str c)]])
-                )
-
-          )
-        ))
+          nm (str ns (:type c))
+          func  (resolve (symbol nm)) 
+          wmodel (helper/lookup-widget-by-name (:name c)) ]
+          (list
+             (if func 
+                 [:div (dbg [:div.debug "Name: " (:name c) " WM " wmodel ]) 
+                    [:div c ] (func c wmodel) ]
+                 [:div "Unrecognized control " [:span.control-type  (:type c) ] c ])
+             (dbg [:div.debug  "NAME " (:name c)  " WM " wmodel " " [:pre (pprint-str c)]])))))
 
 (defn- process-section
-  "Display section in a div"
+  "Display section in a div."
   [s]
   [:div.section (map process-control (:contains s)) ])
 
 (defn- display-page
-  "Displays sections." 
+  "Displays sections. Checks for missing page
+  and optionally displays debugging information.
 
-  [p]
+  If page is available, displays each section of the page
+  in a separate div." 
+
+  [p s]
 
   (if (= nil p) 
     [:h1 "Unable to show page - missing page " 
-         (if-let [pn (:page-name (session-get :collect-consent-status)) ]
+         (if-let [pn (:page-name s) ]
              [:span.standout pn ]) ])
     [:div
-       (dbg [:div.left "Page title " (:title p) ] )
+       (dbg [:div.debug
+              [:div.left "Page title " (:title p) " name " (:name (:page s))   
+                " current form " (:current-form-number s) " num forms " (:num-forms s)  ]
+              [:div "Data " (pprint-str (session-get :model-data))] ])
        [:div (map process-section (:contains p)) ]
      ])
 
@@ -211,15 +217,6 @@
   [f n]
   (first (filter #(= (:name %) n ) (:contains f) )))
 
-(defn- get-consent-start-page
-  "Returns the first page of the consent process."
-  [f]
-  (get-named-page f (:collect-start f)))
-
-(defn- continue-form
-  [ctx]
-)
-
 (defn- view-finished
   [ctx]
   (let [s (session-get :collect-consent-status)]
@@ -231,7 +228,6 @@
               [:div.finished3 "Return the device to the clerk." ] ]
            (helper/standard-submit-button {:value "Continue" :name "next" })) 
        :title "Consents Complete" )))
-
 
 (defn- update-session
   "Merges the map, logs the new map, saves in session, and returns merged map."
@@ -262,20 +258,6 @@
         (session-put! :model-data n)
         (debug "capture-data " n " orig " orig " ctx " ctx )))
 
-(defn- init-form-fields
-  [form which-section n ]
-
-  (debug "KKK init-form-fields A " (get-named-page form (which-section form)))
-  (debug "KKK init-form-fields PAGE " (which-section form))
-  (debug "KKK init-form-fields B " n " " which-section " FORM " form)
-  ;; would be getting the nth form  instead of passing the form
-  (let [p (get-named-page form (which-section form))]
-    {:form form
-     :state :begin 
-     :page p
-     :page-name (:name p)
-     :current-form-number (+ n 1) 
-    }))
 
 (defn- get-next-form
   "Returns the nth form." 
@@ -288,68 +270,95 @@
            dsa/lewis-blackman-form)
       nil))
 
+(defn- has-another-form?
+  "this test will change"
+  [s]
+  (if-let [next-form (get-next-form (+ 1 (:current-form-number s)) (:num-forms s))]
+    true
+    false))
+
+(defn- finish-form
+  []
+  (debug "1 save data in last form and start new form: " (session-get :model-data))
+  (debug "2 save data in last form and start new form: " (pprint-str (session-get :model-data)))
+)
+
 (defn- advance-to-next-form
-  "Advances to the next form.  Returns nil if no such form exists."
+  "Advances to the next form.  Returns nil if no such form exists.
+  If there's a current form, then should close that out before 
+  continuing on to the next one.
+  Sets page to the first page specified by 'which-flow' 
+  Increments the form number."
   []
 
-  (let [s (session-get :collect-consent-status)]
+  (let [s (session-get :collect-consent-status)
+        which-flow (:which-flow s) ]
     (if-let [next-form (get-next-form (+ 1 (:current-form-number s)) (:num-forms s))]
-            (update-session 
-              (init-form-fields (:form next-form) COLLECT_START_PAGE (:current-form-number s)))
+       (let [form (:form next-form)
+             n (:current-form-number s)]
+            (do
+              (finish-form)
+              (debug "KKK advance-to-next-form "  (which-flow form) " n "  n " " 
+                            (get-named-page form (which-flow form)))
+              (debug "KKK advance-to-next-form  FORM " (form-title form) " " form)
+            ;; would be getting the nth form  instead of passing the form
+            (let [p (get-named-page form (which-flow form))
+                 modified-state {:form form
+                                 :state :begin 
+                                 :page p
+                                 :page-name (:name p)
+                                 :current-form-number (+ n 1) 
+                                }]
+                 (update-session modified-state)
+             )))
             nil)))
 
-(defn- initialize-capture-data-process
-  []
+(defn- navigation-buttons
+  "Displays the navigation button for the page, which will be
+  a Continue button and optionally a previous button."
+  [s]
 
-  (helper/init-consents (dsa/sample-form) )
-  (let [form (dsa/sample-form)
-        m {:form (:form form)
-           :state :begin 
-           :page (get-consent-start-page (:form (dsa/sample-form)) )
-           :current-form-number 0
+  [:div 
+   (if (:previous (:page s))
+       (helper/standard-submit-button {:value "Previous" :name "previous" }))
+   (helper/standard-submit-button {:value "Continue" :name "next" }) ]) 
 
-           ;; this is a list of the actual forms
-           ;;  :list-of-forms (session-get :protocols-to-be-filled-out)
-           :num-forms (count (session-get :protocols-to-be-filled-out))
-          }]
-      (session-put! :collect-consent-status m )
-      (session-put! :current-form (:form form) )
-      (session-put! :current-form-data (:form form) )
-      ;;(debug "192 initialize-capture-data-process " (pprint-str m))
-    ))
 
-(defn show-page
+(defn- get-types
+  [col]
+  (set (flatten (list (for [b col] (:type b))))))
+
+(defn- has-signature?
+  [p]
+  ;; a page contains sections, sections contain widgets
+  (let [section-list (:contains p) 
+        ;;_ (debug "has-signature? section-list is " (pprint-str section-list))
+        ww (map (fn [n] (:contains n)) section-list)
+        ;;_ (debug "has-signature? ww is " (pprint-str ww))
+        bb (map :type (flatten ww))
+        ;;_ (debug "has-signature? bb is " (pprint-str bb))
+        has-sig (contains? (set bb) "signature")
+        _ (debug "has-signature? RETURNING " (pprint-str has-sig)) ]
+    has-sig))
+
+(defn view 
    "Collect and review consents proceesses. Displays current page"
   [ctx]
 
   ;; first time here, initialize 
   (if-let [s (session-get :collect-consent-status)]
     (debug "already initialized " (pprint-str (:name (:page s))))
-    (initialize-capture-data-process)) 
+    (helper/init-consents (dsa/sample-form)))
 
   (let [s (session-get :collect-consent-status)]
     (helper/rpms2-page 
-       (helper/collect-consent-form "/collect/consents"
-           [:div 
-            (if-let [b (config "verbose-collect-consents")]
-              [:div.debug "DEBUG Page name " (:name (:page s))  
-                 " current form " (:current-form-number s) " num forms " (:num-forms s) 
-               [:div "Data " (pprint-str (session-get :model-data))]
-               ])
-            (display-page (:page s)) 
-            ]
-           [:div
-           (if (:previous (:page s))
-              (helper/standard-submit-button {:value "Previous" :name "previous" }))
-           (helper/standard-submit-button {:value "Continue" :name "next" })
-           ]) 
-       :title (form-title (:form s) ))))
-
-(defn view 
-   "Collect and review consents processes. Displays current page"
-  [ctx]
-   
-  (show-page ctx))
+        [:div
+           (helper/collect-consent-form "/collect/consents"
+             (display-page (:page s) s) 
+             (navigation-buttons s))
+           (if (has-signature? (:page s) ) (sigpad)) ]
+       :title (form-title (:form s)) 
+      )))
 
 (defn- update-session
   "Merges the map, logs the new map, saves in session, and returns merged map."
@@ -368,7 +377,8 @@
   (helper/myredirect "/collect/consents"))
 
 (defn- get-matching-btns 
-  "Get parameters with name starting with string 's'"
+  "Get parameters with name starting with string 's'.
+  Returns a list, which will be empty if there are no matches."
   [parms s]
   (filter #(.startsWith (str (name %)) s) (keys parms)))
 
@@ -395,24 +405,29 @@
     ;; either go to the next page or show end of collection page
     (cond 
       (has-any? parms "action-btn-")
-      (helper/flash-and-redirect 
-        (str
+      (if-let [b (config "verbose-collect-consents")]
+        (helper/flash-and-redirect 
+          (str
           "[Thank you for pressing that action button "  
              (pprint-str (get-matching-btns parms "action-btn-")) "]")
            "/collect/consents")
+          (helper/myredirect "/collect/consents"))
 
       (has-any? parms "signature-btn-")
-      (helper/flash-and-redirect 
-        (str
-          "[Thank you for pressing that signature button "  
+      (if-let [b (config "verbose-collect-consents")]
+        (helper/flash-and-redirect 
+          (str "[Thank you for pressing that signature button "  
              (pprint-str (get-matching-btns parms "signature-btn-")) "]")
            "/collect/consents")
+          (helper/myredirect "/collect/consents"))
 
       (has-any? parms "meta-data-btn-")
-      (helper/flash-and-redirect 
-          (str "[Thank you for pressing that meta-data button " 
+      (if-let [b (config "verbose-collect-consents")]
+          (helper/flash-and-redirect
+             (str "[Thank you for pressing that meta-data button " 
              (pprint-str (get-matching-btns parms "meta-data-btn-")) "]")
-           "/collect/consents")
+             "/collect/consents")
+          (helper/myredirect "/collect/consents"))
 
       (contains? parms :previous)
       ;; if previous button pressed and prev page available
@@ -440,5 +455,4 @@
                                :page-name (:summary-start form)
                                :review-confirmed :true } )
              (view-finished ctx)))))
-
 

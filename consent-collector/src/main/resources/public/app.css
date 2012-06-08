@@ -309,3 +309,27 @@ div.control > .title { font-size: 1.1em; font-weight: bold; }
 div.control > .text { padding-bottom: 10px; }
 
 div.ccsig { border: thin solid navy; background-color: pink; }
+
+form.debug { background-color: gray; border: thick solid navy; }
+
+.changed { color: red; padding-left: 5px; }
+
+div.ui-block-a.metadata,  div.ui-block-b.metadata { padding-top: 15px; }
+
+/* #signature-id  // this is item  we want to appear after */
+#signature-pad-item { 
+	padding: 10px; 
+	border: thin solid navy; 
+	display: block;
+	background-color: pink; 
+	position: absolute;
+	bottom: 5px;
+	left: 10px;
+}
+
+div.sigpad-control { 
+	padding: 10px; 
+	border: thin solid green; 
+	display: block;
+	background-color: #ccccff; 
+}

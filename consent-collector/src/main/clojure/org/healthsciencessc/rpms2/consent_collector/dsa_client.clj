@@ -38,18 +38,6 @@
                                :zipcode ])
 
 
-(def consenter-field-defs { 
-  :first-name          { :required true :i18n-name "first-name" }
-  :middle-name         {}
-  :last-name           { :required true :i18n-name "last-name"}
-  :title               {}
-  :suffix              {}
-  :consenter-id        { :required true :default-value generate-default-consenter-id }
-  :gender              { :required true :type "gender" :i18n-name "gender" }
-  :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
-  :zipcode             { :required true :type "number" :i18n-name "zipcode" } 
-})
-
 
 ;;consider using values from domain-services
 ;;MERGE WITH values from domain-services (consenter-id is required but first-name and last-name is not)
@@ -58,21 +46,17 @@
   (let [attrs (:attributes (domain/default-data-defs "consenter")) ]
     (filter #(:required (attrs %)) (keys attrs))))
 
-(def my-create-consenter-required-fields [ :first-name
-                                        :last-name 
-                                        :gender
-                                        :dob
-                                        :zipcode ])
-
-
-(defn- generate-create-consenter-required-fields
-  "Add the required fields to our list of required fields, to make sure we get everything.
-  Note: currently (2012-05-16)  consent-domain is not adding first-name last-name but this app is requiring those"
+(defn- get-create-required
+  "Add consent domain required fields to our list of required fields, 
+  to make sure we get everything.  
+  Note: currently (2012-05-16)  consent-domain is not adding first-name last-name 
+  but this app is requiring those"
   []
-  (distinct (flatten (merge my-create-consenter-required-fields (get-consent-domain-required-consenter-fields)))))
+  (distinct (flatten (merge [ :first-name :last-name :gender :dob :zipcode ]
+                            (get-consent-domain-required-consenter-fields)))))
 
-(def create-consenter-required-fields (generate-create-consenter-required-fields))
-(debug "GENERATED create-consenter-required-fields ==> " create-consenter-required-fields)
+(defonce create-consenter-required-fields (get-create-required))
+;(debug "GENERATED create-consenter-required-fields ==> " create-consenter-required-fields)
 
 (defn- no-slashes [s] (second (re-matches #"/*([^/].*[^/])/*" s)))
 
@@ -157,9 +141,6 @@
                  ;;(assoc m :organization org-id)
                 )))
 
-
-
-
 (defn dsa-create-consenter
   "Create a consenter."
   [params]
@@ -178,7 +159,6 @@
   []
   (rand-int 1000000000))
 
-
 (def consenter-field-defs { 
   :first-name          { :required true :i18n-name "first-name" }
   :middle-name         {}
@@ -190,23 +170,6 @@
   :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
   :zipcode             { :required true :type "number" :i18n-name "zipcode" } 
 })
-
-
-;;consider using values from domain-services
-;;MERGE WITH values from domain-services (consenter-id is required but first-name and last-name is not)
-(defn- get-consent-domain-required-consenter-fields
-  []
-  (let [attrs (:attributes (domain/default-data-defs "consenter")) ]
-    (filter #(:required (attrs %)) (keys attrs))))
-
-(def my-create-consenter-required-fields [ :first-name
-                                        :last-name 
-                                        :gender
-                                        :dob
-                                        :zipcode ])
-
-;; where to catch exceptions
-;;  java.net.UnknownHostException
 
 (defn get-protocols-version
   [protocols]
@@ -221,45 +184,6 @@
     {:id "LANG_EN01" :code "EN" :name "English" }
     {:id "LANG_EN02" :code "SP" :name "Spanish" } 
     {:id "LANG_EN03" :code "GP" :name "German" } ))
-
-(defn old-get-published-protocols
-  []
-  (list
-    {:protocol {:id "P0001" 
-                 :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
-                 :status "published"
-                 :languages [ 
-                              {:id "LANG_EN01" :code "EN" :name "English" }
-                              {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
-                 :organization { :id 1 :name "Some Org" :code "mo" } } }
-
-
-    {:protocol {:id "P0002" 
-                 :name "Consent for Medical Treatment" 
-                 :status "published"
-                 :languages [ 
-                              {:id "LANG_EN01" :code "EN" :name "English" }
-                              {:id "LANG_EN02" :code "SP" :name "Spanish" } ]
-                 :organization { :id 1 :name "Some Org" :code "mo" } } }
-
-
-    {:protocol {:id "P0003" 
-                 :name "Medicare" 
-                 :status "published"
-                 :languages [ 
-                              {:id "LANG_EN01" :code "EN" :name "English" }
-                              {:id "LANG_EN02" :code "Greek" :name "Greek" } ]
-                 :organization { :id 1 :name "Some Org" :code "mo" } } }
-
-    {:protocol {:id "P0004" 
-                 :name "Tricare" 
-                 :status "published"
-                 :languages [ 
-                              {:id "LANG_EN01" :code "EN" :name "English" }
-                              {:id "LANG_EN02" :code "GE" :name "German" } ]
-                 :organization { :id 1 :name "Some Org" :code "mo" } } }
-    )
- ) 
 
 (defn get-published-protocols
   []

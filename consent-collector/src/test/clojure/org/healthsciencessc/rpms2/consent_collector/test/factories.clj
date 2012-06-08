@@ -13,7 +13,7 @@
                    :code "srhs"}
    :role-mappings (for [[role-name location-name] role-location-pairs]
                     {:role {:id (id) :name role-name :code "cc"}
-                     :organization {:id (id) :name "hahah" :code "srhs"}
+                     :organization {:id (id) :name "Organization-SRHS" :code "srhs"}
                      :location {:id (id) :name location-name :code "reg"}})})
 
 (defn user-with-locations

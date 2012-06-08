@@ -18,8 +18,9 @@
   (if (or (= lockcode (session-get :lockcode))
           (= nil (session-get :lockcode)))
     (do (session-delete-key! :lockcode )
-        (helper/init-review)
+        (helper/init-review dsa/sample-form)
         (helper/flash-and-redirect  "Unlocked. Review consents unimplemented" "/view/unimplemented"))
+        ;(helper/flash-and-redirect  "Unlocked. Review consents unimplemented" "/review/consents"))
     (helper/flash-and-redirect :flash-invalid-lockcode "/view/unlock")))
 
 (defn view 

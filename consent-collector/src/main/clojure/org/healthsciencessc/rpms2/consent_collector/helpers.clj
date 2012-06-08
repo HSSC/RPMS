@@ -10,10 +10,15 @@
   (:use [clojure.data.json :only (read-json json-str)])
   (:use [clojure.pprint])
 
+  (:use [org.healthsciencessc.rpms2.consent-domain.tenancy :only [label-for-location label-for-protocol]])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
+  (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing
                                                                        i18n-label-for
                                                                        i18n-placeholder-for)]))
+
+(def ^:const COLLECT_START_PAGE :collect-start)
+(def ^:const REVIEW_START_PAGE :summary-start)
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
@@ -63,42 +68,28 @@
         (filter (comp #{"Consent Collector"} :name :role))
              (map :location)))
        
-(defn current-org-id
-  "Extracts the org-id from the currently logged in user.
-  Maybe we should use the org associated with the user record
-  instead of the location"
-  []
-  (get-in (session-get :org-location) [:organization :id]))
-  ;;(get-in (session-get :user) [:organization :id]))
 
-(defn custom-site-label
-  "Returns the location label, which is taken from the user's location
-  if available; otherwise this is taken from the organization.
-  If neither the organization or location has a value, then uses a default val"
-  [label-nm defaultval]
-  (let [u (session-get :user)
-        l (session-get :org-location)
-        loc-specific (get-in l [:location label-nm ])
-        org-specific (get-in u [:organization label-nm ])
-        retval (if (empty? loc-specific) 
-                   (if (empty? org-specific) 
-                       defaultval 
-                       org-specific)
-                   loc-specific) ]
-      (debug "custom-site-label |", label-nm "|" defaultval, "|u|" u, "|l|" l, " loc spec ", loc-specific " org-specific ", org-specific " RETURNING " retval)
-    retval))
+(defn- pg-dbg 
+  [s]
+  (if-let [b (config "verbose-page")]
+    (debug s)))
+
+(defn current-org-id
+  "The org-id from the currently logged in user."
+  []
+  (get-in (session-get :user) [:organization :id]))
 
 (defn org-location-label
   "Returns the location label, which is taken from the user's location
   if available; otherwise this is taken from the organization."
   []
-  (custom-site-label :location-label "Location"))
+  (label-for-location (session-get :org-location) (:organization (session-get :user))))
 
 (defn org-protocol-label
   "Returns the protocol label, which is taken from the user's location
   if available; otherwise this is taken from the organization."
   []
-  (custom-site-label :protocol-label "Protocol" ))
+  (label-for-protocol (session-get :org-location) (:organization (session-get :user))))
 
 (defn standard-submit-button 
   "Standard submit button.  :name and :value should be define plus optionally other."
@@ -229,6 +220,18 @@
       (header-collect-consents title)
       (header-standard title cancel-btn)))
 
+(defn- after-content
+  []
+  (if (session-get :collect-consent-status) 
+    (list 
+     (hpage/include-js 
+       (absolute-path "jquery.signaturepad.js")
+       (absolute-path "json2.js"))
+       ;;Needed to enable the Signature Pad
+       [:script "$(document).ready( function() { $('.sigPad').signaturePad( {drawOnly:true}); });" ]
+      )))  
+
+
 (defn- footer
   []
   [:div.footer {:data-role "footer" :data-theme "c" } 
@@ -245,7 +248,7 @@
 
 (defn rpms2-page
   "Emits a standard RPMS2 page."
-  [content & {:keys [title cancel-btn]}]
+  [content & {:keys [title cancel-btn end-of-page-stuff]}]
 
   (let [resp (hpage/html5 {:class ipad-html5-class }
     [:head
@@ -254,8 +257,7 @@
     (hpage/include-css 
      (absolute-path "app.css")
      (absolute-path "jquery.mobile-1.1.0.min.css" )
-     (absolute-path "jquery.signaturepad.css" )
-     )
+     (absolute-path "jquery.signaturepad.css" ))
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
     (helem/javascript-tag (format "var RPMS2_CONTEXT = %s;" (pr-str *context*)))
@@ -264,16 +266,18 @@
      (absolute-path "jquery.mobile-1.1.0.min.js")
       ;; see http://thomasjbradley.ca/lab/signature-pad/
      (absolute-path "flashcanvas.js")
-     (absolute-path "jquery.signaturepad.js")
-     (absolute-path "json2.js")
      (absolute-path "app.js")
       ) ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
       (header title cancel-btn)
-      [:div#content {:data-role "content" :data-theme "d" } content]
-      (footer) ]])] 
-      (debug "Page: " title " is\n" (pprint-str resp) "\n")
+      [:div#content {:data-role "content" :data-theme "d" } 
+      content
+      (after-content)
+      end-of-page-stuff ]
+      (footer) 
+     ]])] 
+      (pg-dbg (str "Page: " title " is\n" (pprint-str resp) "\n"))
       resp))
 
 (defn rpms2-page-two-column
@@ -294,7 +298,7 @@
   ([group-name btn-name] 
      (radio-btn group-name btn-name btn-name))
   ([group-name btn-name btn-id]
-     (radio-btn group-name btn-name btn-name {}))
+     (radio-btn group-name btn-name btn-id {}))
   ([group-name btn-name btn-id m]
 
   (list [:input (merge {:type "radio" 
@@ -414,6 +418,13 @@
   (all-widget-props-in-form form :type ))
 
 
+(defn form-contains-signature
+  [form]
+
+  (debug "form-contains-signature " form)
+  (debug "form-contains-signature widget types in form " (all-widget-types-in-form form))
+  (some #(= % "signature") (all-widget-types-in-form form))) 
+
 (defn lookup-widget-by-name
   "Lookup the widget by name."
   ([n]
@@ -443,38 +454,82 @@
   (let [n (if (seq? orig-n) (first orig-n) orig-n)]
      (get-in n [:protocol :name])))
 
-(defn init-consents
+
+
+(defn get-named-page
+  "Find page named 'n' in form 'f'"
+  [f n]
+  (first (filter #(= (:name %) n ) (:contains f) )))
+
+(defn init-form-flow 
   "Initializes the consent collection data structures."
-  [f]
-  (debug "initializing consent data : form is " f)
+  [which-flow f]
+  (debug "init-form-flow which is " which-flow " form is " f)
   (session-put! :current-form f)
   (let [formlist (session-get :protocols-to-be-filled-out)
-        wnames (all-widget-names-in-form f) ]
+        wnames (all-widget-names-in-form f) 
+        form f
+        fform (:form form)
+        m {:form (:form form)
+           :state :begin 
+           :page (get-named-page fform (which-flow fform))
+           :current-form-number 0
+           :which-flow which-flow
+           ;; this is a list of the actual forms
+           ;;  :list-of-forms (session-get :protocols-to-be-filled-out)
+           :num-forms (count (session-get :protocols-to-be-filled-out))
+          }]
+    (do
+      (debug "init-form-flow m " (pprint-str m))
+      (debug "init-form-flow page " (pprint-str (:page m)))
+      (if-not (:page m) (do
+                          (error "MISSING PAGE: " which-flow )
+                          (println  "MISSING PAGE: " which-flow )
+                          ))
+      (session-put! :collect-consent-status m )
+      (session-put! :current-form (:form form) )
+      (session-put! :current-form-data (:form form) )
     (try
       (do
-        (debug "WNAMES IS " wnames)
+        (debug "Widgets in current form WNAMES IS " wnames)
         (session-put! :current-form-data (all-widgets-in-form f))
         (session-put! :current-form-names wnames )
         (debug "form list count is " (count formlist))
-        (debug "LIST MAP = " (pprint-str (list (map print-form formlist)) ))
-        (list (map print-form formlist)) 
+        (debug "Forms to be filled out " (pprint-str (list (map print-form formlist)) ))
         formlist)
     (catch Exception e (do 
                          (debug "init-consents EXCEPTION Ex " e)
                          (println "init-consents EXCEPTION Ex " e)
-                         (.printStackTrace e))))))
+                         (.printStackTrace e)))))))
 
 (defn init-review
-  []
+  "Initializes the consent collection data structures
+  for review."
+  [f]
   (debug "init-review")
-)
+  (init-form-flow REVIEW_START_PAGE f))
+
+(defn init-consents
+  "Initializes the consent collection data structures
+  for collection."
+  [f]
+  (debug "init-consents")
+  (init-form-flow COLLECT_START_PAGE f ))
+
+(defn dbg-session
+  [msg]
+  (debug msg " user: " (pprint-str (session-get :user)))
+  (debug msg " location: " (pprint-str (session-get :location)))
+  (debug msg " org-location: " (pprint-str (session-get :org-location))))
 
 (defn clear-location
+  "Removes location information from session."
   []
   (session-delete-key! :location)
-)
+  (session-delete-key! :org-location))
 
 (defn clear-patient
+  "Removes patient information from session."
   []
 
   (debug "clear patient: ")
