@@ -472,6 +472,7 @@
         fform (:form form)
         m {:form (:form form)
            :state :begin 
+           ;;:page (get-named-page fform "page8") ;; to test signature
            :page (get-named-page fform (which-flow fform))
            :current-form-number 0
            :which-flow which-flow

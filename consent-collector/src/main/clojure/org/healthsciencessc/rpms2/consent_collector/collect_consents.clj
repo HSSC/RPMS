@@ -24,7 +24,6 @@
   []
 
   [:div.sigpad-control#signature-pad-item
-   [:h1 "Endorsement" ]
   [:form.sigPad {:method "POST" :data-ajax "false" }
       #_[:label {:for "name"} "Print your name" ]
       #_[:input {:type "text" :name "name" :id "name" :class "name" } "Print your name" ]
@@ -46,17 +45,27 @@
   "Emits data for the signature widget. A map with the widgets state is passed
    to use in rendering the widget."
   [c m]
-  [:div.control.signature#signature-id "Your signature is requested: " 
-    [:div "Guarantor " (:name c)]
-    (dbg (str "Endorsement " (:endorsement c)))
-    [:div 
-       [:input { :type "submit" 
-                    :data-theme "a"
-                    :data-role "button"
-                    :data-inline "true"
-                    :value (:clear-label c)
-                    :name (str "signature-btn-" (:name c))
-                   } ] ]])
+  [:div.control.signature 
+     "Your signature is requested: " "Guarantor " (:name c)
+
+  [:div.sigpad-control
+      [:div.sigPad  ; sigPad must be on div which directly contains sigNav
+      [:ul.sigNav 
+         #_[:li.clearButton [:a {:href "#clear"} "Clear" ] ] ; use an onclick event here
+         [:li [:input {:type "submit" 
+                       :data-theme "a"
+                       :data-role "button"
+                       :data-inline "true"
+                       :value (:clear-label c)
+                       :name (str "signature-btn-" (:name c))
+                      } ] ]
+      ] 
+      [:div {:class "sig sigWrapper" }
+        [:div.typed ] 
+          [:canvas {:class "pad" :width "198" :height "55" }  ]
+          [:input {:type "hidden" :name "output" :class "output" }  ]
+      ]]]
+   ])
 
 (defn- true-or-not-specified? 
   [v]
@@ -342,26 +351,24 @@
     has-sig))
 
 (defn view 
-   "Collect and review consents proceesses. Displays current page"
+  "Collect and review consents processes. Displays current page."
   [ctx]
 
   ;; first time here, initialize 
   (if-let [s (session-get :collect-consent-status)]
-    (debug "already initialized " (pprint-str (:name (:page s))))
+    (debug "Already initialized " (pprint-str (:name (:page s))))
     (helper/init-consents (dsa/sample-form)))
 
   (let [s (session-get :collect-consent-status)]
     (helper/rpms2-page 
-        [:div
-           (helper/collect-consent-form "/collect/consents"
-             (display-page (:page s) s) 
-             (navigation-buttons s))
-           (if (has-signature? (:page s) ) (sigpad)) ]
-       :title (form-title (:form s)) 
-      )))
+       (helper/collect-consent-form "/collect/consents"
+           (display-page (:page s) s) 
+           (navigation-buttons s)) 
+       :title (form-title (:form s)) )))
 
 (defn- update-session
-  "Merges the map, logs the new map, saves in session, and returns merged map."
+  "Merges m into the session's :collect-consent-status map, 
+  Logs the new map, saves in session, and returns merged map."
   [m]
   (let [s (session-get :collect-consent-status)
         new-map (merge s m)]

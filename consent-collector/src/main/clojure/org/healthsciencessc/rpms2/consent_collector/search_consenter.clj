@@ -12,6 +12,12 @@
 (def search-results-verify-fields [:name :consenter-id :zipcode :dob ])
 
 (defn- display-search-items-column 
+  "Displays search results entry.  For each entry, the 'onclick' 
+  attribute is set, containing a representation of that entry.
+  The onclick method is a ClojureScript method which highlights
+  the entry and sets some variables to indicate the selection.
+  "
+
   [results]
 
   [:div#search-consenter-list
