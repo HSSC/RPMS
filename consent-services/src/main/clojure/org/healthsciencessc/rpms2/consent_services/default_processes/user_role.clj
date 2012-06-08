@@ -59,7 +59,7 @@
                     loc-id (get-in params [:query-params :location])]
                 (if loc-id
                   (let [role-mappings (data/find-children "user" user-id "role-mapping")
-                        role-mapping (filter #(and (= role-id (get-in % [:role :id])) (= loc-id (get-in % [:location :id]))) role-mappings)]
+                        role-mapping (first (filter #(and (= role-id (get-in % [:role :id])) (= loc-id (get-in % [:location :id]))) role-mappings))]
                     (data/delete "role-mapping" (:id role-mapping)))
                   (let [role-mappings (filter #(= role-id (get-in % [:role-id])) (data/find-children "user" user-id "role-mapping"))]
                     (doseq [{id :id} role-mappings]
