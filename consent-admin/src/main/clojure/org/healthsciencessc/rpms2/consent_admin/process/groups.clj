@@ -82,7 +82,7 @@
   (let [group-id (-> ctx :query-params :group)
         {in :in :as all} (service/get-group-members group-id)]
     (layout/render ctx "Members"
-                   (userlist in)
+                   (userlist (sort-by #(vec (map % [:last-name :first-name])) in))
                    (actions/actions
                      (actions/details-button {:label "Add Member..."
                                               :url "/view/group/adduser"
