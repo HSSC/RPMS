@@ -284,9 +284,8 @@
   [id type]
   {:pre [(or (= type :user)
              (= type :group))]}
-  (-> (fetch-assignee type id)
-    (filter-direct-roles type)
-    :role-mappings))
+  (let [roles (:role-mappings (fetch-assignee type id))]
+    (group-by #(some #{:user :group} (keys %)) roles)))
 
 (defn- add-rolemapping-helper [assignee-id
                  assignee-type

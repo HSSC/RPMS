@@ -16,6 +16,7 @@
             [hiccup.form :as form]
             [ring.util.response :as rutil])
   (:use [clojure.pprint]
+        [org.healthsciencessc.rpms2.consent-domain.tenancy :only (label-for-location)]
         [clojure.java.io :as io])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
@@ -27,7 +28,7 @@
       (layout/render ctx "Roles"
         (container/scrollbox
           (selectlist/selectlist {:action :.detail-action}
-            (for [x roles]
+            (for [x (sort-by :name roles)]
               {:label (:name x) :data x})))
         (actions/actions 
              (actions/details-button {:url "/view/role/edit" :params {:role :selected#id}})
@@ -108,33 +109,45 @@
       first-failure
       :success)))
 
+(defn location-helper []
+  (label-for-location nil (-> (sess/session-get :user) :organization)))
+
 (defn post-api-role-assign
   [ctx]
   (let [{locations (keyword "location[]")       ;; MULTISELECTS result in this crazy post param syntax "name[]"
          roles (keyword "role[]")} (:body-params ctx)  ;; if only one thing is selected, you get a string, >1 it's a vector.  annoying
-        {assignee-type :assignee-type
-         assignee-id :assignee-id}  (:query-params ctx)
+        roles (if (string? roles) [roles] roles)
         locations (if (string? locations) [locations] locations)
-        roles (if (string? roles) [roles] roles)]
-    (if (= (count roles) 0)
+        {assignee-type :assignee-type
+         assignee-id :assignee-id}  (:query-params ctx)]
+    (cond
+      (= 0 (count locations))
+      (ajax/error {:message (format "Please select at least one %s." (location-helper))})
+      (= (count roles) 0)
       (ajax/error {:message "Please select at least one role."})
-      (do 
-        (let [resp (add-roles-helper roles locations assignee-type assignee-id)]
+      (and (< 1 (count locations))
+           (some #{":all"} locations))
+      (ajax/error {:message "Conflicting location option. Can't select all with other selections."})
+      :else
+      (let [locations (if (= [":all"] locations) nil locations)
+            resp (add-roles-helper roles locations assignee-type assignee-id)]
           (if (not= :success resp)
             (ajax/error {:message "One or more roles not successfully assigned."})
-            (ajax/success "")))))))
+            (ajax/success ""))))))
 
 (defn rolechooser
   [{:keys [roles locations]}]
   (let [roles (for [x (sort-by :name roles)]
                 {:value (:id x)
                  :label (:name x)})
-        locations (for [x (sort-by :name locations)]
-                    {:value (:id x)
-                     :label (:name x)})]
-    (list
-      (formui/multiselect {:label "Roles" :name "role" :items roles})
-      (formui/multiselect {:label "Locations" :name "location" :items locations}))))
+        locations (cons
+                    {:value ":all" :label (format "All %ss" (location-helper))}
+                    (for [x (sort-by :name locations)]
+                      {:value (:id x)
+                       :label (:name x)}))]
+                    (list
+                      (formui/multiselect {:label "Roles" :name "role" :items roles})
+                      (formui/multiselect {:label (str (location-helper) "s") :name "location" :items locations}))))
 
 (defn get-view-roles-assign
   [ctx]
@@ -166,10 +179,18 @@
       (ajax/error (meta resp))
       (ajax/success resp))))
 
+(defn layout-group-effective-permissions 
+  [grouproles]
+  [:div.group-roles
+   [:h3 "Group inherited permissions"]
+   (for [{:keys [group role]} grouproles]
+     [:div (format "%s in %s" (:name role) (:name group))])])
+
 (defn get-view-roles-show
   [ctx]
   (if-let [{{:keys [assignee-id assignee-type]} :query-params} ctx]
-    (let [rolemappings (service/get-assigned-roles assignee-id (keyword assignee-type))
+    (let [assignee-type (keyword assignee-type)
+          rolemappings (service/get-assigned-roles assignee-id assignee-type)
           delete-params {:params {:assignee-type assignee-type
                                   :assignee-id assignee-id
                                   :location :selected#location#id
@@ -178,19 +199,21 @@
                          :url "/api/rolemapping"}
           add-params {:url "/view/roles/assign"
                       :params {:assignee-type assignee-type
-                               :assignee-id assignee-id}}
-          locations (service/get-locations)]
+                               :assignee-id assignee-id}}]
       (if (service/service-error? rolemappings)
         (ajax/error (meta rolemappings))
         (layout/render ctx "Assigned Roles"
                        (container/scrollbox
-                         (selectlist/selectlist {}
-                                                (for [x (->> rolemappings
-                                                          (map #(assoc % :friendly-name 
-                                                                       (->friendly-name %)))
-                                                          (sort-by :friendly-name))]
-                                                  {:label (:friendly-name x)
-                                                   :data x})))
+                         (if (= :user assignee-type)
+                           (layout-group-effective-permissions (:group rolemappings)))
+                         [:div.effective-perms
+                           (selectlist/selectlist {}
+                                                  (for [x (->> (assignee-type rolemappings)
+                                                            (map #(assoc % :friendly-name 
+                                                                         (->friendly-name %)))
+                                                            (sort-by :friendly-name))]
+                                                    {:label (:friendly-name x)
+                                                     :data x}))])
                        (actions/actions 
                          (actions/new-button add-params)
                          (actions/delete-button delete-params)

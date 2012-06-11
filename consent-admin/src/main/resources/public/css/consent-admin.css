@@ -299,3 +299,6 @@ select.single-select{
 	
 }
 
+.effective-perms {
+	position: relative;
+}
