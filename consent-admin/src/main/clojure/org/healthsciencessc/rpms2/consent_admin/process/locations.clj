@@ -36,9 +36,9 @@
             (for [x locations]
               {:label (:name x) :data x})))
         (actions/actions
-             (actions/details-button {:url "/view/location/edit" :params {:location :selected#id}})
-             (actions/new-button {:url "/view/location/add"})
-             (actions/pop-button))))))
+             (actions/details-action {:url "/view/location/edit" :params {:location :selected#id}})
+             (actions/new-action {:url "/view/location/add"})
+             (actions/back-action))))))
 
 (def ^:const location-fields
   (let [text-fields [:name "Name"
@@ -65,8 +65,8 @@
   (layout/render ctx (str "Create " (render-label))
                  (container/scrollbox (formui/dataform (render-location-fields)))
                  (actions/actions
-                   (actions/save-button {:method :post :url "/api/location/add"})
-                   (actions/pop-button))))
+                   (actions/save-action {:method :post :url "/api/location/add"})
+                   (actions/back-action))))
 
 (defn get-view-location-edit
   [ctx]
@@ -77,9 +77,9 @@
         (layout/render ctx (str "Edit " (render-label))
                    (container/scrollbox (formui/dataform (render-location-fields location)))
                    (actions/actions
-                     (actions/delete-button {:url "/api/location" :params {:location location-id}})
-                     (actions/save-button {:method :post :url "/api/location/edit" :params {:location location-id}})
-                     (actions/pop-button)))))))
+                     (actions/delete-action {:url "/api/location" :params {:location location-id}})
+                     (actions/save-action {:method :post :url "/api/location/edit" :params {:location location-id}})
+                     (actions/back-action)))))))
 
 
 (defn delete-api-location

@@ -29,3 +29,8 @@
   "Obtains the organization from the current user.  If out of session returns nil."
   [& ignore]
   (:organization (current-user)))
+
+(defn current-org-id
+  "Obtains the organization from the current user.  If out of session returns nil."
+  [& ignore]
+  (get-in (current-user) [:organization :id]))

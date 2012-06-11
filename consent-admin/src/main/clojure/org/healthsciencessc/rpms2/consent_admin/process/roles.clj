@@ -31,9 +31,9 @@
             (for [x (sort-by :name roles)]
               {:label (:name x) :data x})))
         (actions/actions 
-             (actions/details-button {:url "/view/role/edit" :params {:role :selected#id}})
-             (actions/new-button {:url "/view/role/add"})
-             (actions/pop-button))))))
+             (actions/details-action {:url "/view/role/edit" :params {:role :selected#id}})
+             (actions/new-action {:url "/view/role/add"})
+             (actions/back-action))))))
 
 (def ^:const role-fields ;; probably should be i18nized
   (let [text-fields [:name "Role name"
@@ -54,8 +54,8 @@
   (layout/render ctx "Create Role"
                  (container/scrollbox (formui/dataform (render-role-fields)))
                  (actions/actions 
-                   (actions/save-button {:method :post :url "/api/role/add"})
-                   (actions/pop-button))))
+                   (actions/save-action {:method :post :url "/api/role/add"})
+                   (actions/back-action))))
 
 (defn get-view-role-edit
   [ctx]
@@ -66,9 +66,9 @@
         (layout/render ctx "Edit Role"
                    (container/scrollbox (formui/dataform (render-role-fields role)))
                    (actions/actions 
-                     (actions/save-button {:method :post :url "/api/role/edit" :params {:role role-id}})
-                     (actions/delete-button {:url "/api/role" :params {:role role-id}})
-                     (actions/pop-button)))))))
+                     (actions/save-action {:method :post :url "/api/role/edit" :params {:role role-id}})
+                     (actions/delete-action {:url "/api/role" :params {:role role-id}})
+                     (actions/back-action)))))))
 
 (defn delete-api-role
   [ctx]
@@ -161,8 +161,8 @@
                      (container/scrollbox (formui/dataform 
                                             (rolechooser {:roles (service/get-roles) :locations (service/get-locations)})))
                      (actions/actions 
-                       (actions/save-button post-params)
-                       (actions/pop-button))))))
+                       (actions/save-action post-params)
+                       (actions/back-action))))))
 
 (defn ->friendly-name
   [rm]
@@ -182,9 +182,12 @@
 (defn layout-group-effective-permissions 
   [grouproles]
   [:div.group-roles
-   [:h3 "Group inherited permissions"]
-   (for [{:keys [group role]} grouproles]
-     [:div (format "%s in %s" (:name role) (:name group))])])
+   [:h3 "Group Inherited Roles"]
+   (for [{:keys [group role location]} grouproles]
+     [:div 
+      (if location
+        (format "%s in %s (%s)" (:name role) (:name location) (:name group))
+        (format "%s (%s)" (:name role) (:name group)))])])
 
 (defn get-view-roles-show
   [ctx]
@@ -205,19 +208,20 @@
         (layout/render ctx "Assigned Roles"
                        (container/scrollbox
                          (if (= :user assignee-type)
-                           (layout-group-effective-permissions (:group rolemappings)))
-                         [:div.effective-perms
-                           (selectlist/selectlist {}
-                                                  (for [x (->> (assignee-type rolemappings)
-                                                            (map #(assoc % :friendly-name 
-                                                                         (->friendly-name %)))
-                                                            (sort-by :friendly-name))]
-                                                    {:label (:friendly-name x)
-                                                     :data x}))])
+                           (list
+                             (layout-group-effective-permissions (:group rolemappings))
+                             [:h3 "User Roles"]))
+                         (selectlist/selectlist {}
+                                                (for [x (->> (assignee-type rolemappings)
+                                                          (map #(assoc % :friendly-name 
+                                                                       (->friendly-name %)))
+                                                          (sort-by :friendly-name))]
+                                                  {:label (:friendly-name x)
+                                                   :data x})))
                        (actions/actions 
-                         (actions/new-button add-params)
-                         (actions/delete-button delete-params)
-                         (actions/pop-button)))))))
+                         (actions/new-action add-params)
+                         (actions/delete-action delete-params)
+                         (actions/back-action)))))))
 
 (def process-defns
   [{:name "get-view-roles"

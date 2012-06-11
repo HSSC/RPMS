@@ -1,9 +1,10 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.protocol
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn current-user)])
+  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-domain.roles :as role]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
@@ -15,7 +16,7 @@
 
 (def protocol-processes
   [{:name "get-protocols"
-    :runnable-fn (runnable/gen-designer-location-check current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check utils/current-user [:query-params :location])
     :run-fn (fn [params]
               (let [loc (get-in params [:query-params :location])]
                 (sort-by :name (data/find-children types/location loc types/protocol))))

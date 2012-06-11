@@ -30,8 +30,8 @@
             (for [x (sort-by :name groups)]
               {:label (:name x) :data x})))
         (actions/actions 
-             (actions/details-button {:url "/view/group/edit" :params {:group :selected#id}})
-             (actions/new-button {:url "/view/group/add"})
+             (actions/details-action {:url "/view/group/edit" :params {:group :selected#id}})
+             (actions/new-action {:url "/view/group/add"})
              (actions/back-action))))))
 
 (defn userlist [users]
@@ -60,7 +60,7 @@
   (layout/render ctx "Create Group"
                  (container/scrollbox (formui/dataform (render-group-fields)))
                  (actions/actions 
-                   (actions/save-button {:method :post :url "/api/group/add"})
+                   (actions/save-action {:method :post :url "/api/group/add"})
                    (actions/back-action))))
 
 (defn get-view-group-edit
@@ -72,10 +72,10 @@
         (layout/render ctx "Edit Group"
                    (container/scrollbox (formui/dataform (render-group-fields group)))
                    (actions/actions 
-                     (actions/save-button {:method :post :url "/api/group/edit" :params {:group group-id}})
-                     (actions/details-button {:url "/view/group/members" :params {:group group-id} :label "Members"})
-                     (actions/details-button {:url "/view/roles/show" :params {:assignee-type :group :assignee-id group-id} :label "Roles"})
-                     (actions/delete-button {:url "/api/group" :params {:group group-id}})
+                     (actions/save-action {:method :post :url "/api/group/edit" :params {:group group-id}})
+                     (actions/details-action {:url "/view/group/members" :params {:group group-id} :label "Members"})
+                     (actions/details-action {:url "/view/roles/show" :params {:assignee-type :group :assignee-id group-id} :label "Roles"})
+                     (actions/delete-action {:url "/api/group" :params {:group group-id}})
                      (actions/back-action)))))))
 
 (defn get-view-group-members [ctx]
@@ -84,10 +84,10 @@
     (layout/render ctx "Members"
                    (userlist (sort-by #(vec (map % [:last-name :first-name])) in))
                    (actions/actions
-                     (actions/details-button {:label "Add Member..."
+                     (actions/details-action {:label "Add Member..."
                                               :url "/view/group/adduser"
                                               :params {:group group-id}})
-                     (actions/delete-button {:label "Remove Member"
+                     (actions/delete-action {:label "Remove Member"
                                              :url "/api/group/member"
                                              :params {:user :selected#id
                                                       :group group-id}})
@@ -99,7 +99,7 @@
     (layout/render ctx "Add Member"
                    (userlist (sort-by #(vec (map % [:last-name :first-name])) out))
                    (actions/actions
-                     (actions/save-button {:label "Add Member"
+                     (actions/save-action {:label "Add Member"
                                            :method :put
                                            :url "/api/group/member"
                                            :params {:group group-id

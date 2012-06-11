@@ -31,9 +31,9 @@
                     (sort-by :name))]
             {:label (:name x) :data x})))
         (actions/actions 
-             (actions/details-button {:url "/view/organization/edit" :params {:organization :selected#id}})
-             (actions/new-button {:label "New" :url "/view/organization/add"})
-             (actions/pop-button))))))
+             (actions/details-action {:url "/view/organization/edit" :params {:organization :selected#id}})
+             (actions/new-action {:label "New" :url "/view/organization/add"})
+             (actions/back-action))))))
 
 (defn create-fields [{:keys [name code protocol-label location-label consenter-label]}]
   (list
@@ -48,8 +48,8 @@
   (layout/render ctx "Create Organization"
                  (container/scrollbox (formui/dataform (create-fields {})))
                  (actions/actions 
-                   (actions/save-button {:method :post :url "/api/organization/add"})
-                   (actions/pop-button))))
+                   (actions/save-action {:method :post :url "/api/organization/add"})
+                   (actions/back-action))))
 
 (defn delete-api-organization
   [ctx]
@@ -68,10 +68,10 @@
         (layout/render ctx "Edit Organization"
                    (container/scrollbox (formui/dataform (create-fields org)))
                    (actions/actions 
-                     (actions/details-button {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
-                     (actions/delete-button {:label "Delete" :url "/api/organization" :params {:organization org-id} :confirm "Are you sure you want to delete this organization?"})
-                     (actions/save-button {:method :post :url "/api/organization/edit" :params {:organization org-id}})
-                     (actions/pop-button)))))))
+                     (actions/details-action {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
+                     (actions/delete-action {:label "Delete" :url "/api/organization" :params {:organization org-id} :confirm "Are you sure you want to delete this organization?"})
+                     (actions/save-action {:method :post :url "/api/organization/edit" :params {:organization org-id}})
+                     (actions/back-action)))))))
 
 (defn post-api-organization-add
   [ctx]

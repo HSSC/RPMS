@@ -108,7 +108,9 @@
     {:group "s" :use? designer? :generator protocols-group-generator
       :items [{:url "/view/protocol/location" :label "Locations" :generator protocol-location-item-generator}]}
     {:group "Library" :use? designer?
-      :items [{:url "/view/policy/definitions" :label "Policy Definitions"}
+      :items [{:url "/view/endorsement/types" :label "Endorsement Types"}
+              {:url "/view/endorsements" :label "Endorsements"}
+              {:url "/view/policy/definitions" :label "Policy Definitions"}
               {:url "/view/policies" :label "Policies"}
               {:url "/view/metaitems" :label "Meta Items"}
               {:url "/view/widgets" :label "Widgets"}]}

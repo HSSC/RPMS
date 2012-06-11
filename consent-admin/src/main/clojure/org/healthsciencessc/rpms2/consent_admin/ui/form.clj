@@ -1,6 +1,14 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.form
   (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
 
+(def readonly {:disabled true})
+
+(def required-props {:data-required true})
+
+(defn required
+  [options props]
+  (if (:required options) (merge props required) props))
+
 (defn dataform
   [& items]
   [:div.dataform [:form.dataform items]])
@@ -15,10 +23,13 @@
 
 (defn input-text
   "Generates a text input."
-  [{value :value name :name label :label classes :classes}]
-  [(tag-class :div.form-control-wrapper.form-text classes)
-    [(tag-class :label.text classes) {:for name} label]
-    [(tag-class :input.text classes) {:type :text :value value :name name}]])
+  [{value :value name :name label :label classes :classes readonly :readonly editable :editable}]
+  (let [props {:type :text :value value :name name}
+        disabled (or (false? editable) readonly)
+        props (if disabled (merge props readonly) props)]
+    [(tag-class :div.form-control-wrapper.form-text classes)
+     [(tag-class :label.text classes) {:for name} label]
+     [(tag-class :input.text classes) props]]))
 
 (defn input-checkbox
   "Generates a checkbox input."
@@ -44,16 +55,25 @@
   [{value :value name :name}]
   [:hidden {:value value :name name}])
 
-(defn combobox
-  "Generate a combobox"
+(def selected {:selected true})
+
+(defn singleselect
+  "Generate a select control that allows only a single value selected"
   [{name :name
     items :items 
+    value :value
+    label :label
+    blank :blank
     classes :classes}]
   [(tag-class :div.form-control-wrapper.form-select classes)
-    [(tag-class :select.single-select classes) {:name name}
-      (for [{:keys [label data selected]} items]
-        [:option {:value data
-                  :selected selected} label])]])
+    [(tag-class :label.single-select classes) {:for name} label]
+    [(tag-class :select.single-select classes) {:name name :value value}
+      ;;(if (and blank (not value)) [:option selected])
+      (for [{:keys [label data item]} items]
+        (let [props {:value data}
+              props (if (= data value) (merge selected props) props)
+              props (if item (merge {:data-item (to-attr-value item)} props) props)]
+        [:option props label]))]])
 
 (defn multiselect
   [{:keys [label name items]}]
@@ -78,6 +98,14 @@
   [field]
   (input-checkbox field))
 
+(defmethod edit-field :singleselect
+  [field]
+  (singleselect field))
+
+(defmethod edit-field :multiselect
+  [field]
+  (multiselect field))
+
 (defmethod edit-field :default
   [field]
   (input-text field))
@@ -87,16 +115,20 @@
   a list of maps with name, label, and optional type"
   [record {field-kw :name
            field-type :type
+           parser :parser
            :as field}]
   (let [field-val (get record field-kw)
+        field-val (if parser (parser field-val) field-val)
         field-type (or field-type :text)]
     (edit-field (assoc field
                        :value field-val
                        :type field-type))))
 
 (defn render-fields
-  ([fields] (render-fields fields {}))
-  ([fields record]
-    (map record->editable-field 
-         (repeat record)
-         fields)))
+  ([options fields] (render-fields options fields {}))
+  ([options fields record]
+    (let [field-mods (or (:fields options) {})
+          options (dissoc options :fields)]
+      (map #(let [field-name (:name %)
+                  field-options (field-mods field-name)]
+              (record->editable-field record (merge options % field-options))) fields))))

@@ -12,6 +12,10 @@
   (can-collect-location-id user (:id location)))
 
 ;; Helper functions to check if a protocol/version/location is accessible for a user.
+(defn can-design-org-id
+  [user org-id]
+  (roles/protocol-designer? user :organization {:id org-id}))
+
 (defn can-design-location-id
   [user location-id]
   (roles/protocol-designer? user :location {:id location-id}))
@@ -50,6 +54,23 @@
     (let [user (userfn ctx)
           location-id (get-in ctx path-to-location)]
       (can-design-location-id user location-id))))
+
+(defn gen-designer-org-check
+  "Creates a runnable? function that checks if a user is a protocol designer within an organization."
+  [userfn org-id-lookup]
+  (fn [ctx]
+    (let [user (userfn ctx)
+          org-id (org-id-lookup ctx)]
+      (can-design-org-id user org-id))))
+
+(defn gen-designer-record-check
+  "Creates a runnable? function that checks if a user is a protocol designer within an organization."
+  [userfn record-lookup]
+  (fn [ctx]
+    (let [user (userfn ctx)
+          record (record-lookup ctx)
+          org-id (get-in record [:organization :id])]
+      (can-design-org-id user org-id))))
 
 (defn gen-collector-location-check
   "Creates a runnable? function that checks if a user is a consent collector for a specific location."

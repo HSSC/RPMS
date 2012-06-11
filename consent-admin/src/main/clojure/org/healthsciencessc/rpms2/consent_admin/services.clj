@@ -438,17 +438,17 @@
 
 (defn delete-protocol-version
   "Deletes a new protocol version from a protocol."
-  [protocol-id]
+  [protocol-version-id]
   (DELETE "/protocol/version"
-        {:version protocol-id}
+        {:version protocol-version-id}
         nil
         nil))
 
 (defn update-protocol-version
   "Updates a protocol version with data changes."
-  [protocol-id data]
+  [protocol-version-id data]
   (POST "/protocol/version"
-        {:version protocol-id}
+        {:version protocol-version-id}
         nil
         (with-out-str (prn data))))
 
@@ -467,4 +467,67 @@
         {:version protocol-version-id}
         nil
         nil))
+
+(defn draft-protocol-version
+  "Updates a protocol version with data changes."
+  [protocol-version-id]
+  (POST "/protocol/draft"
+        {:version protocol-version-id}
+        nil
+        nil))
+
+;; Endorsement Types
+(defn get-endorsement-types
+  [_]
+  (GET "/library/endorsement/types" {}))
+
+(defn get-endorsement-type
+  [id]
+  (GET "/library/endorsement/type" {:endorsement-type id}))
+
+(defn add-endorsement-type
+  [o]
+  (PUT "/library/endorsement/type"
+       nil
+       nil
+       (with-out-str (prn o))))
+
+(defn edit-endorsement-type
+  [id o]
+  (POST "/library/endorsement/type"
+        {:endorsement-type id}
+        nil
+        (with-out-str (prn o))))
+
+(defn delete-endorsement-type
+  [id]
+  (DELETE "/library/endorsement/type" {:endorsement-type id} nil nil))
+
+
+;; Endorsements
+(defn get-endorsements
+  [_]
+  (GET "/library/endorsements" {}))
+
+(defn get-endorsement
+  [id]
+  (GET "/library/endorsement" {:endorsement id}))
+
+(defn add-endorsement
+  [o]
+  (PUT "/library/endorsement"
+       nil
+       nil
+       (with-out-str (prn o))))
+
+(defn edit-endorsement
+  [id o]
+  (POST "/library/endorsement"
+        {:endorsement id}
+        nil
+        (with-out-str (prn o))))
+
+(defn delete-endorsement
+  [id]
+  (DELETE "/library/endorsement" {:endorsement id} nil nil))
 

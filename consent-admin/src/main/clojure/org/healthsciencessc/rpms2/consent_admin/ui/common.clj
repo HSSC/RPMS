@@ -28,3 +28,36 @@
     (if (not= 0 (count cls))
       (apply smooshkw (cons tag (map dotit cls)))
       tag))))
+
+
+;; Functions for defining common behaviors and options.
+(defn options
+  "Accepts a variable number of maps and functions that operate on them to put together a single options map."
+  [& opts]
+  (loop [maps (merge-with cons (filter map? opts))
+         functions (filter fn? opts)]
+    (let [f (first functions)
+          n (next functions)]
+      (if (empty? functions)
+        maps
+        (recur (f maps) n)))))
+        
+(defn disabled
+  ([] (disabled {}))
+  ([opts] (merge opts {:disabled true})))
+
+(defn scrollable
+  ([] (scrollable {}))
+  ([opts] (merge opts {:scrollable :.scroll})))
+
+(defn fill
+  ([] (fill {}))
+  ([opts] (merge opts {:fill :.fill})))
+
+(defn fill-down
+  ([] (fill-down {}))
+  ([opts] (merge opts {:fill :.fill-down})))
+
+(defn fill-right
+  ([] (fill-right {}))
+  ([opts] (merge opts {:fill :.fill-rigth})))

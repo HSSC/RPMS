@@ -117,10 +117,16 @@
 
    endorsement {:attributes (merge base
                                    {:name {:persisted true}
+                                    :code {:persisted true}})
+                :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
+                            {:type :belongs-to :related-to endorsement-type :relationship :has-type :omit-rels true}
+                            {:type :belongs-to :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
+   
+   endorsement-type {:attributes (merge base
+                                   {:name {:persisted true}
                                     :code {:persisted true}
                                     :uri {:persisted true}})
-                :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
-                            {:type :belongs-to :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
+                :relations [{:type :belongs-to :related-to organization :relationship :owned-by}]}
    
    protocol {:attributes (merge base
                                 {:name {:persisted true}}

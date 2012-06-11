@@ -16,6 +16,7 @@
 (def policy "policy")
 (def policy-definition "policy-defintion")
 (def endorsement "endorsement")
+(def endorsement-type "endorsement-type")
 (def form "form")
 (def widget "widget")
 (def widget-property "widget-property")
@@ -40,12 +41,17 @@
 
 ;; STANDARD PROTOCOL VERSION STATUSES
 (def status-draft "Draft")
+(def status-submitted "Submitted")
 (def status-published "Published")
 (def status-retired "Retired")
 
 (defn draft?
   [protocol-version]
   (= status-draft (:status protocol-version)))
+
+(defn submitted?
+  [protocol-version]
+  (= status-submitted (:status protocol-version)))
 
 (defn published?
   [protocol-version]

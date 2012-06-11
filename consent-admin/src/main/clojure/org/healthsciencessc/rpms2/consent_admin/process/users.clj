@@ -32,11 +32,11 @@
         (container/scrollbox
           (selectlist/selectlist {:action :.detail-action}
             (for [x users]
-              {:label (format-name x) :data x})))
+              {:label (format-name x) :data (select-keys x [:id])})))
         (actions/actions 
-             (actions/details-button {:url "/view/user/edit" :params {:user :selected#id}})
-             (actions/new-button {:url "/view/user/add"})
-             (actions/pop-button))))))
+             (actions/details-action {:url "/view/user/edit" :params {:user :selected#id}})
+             (actions/new-action {:url "/view/user/add"})
+             (actions/back-action))))))
 
 (def ^:const user-fields ;; probably should be i18nized
   (let [text-fields [:first-name "First Name"
@@ -67,8 +67,8 @@
   (layout/render ctx (if org "Create Admin" "Create User")
                  (container/scrollbox (formui/dataform (render-user-fields)))
                  (actions/actions
-                   (actions/save-button persist-params)
-                   (actions/pop-button)))))
+                   (actions/save-action persist-params)
+                   (actions/back-action)))))
 
 (defn get-view-user-edit
   [ctx]
@@ -79,10 +79,10 @@
         (layout/render ctx "Edit User"
                    (container/scrollbox (formui/dataform (render-user-fields user)))
                    (actions/actions 
-                     (actions/save-button {:method :post :url "/api/user/edit" :params {:user user-id}})
-                     (actions/details-button {:url "/view/roles/show" :params {:assignee-type :user :assignee-id user-id} :label "Roles"})
-                     (actions/delete-button {:url "/api/user" :params {:user user-id}})
-                     (actions/pop-button)))))))
+                     (actions/save-action {:method :post :url "/api/user/edit" :params {:user user-id}})
+                     (actions/details-action {:url "/view/roles/show" :params {:assignee-type :user :assignee-id user-id} :label "Roles"})
+                     (actions/delete-action {:url "/api/user" :params {:user user-id}})
+                     (actions/back-action)))))))
 
 (defn post-api-user-add
   [ctx]

@@ -66,7 +66,7 @@
       (if (not= location-id (get-in protocol [:location :id]))
         (layout/render-error ctx {:message "Location provided must match the location of the protocol requested."})
         (layout/render ctx (render-label location ": " (:name protocol))
-                       (container/scrollbox (form/dataform (form/render-fields fields protocol)))
+                       (container/scrollbox (form/dataform (form/render-fields {} fields protocol)))
                        (actions/actions
                          (actions/push-action 
                            {:url "/view/protocol/versions" :params {:protocol protocol-id} :label "Versions"})
@@ -86,7 +86,7 @@
   (let [location-id (get-in ctx [:query-params :location])
         location (services/get-location location-id)]
     (layout/render ctx (str "Create " (render-label location))
-                   (container/scrollbox (form/dataform (form/render-fields fields {:required true})))
+                   (container/scrollbox (form/dataform (form/render-fields {} fields {:required true})))
                    (actions/actions 
                      (actions/ajax-action 
                        {:method :put :url "/api/protocol" :params {:location location-id}

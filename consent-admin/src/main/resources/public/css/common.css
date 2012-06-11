@@ -1,0 +1,6 @@
+/*
+ * Makes a container, such as a div, add scrollbars when needed.
+ */
+.scroll{
+	overflow: auto;
+}

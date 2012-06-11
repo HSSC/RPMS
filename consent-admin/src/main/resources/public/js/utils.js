@@ -69,3 +69,164 @@ Utils.Map = {
 Utils.Misc = {
 	nothing: function(){}
 };
+Utils.Size = {
+	fill: function(target){
+		this.fillDown(target);
+		this.fillRight(target);
+		
+	},
+	fillRight: function(target){
+		var parent = target.parent();
+		var parentWidth = parent.width();
+		var targetPosition = target.position();
+		var availableSpace = parentWidth - targetPosition.left;
+		var outerWidth = target.outerWidth(true);
+		var width = target.width();
+		var widthDiff = availableSpace - outerWidth;
+		target.width(width + widthDiff);
+	},
+	fillDown: function(target){
+		var parent = target.parent();
+		var parentHeight = parent.height();
+		var targetPosition = target.position();
+		var availableSpace = parentHeight - targetPosition.top;
+		var outerHeight = target.outerHeight(true);
+		var height = target.height();
+		var heightDiff = availableSpace - outerHeight;
+		target.height(height + heightDiff);
+	},
+	fillTo: function(target, sibling, buffer){
+		this.fillDownTo(target, sibling, buffer);
+		this.fillRightTo(target, sibling, buffer);
+	},
+	fillRightTo: function(target, sibling, buffer){
+		if(isNaN(buffer)){
+			buffer = 0;
+		}
+		var targetPosition = target.position();
+		var siblingPosition = sibling.position();
+		var availableSpace = siblingPosition.left - (targetPosition.left + buffer);
+		var targetWidth = target.outerWidth(true);
+		var widthDiff = availableSpace - targetWidth;
+		var width = target.width();
+		target.width(width + widthDiff);
+	},
+	fillDownTo: function(target, sibling, buffer){
+		if(isNaN(buffer)){
+			buffer = 0;
+		}
+		var targetPosition = target.position();
+		var siblingPosition = sibling.position();
+		var availableSpace = siblingPosition.top - (targetPosition.top + buffer);
+		var targetHeight = target.outerHeight(true);
+		var heightDiff = availableSpace - targetHeight;
+		var height = target.height();
+		target.width(height + heightDiff);
+	},
+	refill: function(target){
+		target.find(".fill").each(function(index, e){
+			Utils.Size.fill($(e));
+		});
+		target.find(".fill-down").each(function(index, e){
+			Utils.Size.fillDown($(e));
+		});
+		target.find(".fill-right").each(function(index, e){
+			Utils.Size.fillRight($(e));
+		});
+		target.find(".fill-to").each(function(index, e){
+			e = $(e);
+			var sibling = e.siblings(Utils.DataSet.get(e, "data-fillto"));
+			var buffer = Utils.DataSet.getNumber(e, "data-fillbuffer", 0);
+			Utils.Size.fillTo(e, sibling, buffer);
+		});
+		target.find(".fill-downto").each(function(index, e){
+			e = $(e);
+			var sibling = e.siblings(Utils.DataSet.get(e, "data-fillto"));
+			var buffer = Utils.DataSet.getNumber(e, "data-fillbuffer", 0);
+			Utils.Size.fillDownTo(e, sibling, buffer);
+		});
+		target.find(".fill-rightto").each(function(index, e){
+			e = $(e);
+			var sibling = e.siblings(Utils.DataSet.get(e, "data-fillto"));
+			var buffer = Utils.DataSet.getNumber(e, "data-fillbuffer", 0);
+			Utils.Size.fillRightTo(e, sibling, buffer);
+		});
+	}
+};
+Utils.DataSet = {
+	dataAttribute: function(attribute){
+		if(attribute.indexOf("data-") != 0){
+			attribute = "data-" + attribute;
+		}
+		return attribute;
+	},
+	get: function(target, attribute, defaultValue){
+		attribute = this.dataAttribute(attribute);
+		return Utils.Element.getAttribute(target, attribute, defaultValue);
+	},
+	
+	getBoolean: function(target, attribute, defaultValue){
+		attribute = this.dataAttribute(attribute);
+		var val = this.get(target, attribute, defaultValue);
+		if(val != null && (val == true || val == "true" || val == attribute)){
+			return true;
+		}
+		return false;
+	},
+	
+	getObject: function(target, attribute){
+		var value = this.get(target, attribute);
+		if(value != null && typeof value == 'string'){
+			return $.parseJSON(value);
+		}
+		return value;
+	},
+	getNumber: function(target, attribute, defaultValue){
+		var val = this.get(target, attribute);
+		if(!isNaN(val)){
+			return new Number(val).valueOf();
+		}
+		return defaultValue;
+	} 
+};
+Utils.Element = {
+	getAttribute: function(target, attribute, defaultValue){
+		var value = null;
+		if(target.getAttribute){
+			value = target.getAttribute(attribute);
+		}
+		else if(target.attr){
+			value = target.attr(attribute);
+		} 
+		if(value == null){
+			return defaultValue;
+		}
+		return value;
+	},
+	getBooleanAttribute: function(target, attribute, defaultValue){
+		var value = this.getAttribute(target, attribute, defaultValue);
+		if(value != null && (value == true || value == "true" || value == attribute)){
+			return true;
+		}
+		return false;
+	},
+	getObjectAttribute: function(target, attribute, defaultValue){
+		var value = this.getAttribute(target, attribute, defaultValue);
+		if(value != null){
+			if(typeof value == 'string'){
+				return $.parseJSON(value);
+			}
+			else{
+				return value;
+			}
+		}
+		return defaultValue;
+	},
+	getNumber: function(target, attribute, defaultValue){
+		var value = this.get(target, attribute);
+		if(!isNaN(value)){
+			return new Number(value).valueOf();
+		}
+		return defaultValue;
+	} 
+}

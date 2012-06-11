@@ -166,10 +166,11 @@ var PaneManager = {
 			$(this.current.pane).hide("slide", {direction: "left"}, this.settings.duration);
 		}
 		
-		$(this.content).append("<div class='pane' style='display:none;'></div>");
+		this.content.append("<div class='pane' style='display:none;'></div>");
 		pane.pane = $(content).children().last();
 		pane.pane.html(data);
 		pane.pane.show("slide", {direction: "right"}, this.settings.duration);
+		this.onload(this.content);
 		this.current = pane;
 		Dialog.Progress.end();
 	},
@@ -178,6 +179,7 @@ var PaneManager = {
 	onrefresh: function(data, target, status, xhr){
 		target.pane.empty();
 		target.pane.html(data);
+		this.onload(this.content);
 		Dialog.Progress.end();
 	},
 	
@@ -296,5 +298,24 @@ var PaneManager = {
 	
 	on: function(type, selector, method){
 		this.content.on(type, selector, method);
+	},
+	
+	loaders: [],
+	loader: function(handler){
+		if(handler != null){
+			this.loaders.push(handler);
+		}
+	},
+	onload: function(content){
+		for(var i = 0; i < this.loaders.length; i++){
+			try{
+				this.loaders[i](content);
+			}
+			catch(e){
+				// Soft Fail
+				console.log("PaneManager: A loader is not handling itself properly.");
+				console.log(e);
+			}
+		}
 	}
 };
