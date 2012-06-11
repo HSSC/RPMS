@@ -67,7 +67,7 @@
                   (let [role-mappings (data/find-children "group" group-id "role-mapping")
                         role-mapping (first (filter #(and (= role-id (get-in % [:role :id])) (= loc-id (get-in % [:location :id]))) role-mappings))]
                     (data/delete "role-mapping" (:id role-mapping)))
-                  (let [role-mappings (filter #(= role-id (get-in % [:role-id])) (data/find-children "group" group-id "role-mapping"))]
+                  (let [role-mappings (filter #(= role-id (get-in % [:role :id])) (data/find-children "group" group-id "role-mapping"))]
                     (doseq [{id :id} role-mappings]
                       (data/delete "role-mapping" id))))))
     :run-if-false forbidden-fn}])

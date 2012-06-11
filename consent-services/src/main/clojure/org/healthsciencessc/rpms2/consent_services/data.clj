@@ -196,8 +196,8 @@
                          (:record-type record)
                          (:related-to relation)
                          schema)]
-    (vec (map #(node->record % (:related-to relation))
-              (children-nodes-by-rel node relationship)))))
+    (vec (filter identity (map #(node->record % (:related-to relation))
+                               (children-nodes-by-rel node relationship))))))
 
 (defmethod get-related-obj :has-many-through
   [record node relation]
@@ -208,7 +208,7 @@
 (defmethod get-related-obj :many-to-many
   [record node relation]
   (let [{related-to :related-to} relation]
-    (vec (map #(node->record % related-to) (walk-types-path node (vector related-to))))))
+    (vec (filter identity (map #(node->record % related-to) (walk-types-path node (vector related-to)))))))
 
 (defn add-related-records
   [record node relations]
@@ -356,7 +356,7 @@
   ([parent-type parent-id child-type include-defaults]
      (let [parent-node (get-node-by-index parent-type parent-id)]
        (filter identity (map #(node->record % child-type)
-             (children-nodes-by-type parent-node child-type (if include-defaults directed-default-rel)))))))
+                             (children-nodes-by-type parent-node child-type (if include-defaults directed-default-rel)))))))
 
 (defn belongs-to?
   ([child-type child-id parent-type parent-id]
