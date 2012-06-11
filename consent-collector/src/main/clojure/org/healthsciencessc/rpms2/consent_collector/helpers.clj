@@ -4,10 +4,10 @@
                [page :as hpage]
                [element :as helem]])
   (:require [ring.util.response :as ring])
+  (:require [org.healthsciencessc.rpms2.consent-collector.mock :as mock])
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
-  (:use [clojure.data.json :only (read-json json-str)])
   (:use [clojure.pprint])
 
   (:use [org.healthsciencessc.rpms2.consent-domain.tenancy :only [label-for-location label-for-protocol]])
@@ -43,9 +43,20 @@
   (absolute-path (remove-initial-slash url)))
 
 (defn myredirect
-  "Redirect, adding context information as needed."
-  [url]
-  (ring/redirect (mypath url)))
+  "Redirect to url, adding context information as needed.
+  If a message is specified and debugging is enabled, 
+  the message is displayed as a flash message"
+  ([i18n-key url]
+   (if-let [b (config "verbose-collect-consents")]
+     (do
+      (debug "myredirect  " (i18n i18n-key) " url " url)
+      (flash-put! :header (i18n i18n-key))
+      (myredirect url))
+     (myredirect url)))
+
+  ([url]
+  (debug "myredirect url " url)
+  (ring/redirect (mypath url))))
 
 (defn flash-and-redirect
   "Sets flash message and goes to the specified page."
@@ -450,21 +461,53 @@
   {:hi "Tami" })
 
 (defn print-form
+  "If orig-n is a sequence, use the first item.
+  Otherwise, use orig-n, then return the protocol name."
   [orig-n]
   (let [n (if (seq? orig-n) (first orig-n) orig-n)]
      (get-in n [:protocol :name])))
-
-
 
 (defn get-named-page
   "Find page named 'n' in form 'f'"
   [f n]
   (first (filter #(= (:name %) n ) (:contains f) )))
 
+(defn get-nth-form
+  "Uses hardcoded mock data. Should return the nth 
+  form (from protocols-to-be-filled-out)."
+  [n]
+  (cond 
+    (>= n (count (session-get :protocols-to-be-filled-out)))
+    nil
+
+    (= 0 n) 
+    mock/sample-form 
+    
+    :else
+    mock/lewis-blackman-form))
+
+(defn finish-form
+  []
+  (let [s (session-get :collect-consent-status)
+        form-data (session-get :model-data)
+        finished-forms (session-get :finished-forms)
+        n (:current-form-number s)
+        aa (if finished-forms finished-forms {})
+        ff (assoc aa (keyword (str "form-" n)) form-data) ] 
+    (do
+
+      (session-put! :finished-forms ff)
+      (session-put! :model-data {} )
+      (debug "AAA finish-form form# " n " " (pprint-str ff) )
+      (debug "1 save data in last form and start new form: " (session-get :model-data))
+      (debug "2 save data in last form and start new form: " (pprint-str (session-get :model-data))))))
+
+
 (defn init-form-flow 
-  "Initializes the consent collection data structures."
+  "Initializes consent collection data structures."
   [which-flow f]
   (debug "init-form-flow which is " which-flow " form is " f)
+  (debug "FORM \n\n\ns " (pprint-str f) "\n\n\n" )
   (session-put! :current-form f)
   (let [formlist (session-get :protocols-to-be-filled-out)
         wnames (all-widget-names-in-form f) 
@@ -481,12 +524,10 @@
            :num-forms (count (session-get :protocols-to-be-filled-out))
           }]
     (do
-      (debug "init-form-flow m " (pprint-str m))
-      (debug "init-form-flow page " (pprint-str (:page m)))
-      (if-not (:page m) (do
-                          (error "MISSING PAGE: " which-flow )
-                          (println  "MISSING PAGE: " which-flow )
-                          ))
+      (debug "init-form-flow page " (pprint-str (:page m))
+            " m " (pprint-str m))
+      (if-not (:page m) (error "init-form-flow MISSING PAGE: " which-flow 
+                                 (pprint-str m)))
       (session-put! :collect-consent-status m )
       (session-put! :current-form (:form form) )
       (session-put! :current-form-data (:form form) )
@@ -506,16 +547,17 @@
 (defn init-review
   "Initializes the consent collection data structures
   for review."
-  [f]
+  []
   (debug "init-review")
-  (init-form-flow REVIEW_START_PAGE f))
+  (init-form-flow REVIEW_START_PAGE (get-nth-form 0)))
 
 (defn init-consents
   "Initializes the consent collection data structures
   for collection."
-  [f]
+  []
   (debug "init-consents")
-  (init-form-flow COLLECT_START_PAGE f ))
+  ;; set currnet-form number , the forms 
+  (init-form-flow COLLECT_START_PAGE (get-nth-form 0)))
 
 (defn dbg-session
   [msg]

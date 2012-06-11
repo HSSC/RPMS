@@ -297,6 +297,7 @@ div.finished2 { margin: 15px; text-align: center; }
 div.finished3 { xfont-size: 1.5em; xfont-weight: bold; margin: 20px;text-align: center; }
 
 .debug { background: yellow; color: black; font-weight: bold; }
+.debug .standout  { background: #ccccff; color: #660099; font-weight: bold; }
 
 div.section { xborder: thick solid purple; margin-bottom: 10px; padding-bottom: 5px; clear: left; }
 div.render-media { border: 1px solid silver ; padding: 10px ; margin-bottom: 5px; }

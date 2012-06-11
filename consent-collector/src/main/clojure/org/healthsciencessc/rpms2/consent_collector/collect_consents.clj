@@ -2,6 +2,7 @@
   org.healthsciencessc.rpms2.consent-collector.collect-consents
   (:require
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
+   [org.healthsciencessc.rpms2.consent-collector.mock :as mock]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! destroy-session! ]])
   (:use [clojure.tools.logging :only (debug info warn error)])
@@ -41,13 +42,45 @@
      ]
    ]])
 
+
+(defn- widget-not-implemented 
+  [c m]
+  (debug "widget not implemented")
+  [:div.control "Widget Not Implemented " ]
+)
+
+(defn review-endorsement
+  [c m]
+  (debug "review-endortment not implemented")
+  [:div.control "Review Endorsement" ]
+)
+
+(defn review-metaitem
+  [c m]
+  (debug "review-metaitemendortment not implemented")
+  [:div.control "Review Meta Item" ]
+)
+
+
+(defn review-policy 
+  [c m]
+  (debug "review-policy metaitemendortment not implemented")
+  [:div.control "Review Policy" ]
+)
+
+
+(defn media 
+  [c m]
+  (debug "media not implemented")
+  [:div.control "Media" ]
+)
+  
 (defn signature
   "Emits data for the signature widget. A map with the widgets state is passed
    to use in rendering the widget."
   [c m]
   [:div.control.signature 
-     "Your signature is requested: " "Guarantor " (:name c)
-
+   (:name c)
   [:div.sigpad-control
       [:div.sigPad  ; sigPad must be on div which directly contains sigNav
       [:ul.sigNav 
@@ -122,8 +155,7 @@
   [c m]
   [:div.control.data-change
    (list 
-     (dbg [:div.debug "DATA CHANGE M IS " (pprint-str m) 
-           " MODEL DATA IS " (session-get :model-data) ])
+     (dbg [:div.debug "DATA CHANGE M IS " (pprint-str m) ])
      (for [t (:meta-items c)] 
            (list
              (let [md (dsa/get-metadata t)
@@ -160,6 +192,9 @@
   ])
 
 (defn text
+  "A Text widget generates a title and paragraph representations for 
+  text values set on the control. The control requires that either the 
+  title, the text, or both be set."
   [c _]
   [:div.control.text
    (if (:title c) [:h1.title (:title c) ])
@@ -186,10 +221,9 @@
           wmodel (helper/lookup-widget-by-name (:name c)) ]
           (list
              (if func 
-                 [:div (dbg [:div.debug "Name: " (:name c) " WM " wmodel ]) 
-                    [:div c ] (func c wmodel) ]
+                 [:div [:div c ] (func c wmodel) ]
                  [:div "Unrecognized control " [:span.control-type  (:type c) ] c ])
-             (dbg [:div.debug  "NAME " (:name c)  " WM " wmodel " " [:pre (pprint-str c)]])))))
+             (dbg [:div.debug [:span.standout (:name c) ] " WM " wmodel " " [:pre (pprint-str c)]])))))
 
 (defn- process-section
   "Display section in a div."
@@ -211,8 +245,9 @@
              [:span.standout pn ]) ])
     [:div
        (dbg [:div.debug
-              [:div.left "Page title " (:title p) " name " (:name (:page s))   
-                " current form " (:current-form-number s) " num forms " (:num-forms s)  ]
+              [:div.left"Page "  [:span.standout (:name (:page s)) ] " " (:title p)    
+                " Form #" [:span.standout (inc (:current-form-number s))] " of " 
+               [:span.standout (count (session-get :protocols-to-be-filled-out)) ] ]
               [:div "Data " (pprint-str (session-get :model-data))] ])
        [:div (map process-section (:contains p)) ]
      ])
@@ -267,24 +302,10 @@
         (session-put! :model-data n)
         (debug "capture-data " n " orig " orig " ctx " ctx )))
 
-
-(defn- get-next-form
-  "Returns the nth form." 
-  [n numforms]
-
-  (if (and (< n numforms) 
-           (< n 2)) ;; for now we only have two sample forms
-
-      (do (debug "get-next-form: n = " n " Returning lewis black form" )
-           dsa/lewis-blackman-form)
-      nil))
-
 (defn- has-another-form?
   "this test will change"
   [s]
-  (if-let [next-form (get-next-form (+ 1 (:current-form-number s)) (:num-forms s))]
-    true
-    false))
+  (helper/get-nth-form (inc (:current-form-number s)) ))
 
 (defn- finish-form
   []
@@ -302,11 +323,11 @@
 
   (let [s (session-get :collect-consent-status)
         which-flow (:which-flow s) ]
-    (if-let [next-form (get-next-form (+ 1 (:current-form-number s)) (:num-forms s))]
+    (if-let [next-form (helper/get-nth-form (inc (:current-form-number s)) )]
        (let [form (:form next-form)
              n (:current-form-number s)]
             (do
-              (finish-form)
+              (helper/finish-form)
               (debug "KKK advance-to-next-form "  (which-flow form) " n "  n " " 
                             (get-named-page form (which-flow form)))
               (debug "KKK advance-to-next-form  FORM " (form-title form) " " form)
@@ -316,7 +337,7 @@
                                  :state :begin 
                                  :page p
                                  :page-name (:name p)
-                                 :current-form-number (+ n 1) 
+                                 :current-form-number (inc n) 
                                 }]
                  (update-session modified-state)
              )))
@@ -331,7 +352,6 @@
    (if (:previous (:page s))
        (helper/standard-submit-button {:value "Previous" :name "previous" }))
    (helper/standard-submit-button {:value "Continue" :name "next" }) ]) 
-
 
 (defn- get-types
   [col]
@@ -357,7 +377,7 @@
   ;; first time here, initialize 
   (if-let [s (session-get :collect-consent-status)]
     (debug "Already initialized " (pprint-str (:name (:page s))))
-    (helper/init-consents (dsa/sample-form)))
+    (helper/init-consents))
 
   (let [s (session-get :collect-consent-status)]
     (helper/rpms2-page 
@@ -412,29 +432,16 @@
     ;; either go to the next page or show end of collection page
     (cond 
       (has-any? parms "action-btn-")
-      (if-let [b (config "verbose-collect-consents")]
-        (helper/flash-and-redirect 
-          (str
-          "[Thank you for pressing that action button "  
-             (pprint-str (get-matching-btns parms "action-btn-")) "]")
-           "/collect/consents")
-          (helper/myredirect "/collect/consents"))
+      (helper/myredirect (str "[action button "  (pprint-str (get-matching-btns parms "action-btn-")) "]")
+                         "/collect/consents")
 
       (has-any? parms "signature-btn-")
-      (if-let [b (config "verbose-collect-consents")]
-        (helper/flash-and-redirect 
-          (str "[Thank you for pressing that signature button "  
-             (pprint-str (get-matching-btns parms "signature-btn-")) "]")
+      (helper/myredirect (str "[signature button "  (pprint-str (get-matching-btns parms "signature-btn-")) "]")
            "/collect/consents")
-          (helper/myredirect "/collect/consents"))
 
       (has-any? parms "meta-data-btn-")
-      (if-let [b (config "verbose-collect-consents")]
-          (helper/flash-and-redirect
-             (str "[Thank you for pressing that meta-data button " 
-             (pprint-str (get-matching-btns parms "meta-data-btn-")) "]")
+      (helper/myredirect (str "[meta-data button " (pprint-str (get-matching-btns parms "meta-data-btn-")) "]")
              "/collect/consents")
-          (helper/myredirect "/collect/consents"))
 
       (contains? parms :previous)
       ;; if previous button pressed and prev page available
@@ -452,7 +459,7 @@
       ;; At end of current form, set current page to start of next form,
       ;; or if there are none, set current page to start of review 
       (advance-to-next-form)
-      (helper/myredirect "/collect/consents")
+      (helper/myredirect "Advancing to next form" "/collect/consents")
 
      (:review-confirmed s)
           (helper/myredirect "/view/unlock")
