@@ -61,7 +61,15 @@
                                   :dob {:persisted true :required true}
                                   :zipcode {:persisted true :required true}})
               :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
+                          {:type :has-many :related-to encounter}
                           {:type :belongs-to :related-to location :relationship :in-location}]}
+
+   encounter {:attributes (merge base
+                                 {:encounter-id {:persisted true :required true}
+                                  :date {:persisted true :required true}})
+                 :relations [{:type :belongs-to :related-to organization :relationship :has-organization}
+                             {:type :belongs-to :related-to consenter :relationship :has-consenter :omit-rels true}
+                             {:type :belongs-to :related-to location :relationship :has-location}]}
 
    role-mapping {:attributes base
                  :relations [{:type :belongs-to :related-to user :relationship :has-user :omit-rels true}

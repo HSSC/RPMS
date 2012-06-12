@@ -18,7 +18,7 @@
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def ^:const fields [{:name :name :label "Name"}
+(def fields [{:name :name :label "Name"}
                      {:name :description :label "Description"}
                      {:name :protocol-id :label "External ID"}
                      {:name :code :label "Code"}

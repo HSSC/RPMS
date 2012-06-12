@@ -40,7 +40,7 @@
              (actions/new-action {:url "/view/location/add"})
              (actions/back-action))))))
 
-(def ^:const location-fields
+(def location-fields
   (let [text-fields [:name "Name"
                      :code "Code"
                      :protocol-label "Protocol Label"

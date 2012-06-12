@@ -41,7 +41,7 @@
         {:label (format-name u)
          :data u}))))
 
-(def ^:const group-fields
+(def group-fields
   (let [text-fields [:name "Group name"
                      :code "Code"]]
     (map #(zipmap [:name :label] %)

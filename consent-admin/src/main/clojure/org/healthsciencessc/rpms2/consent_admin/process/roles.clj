@@ -35,7 +35,7 @@
              (actions/new-action {:url "/view/role/add"})
              (actions/back-action))))))
 
-(def ^:const role-fields ;; probably should be i18nized
+(def role-fields ;; probably should be i18nized
   (let [text-fields [:name "Role name"
                      :code "Code"]]
     (map #(zipmap [:name :label] %)

@@ -17,8 +17,8 @@
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def ^:const fields [{:name :version :label "Version"}
-                     {:name :status :label "Status" :readonly true}])
+(def fields [{:name :version :label "Version"}
+             {:name :status :label "Status" :readonly true}])
 
 (defn- render-label
   [protocol & addons]

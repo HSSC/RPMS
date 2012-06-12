@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.init
   (:require [org.healthsciencessc.rpms2.consent-services.default-processes.consent]
+            [org.healthsciencessc.rpms2.consent-services.default-processes.encounter]
             [org.healthsciencessc.rpms2.consent-services.default-processes.group-role]
             [org.healthsciencessc.rpms2.consent-services.default-processes.group]
             [org.healthsciencessc.rpms2.consent-services.default-processes.location]

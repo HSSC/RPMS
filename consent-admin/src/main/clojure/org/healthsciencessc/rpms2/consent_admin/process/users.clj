@@ -38,7 +38,7 @@
              (actions/new-action {:url "/view/user/add"})
              (actions/back-action))))))
 
-(def ^:const user-fields ;; probably should be i18nized
+(def user-fields ;; probably should be i18nized
   (let [text-fields [:first-name "First Name"
                      :middle-name "Middle Name"
                      :last-name "Last Name"

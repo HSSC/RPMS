@@ -4,29 +4,35 @@
 
 ;; TYPES THAT ARE AVAILABLE IN THE BASE APPLICATION
 
-(def organization "organization")
-(def user "user")
-(def role "role")
-(def language "language")
-(def location "location")
-(def group "group")
-(def consenter "consenter")
-(def role-mapping "role-mapping")
-(def meta-item "meta-item")
-(def policy "policy")
-(def policy-definition "policy-defintion")
-(def endorsement "endorsement")
-(def endorsement-type "endorsement-type")
-(def form "form")
-(def widget "widget")
-(def widget-property "widget-property")
-(def encounter "encounter")
-(def consent "consent")
-(def consent-meta "consent-meta")
-(def consent-endorsement "consent-endorsement")
-(def protocol "protocol")
-(def protocol-version "protocol-version")
-(def text-i18n "text-i18n")
+(defmacro def-them-all [& types]
+  `(do
+     ~@(for [t types]
+        `(def ~t ~(name t)))))
+
+(def-them-all 
+  organization
+  user
+  role
+  language
+  location
+  group
+  consenter
+  role-mapping
+  meta-item
+  policy
+  policy-definition
+  endorsement
+  endorsement-type
+  form
+  widget
+  widget-property
+  encounter
+  consent
+  consent-meta
+  consent-endorsement
+  protocol
+  protocol-version
+  text-i18n)
 
 ;; COMMON CODES USED THROUGHOUT THE APPLICATION.  IDENTIFIES UNIQUENESS WITHIN METADATA.
 

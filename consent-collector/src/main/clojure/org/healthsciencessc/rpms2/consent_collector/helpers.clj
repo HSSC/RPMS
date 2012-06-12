@@ -18,8 +18,8 @@
                                                                        i18n-label-for
                                                                        i18n-placeholder-for)]))
 
-(def ^:const COLLECT_START_PAGE :collect-start)
-(def ^:const REVIEW_START_PAGE :summary-start)
+(def COLLECT_START_PAGE :collect-start)
+(def REVIEW_START_PAGE :summary-start)
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
