@@ -729,7 +729,7 @@ $.fn.signaturePad.defaults = {
   , drawItDesc: '.drawItDesc' // The description for DrawIt actions (hidden by default)
   , output: '.output' // The hidden input field for remembering line coordinates
   , currentClass: 'current' // The class used to mark items as being currently active
-  , validateFields: true // Whether the name, draw fields should be validated
+  , validateFields: false  // Whether the name, draw fields should be validated
   , errorClass: 'error' // The class applied to the new error Html element
   , errorMessage: 'Please enter your name' // The error message displayed on invalid submission
   , errorMessageDraw: 'Please sign the document' // The error message displayed when drawOnly and no signature is drawn

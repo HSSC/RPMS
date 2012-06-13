@@ -35,8 +35,6 @@
                        :min 0 
                        :max "9999" 
                        :placeholder (i18n :unlock-code-form-enter-lock-code-placeholder) } ])
-        (helper/standard-submit-button {
-                   :value (i18n "unlock-code-form-submit-button") 
-                   :name "unlock-code-form-submit-button" } ))
+        (helper/submit-btn { :value (i18n "unlock-code-form-submit-button") :name "unlock-code-form-submit-button" } ))
    :title (i18n :hdr-select-unlockcode)
     )) 

@@ -298,6 +298,7 @@ div.finished3 { xfont-size: 1.5em; xfont-weight: bold; margin: 20px;text-align: 
 
 .debug { background: yellow; color: black; font-weight: bold; }
 .debug .standout  { background: #ccccff; color: #660099; font-weight: bold; }
+.debug .data { background: #ffffcc; color: #660099; font-weight: normal; border: 1px solid navy; padding: 5px;}
 
 div.section { xborder: thick solid purple; margin-bottom: 10px; padding-bottom: 5px; clear: left; }
 div.render-media { border: 1px solid silver ; padding: 10px ; margin-bottom: 5px; }
@@ -308,6 +309,9 @@ div.control h1.title { font-size: 1.1em; font-weight: bold; }
 div.control > .title { font-size: 1.1em; font-weight: bold; }
 
 div.control > .text { padding-bottom: 10px; }
+
+//div.control.review-endorsement { border: thin solid red; padding: 5px; background-color: pink; }
+//div.control.review { border: thin solid navy; padding: 5px; background-color: pink; }
 
 div.ccsig { border: thin solid navy; background-color: pink; }
 
@@ -329,8 +333,8 @@ div.ui-block-a.metadata,  div.ui-block-b.metadata { padding-top: 15px; }
 }
 
 div.sigpad-control { 
-	padding: 10px; 
-	border: thin solid green; 
+	padding: 3px; 
+	//border: thin solid green; 
 	display: block;
 	xbackground-color: #ccccff; 
 }

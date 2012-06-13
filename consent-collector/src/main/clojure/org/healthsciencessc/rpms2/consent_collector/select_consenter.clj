@@ -29,10 +29,10 @@
               (session-get :search-params) ))))
 
      [:div.centered  {:data-role "fieldcontain" } 
-          (helper/standard-submit-button { :value (i18n "search-consenters-form-submit-button")
+          (helper/submit-btn { :value (i18n "search-consenters-form-submit-button")
                                            :name "search-consenters" } )
 
-          (helper/standard-submit-button { :value (i18n "select-consenters-view-create-consenter-button")
+          (helper/submit-btn { :value (i18n "select-consenters-view-create-consenter-button")
                                            :name "create-consenters" } )
 
      ]) 

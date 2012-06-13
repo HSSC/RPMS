@@ -5,6 +5,7 @@
                [element :as helem]])
   (:require [ring.util.response :as ring])
   (:require [org.healthsciencessc.rpms2.consent-collector.mock :as mock])
+  (:require [org.healthsciencessc.rpms2.consent-collector.formutil :as formutil])
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
@@ -79,7 +80,6 @@
         (filter (comp #{"Consent Collector"} :name :role))
              (map :location)))
        
-
 (defn- pg-dbg 
   [s]
   (if-let [b (config "verbose-page")]
@@ -91,26 +91,29 @@
   (get-in (session-get :user) [:organization :id]))
 
 (defn org-location-label
-  "Returns the location label, which is taken from the user's location
+  "Returns location label, which is taken from the user's location
   if available; otherwise this is taken from the organization."
   []
   (label-for-location (session-get :org-location) (:organization (session-get :user))))
 
 (defn org-protocol-label
-  "Returns the protocol label, which is taken from the user's location
+  "Returns protocol label, which is taken from the user's location
   if available; otherwise this is taken from the organization."
   []
   (label-for-protocol (session-get :org-location) (:organization (session-get :user))))
 
-(defn standard-submit-button 
+(defn submit-btn 
   "Standard submit button.  :name and :value should be define plus optionally other."
-  [input-opts]
-  [:input (merge { :type "submit" 
+  ([] (submit-btn {}))
+
+  ([input-opts]
+   [:input (merge {:type "submit" 
                    :data-theme "a"
                    :data-role "button"
                    :data-ajax "false" 
                    :data-inline "true"
-                   } input-opts) ])
+                  } input-opts) ] ))
+
 
 (defn submit-button
   "Returns submit button for form."
@@ -225,6 +228,12 @@
         [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
      [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ] )
 
+(defrecord FormStatus [forms cform state])
+
+(defn make-form-status [forms cform state]
+  {:pre [(>= (count forms) 0)] }   ; ensure there's at least one form
+  (FormStatus. forms cform state))
+
 (defn- header
   [title cancel-btn]
   (if (session-get :collect-consent-status) 
@@ -232,16 +241,12 @@
       (header-standard title cancel-btn)))
 
 (defn- after-content
+  "Enable signature pad."
   []
   (if (session-get :collect-consent-status) 
-    (list 
-     (hpage/include-js 
-       (absolute-path "jquery.signaturepad.js")
-       (absolute-path "json2.js"))
-       ;;Needed to enable the Signature Pad
-       [:script "$(document).ready( function() { $('.sigPad').signaturePad( {drawOnly:true}); });" ]
-      )))  
-
+      [:script "// var api = $('.sigPad').signaturePad();
+               $(document).ready( function() { $('.sigPad').signaturePad({drawOnly: true}); });" 
+      ]))  
 
 (defn- footer
   []
@@ -276,16 +281,20 @@
      (absolute-path "jquery-1.7.1.min.js")
      (absolute-path "jquery.mobile-1.1.0.min.js")
       ;; see http://thomasjbradley.ca/lab/signature-pad/
+     (absolute-path "jquery.signaturepad.js")
+     (absolute-path "json2.js")
      (absolute-path "flashcanvas.js")
-     (absolute-path "app.js")
-      ) ]
+     (absolute-path "app.js")) ]
    [:body 
     [:div {:data-role "page" :data-theme "a"  }  
       (header title cancel-btn)
       [:div#content {:data-role "content" :data-theme "d" } 
       content
       (after-content)
-      end-of-page-stuff ]
+       "<!-- ZZZ BEGIN END OF PAGE -->"
+      end-of-page-stuff 
+       "<!-- ZZZ AFTER END OF PAGE -->"
+       ]
       (footer) 
      ]])] 
       (pg-dbg (str "Page: " title " is\n" (pprint-str resp) "\n"))
@@ -301,7 +310,6 @@
 	     [:div.ui-block-b col2-content ]]
         :title title 
         :cancel-btn cancel-btn ))
-
 
 (defn radio-btn
   "Returns a radio button."
@@ -334,13 +342,13 @@
              (:btnlist m) )) ])
 
 (defn checkbox-group
-  "{:name n :value v}"
+  "Returns checkbox group, with jquerymobile attributes."
   [m]
-  (debug "checkbox-group " m )
   [:div {:data-role "fieldcontain" }
-   [:input (merge 
-             {:type "checkbox" :id (:name m) :name (:name m) } 
-             (if (= (:value m) "on") {:checked "checked" } {} )) ]
+   [:input (merge {:type "checkbox" 
+                   :id (:name m) 
+                   :name (:name m) } 
+                   (if (= (:value m) "on") {:checked "checked" } {} )) ]
    [:label {:for (:name m) } (:label m) ]])
 
 (defn gender-control
@@ -396,58 +404,38 @@
                      (i18n-label-for form-name normalized-field) ]
             [:input m ]])))))
 
+(defn get-named-page
+  "Find page named 'n' in form 'f'"
+  [f n]
+  (first (filter #(= (:name %) n ) (:contains f) )))
 
+(defn data-for
+  [c]
+  (get (session-get :model-data) (keyword (:name c))))
 
-(defn n-get-widgets [slist] 
-  (doall (for [wlist slist] (:contains wlist) )))
+(defn clear-return-page
+  []
+  (session-delete-key! :review-consent-page-in-progress))
 
-(defn all-widgets-in-form
-  "Traverses the pages and sections to get the widget names"
-  [a]
-  (flatten 
-    (do
-      (for [s (map (fn [n] (get-in n [:contains])) (get-in a [:form :contains]))]
-             (flatten (n-get-widgets s))
-        ))))
+(defn get-return-page
+  []
+  (session-get :review-consent-page-in-progress))
 
-(defn all-widget-props-in-form
-  "Traverses the pages and sections to get the widget names"
-  [a prop]
-  (flatten 
-    (do
-      (for [s (map (fn [n] (get-in n [:contains])) (get-in a [:form :contains]))]
-        (map prop (flatten (n-get-widgets s)))))))
+(defn save-return-page
+  []
+  (let [s (session-get :collect-consent-status) 
+          cur-page (:page-name s)]
+        (do
+          (debug "save-return-page: " cur-page)
+          (session-put! :review-consent-page-in-progress cur-page))))
 
-(defn all-widget-names-in-form
-  "Returns a list of all widget names in this form."
-  [form]
-  (all-widget-props-in-form form :name))
-
-(defn all-widget-types-in-form
-  "Returns a list of all widget types in this form."
-  [form]
-  (all-widget-props-in-form form :type ))
-
-
-(defn form-contains-signature
-  [form]
-
-  (debug "form-contains-signature " form)
-  (debug "form-contains-signature widget types in form " (all-widget-types-in-form form))
-  (some #(= % "signature") (all-widget-types-in-form form))) 
-
-(defn lookup-widget-by-name
-  "Lookup the widget by name."
-  ([n]
-   (let [d (session-get :current-form-data)]
-     (if d (lookup-widget-by-name d n))))
-    
-  ([all n]
-    (first (filter #(= (:name %) n) all))))
-
-;;(println "Medical Treatment Text " (lookup-widget-by-name data-model "MedicalTreatmentText"))
-;;(println "Privacy Practices " (lookup-widget-by-name data-model "PrivacyPracticesText"))
-;;(println "bad " (lookup-widget-by-name data-model "badname"))
+(defn save-captured-data
+  "Updates model with the information from the map.
+  m contains the form post parameters. "
+  [m]
+  (let [orig (session-get :model-data) 
+        m1 (dissoc (merge orig m) :next :previous) ]
+        (session-put! :model-data  m1)))
 
 (defn clear-consents
   "Remove any in-progress consent information."
@@ -456,10 +444,6 @@
   (session-delete-key! :collect-consent-status)
   (session-delete-key! :model-data))
 
-(defn create-form-data
-  [n]
-  {:hi "Tami" })
-
 (defn print-form
   "If orig-n is a sequence, use the first item.
   Otherwise, use orig-n, then return the protocol name."
@@ -467,97 +451,147 @@
   (let [n (if (seq? orig-n) (first orig-n) orig-n)]
      (get-in n [:protocol :name])))
 
-(defn get-named-page
-  "Find page named 'n' in form 'f'"
-  [f n]
-  (first (filter #(= (:name %) n ) (:contains f) )))
-
 (defn get-nth-form
   "Uses hardcoded mock data. Should return the nth 
-  form (from protocols-to-be-filled-out)."
+  form (from :protocols-to-be-filled-out)."
   [n]
   (cond 
     (>= n (count (session-get :protocols-to-be-filled-out)))
     nil
 
     (= 0 n) 
+    mock/lewis-blackman-form 
+
+    (= 1 n) 
     mock/sample-form 
     
     :else
     mock/lewis-blackman-form))
 
+(defn update-session
+  "Merges the map, logs the new map, saves in session, and returns merged map."
+  ([m] (update-session m ""))
+  ([m msg]
+   (let [new-map (merge (session-get :collect-consent-status) m)]
+       (debug "update-session: " msg " " new-map)
+       (session-put! :collect-consent-status new-map)
+       new-map)))
+
+(defn- get-form-name-kw
+  "Each form is named by form-n where n is the number."
+  [n]
+  (keyword (str "form-" n)) )
+
+(defn pr-truncate 
+  "there's probably an output settig for this"
+  [n]
+  (let [s (pprint-str n)
+        len (count s)]
+    (if (> len 40) 
+        (str (.substring s 0 40) "...")
+        s)) )
+
+(defn pr-form
+  "Prints the form without the :output value.
+  Want to replace keys starting with out"
+  [ff]
+  (if (map? ff)
+      (let [okeys (filter #(.startsWith (name %) "output") (keys ff))]
+        (if (> (count okeys) 0) 
+            (str "okeys: " (list okeys) " " (pprint-str (dissoc ff (flatten okeys))))
+            (pprint-str ff)))
+      (str "not map " (pprint-str ff))))
+
+(defn pr-model-data
+  []
+  (pr-form (session-get :model-data)))
+
+(defn print-all-form-data
+ []
+ (let [ff (session-get :finished-forms)]
+   [:div [:ol (for [f (keys ff) ]
+         [:li "Form " [:span.standout f ] (pprint-str (pr-form (f ff) ) )] )]]))
+
+(defn current-form
+  "Returns the current form which is being processed."
+  []
+  (let [s (session-get :collect-consent-status)]
+        (:form s))) 
+
+(defn- get-data-for-nth-finished-form
+  "If there is data saved for the nth form, return it.
+  Otherwise return an empty map." 
+  [n]
+  (let [forms-data (if-let [f (session-get :finished-forms)] f {}) ]
+        (get forms-data (get-form-name-kw n))))
+
 (defn finish-form
+  "Save data of the current form and prepare for the next one."
   []
   (let [s (session-get :collect-consent-status)
-        form-data (session-get :model-data)
-        finished-forms (session-get :finished-forms)
         n (:current-form-number s)
-        aa (if finished-forms finished-forms {})
-        ff (assoc aa (keyword (str "form-" n)) form-data) ] 
+        finform  (if-let [finished-forms (session-get :finished-forms)] finished-forms {})
+        k  (get-form-name-kw n)
+        ff (assoc finform k (session-get :model-data))  ;; add current data to finished-forms
+        ] 
     (do
-
       (session-put! :finished-forms ff)
-      (session-put! :model-data {} )
-      (debug "AAA finish-form form# " n " " (pprint-str ff) )
-      (debug "1 save data in last form and start new form: " (session-get :model-data))
-      (debug "2 save data in last form and start new form: " (pprint-str (session-get :model-data))))))
+      ;; if we are in review then load up saved data for the form
+      (if (= (:which-flow s) COLLECT_START_PAGE ) 
+          (session-put! :model-data {} )
+          (session-put! :model-data (get-data-for-nth-finished-form (inc n))))
 
+      (if-let [next-form (get-nth-form (inc n))]
+       (let [formval (:form next-form)
+             start-page-nm ((:which-flow s) formval)
+             p (get-named-page formval start-page-nm) ;; get first page form, using specified flow
+             modified-state {:form formval
+                             :page p
+                             :page-name (:name p)
+                             :current-form-number (inc n) 
+                            }]
+            (update-session modified-state "finish-form" ))
+       nil ))))
+  
 
-(defn init-form-flow 
-  "Initializes consent collection data structures."
-  [which-flow f]
-  (debug "init-form-flow which is " which-flow " form is " f)
-  (debug "FORM \n\n\ns " (pprint-str f) "\n\n\n" )
-  (session-put! :current-form f)
-  (let [formlist (session-get :protocols-to-be-filled-out)
-        wnames (all-widget-names-in-form f) 
-        form f
-        fform (:form form)
-        m {:form (:form form)
-           :state :begin 
-           ;;:page (get-named-page fform "page8") ;; to test signature
-           :page (get-named-page fform (which-flow fform))
+(defn- init-flow 
+  "Initializes consent collection data structures.
+  Sets :form to the the current form, initializes :page "
+  [which-flow]
+  (debug "init-flow: " which-flow)
+  (let [form (get-nth-form 0)
+        fform  (:form form)
+        pg-nm (which-flow fform)
+        m {:form fform 
+           :page (get-named-page fform pg-nm)
+           :page-name pg-nm
            :current-form-number 0
            :which-flow which-flow
-           ;; this is a list of the actual forms
-           ;;  :list-of-forms (session-get :protocols-to-be-filled-out)
-           :num-forms (count (session-get :protocols-to-be-filled-out))
           }]
     (do
-      (debug "init-form-flow page " (pprint-str (:page m))
-            " m " (pprint-str m))
-      (if-not (:page m) (error "init-form-flow MISSING PAGE: " which-flow 
-                                 (pprint-str m)))
-      (session-put! :collect-consent-status m )
-      (session-put! :current-form (:form form) )
-      (session-put! :current-form-data (:form form) )
-    (try
-      (do
-        (debug "Widgets in current form WNAMES IS " wnames)
-        (session-put! :current-form-data (all-widgets-in-form f))
-        (session-put! :current-form-names wnames )
-        (debug "form list count is " (count formlist))
-        (debug "Forms to be filled out " (pprint-str (list (map print-form formlist)) ))
-        formlist)
-    (catch Exception e (do 
-                         (debug "init-consents EXCEPTION Ex " e)
-                         (println "init-consents EXCEPTION Ex " e)
-                         (.printStackTrace e)))))))
+      (if-not (:page m) 
+              (do
+                (flash-put! :header "MISSING PAGE " pg-nm)
+                (error "init-flow MISSING PAGE: " pg-nm )))
+      (update-session m "init-flow") )))
 
 (defn init-review
-  "Initializes the consent collection data structures
+  "Initializes consent collection data structures
   for review."
   []
-  (debug "init-review")
-  (init-form-flow REVIEW_START_PAGE (get-nth-form 0)))
+  (init-flow REVIEW_START_PAGE)
+  (session-put! :model-data (get-data-for-nth-finished-form 0)))
+
+(defn set-page
+  [page]
+  (debug "Setting page: " (:name page) " " page)
+  (update-session {:page page :page-name (:name page) }))
 
 (defn init-consents
   "Initializes the consent collection data structures
   for collection."
   []
-  (debug "init-consents")
-  ;; set currnet-form number , the forms 
-  (init-form-flow COLLECT_START_PAGE (get-nth-form 0)))
+  (init-flow COLLECT_START_PAGE ))
 
 (defn dbg-session
   [msg]
@@ -590,3 +624,4 @@
   (session-put! :patient-name (:patient-name m))
   (session-put! :encounter-id (:encounter-id m))
   (session-put! :patient-encounter-date (:patient-encounter-date m)))
+

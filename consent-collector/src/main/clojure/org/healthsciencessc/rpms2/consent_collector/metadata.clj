@@ -77,8 +77,7 @@
      (list [:div.left "Enter the following information:" ]
        (list (for [item (session-get :needed-meta-data)]
             (list (emit-item item)))))
-       (helper/standard-submit-button 
-        { :value (i18n :meta-data-form-submit-button) } ))
+       (helper/submit-btn { :value (i18n :meta-data-form-submit-button) } ))
     :title (i18n :hdr-metadata)
     :cancel-btn (helper/cancel-form "/view/select/consenter")))
 

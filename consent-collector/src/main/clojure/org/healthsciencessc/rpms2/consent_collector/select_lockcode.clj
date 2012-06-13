@@ -39,9 +39,7 @@
               [:input {:id "lockcode" :name "lockcode" :type "number" 
                        :required "" :length 4 :min 0 :max "9999" 
                        :placeholder (i18n :lock-code-form-enter-lock-code-placeholder) } ])
-        (helper/standard-submit-button {
-                   :value (i18n "lock-code-form-submit-button") 
-                   :name "lock-code-form-submit-button" } ))
+        (helper/submit-btn { :value (i18n "lock-code-form-submit-button") :name "lock-code-form-submit-button" } ))
    :title (i18n :hdr-select-lockcode)
    :cancel-btn (if (> (count (helper/authorized-locations)) 1)
                     (helper/cancel-form "/view/select/location") "" ) 

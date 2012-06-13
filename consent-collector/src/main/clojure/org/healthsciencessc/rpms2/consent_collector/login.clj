@@ -37,7 +37,7 @@
                  [:input {:name "password" :id "password" :type "password" :required ""
                       :placeholder (i18n "login-form-password-placeholder") }]])
 
-        (helper/standard-submit-button { :value (i18n :login-form-submit-button) } ))
+        (helper/submit-btn { :value (i18n :login-form-submit-button) } ))
    :title (i18n :hdr-login)))
 
 

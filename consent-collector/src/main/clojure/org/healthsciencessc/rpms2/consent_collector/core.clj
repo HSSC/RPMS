@@ -13,6 +13,7 @@
             						  [create-consenter :as create-consenter] 
             						  [select-protocol :as select-protocol] 
             						  [collect-consents :as collect-consents] 
+            						  [witness-consents :as witness-consents] 
             						  [metadata :as metadata]
             						  [unimplemented :as unimplemented]
 							]
@@ -83,6 +84,8 @@
 
                 {:name "get-review-consents" :runnable-fn active-session?  :run-fn collect-consents/view :run-if-false goto-login-page }
                 {:name "post-review-consents" :runnable-fn active-session?  :run-fn collect-consents/perform :run-if-false goto-login-page }
+                {:name "get-witness-consents" :runnable-fn active-session?  :run-fn witness-consents/view :run-if-false goto-login-page }
+                {:name "post-witness-consents" :runnable-fn active-session?  :run-fn witness-consents/perform :run-if-false goto-login-page }
 
                 {:name "get-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
                 {:name "post-view-unimplemented" :runnable-fn (constantly true) :run-fn unimplemented/view }
@@ -177,19 +180,19 @@
   (fn [req]
     (let [resp (app req)]
       (when (= :get (:request-method req))
-        (do (debug "last page (get) " (:uri req))
+        (do ;; (debug "last page (get) " (:uri req))
         (session-put! :last-page (:uri req))))
       (when (= :post (:request-method req))
-        (do (debug "last page (post) " (:uri req))
+        (do ;;(debug "last page (post) " (:uri req))
         (session-put! :last-post-page (:uri req))))
       resp)))
 
 (defn add-logging 
   [handler]
   (fn [req]
-    (info "core 234: Got request: " (:uri req) " " req)
+    ;;(info "core 234: Got request: " (:uri req) " " req)
     (let [resp (handler req)]
-      (info "core 234: Got response " (:uri req) " " resp)
+      ;;(info "core 234: Got response " (:uri req) " " resp)
       resp)))
 
 (defn add-path-info

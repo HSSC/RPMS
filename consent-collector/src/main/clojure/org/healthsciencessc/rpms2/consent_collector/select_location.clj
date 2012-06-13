@@ -37,9 +37,7 @@
         (map (fn [l] (helper/radio-btn "location" l )) (distinct locs-names))
       ]
 
-      (helper/standard-submit-button { 
-                :value (str "Select " (helper/org-location-label))
-                :name "select-location" } ))
+     (helper/submit-btn { :value (str "Select " (helper/org-location-label)) :name "select-location" } ))
     :title (str "Select " (helper/org-location-label))))
 
 (defn view 

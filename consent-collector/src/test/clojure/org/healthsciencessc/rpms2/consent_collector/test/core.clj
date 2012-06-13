@@ -198,15 +198,15 @@
                   )
          "Valid metadata" {:mdid "MI001" :MI001 "Dr Primary Care Physician Test" } "/collect/consents" true)))
 
-(deftest collect-consents-view-test
+#_(deftest collect-consents-view-test
   "Verify that /collect/consents screen renders."
   (let [html (collect-consents/view {})
-        ;; _ (spit-html html "collect_consents.html")
+        _ (dbg-spit-html html "collect_consents.html")
         [form] (en/select (en/html-snippet html)
                           [[:form (en/attr= :action "/collect/consents")]])]
     (is form)
     (are [sel] (is (not (empty? (en/select form sel))))
-         [[:form (en/attr= :action "/collect/consents")]]
+         #_[[:form (en/attr= :action "/collect/consents")]]
          )))
 
 

@@ -92,8 +92,8 @@
                  (select-language (dsa/get-languages) )))
         ))]
       [:div.centered {:data-role "fieldcontain" }
-       (helper/standard-submit-button { :value "Back" :name :go-back })
-       (helper/standard-submit-button { :value "Continue" :name "select-protocols-form"  })
+       (helper/submit-btn { :value "Back" :name :go-back })
+       (helper/submit-btn { :value "Continue" :name "select-protocols-form"  })
       ])
     :title (str "Select " (helper/org-protocol-label)) 
     :cancel-btn (helper/cancel-form "/view/select/consenter")
