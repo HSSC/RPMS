@@ -1,7 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.form
   (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
 
-(def readonly {:disabled true})
+(def readonly-props {:disabled true})
 
 (def required-props {:data-required true})
 
@@ -26,7 +26,7 @@
   [{value :value name :name label :label classes :classes readonly :readonly editable :editable}]
   (let [props {:type :text :value value :name name}
         disabled (or (false? editable) readonly)
-        props (if disabled (merge props readonly) props)]
+        props (if disabled (merge props readonly-props) props)]
     [(tag-class :div.form-control-wrapper.form-text classes)
      [(tag-class :label.text classes) {:for name} label]
      [(tag-class :input.text classes) props]]))
