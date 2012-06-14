@@ -92,7 +92,7 @@
 
 (defn children-nodes-by-type
   [parent-node child-type & extra-rels]
-  (let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type schema)]
+  (if-let [child-rel (domain/get-relationship-from-child (get-type parent-node) child-type schema)]
     (neo/traverse parent-node
                   :1
                   (fn [pos] (let [current-node (:node pos)]
@@ -405,9 +405,11 @@
 (defn delete
   [type id]
   (let [node (get-node-by-index type id)
-        props (assoc (neo/props node) :active false)]
+        props (assoc (neo/props node) :active false)
+        child-nodes (filter identity (flatten (map #(children-nodes-by-type node %) (keys schema))))]
     (neo/with-tx
       (neo/set-props! node props))
+    (doseq [child-node child-nodes] (delete (get-type child-node) (:id (neo/props child-node))))
     true))
 
 (defn relate-records
