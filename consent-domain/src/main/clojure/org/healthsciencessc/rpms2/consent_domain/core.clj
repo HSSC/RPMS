@@ -17,16 +17,16 @@
   {organization {:attributes
                  (merge base
                         {:name {:required true :persisted true}
-                         :code {:persisted true}
+                         :code {:persisted true :unique true}
                          :location-label {:persisted true}
                          :protocol-label {:persisted true}
                          :consenter-label {:persisted true}})}
 
    user {:attributes (merge base
                             person
-                            {:username {:persisted true :required true}
-                             :password {:omit true :persisted true :required true :validation (fn [password] (< 5 (count password)))}})
-         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+                            {:username {:persisted true :required true :unique true}
+                             :password {:omit true :persisted true :required true :validation (fn [password] (if (> 5 (count password)) "Password must be longer than 5 characters."))}})
+         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                      {:type :belongs-to :related-to group :relationship :in-group}
                      {:type :has-many :related-to role-mapping}
                      {:type :has-many-through :related-to role-mapping :relation-path [group]}]}
@@ -35,24 +35,24 @@
                             {:name {:persisted true :required true}
                              :code {:persisted true}
                              :requires-location {:persisted true}})
-         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}]}
+         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}]}
 
    language {:attributes (merge base
                                 {:name {:persisted true :required true}
                                  :code {:persisted true}})
-             :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}]}
+             :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}]}
 
    location {:attributes (merge base
                                 {:name {:persisted true}
                                  :code {:persisted true}
                                  :protocol-label {:persisted true}
                                  :consenter-label {:persisted true}})
-             :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}]}
+             :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}]}
 
    group {:attributes (merge base
                              {:name {:persisted true}
                               :code {:persisted true}})
-          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                       {:type :has-many :related-to role-mapping}]}
 
    consenter {:attributes (merge base
@@ -61,7 +61,7 @@
                                   :gender {:persisted true :required true}
                                   :dob {:persisted true :required true}
                                   :zipcode {:persisted true :required true}})
-              :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+              :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                           {:type :has-many :related-to encounter}
                           {:type :belongs-to :related-to location :relationship :in-location}]}
 
@@ -75,8 +75,8 @@
    role-mapping {:attributes base
                  :relations [{:type :belongs-to :related-to user :relationship :has-user :omit-rels true :deletable-by-parent true}
                              {:type :belongs-to :related-to group :relationship :has-group :omit-rels true :deletable-by-parent true}
-                             {:type :belongs-to :related-to role :relationship :has-role :deletable-by-parent true}
-                             {:type :belongs-to :related-to organization :relationship :has-organization :deletable-by-parent true}
+                             {:type :belongs-to :related-to role :relationship :has-role :required true :deletable-by-parent true}
+                             {:type :belongs-to :related-to organization :relationship :has-organization :required true :deletable-by-parent true}
                              {:type :belongs-to :related-to location :relationship :has-location :deletable-by-parent true}]}
 
    meta-item {:attributes (merge base
@@ -86,7 +86,7 @@
                                   :data-type {:persisted true}
                                   :default-value {:persisted true}
                                   :status {:persisted true}})
-              :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+              :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                           {:type :belongs-to :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
 
    policy {:attributes (merge base
@@ -95,7 +95,7 @@
                                :uri {:persisted true}
                                :code {:persisted true}
                                :status {:persisted true}})
-           :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+           :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                        {:type :belongs-to :related-to text-i18n :relationship :has-title :name :title :can-create-parent true}
                        {:type :belongs-to :related-to text-i18n :relationship :has-text :name :text :can-create-parent true}]}
 
@@ -104,20 +104,20 @@
                                           :description {:persisted true}
                                           :code {:persisted true}
                                           :status {:persisted true}})
-                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by}]}
+                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}]}
 
    form {:attributes (merge base
                             {:name {:persisted true}
                              :code {:persisted true}
                              :status {:persisted true}})
-         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                      {:type :has-many :related-to widget}]}
 
    widget {:attributes (merge base
                               {:name {:persisted true}
                                :type {:persisted true}
                                :status {:persisted true}})
-           :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+           :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                        {:type :belongs-to :related-to form :relationship :in-form}
                        {:type :belongs-to :related-to widget :relationship :contained-in :name :contained-in :omit-rels true}
                        {:type :has-many :related-to widget :name :contains}
@@ -126,7 +126,7 @@
    widget-property {:attributes (merge base
                                        {:key {:persisted true}
                                         :value {:persisted true}})
-                    :relations [{:type :belongs-to :related-to widget :relationship :has-widget :omit true :deletable-by-parent true}
+                    :relations [{:type :belongs-to :related-to widget :relationship :has-widget :omit true :required true :deletable-by-parent true}
                                 {:type :belongs-to :related-to language :relationship :in-language}]}
 
    endorsement {:attributes (merge base
@@ -142,7 +142,7 @@
                                          :code {:persisted true}
                                          :uri {:persisted true}
                                          :status {:persisted true}})
-                     :relations [{:type :belongs-to :related-to organization :relationship :owned-by}]}
+                     :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}]}
 
    protocol {:attributes (merge base
                                 {:name {:persisted true}
@@ -151,14 +151,14 @@
                                  :code {:persisted true}
                                  :required {:persisted true}
                                  :select-by-default {:persisted true}})
-             :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
+             :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                          {:type :belongs-to :related-to location :relationship :located-at}]}
 
    protocol-version {:attributes (merge base
                                         {:status {:persisted true}
                                          :version {:persisted true}})
-                     :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
-                                 {:type :belongs-to :related-to protocol :relationship :version-of :deletable-by-parent true}
+                     :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
+                                 {:type :belongs-to :related-to protocol :relationship :version-of :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to form :relationship :described-by}
                                  {:type :has-many :related-to policy :name :policies}
                                  {:type :has-many :related-to endorsement}
@@ -167,7 +167,7 @@
 
    text-i18n {:attributes (merge base
                                  {:value {:persisted true}})
-              :relations [{:type :belongs-to :related-to language :relationship :in-language}]}})
+              :relations [{:type :belongs-to :related-to language :relationship :in-language :required true}]}})
 
 (def default-value-types
   ["role" "policy" "language"])
@@ -205,23 +205,17 @@
   [type data-defs]
   (remove :omit (get-relations type data-defs)))
 
-(defn attr-search
-  [term]
-  (fn [[attr desc]]
-    (if (term desc)
-      attr)))
+(defn get-attrs
+  [type data-defs & attr-types]
+  (let [attrs (get-in data-defs [type :attributes])]
+    (if attr-types
+      (for [[name props] attrs :when (and props (every? props attr-types))]
+        name)
+      (keys attrs))))
 
-(defn required-attrs
-  "Returns a collection of attribues that are required for the record to be saved."
-  [data-def]
-  (keep (attr-search :required)
-        (:attributes data-def)))
-
-(defn persisted-attrs
-  "Returns a collection of only the attributes that can be saved to a record."
-  [data-def]
-  (keep (attr-search :persisted)
-        (:attributes data-def)))
+(defn required-rels
+  [type data-defs]
+  (filter :required (get-in data-defs [type :relations])))
 
 (defmulti relation-name->key
   (fn [relation]
@@ -264,17 +258,12 @@
      parent-relationship {:dir :in :rel parent-relationship}
      child-relationship {:dir :out :rel child-relationship})))
 
-(defn validate
-  [record]
-  record)
-
 (defn validate-record
   [record type data-defs]
   (->> (data-defs type)
        all-valid-keys
-       (select-keys record)
-       validate))
+       (select-keys record)))
 
 (defn validate-persistent-record
   [record type data-defs]
-  (select-keys record (persisted-attrs (data-defs type))))
+  (select-keys record (get-attrs type data-defs :persisted)))

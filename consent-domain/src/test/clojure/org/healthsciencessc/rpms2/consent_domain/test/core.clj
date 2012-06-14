@@ -2,25 +2,27 @@
   (:use [org.healthsciencessc.rpms2.consent-domain.core])
   (:use [clojure.test]))
 
+
+(def test-data-defs
+  {"foo-type" {:attributes {:foo {:required true}
+                             :bar nil
+                            :baz {:required true :persisted true}}
+               :relations [{:type :has-many :related-to "bar-type"}]}
+   "bar-type" {:relations [{:type :belongs-to :related-to "foo-type" :relationship :foobar}]}})
+
 (deftest get-required-attrs-from-data-def
   (is (= (hash-set :foo :baz)
-         (set (required-attrs {:attributes {:foo {:required true}
-                                                :bar nil
-                                            :baz {:required true}}})))))
+         (set (get-attrs "foo-type" test-data-defs :required)))))
 
 (deftest get-persisted-attrs-from-data-def
-  (is (= (hash-set :foo :bar)
-         (set (persisted-attrs {:attributes {:foo {:persisted true}
-                                                :bar {:persisted true}
-                                             :baz nil}})))))
+  (is (= (hash-set :baz)
+         (set (get-attrs "foo-type" test-data-defs :persisted)))))
 
 (deftest get-relationship-for-parent-from-child
-  (let [data-defs {"foo" {:relations [{:type :has-many :related-to "bar"}]}
-                   "bar" {:relations [{:type :belongs-to :related-to "foo" :relationship :foobar}]}}]
-    (is (= :foobar
-           (get-relationship-from-child "foo" "bar" data-defs)))))
+  (is (= :foobar
+         (get-relationship-from-child "foo-type" "bar-type" test-data-defs))))
 
 (deftest omit-attributes
   (let [attr-map {:attributes {:foo {:persisted true}
-                                :bar {:omit true}}}]
+                               :bar {:omit true}}}]
     (is (= '(:foo) (all-valid-keys attr-map)))))

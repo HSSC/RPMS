@@ -37,34 +37,42 @@
 ;; The resolve-body function has used cond to allow for more resolutions to be added.
 ;; For example, to add a resolution for handling multipart requests with files.
 (defn resolve-body
-  "If the body is available to be resolved, it will be read. There are instances when 
-   the stream to the body has been closed and should not be read, such as when an HTML 
+  "If the body is available to be resolved, it will be read. There are instances when
+   the stream to the body has been closed and should not be read, such as when an HTML
    form submits data."
   [request]
   (let [content-type (or (:content-type request) "NA")
         data (:form-params request)
         body (:body request)]
-    (cond 
-      (.startsWith content-type "application/json") (get-json-params body)
-      (.startsWith content-type "application/clojure") (read-clojure body)
-      (.startsWith content-type "application/x-www-form-urlencoded") (keyify-params data)
-      (< 0 (count data)) (keyify-params data)
-      :else {})))
+    (cond
+     (.startsWith content-type "application/json") (get-json-params body)
+     (.startsWith content-type "application/clojure") (read-clojure body)
+     (.startsWith content-type "application/x-www-form-urlencoded") (keyify-params data)
+     (< 0 (count data)) (keyify-params data)
+     :else {})))
+
+(defn json-requested?
+  [content-type]
+  (.startsWith content-type "application/json"))
+
+(defn clojure-requested?
+  [content-type]
+  (or (.startsWith content-type "text/clojure")
+      (.startsWith content-type "application/clojure")))
 
 (defn format-response-body
   [body request]
   (let [requested-content-type (or (:content-type request) "NA")]
-    (if-not (response? body)
-      (cond
-       (.startsWith requested-content-type "application/json")
-       (content-type (response (with-out-str (pprint-json body))) requested-content-type)
-       (or (map? body)
-           (.startsWith requested-content-type "text/clojure")
-           (.startsWith requested-content-type "application/clojure"))
-       (content-type (response (with-out-str (prn body))) "application/clojure")
-       :else 
-       body)
-      body)))
+    (cond
+     (json-requested? requested-content-type)
+     (if (response? body)
+       (content-type (update-in body [:body] (fn [b] (with-out-str (pprint-json b)))) requested-content-type)
+       (content-type (response (with-out-str (pprint-json body))) requested-content-type))
+     (or (map? body) (clojure-requested? requested-content-type))
+     (if (response? body)
+       (content-type (update-in body [:body] (fn [b] (with-out-str (prn b)))) "application/clojure")
+       (content-type (response (with-out-str (prn body))) "application/clojure"))
+     :else body)))
 
 (defn process-not-found-body
   [req process-name]

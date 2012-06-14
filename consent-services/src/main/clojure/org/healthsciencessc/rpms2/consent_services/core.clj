@@ -1,7 +1,8 @@
 (ns org.healthsciencessc.rpms2.consent-services.core
   (:use compojure.core
         ring.middleware.reload-modified
-        ring.util.serve)
+        ring.util.serve
+        [slingshot.slingshot :only (try+)])
   (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.config :as config]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
@@ -37,21 +38,33 @@
             (seed/seed-example-org!))
           "Done"))
 
-(defroutes app
-  (process-ws/ws-constructor (fn [handler]
-                               (auth/wrap-authentication handler auth/authenticate))))
-
 (defn add-path-info
   [handler]
   (fn [req]
     (handler (assoc req :path-info (:uri req)))))
 
+(defn wrap-data-errors
+  [handler]
+  (fn [req]
+    (try+
+     (handler req)
+     (catch [:type :org.healthsciencessc.rpms2.consent-services.data/invalid-record] {errors :errors}
+       (process-ws/format-response-body {:status 422 :headers {} :body {:errors errors}} req))
+     (catch [:type :org.healthsciencessc.rpms2.consent-services.data/record-not-found] {:keys [record-type id]}
+         (process-ws/format-response-body {:status 404 :headers {} :body {:errors {:type record-type :id id}}} req)))))
+
+(defroutes app
+  (wrap-data-errors
+   (process-ws/ws-constructor (fn [handler]
+                                (auth/wrap-authentication handler auth/authenticate)))))
+
 (defroutes dev-routes
   static-dev-routes
-  (process-ws/ws-constructor (fn [handler]
-                               (-> handler
-                                   (auth/wrap-authentication auth/authenticate)
-                                   add-path-info))))
+  (wrap-data-errors
+   (process-ws/ws-constructor (fn [handler]
+                                (-> handler
+                                    (auth/wrap-authentication auth/authenticate)
+                                    add-path-info)))))
 
 (def dev-app
   (-> dev-routes
@@ -66,4 +79,3 @@
   []
   (stop-server)
   (ws-destroy))
-

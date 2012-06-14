@@ -1,9 +1,9 @@
 (ns org.healthsciencessc.rpms2.consent-services.data
-  (:use [clojure.set :only (difference)])
+  (:use [clojure.set :only (difference)]
+        [clojure.string :only (blank? capitalize)]
+        [slingshot.slingshot :only (throw+)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-services.auth :as auth]
-            [org.healthsciencessc.rpms2.consent-services.config :as config]
             [borneo.core :as neo]
             [clojure.zip :as zip])
   (:import [org.neo4j.graphdb.index IndexManager
@@ -99,6 +99,11 @@
                               (and (not= current-node parent-node) (type-of? child-type current-node))))
                   (apply merge {child-rel :in} extra-rels))))
 
+(defn find-nodes-by-props
+  [type props]
+  (let [type-node (find-record-type-node type)]
+    (neo/traverse type-node :1 props {:kind-of :in})))
+
 (defn clean-nils
   [data]
   (into {} (filter (comp not nil? val) data)))
@@ -155,17 +160,6 @@
     (if node
       node
       (create-node-with-default-relationships type props nil))))
-
-(defn update-node-props
-  [type id data]
-  "Returns the node"
-  (neo/with-tx
-    (let [upd-node (get-node-by-index type id)
-          merged-data (merge (neo/props upd-node) data)
-          update-data (domain/validate-persistent-record
-                       (clean-nils merged-data) type schema)]
-      (neo/set-props! upd-node update-data)
-      upd-node)))
 
 (defn find-all-instance-nodes
   [type]
@@ -300,6 +294,7 @@
           :rel-type default-rel})))))
 
 (defn create-node-with-default-relationships
+  "Creates a node along with domain relationships.  Needs to be run in a neo4j transaction."
   [node-type node-properties extra-relationships]
   (let [rels (concat [{:from :self
                        :to (find-record-type-node node-type)
@@ -325,6 +320,57 @@
     (flatten (for [rel rels]
                (map #(assoc % :record-type (second rel)) ((first rel) children-by-rel))))))
 
+;; Data Validations
+
+(defn validate-required-props
+  [type record]
+  (let [required-props (domain/get-attrs type schema :required)]
+    (->> required-props
+         (filter (fn [prop] (blank? (prop record))))
+         (map (fn [prop] (str (capitalize (name prop)) " is required."))))))
+
+(defn validate-unique-fields
+  [type record]
+  (let [unique-props (domain/get-attrs type schema :unique)]
+    (->> unique-props
+         (filter (fn [prop] (not (empty? (find-nodes-by-props type (select-keys record (list prop)))))))
+         (map (fn [prop] (str (capitalize (name prop)) " must be unique."))))))
+
+(defn custom-validations
+  [type record]
+  (let [validations (for [prop (domain/get-attrs type schema :validation)]
+                      [prop (get-in schema [type :attributes prop :validation])])]
+    (->> validations
+         (filter (fn [[prop valid-fn]] (not (nil? (valid-fn (prop record))))))
+         (map (fn [[prop valid-fn]] (valid-fn (prop record)))))))
+
+(defn validate-required-rels
+  [type record]
+  (let [reqired-rels (domain/required-rels type schema)]
+    (->> reqired-rels
+         (filter (fn [rel] (nil? (get-node-by-index (:related-to rel) (get-in record [(domain/get-relation-name rel) :id])))))
+         (map (fn [rel] (str (capitalize (name (domain/get-relation-name rel))) " is required."))))))
+
+(defn validate-properties
+  [type record]
+  (concat (validate-required-props type record)
+          (validate-unique-fields type record)
+          (custom-validations type record)))
+
+(defn validate-record
+  [type record]
+  (concat (validate-properties type record)
+          (validate-required-rels type record)))
+
+(defn with-validation
+  [type record execfn & validfns]
+  (let [errors (if validfns
+                 (reduce conj (map #(% type record) validfns))
+                 (validate-record type record))]
+    (if (empty? errors)
+      (execfn)
+      (throw+ {:type ::invalid-record :errors errors}))))
+
 ;; Public API
 (defn find-all
   [type]
@@ -333,13 +379,13 @@
 (defn find-record
   [type id]
   (if-let [node (get-node-by-index type id)]
-    (node->record node type)))
+    (node->record node type)
+    (throw+ {:type ::record-not-found :record-type type :id id})))
 
 (defn find-records-by-attrs
   [type attr-map]
-  (filter (fn [record]
-            (= attr-map (select-keys record (keys attr-map))))
-          (find-all type)))
+  (let [nodes (find-nodes-by-props type attr-map)]
+    (map #(node->record % type) nodes)))
 
 (defn find-related-records
   "From the start record, finds all the records at the end of the relation path"
@@ -369,8 +415,9 @@
   [type properties & extra-relationships]
   "extra-relationships is a sequence of maps with either :from or :to, plus a relationtype"
   (node->record
-   (neo/with-tx
-     (create-node-with-default-relationships type properties extra-relationships))
+   (with-validation type properties
+     #(neo/with-tx
+        (create-node-with-default-relationships type properties extra-relationships)))
    type))
 
 (defn create-records
@@ -392,14 +439,22 @@
                 relation (domain/get-parent-relation parent-type child-type schema)
                 rel-name (if relation (domain/get-relation-name relation))
                 neo-data (if rel-name (assoc child-node rel-name (:neo-data parent-node)) child-node)
-                record (node->record (create-node-with-default-relationships child-type neo-data nil) child-type)]
+                record (node->record
+                        (with-validation child-type neo-data #(create-node-with-default-relationships child-type neo-data nil))
+                        child-type)]
             (recur
              (zip/next (zip/replace loc (assoc child-node :neo-data record))))))))))
 
 (defn update
   [type id data]
-  "This only updates properties, not relations"
-  (update-node-props type id data)
+  (if-let [update-node (get-node-by-index type id)]
+    (let [merged-data (merge (neo/props update-node) data)
+          update-data (domain/validate-persistent-record
+                       (clean-nils merged-data) type schema)]
+      (with-validation type update-data
+        #(neo/with-tx
+           (neo/set-props! update-node update-data))
+        validate-properties)))
   (find-record type id))
 
 (defn delete
