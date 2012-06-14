@@ -18,8 +18,11 @@
                                                                        i18n-label-for
                                                                        i18n-placeholder-for)]))
 
-(def COLLECT_START_PAGE :collect-start)
-(def REVIEW_START_PAGE :summary-start)
+(def ^:const COLLECT_START_PAGE :collect-start)
+(def ^:const REVIEW_START_PAGE :summary-start)
+
+(def ^:const ACTION_BTN_PREFIX "action-btn-")
+(def ^:const META_DATA_BTN_PREFIX "meta-data-btn-")
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
@@ -273,6 +276,7 @@
     (hpage/include-css 
      (absolute-path "app.css")
      (absolute-path "jquery.mobile-1.1.0.min.css" )
+     (absolute-path "new-theme-e.css")
      (absolute-path "jquery.signaturepad.css" ))
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")
@@ -429,11 +433,38 @@
           (debug "save-return-page: " cur-page)
           (session-put! :review-consent-page-in-progress cur-page))))
 
+
+(defn- make-keyword-from-button 
+  "Remove the prefix from the string (from list of matching button names)
+  and turn it into a keyword."
+  [btns prefix]
+
+  (let [b (name (first btns))
+        len (count prefix)]
+        (keyword (.substring b len))))
+
+(defn- preprocess-parameters
+  "Some parameter names must be adjusted, because they have been modified to enable
+  special processing.  For instance, action buttons start with action-btn-"
+  [m]
+  (let [action-btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))
+        meta-btns (filter #(.startsWith (str (name %)) META_DATA_BTN_PREFIX) (m keys))]
+        (if (> (count action-btns) 0)
+            (assoc m (make-keyword-from-button action-btns ACTION_BTN_PREFIX ) "selected")
+            (if (> (count meta-btns) 0)
+                (assoc m (make-keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "selected")
+                m))))
+
 (defn save-captured-data
   "Updates model with the information from the map.
-  m contains the form post parameters. "
-  [m]
-  (let [orig (session-get :model-data) 
+  parms-orig contains form POST parameters. "
+
+  [parms-orig]
+  (let [m (preprocess-parameters parms-orig) 
+        _ (debug "save-captured-data: after preprocess " m)
+        action-btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) m)
+        meta-btns (filter #(.startsWith (str (name %)) META_DATA_BTN_PREFIX) m)
+        orig (session-get :model-data) 
         m1 (dissoc (merge orig m) :next :previous) ]
         (session-put! :model-data  m1)))
 

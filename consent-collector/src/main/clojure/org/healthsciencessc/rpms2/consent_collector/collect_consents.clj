@@ -32,9 +32,6 @@
 
 (defn- process-control
   "Displays the widget 'widget' by invoking the method with the widget's type.
-  This method takes the control (widget) and the model data associated with that 
-  control. This enables the control to display a previously set value.
-  
   A map is passed in which contains the widget, the current value of the widget,
   the form and flag indicated whether this is in the review phase (so the widget
   can render itself appropriately)."
@@ -120,10 +117,10 @@
    to use in rendering the widget."
   [{:keys [widget value form review] :as m}]
 
-  (debug "SIGNATURE: widiget " widget " VALUE " (pprint-str value))
-  (debug "SIGNATURE: widiget " widget " jSON VALUE " (json-str value) )
+  ;;(debug "SIGNATURE: widget " widget " VALUE " (pprint-str value))
+  ;;(debug "SIGNATURE: widget " widget " jSON VALUE " (json-str value) )
 
-  (if value (do
+ #_(if value (do
               (debug "adding signature with a value ")
               (let [jscript (str 
 "$(document).ready(function() { $('.sigPad').signaturePad().regenerate(" (json-str value) "); }")]
@@ -197,7 +194,7 @@
      (for [t (:meta-items widget)] 
            (list
              (let [md (dsa/get-metadata t)
-                   data-name (str "meta-data-btn-" (:mdid md))
+                   data-name (str helper/META_DATA_BTN_PREFIX (:mdid md))
                    model-data (session-get :model-data)
                    data-value ( (keyword data-name) model-data ) ]
                   [:div.ui-grid-b
@@ -211,15 +208,17 @@
                                                          :name data-name } )] ])))) ])
 
 (defn policy-button
+  "Displays the policy button." 
+
   [{:keys [widget value form review] :as m}]
-  [:div.control 
-   (if review 
-       [:div "in review values is " value [:div "the label is " (:label widget) ]] )
-   (helper/submit-btn {:data-theme "d"
+  [:div.control.policy-button 
+   (dbg (if review 
+       [:div "in review values is " value [:div "the label is " (:label widget) ]] ))
+   (helper/submit-btn {:data-theme (if value "e" "d" )
                        :data-inline "false"
-                       :name (str "action-btn-" (:label widget))
+                       :name (str helper/ACTION_BTN_PREFIX (:name widget))
                        :value (:label widget)
-                      })])
+                      }) ])
 
 (defn text
   "A Text widget generates a title and paragraph representations for 
@@ -345,12 +344,38 @@
   [parms s]
   (filter #(.startsWith (str (name %)) s) (keys parms)))
 
+
+
+(defn- find-special-page
+  [parms str1 ]
+  (let [s str1
+        len (count s)
+        pg-name (map (fn [n] (.substring (name n) len)) (get-matching-btns parms str1))]
+        (first pg-name) ))
+
 (defn- find-review-edit-page
   [parms]
-  (let [s "review-edit-btn-"
-        len (count s)
-        pg-name (map (fn [n] (.substring (name n) len)) (get-matching-btns parms "review-edit-btn"))]
-        (first pg-name) ))
+  (find-special-page "review-edit-btn-"))
+
+(defn- find-meta-item-page
+  [parms]
+  (find-special-page helper/META_DATA_BTN_PREFIX ))
+
+(defn- find-review-edit-or-meta-item-page-name
+  [parms]
+  (or (find-review-edit-page parms) 
+       (find-meta-item-page parms)))
+
+
+(defn- goto-special-page
+  [pg-nm]
+
+  (let [page (get-named-page (helper/current-form) pg-nm) ]
+       (do (helper/save-return-page)
+           (if page (helper/set-page page)
+                    (flash-put! :header "Unable to find edit page"))
+           (helper/myredirect "/collect/consents"))))
+
 
 (defn- has-any?
   "Are there any parameters starting with the string 's'?"
@@ -367,6 +392,8 @@
     (get-named-page (:form s) nxt) 
     nil))
 
+
+
 (defn perform
   "Collect consents."
 
@@ -380,39 +407,28 @@
     (helper/save-captured-data parms) 
 
     ;; see if previous or continue was pressed
-    ;; either go to the next page or show end of collection page
+    ;; either go to next page or show end of collection page
     (cond 
       (helper/get-return-page)
       (do
         (let [pg-name (helper/get-return-page)]
-           (helper/clear-return-page )
-           (helper/set-page (get-named-page form pg-name))
-           (helper/myredirect "/collect/consents")))
+              (helper/clear-return-page)
+              (helper/set-page (get-named-page form pg-name))
+              (helper/myredirect "/collect/consents")))
 
-      (has-any? parms "review-edit-btn-")
-      ;; in this case need to extract out the new page
-      ;; save this page as the next page
-      (let [pg-nm (find-review-edit-page parms) 
-            page (get-named-page form pg-nm) ]
-          (do
-             (debug "SENDING TO PAGE: " pg-nm )
-             (debug "SENDING TO PAGE: " page )
-             (helper/save-return-page )
-             (helper/set-page (get-named-page form pg-nm))
-             (helper/myredirect "/collect/consents")))
+      (has-any? parms helper/META_DATA_BTN_PREFIX )
+      (helper/myredirect (str "[meta-data button " (pprint-str (get-matching-btns parms helper/META_DATA_BTN_PREFIX )) "]")
+             "/collect/consents")
 
       ;; special buttons which are completely processed by save-captured-data
-      (has-any? parms "action-btn-")
-      (helper/myredirect (str "[action button "  (pprint-str (get-matching-btns parms "action-btn-")) "]")
+      (has-any? parms helper/ACTION_BTN_PREFIX )
+      (helper/myredirect (str "[action button "  (pprint-str (get-matching-btns parms helper/ACTION_BTN_PREFIX )) "]")
                          "/collect/consents")
 
       (has-any? parms "signature-btn-")
       (helper/myredirect (str "[signature button "  (pprint-str (get-matching-btns parms "signature-btn-")) "]")
            "/collect/consents")
 
-      (has-any? parms "meta-data-btn-")
-      (helper/myredirect (str "[meta-data button " (pprint-str (get-matching-btns parms "meta-data-btn-")) "]")
-             "/collect/consents")
 
       (contains? parms :previous)
       (if-let [pg-name (:previous (:page s)) ]

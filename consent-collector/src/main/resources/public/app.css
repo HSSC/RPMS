@@ -313,6 +313,10 @@ div.control > .text { padding-bottom: 10px; }
 //div.control.review-endorsement { border: thin solid red; padding: 5px; background-color: pink; }
 //div.control.review { border: thin solid navy; padding: 5px; background-color: pink; }
 
+//div.control > policy-button-selected { border: thick solid purple; }
+//div.control > policy-button-not-selected { border: thick solid orange; }
+//div.control.policy-button { border: thin dashed purple; background-color: pink; }
+
 div.ccsig { border: thin solid navy; background-color: pink; }
 
 form.debug { background-color: gray; border: thick solid navy; }
@@ -338,3 +342,8 @@ div.sigpad-control {
 	display: block;
 	xbackground-color: #ccccff; 
 }
+
+.ui-btn-up-e {
+	border: 1px solid #29abe2 /*{e-bup-border}*/;
+}
+
