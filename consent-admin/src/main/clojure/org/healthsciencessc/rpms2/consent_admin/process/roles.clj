@@ -114,10 +114,8 @@
 
 (defn post-api-role-assign
   [ctx]
-  (let [{locations (keyword "location[]")       ;; MULTISELECTS result in this crazy post param syntax "name[]"
-         roles (keyword "role[]")} (:body-params ctx)  ;; if only one thing is selected, you get a string, >1 it's a vector.  annoying
-        roles (if (string? roles) [roles] roles)
-        locations (if (string? locations) [locations] locations)
+  (let [{locations :location 
+         roles :role } (:body-params ctx)
         {assignee-type :assignee-type
          assignee-id :assignee-id}  (:query-params ctx)]
     (cond
@@ -199,6 +197,7 @@
                                   :location :selected#location#id
                                   :role :selected#role#id}
                          :method :delete
+                         :action-on-success "refresh"
                          :url "/api/rolemapping"}
           add-params {:url "/view/roles/assign"
                       :params {:assignee-type assignee-type
