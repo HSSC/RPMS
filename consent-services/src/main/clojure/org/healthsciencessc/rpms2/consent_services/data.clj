@@ -408,8 +408,8 @@
         props (assoc (neo/props node) :active false)
         child-nodes (filter identity (flatten (map #(children-nodes-by-type node %) (keys schema))))]
     (neo/with-tx
-      (neo/set-props! node props))
-    (doseq [child-node child-nodes] (delete (get-type child-node) (:id (neo/props child-node))))
+      (neo/set-props! node props)
+      (doseq [child-node child-nodes] (delete (get-type child-node) (:id (neo/props child-node)))))
     true))
 
 (defn relate-records
