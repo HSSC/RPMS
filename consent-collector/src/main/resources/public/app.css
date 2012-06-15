@@ -173,7 +173,7 @@ div.innerform {
 /* footer */
 .footer .ui-grid-b .ui-block-b { text-align: center; }
 .footer .ui-grid-b .ui-block-c { text-align: right; }
-.footer .ui-grid-b { margin-left: 5px; padding: 5px; background-color: white; font-size: .8em; color: #333333; height: 20px; }
+.footer .ui-grid-b { margin-left: 5px; padding: 5px; background-color: white; font-size: .8em; color: #333333; height: 40px; }
 
 /* Styles for the Search Results */ 
 .user-selected { background-color: #0000A0 ; color: white ; }

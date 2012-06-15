@@ -12,6 +12,7 @@
             						  [search-results :as search-results] 
             						  [create-consenter :as create-consenter] 
             						  [select-protocol :as select-protocol] 
+            						  [encounter :as encounter] 
             						  [collect-consents :as collect-consents] 
             						  [witness-consents :as witness-consents] 
             						  [metadata :as metadata]
@@ -61,6 +62,12 @@
 
                 {:name "get-view-select-consenter" :runnable-fn active-session?  :run-fn select-consenter/view :run-if-false goto-login-page }
                 {:name "post-view-select-consenter" :runnable-fn active-session?  :run-fn select-consenter/perform :run-if-false goto-login-page }
+
+                {:name "get-view-select-encounter" :runnable-fn active-session?  :run-fn encounter/view :run-if-false goto-login-page }
+                {:name "post-view-select-encounter" :runnable-fn active-session?  :run-fn encounter/perform :run-if-false goto-login-page }
+
+                {:name "get-view-create-encounter" :runnable-fn active-session?  :run-fn encounter/create-view :run-if-false goto-login-page }
+                {:name "post-view-create-encounter" :runnable-fn active-session?  :run-fn encounter/create-perform :run-if-false goto-login-page }
 
                 {:name "post-view-search-consenters" :runnable-fn active-session?  :run-fn search-consenter/perform :run-if-false goto-login-page }
                 {:name "get-view-search-consenters" :runnable-fn active-session?  :run-fn search-consenter/view :run-if-false goto-login-page }

@@ -54,11 +54,8 @@
 
      [:form#other-section { :method "POST" :action (helper/mypath "/view/search/results") } 
 
-     ;; save current selection 
-     ;; obviously we should no longer save these because these aren't the fields
-      (for [f ["patient-id" "patient-name" "patient-encounter-data" ]]
-            [:input {:type "hidden" :name f :id f :value "no patient"}])
-
+     ;; This is the hook for clojurescript to modify
+     [:input {:type "hidden" :name "consenter-id" :id "consenter-id" :value "no patient"}]
       [:div.centered
       (helper/submit-button "NO" "search-consenter-results-no")
       (helper/submit-button "YES" "search-consenter-results-yes") ]]] ))

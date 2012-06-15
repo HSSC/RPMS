@@ -32,7 +32,7 @@
   "Generates form for entering lockcode - a required
    4 digit number."
   [_]
-  (helper/clear-patient)
+  (helper/clear-consenter)
   (helper/rpms2-page 
     (helper/post-form "/view/select/lock-code" 
         (list [:div.left (i18n :lock-code-form-enter-lock-code ) ]

@@ -20,15 +20,15 @@
              t1 (filter #(= location (get-in % [:location :name])) rmapping)
              selected-loc (:location (first t1)) ]
           (do
-            (session-put! :org-location selected-loc)
-            (session-put! :location location)
+            (session-put! :org-location selected-loc)  ;; this is the actual map of location
+            (session-put! :location location)          ;; this is the simple name of the location
             (helper/myredirect "/view/select/lock-code")))))
 
 
 (defn- select-location-form
   "Display select location form."
   [locs-names locs-data]
-  (helper/clear-patient)
+  (helper/clear-consenter)
   (helper/clear-location)
   (helper/rpms2-page 
     (helper/post-form "/view/select/location"

@@ -28,16 +28,19 @@
     (.text (.find details "#consenter-dob") (:dob user) )
     (.text (.find details "#consenter-consenter-id") (:consenter-id user) )
 		
-    ;; Set this value in the form that will be submitted if the 
-    ;; user selects yes, that this is the correct record
     (.val (.find other-section (str "#patient-name")) (str first-name " " last-name))
     (.log js/console "patient name set " (str first-name " " last-name))
 
-    (.val (.find other-section (str "#patient-encounter-date")) (:consenter-encounter-date user))
-    (.val (.find other-section (str "#patient-id")) (:medical-record-number user))
+    ;; Set this value in the form that will be submitted if the 
+    ;; user selects yes, that this is the correct record
+    (.log js/console "consenter id set: " (:consenter-id user))
+    (.val (js/$ "#consenter-id") (:consenter-id user))
+
+    ;(.val (.find other-section (str "#patient-encounter-date")) (:consenter-encounter-date user))
+    ;(.val (.find other-section (str "#patient-id")) (:medical-record-number user))
 
     ;; Set this value so it can be referred to 
-    (.val (.find other-section (str "#current-patient-selection")) user)
+    ;;;;;;(.val (.find other-section (str "#current-patient-selection")) user)
 ))
 
 ;;=============================================

@@ -161,7 +161,7 @@
       (do 
         ;; do not want to reperform the search.
         (debug "GO BACK LAST: " (session-get :last-page))
-        (helper/clear-patient)
+        (helper/clear-consenter)
         (helper/myredirect "/view/select/consenter"))
       (perform-select-protocols ctx)))
 

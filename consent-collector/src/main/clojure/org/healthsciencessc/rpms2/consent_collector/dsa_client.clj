@@ -11,9 +11,12 @@
                                                        [debug :only (debug!)] ]
         [clojure.tools.logging :only (debug info error warn)]
         [clojure.pprint :only (pprint)]
+        [sandbar.stateful-session :only (session-get session-put!)]
         [clojure.data.json :only (read-json json-str)]))
 
 (def ^:dynamic *dsa-auth* nil)
+
+
 
 ;; need required fields from consent domain
 (def consenter-search-fields  [:first-name
@@ -21,7 +24,6 @@
                                :consenter-id
                                :dob
                                :zipcode])
-
 
 (defn- generate-default-consenter-id
   []
@@ -136,10 +138,22 @@
                  ;;(assoc m :organization org-id)
                 )))
 
+(defn dsa-create-encounter 
+  [e]
+  (let [location (session-get :org-location)
+        consenter (session-get :consenter)
+        encounter (merge e {:location location}
+                         {:consenter consenter})
+        resp (dsa-call :put-consent-encounter encounter)]
+    (debug "dsa-create-encounter" e location consenter)
+    (debug "dsa-create-encounter-resp" resp)
+    (condp = (:status resp)
+      200 (:body resp)
+      nil)))
+
 (defn dsa-create-consenter
   "Create a consenter."
   [params]
-  (debug "dsa-create-consenter " params )
   (let [p (remove-blank-vals (select-keys params create-consenter-fields)) 
         invalid (has-all-required-fields p create-consenter-required-fields)]
       (if invalid 
@@ -165,6 +179,9 @@
   :dob                 { :required true :type "date" :i18n-name "date-of-birth"}
   :zipcode             { :required true :type "number" :i18n-name "zipcode" } 
 })
+
+(def encounter-field-defs [[:encounter-id {:i18n-name "encounter-id" :required true}]
+                           [:date {:type "date" :i18-name "encounter-date" :required true}]])
 
 (defn get-protocols-version
   [protocols]

@@ -14,7 +14,7 @@
 
 (defn- allowed?
   [u & constraints]
-  (apply (some-fn encounter-roles) u constraints))
+  (apply (apply some-fn encounter-roles) u constraints))
 
 (def encounter-processes
   [{:name "get-consent-encounters"
@@ -29,7 +29,7 @@
                 (cond
                  (roles/superadmin? user)
                  (data/find-all "encounter")
-                 (allowed? user)
+                 (allowed? user :organization {:id user-org-id})
                  (data/find-children "organization" user-org-id "encounter"))))
     :run-if-false forbidden-fn}
 
@@ -38,7 +38,7 @@
                    (let [user (get-in params [:session :current-user])
                          org-id (get-in user [:organization :id])
                          enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user)
+                     (and (allowed? user :organization {:id org-id})
                           (data/belongs-to? "encounter" enc-id "organization" org-id))))
     :run-fn (fn [params]
               (let [encounter-id (get-in params [:query-params :encounter])]
@@ -48,12 +48,13 @@
    {:name "put-consent-encounter"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])]
-                     (allowed? user)))
+                         user-org (:organization user)]
+                     (allowed? user :organization user-org)))
     :run-fn (fn [params]
               (let [enc (:body-params params)]
-                (data/create "encounter" (assoc enc :organization
-                                           (get-in params :user :organization)))))
+                (data/create "encounter" (assoc enc
+                                           :organization
+                                           (get-in params [:session :current-user :organization])))))
     :run-if-false forbidden-fn}
 
    {:name "post-consent-encounter"
@@ -61,7 +62,7 @@
                    (let [user (get-in params [:session :current-user])
                          org-id (get-in user [:organization :id])
                          enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user)
+                     (and (allowed? user :organization {:id org-id})
                           (data/belongs-to? "encounter" enc-id "organization" org-id false))))
     :run-fn (fn [params]
               (let [enc-id (get-in params [:query-params :encounter])
@@ -74,7 +75,7 @@
                    (let [user (get-in params [:session :current-user])
                          org-id (get-in user [:organization :id])
                          enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user)
+                     (and (allowed? user :organization {:id org-id})
                           (data/belongs-to? "encounter" enc-id "organization" org-id false))))
     :run-fn (fn [params]
               (let [enc-id (get-in params [:query-params :encounter])]

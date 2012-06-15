@@ -18,11 +18,11 @@
                                                                        i18n-label-for
                                                                        i18n-placeholder-for)]))
 
-(def ^:const COLLECT_START_PAGE :collect-start)
-(def ^:const REVIEW_START_PAGE :summary-start)
+(def COLLECT_START_PAGE :collect-start)
+(def REVIEW_START_PAGE :summary-start)
 
-(def ^:const ACTION_BTN_PREFIX "action-btn-")
-(def ^:const META_DATA_BTN_PREFIX "meta-data-btn-")
+(def ACTION_BTN_PREFIX "action-btn-")
+(def META_DATA_BTN_PREFIX "meta-data-btn-")
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
@@ -187,17 +187,16 @@
   []
   ;(destroy-session!)
   (debug "remove-session-data")
-  (doseq [k [ :patient-id 
-            :patient-name 
-            :patient-encounter-date 
-            :location 
-            :org-location 
-            :org-name
-            :lockcode
-            :search-params
-            :create-params
-            :user  ]]
-            (session-delete-key! k)))
+  (doseq [k [:consenter 
+             :encounter
+             :location 
+             :org-location 
+             :org-name
+             :lockcode
+             :search-params
+             :create-params
+             :user]]
+    (session-delete-key! k)))
 
 (def ipad-html5-class
   "ui-mobile landscape min-width-320px min-width-480px min-width-768px min-width-1024px" )
@@ -264,6 +263,11 @@
     (hpage/include-js 
      (absolute-path "collect-sigpad.js"))))  
 
+(defn format-consenter []
+  (if-let [{:keys [first-name last-name consenter-id]}
+           (session-get :consenter)]
+    (format "Consenter: %s %s (%s)" first-name last-name consenter-id)))
+
 (defn- footer
   []
   [:div.footer {:data-role "footer" :data-theme "c" } 
@@ -271,11 +275,10 @@
       [:div.ui-block-a (if-let [loc (session-get :location)]
                                (str (org-location-label) ": " loc)) ]
 
-      [:div.ui-block-b (if-let [p (session-get :patient-name)]
-                               (str "Consenter: " p)) ]
+      [:div.ui-block-b (format-consenter)]
 
-      [:div.ui-block-c (if-let [p (session-get :encounter-id)]
-                               (str "EncounterID: " p)) ] ]])
+      [:div.ui-block-c (if-let [p (:encounter-id (session-get :encounter))]
+                               (str "Encounter ID: " p)) ] ]])
 
 
 (defn rpms2-page
@@ -665,23 +668,15 @@
   (session-delete-key! :location)
   (session-delete-key! :org-location))
 
-(defn clear-patient
-  "Removes patient information from session."
+(defn clear-consenter
+  "Removes consenter information from session."
   []
+  (debug "clear consenter ")
+  (session-delete-key! :consenter)
+  (session-delete-key! :encounter))
 
-  (debug "clear patient: ")
-  (session-delete-key! :patient-id)
-  (session-delete-key! :patient-name)
-  (session-delete-key! :encounter-id) 
-  (session-delete-key! :patient-encounter-date))
-
-(defn set-patient
-  "Saves patient info in the session."
-  [m]
-
-  (debug "set patient: " m)
-  (session-put! :patient-id (:patient-id m))
-  (session-put! :patient-name (:patient-name m))
-  (session-put! :encounter-id (:encounter-id m))
-  (session-put! :patient-encounter-date (:patient-encounter-date m)))
-
+(defn set-consenter
+  "Saves consenter info in the session."
+  [c]
+  (debug "set consenter: " c)
+  (session-put! :consenter c))
