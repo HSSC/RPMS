@@ -54,6 +54,22 @@
   (fn [ctx]
     (data/find-children types/organization (lookup-organization ctx) node-type)))
 
+(defn gen-types-unrelate
+  "Generates a function that will remove a relationship between two nodes."
+  [c-type c-lookup p-type p-lookup]
+  (fn [ctx]
+    (let [p-id (p-lookup ctx)
+          c-id (c-lookup ctx)]
+      (data/unrelate-records c-type c-id p-type p-id))))
+
+(defn gen-types-relate
+  "Generates a function that will remove a relationship between two nodes."
+  [c-type c-lookup p-type p-lookup]
+  (fn [ctx]
+    (let [p-id (p-lookup ctx)
+          c-id (c-lookup ctx)]
+      (data/relate-records c-type c-id p-type p-id))))
+
 ;; Generates Common Functions For Looking Up Data Records
 (defn gen-record-lookup
   "Generates a function that will lookup a specific instance of a type, getting it's ID value from the 
@@ -72,6 +88,7 @@
 (def get-meta-item-record (gen-record-lookup types/meta-item lookup/get-meta-item-in-query))
 (def get-organization-record (gen-record-lookup types/organization lookup/get-organization-in-query))
 (def get-policy-record (gen-record-lookup types/policy lookup/get-policy-in-query))
+(def get-policy-definition-record (gen-record-lookup types/policy lookup/get-policy-definition-in-query))
 (def get-protocol-record (gen-record-lookup types/protocol lookup/get-protocol-in-query))
 (def get-protocol-version-record (gen-record-lookup types/protocol-version lookup/get-protocol-version-in-query))
 (def get-role-record (gen-record-lookup types/role lookup/get-role-in-query))

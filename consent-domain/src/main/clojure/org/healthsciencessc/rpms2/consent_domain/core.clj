@@ -83,7 +83,8 @@
                                  {:description {:persisted true}}
                                  {:uri {:persisted true}}
                                  {:data-type {:persisted true}}
-                                 {:default-value {:persisted true}})
+                                 {:default-value {:persisted true}}
+                                 {:status {:persisted true}})
               :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
                           {:type :belongs-to :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
 
@@ -91,7 +92,8 @@
                               {:name {:persisted true}}
                               {:description {:persisted true}}
                               {:uri {:persisted true}}
-                              {:code {:persisted true}})
+                              {:code {:persisted true}}
+                              {:status {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
                        {:type :belongs-to :related-to text-i18n :relationship :has-title :name :title :can-create-parent true}
                        {:type :belongs-to :related-to text-i18n :relationship :has-text :name :text :can-create-parent true}]}
@@ -99,18 +101,21 @@
    policy-definition {:attributes (merge base
                                          {:name {:persisted true}}
                                          {:description {:persisted true}}
-                                         {:code {:persisted true}})
+                                         {:code {:persisted true}}
+                                         {:status {:persisted true}})
                       :relations [{:type :belongs-to :related-to organization :relationship :owned-by}]}
 
    form {:attributes (merge base
                             {:name {:persisted true}}
-                            {:code {:persisted true}})
+                            {:code {:persisted true}}
+                            {:status {:persisted true}})
          :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
                      {:type :has-many :related-to widget}]}
 
    widget {:attributes (merge base
                               {:name {:persisted true}}
-                              {:type {:persisted true}})
+                              {:type {:persisted true}}
+                              {:status {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
                        {:type :belongs-to :related-to form :relationship :in-form}
                        {:type :belongs-to :related-to widget :relationship :contained-in :name :contained-in :omit-rels true}
@@ -125,7 +130,8 @@
 
    endorsement {:attributes (merge base
                                    {:name {:persisted true}
-                                    :code {:persisted true}})
+                                    :code {:persisted true}
+                                    :status {:persisted true}})
                 :relations [{:type :belongs-to :related-to organization :relationship :owned-by}
                             {:type :belongs-to :related-to endorsement-type :relationship :has-type :omit-rels true}
                             {:type :belongs-to :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
@@ -133,7 +139,8 @@
    endorsement-type {:attributes (merge base
                                    {:name {:persisted true}
                                     :code {:persisted true}
-                                    :uri {:persisted true}})
+                                    :uri {:persisted true}
+                                    :status {:persisted true}})
                 :relations [{:type :belongs-to :related-to organization :relationship :owned-by}]}
    
    protocol {:attributes (merge base

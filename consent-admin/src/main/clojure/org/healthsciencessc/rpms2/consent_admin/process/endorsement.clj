@@ -20,9 +20,9 @@
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def ^:const fields [{:name :name :label "Name" :required true}
-                     {:name :code :label "Code"}
-                     {:name :endorsement-type :label "Type" :type :singleselect :required true :blank true :parser :id}])
+(def fields [{:name :name :label "Name" :required true}
+             {:name :code :label "Code"}
+             {:name :endorsement-type :label "Type" :type :singleselect :required true :blank true :parser :id}])
 
 (def type-name types/endorsement)
 (def type-label "Endorsement")
@@ -61,15 +61,21 @@
  [ctx]
   (if-let [node-id (lookup/get-endorsement-in-query ctx)]
     (let [n (services/get-endorsement node-id)
-          org-id (get-in n [:organization :id])]
+          org-id (get-in n [:organization :id])
+          endorsement-type (get-in n [:endorsement-type :id])]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
                        (container/scrollbox 
                          (form/dataform 
                            (form/render-fields 
-                             {:fields {:endorsement-type {:items (gen-endorsement-type-items org-id)}}} fields n)))
+                             {:fields {:endorsement-type {:readonly true
+                                                          :items (gen-endorsement-type-items org-id)}}} fields n)))
                        (actions/actions
+                         (actions/details-action 
+                           {:url (str "/view/" type-path "/types") 
+                            :params {:organization org-id :endorsement node-id :endorsement-type endorsement-type}
+                            :label "Change Type"})
                          (actions/save-action 
                            {:url (str "/api/" type-path) :params {type-kw node-id}})
                          (actions/delete-action 

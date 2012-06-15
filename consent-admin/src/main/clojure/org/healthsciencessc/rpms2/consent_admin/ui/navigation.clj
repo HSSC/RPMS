@@ -112,7 +112,7 @@
               {:url "/view/endorsements" :label "Endorsements"}
               {:url "/view/policy/definitions" :label "Policy Definitions"}
               {:url "/view/policies" :label "Policies"}
-              {:url "/view/metaitems" :label "Meta Items"}
+              {:url "/view/meta-items" :label "Meta Items"}
               {:url "/view/widgets" :label "Widgets"}]}
     {:group "Management" :use? manager?
       :items [{:url "/view/consenter/history" :label " History" :generator consenter-item-generator}

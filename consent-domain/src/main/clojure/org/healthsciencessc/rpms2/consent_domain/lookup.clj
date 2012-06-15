@@ -28,6 +28,7 @@
 (def get-meta-item-in-query (gen-request-query-lookup [:meta-item]))
 (def get-organization-in-query (gen-request-query-lookup [:organization]))
 (def get-policy-in-query (gen-request-query-lookup [:policy]))
+(def get-policy-definition-in-query (gen-request-query-lookup [:policy-definition]))
 (def get-protocol-in-query (gen-request-query-lookup [:protocol]))
 (def get-protocol-version-in-query (gen-request-query-lookup [:protocol-version]))
 (def get-role-in-query (gen-request-query-lookup [:role]))

@@ -13,6 +13,9 @@
 (def default-confirm 
   {:title "Confirm Action" :message "Are you sure you want to proceed?"})
 
+(def default-verify 
+  {:title "Confirm Action" :message "Please provide a user friendly verification message."})
+
 (defn- confirm-to-attr
   [conf]
   (cond
@@ -21,31 +24,47 @@
     :else
     (to-attr-value (assoc default-confirm :message (str conf)))))
 
+(defn- verify-to-attr
+  [verify]
+  (cond
+    (map? verify)
+      (to-attr-value (merge default-verify verify))
+    :else
+    (to-attr-value (assoc default-verify :action (name verify)))))
+
 (defn action-separator
   []
   [:div.action-separator])
+
+(defn get-common-props
+  [{confirm :confirm 
+    verify :verify}]
+  (let [conf-props (if confirm {:data-confirm (confirm-to-attr confirm)} {})
+        verify-props (if verify {:data-verify (verify-to-attr verify)} {})]
+    (merge conf-props verify-props)))
 
 ;; 
 (defn ajax-action
   "Generates an action that will make a call via ajax to the server.  Allows for confirmation of action 
 prior to calling the server, and the execution of a client-side action when the ajax call is successful"
   [{method :method url :url params :params label :label classes :classes
-    confirm :confirm 
     action-on-success :action-on-success
-    include-data :include-data}]
+    include-data :include-data
+    :as options}]
   (let [props {:data-method method :data-url url :data-map (to-attr-value params)}
         action-props (if action-on-success {:data-action-on-success action-on-success} {})
-        conf-props (if confirm {:data-confirm (confirm-to-attr confirm)} {})
+        common-props (get-common-props options)
         data-props (if include-data {:data-include-data true} {})]
-    [(tag-class :div jquery-classes classes :.ajax-action.action) (merge props action-props conf-props data-props)
+    [(tag-class :div jquery-classes classes :.ajax-action.action) (merge props action-props data-props common-props)
       [:span.ui-button-text (or label "Trigger")]]))
 
 (defn push-action
   "Generates an action that will push a new request to the PaneManager."
-  [{url :url params :params label :label confirm :confirm classes :classes}]
+  [{url :url params :params label :label classes :classes
+    :as options}]
   (let [props {:data-url url :data-map (to-attr-value params)}
-        conf-props (if confirm {:data-confirm (confirm-to-attr confirm)} {})]
-    [(tag-class :div classes jquery-classes :.push-action.action) (merge props conf-props)
+        common-props (get-common-props options)]
+    [(tag-class :div classes jquery-classes :.push-action.action) (merge props common-props)
       [:span.ui-button-text (or label "Push")]]))
 
 (defn back-action

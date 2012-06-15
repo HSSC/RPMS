@@ -503,7 +503,6 @@
   [id]
   (DELETE "/library/endorsement/type" {:endorsement-type id} nil nil))
 
-
 ;; Endorsements
 (defn get-endorsements
   [_]
@@ -530,4 +529,91 @@
 (defn delete-endorsement
   [id]
   (DELETE "/library/endorsement" {:endorsement id} nil nil))
+
+(defn assign-endorsement-type
+  [id, old-id, new-id]
+  (POST "/library/endorsement/type/assign" {:endorsement id :endorsement-type old-id :assign-type new-id} nil nil))
+
+;; Meta Items
+(defn get-meta-items
+  [_]
+  (GET "/library/meta-items" {}))
+
+(defn get-meta-item
+  [id]
+  (GET "/library/meta-item" {:meta-item id}))
+
+(defn add-meta-item
+  [o]
+  (PUT "/library/meta-item"
+       nil
+       nil
+       (with-out-str (prn o))))
+
+(defn edit-meta-item
+  [id o]
+  (POST "/library/meta-item"
+        {:meta-item id}
+        nil
+        (with-out-str (prn o))))
+
+(defn delete-meta-item
+  [id]
+  (DELETE "/library/meta-item" {:meta-item id} nil nil))
+
+
+;; Policy Definitions
+(defn get-policy-definitions
+  [_]
+  (GET "/library/policy-definitions" {}))
+
+(defn get-policy-definition
+  [id]
+  (GET "/library/policy-definition" {:policy-definition id}))
+
+(defn add-policy-definition
+  [o]
+  (PUT "/library/policy-definition"
+       nil
+       nil
+       (with-out-str (prn o))))
+
+(defn edit-policy-definition
+  [id o]
+  (POST "/library/policy-definition"
+        {:policy-definition id}
+        nil
+        (with-out-str (prn o))))
+
+(defn delete-policy-definition
+  [id]
+  (DELETE "/library/policy-definition" {:policy-definition id} nil nil))
+
+;; Policy
+(defn get-policys
+  [_]
+  (GET "/library/policies" {}))
+
+(defn get-policy
+  [id]
+  (GET "/library/policy" {:policy id}))
+
+(defn add-policy
+  [o]
+  (PUT "/library/policy"
+       nil
+       nil
+       (with-out-str (prn o))))
+
+(defn edit-policy
+  [id o]
+  (POST "/library/policy"
+        {:policy id}
+        nil
+        (with-out-str (prn o))))
+
+(defn delete-policy
+  [id]
+  (DELETE "/library/policy" {:policy id} nil nil))
+
 

@@ -429,3 +429,16 @@
     (do
       (neo/delete! (rel-between child-node parent-node rel))
       (find-record child-type child-id))))
+
+;; Yes, a terrible name.  
+(defn re-relate-records
+  [child-type child-id parent-type parent-id new-parent-id]
+  (let [child-node (get-node-by-index child-type child-id)
+        parent-node (get-node-by-index parent-type parent-id)
+        new-parent-node (get-node-by-index parent-type new-parent-id)
+        rel (domain/get-parent-relationship parent-type child-type schema)]
+    (do
+      (neo/with-tx
+        (neo/delete! (rel-between child-node parent-node rel))
+        (create-relationship child-node rel new-parent-node))
+      (find-record child-type child-id))))

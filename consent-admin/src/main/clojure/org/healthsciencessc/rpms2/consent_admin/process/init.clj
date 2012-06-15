@@ -7,5 +7,8 @@
             [org.healthsciencessc.rpms2.consent-admin.process.protocol-version]
             [org.healthsciencessc.rpms2.consent-admin.process.endorsement-type]
             [org.healthsciencessc.rpms2.consent-admin.process.endorsement]
+            [org.healthsciencessc.rpms2.consent-admin.process.meta-item]
+            [org.healthsciencessc.rpms2.consent-admin.process.policy]
+            [org.healthsciencessc.rpms2.consent-admin.process.policy-definition]
             [org.healthsciencessc.rpms2.consent-admin.process.roles]
             [org.healthsciencessc.rpms2.consent-admin.process.users]))

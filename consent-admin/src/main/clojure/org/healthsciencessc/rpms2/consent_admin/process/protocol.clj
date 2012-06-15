@@ -11,6 +11,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
             [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [hiccup.core :as hcup]
             [clojure.data.json :as json]
@@ -19,11 +20,12 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (def fields [{:name :name :label "Name"}
-                     {:name :description :label "Description"}
-                     {:name :protocol-id :label "External ID"}
-                     {:name :code :label "Code"}
-                     {:name :required :label "Required" :type :checkbox}
-                     {:name :select-by-default :label "Selected By Default" :type :checkbox}])
+             {:name :description :label "Description"}
+             {:name :protocol-id :label "External ID"}
+             {:name :code :label "Code"}
+             {:name :required :label "Required" :type :checkbox}
+             {:name :select-by-default :label "Selected By Default" :type :checkbox}])
+
 (defn- render-label
   "Helper function to generate labels using the appropriate text for protocols."
   [location & addons]
@@ -139,37 +141,37 @@
   [
    ;; Generates the view for the protocol list in a location.
    {:name "get-view-protocol-location"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check security/current-user lookup/get-location-in-query)
     :run-fn view-protocol-location
     :run-if-false ajax/forbidden}
    
    ;; Generates the view for a specific protocol.
    {:name "get-view-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check security/current-user lookup/get-location-in-query)
     :run-fn view-protocol
     :run-if-false ajax/forbidden}
    
    ;; Generates the view for creating a protocol.
    {:name "get-view-protocol-new"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check security/current-user lookup/get-location-in-query)
     :run-fn view-protocol-new
     :run-if-false ajax/forbidden}
    
    ;; Generates the api service for creating a protocol.
    {:name "put-api-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check security/current-user lookup/get-location-in-query)
     :run-fn api-add-protocol
     :run-if-false ajax/forbidden}
    
    ;; Generates the api service for creating a protocol.
    {:name "post-api-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check security/current-user lookup/get-location-in-query)
     :run-fn api-update-protocol
     :run-if-false ajax/forbidden}
    
    ;; Generates the api service for creating a protocol.
    {:name "delete-api-protocol"
-    :runnable-fn (runnable/gen-designer-location-check security/current-user [:query-params :location])
+    :runnable-fn (runnable/gen-designer-location-check security/current-user lookup/get-location-in-query)
     :run-fn api-delete-protocol
     :run-if-false ajax/forbidden}
    ])

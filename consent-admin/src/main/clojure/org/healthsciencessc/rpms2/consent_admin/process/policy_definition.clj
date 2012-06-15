@@ -1,5 +1,5 @@
 ;; Provides the configuration of the protocol managemant UIs.
-(ns org.healthsciencessc.rpms2.consent-admin.process.endorsement-type
+(ns org.healthsciencessc.rpms2.consent-admin.process.policy-definition
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
@@ -20,51 +20,44 @@
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def fields [{:name :name :label "Name"}
-             {:name :code :label "Code"}
-             {:name :uri :label "URI"}])
+(def fields [{:name :name :label "Name" :required true}
+             {:name :description :label "Description"}
+             {:name :code :label "Code"}])
 
-(def type-name types/endorsement-type)
-(def type-label "Endorsement Type")
-(def type-path "endorsement/type")
+(def type-name types/policy-definition)
+(def type-label "Policy Definition")
+(def type-path "policy-definition")
 (def type-kw (keyword type-name))
 
-(defn view-endorsement-types
+(defn view-policy-definitions
   [ctx]
   (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-endorsement-types org-id)
-        endorsement-id (lookup/get-endorsement-in-query ctx)
-        endorsement-type-id (lookup/get-endorsement-type-in-query ctx)]
+        nodes (services/get-policy-definitions org-id)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
       (layout/render ctx (str type-label "s")
                      (container/scrollbox 
                        (selectlist/selectlist {:action :.detail-action}
                                               (for [n nodes]
-                                                {:label (:name n) :data n})))
+                                                {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 
-                       (if endorsement-id
-                         (actions/ajax-action 
-                           {:method :post :url (str "/api/" type-path "/assign") :label "Assign Type"
-                            :params {:organization org-id :assign-type :selected#id 
-                                     :endorsement endorsement-id type-kw endorsement-type-id}
-                            :action-on-success ".back-action"
-                            :verify {:action "selected" :message "Please select an Endorsement Type."}})
-                         (list
-                           (actions/details-action 
-                             {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
-                           (actions/new-action 
-                             {:url (str "/view/" type-path "/new") :params {:organization org-id}})))
+                       (actions/details-action 
+                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                       (actions/new-action 
+                         {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))
 
-(defn view-endorsement-type
+(defn view-policy-definition
  [ctx]
-  (if-let [node-id (lookup/get-endorsement-type-in-query ctx)]
-    (let [n (services/get-endorsement-type node-id)]
+  (if-let [node-id (lookup/get-policy-definition-in-query ctx)]
+    (let [n (services/get-policy-definition node-id)
+          org-id (get-in n [:organization :id])]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
-                       (container/scrollbox (form/dataform (form/render-fields {} fields n)))
+                       (container/scrollbox 
+                         (form/dataform 
+                           (form/render-fields {} fields n)))
                        (actions/actions
                          (actions/save-action 
                            {:url (str "/api/" type-path) :params {type-kw node-id}})
@@ -72,68 +65,55 @@
                            {:url (str "/api/" type-path) :params {type-kw node-id}})
                          (actions/back-action)))))
     ;; Handle Error
-    (layout/render-error ctx {:message "An endorsement type is required."})))
+    (layout/render-error ctx {:message "An policy-definition type is required."})))
 
-(defn view-endorsement-type-new
+(defn view-policy-definition-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
   (let [org-id (common/lookup-organization ctx)]
     (layout/render ctx (str "Create " type-label)
-                   (container/scrollbox (form/dataform (form/render-fields {} fields )))
+                   (container/scrollbox 
+                     (form/dataform 
+                       (form/render-fields {} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})
                      (actions/back-action)))))
-
-(defn assign-endorsement-type
-  [ctx]
-  (let [endorsement-id (lookup/get-endorsement-in-query ctx)
-        new-type-id (get-in ctx [:query-params :assign-type])
-        endorsement-type-id (lookup/get-endorsement-type-in-query ctx)
-        resp (services/assign-endorsement-type endorsement-id endorsement-type-id new-type-id)]
-    (if (services/service-error? resp)
-          (ajax/save-failed (meta resp))
-          (ajax/success resp))))
-
+    
 (def process-defns
   [{:name (str "get-view-" type-name "s")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsement-types
+    :run-fn view-policy-definitions
     :run-if-false ajax/forbidden}
    
    {:name (str "get-view-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsement-type
+    :run-fn view-policy-definition
     :run-if-false ajax/forbidden}
    
    {:name (str "get-view-" type-name "-new")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsement-type-new
+    :run-fn view-policy-definition-new
     :run-if-false ajax/forbidden}
    
    {:name (str "put-api-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
     :run-fn (common/get-api-type-add 
-              services/add-endorsement-type)
+              services/add-policy-definition)
     :run-if-false ajax/forbidden}
    
    {:name (str "post-api-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
     :run-fn (common/gen-api-type-update 
-              services/edit-endorsement-type 
-              lookup/get-endorsement-type-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name "-assign")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn assign-endorsement-type
+              services/edit-policy-definition 
+              lookup/get-policy-definition-in-query (str "A valid " type-label " is required."))
     :run-if-false ajax/forbidden}
    
    {:name (str "delete-api-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
     :run-fn (common/gen-api-type-delete 
-              services/delete-endorsement-type 
-              lookup/get-endorsement-type-in-query (str "A valid " type-label " is required."))
+              services/delete-policy-definition 
+              lookup/get-policy-definition-in-query (str "A valid " type-label " is required."))
     :run-if-false ajax/forbidden}])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))

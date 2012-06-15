@@ -53,7 +53,9 @@ $(function(){
 		var url = Utils.DataSet.get(target, "data-url");
 		var params = RPMS.getParamMap(target, "data-map");
 		var confirm = Utils.DataSet.getObject(target, "data-confirm");
-		RPMS.Action.doPush(url, params, confirm);
+		RPMS.verify(target, function(){
+			RPMS.Action.doPush(url, params, confirm);
+		});
 	});
 
 	// Register Event - Click Generic Push Action
@@ -68,9 +70,11 @@ $(function(){
 		var confirm = Utils.DataSet.getObject(target, "data-confirm");
 		var includeData = Utils.DataSet.getBoolean(target, "data-include-data");
 		var actionOnSuccess = Utils.DataSet.get(target, "data-action-on-success");
-		
-		RPMS.Action.doAjax(method, fullUrl, includeData ? RPMS.getDataMapString() : null, 
-				confirm, {onsuccess: actionOnSuccess}, RPMS.Action.jsonOptions);
+
+		RPMS.verify(target, function(){
+			RPMS.Action.doAjax(method, fullUrl, includeData ? RPMS.getDataMapString() : null, 
+					confirm, {onsuccess: actionOnSuccess});
+		});
 	});
 	
 	// Register Event - Click Back Button
@@ -90,7 +94,6 @@ $(function(){
 			var params = RPMS.List.getParams(target, item);
 			var confirm = Utils.DataSet.getObject(target, "data-confirm");
 			RPMS.Action.doPush(url, params, confirm);
-			
 		}
 	});
 
@@ -108,12 +111,22 @@ $(function(){
 			var includeData = Utils.DataSet.getBoolean(target, "data-include-data");
 			var actionOnSuccess = Utils.DataSet.get(target, "data-action-on-success");
 			RPMS.Action.doAjax(method, fullUrl, includeData ? RPMS.getDataMapString() : null, 
-					confirm, {onsuccess: actionOnSuccess}, RPMS.Action.jsonOptions);
+					confirm, {onsuccess: actionOnSuccess});
 		}
 	});
 });
 
 var RPMS = {
+	verify: function(target, action){
+		var verify = Utils.DataSet.getObject(target, "data-verify", null);
+		if(verify == null || RPMS.Action.doAction(verify.action)){
+			action();
+		}
+		else{
+			Dialog.inform(verify);
+		}
+	},
+	
 	findTarget: function(event, selector){
 		var element = $(event.target);
 		if(element.filter(selector).length > 0){
@@ -215,6 +228,16 @@ var RPMS = {
 };
 
 RPMS.Action = {
+	actions: {
+		selected: function(){
+			if(PaneManager.cache("selected") != null){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+	},
 	confirmAction: function(action, confirm){
 		if(confirm != null){
 			Dialog.confirm({title: confirm.title, 
@@ -238,6 +261,8 @@ RPMS.Action = {
 				data: body ,
 				type: method,
 				dataType: "text",
+				processData: false, 
+				contentType: "application/json",
 				success: function(data, status, xhr){
 					Dialog.Progress.end();
 					if(actions != null && actions.onsuccess != null){
@@ -260,18 +285,27 @@ RPMS.Action = {
 		this.confirmAction(action, confirm);
 	},
 	doAction: function(action){
+		var parms = action.split("::");
+		action = parms.shift();
+		for(var i = 0; i < parms.length; i++){
+			var parm = parms[i];
+			if(parm.indexOf("[") == 0 || parm.indexOf("{") == 0){
+				parms[i] = JSON.parse(parm);
+			}
+		}
+		if(RPMS.Action.actions[action] != null){
+			return RPMS.Action.actions[action](parms);
+		}
+		
 		if(PaneManager[action] != null){
-			PaneManager[action]();
-			return;
+			return PaneManager[action](parms);
 		}
 		
 		var buttons = PaneManager.current.pane.find(action);
 		if(buttons.length > 0){
-			buttons.trigger("click");
-			return;
+			return buttons.trigger("click");
 		}
-	},
-	jsonOptions: {processData: false, contentType: "application/json"}
+	}
 };
 RPMS.List = {
 	getParams: function(action, selected){

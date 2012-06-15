@@ -49,35 +49,43 @@
 
 (defn gen-designer-location-check
   "Creates a runnable? function that checks if a user is a protocol designer for a specific location."
-  [userfn path-to-location]
+  [userfn lookup-fn]
   (fn [ctx]
     (let [user (userfn ctx)
-          location-id (get-in ctx path-to-location)]
+          location-id (lookup-fn ctx)]
       (can-design-location-id user location-id))))
 
 (defn gen-designer-org-check
   "Creates a runnable? function that checks if a user is a protocol designer within an organization."
-  [userfn org-id-lookup]
+  [userfn lookupfn]
   (fn [ctx]
     (let [user (userfn ctx)
-          org-id (org-id-lookup ctx)]
+          org-id (lookupfn ctx)]
       (can-design-org-id user org-id))))
 
 (defn gen-designer-record-check
   "Creates a runnable? function that checks if a user is a protocol designer within an organization."
-  [userfn record-lookup]
+  [userfn lookupfn]
   (fn [ctx]
     (let [user (userfn ctx)
-          record (record-lookup ctx)
+          record (lookupfn ctx)
           org-id (get-in record [:organization :id])]
       (can-design-org-id user org-id))))
 
-(defn gen-collector-location-check
-  "Creates a runnable? function that checks if a user is a consent collector for a specific location."
-  [userfn path-to-location]
+(defn gen-designer-protocol-check
+  "Creates a runnable? function that checks if a user is a protocol designer for a specific protocol."
+  [userfn lookupfn]
   (fn [ctx]
     (let [user (userfn ctx)
-          location-id (get-in ctx path-to-location)]
+          record (lookupfn ctx)]
+      (can-design-protocol user record))))
+
+(defn gen-collector-location-check
+  "Creates a runnable? function that checks if a user is a consent collector for a specific location."
+  [userfn lookupfn]
+  (fn [ctx]
+    (let [user (userfn ctx)
+          location-id (lookupfn ctx)]
       (can-collect-location-id user location-id))))
 
 (defn gen-super-or-admin
@@ -89,12 +97,12 @@
 
 (defn gen-super-or-admin-by-org
   "Creates a runnable? function that checks if a user is a super admin or an admin for an optional organziation."
-  [userfn path-to-organization]
+  [userfn lookupfn]
   (fn [ctx]
     (let [user (userfn ctx)
-          orgid (get-in ctx path-to-organization)
-          userorgid (get-in user [:organization :id])]
+          org-id (lookupfn ctx)
+          user-org-id (get-in user [:organization :id])]
       (or (roles/superadmin? user)
           (and (roles/admin? user) 
-               (or (nil? orgid)
-                   (= orgid userorgid)))))))
+               (or (nil? org-id)
+                   (= org-id user-org-id)))))))
