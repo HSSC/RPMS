@@ -31,7 +31,7 @@
    [:span.control-type  (:type widget) ] widget ])
 
 (defn- process-control
-  "Displays the widget 'widget' by invoking the method with the widget's type.
+  "Displays widget by invoking the method with the widget's type.
   A map is passed in which contains the widget, the current value of the widget,
   the form and flag indicated whether this is in the review phase (so the widget
   can render itself appropriately)."
@@ -46,30 +46,6 @@
              (func (merge m {:value wdata} )) 
              (dbg [:div.debug [:span.standout (:name widget) ] [:span.data wdata ] widget ]) ])))
        
-(defn- sigpad
-  "Emits signature pad control.  
-  The signature is processed by it's own form and part of the standard
-  collect consents form. "
-  []
-
-  [:div.sigpad-control#signature-pad-item
-  [:form.sigPad {:method "POST" :data-ajax "false" }
-      #_[:label {:for "name"} "Print your name" ]
-      #_[:input {:type "text" :name "name" :id "name" :class "name" } "Print your name" ]
-      #_[:p.typeItDesc "Review your signature" ]
-      [:p.drawItDesc "Draw your signature" ]
-   [:ul.sigNav
-    #_[:li.typeIt [:a {:href "#type-it"} "Type" ] ]
-    #_[:li.drawIt [:a {:href "#draw-it"} "Draw It" ] ]
-    [:li.clearButton [:a {:href "#clear"} "Clear" ] ]
-    ]
-     [:div {:class "sig sigWrapper ccsig" }
-      [:div.typed ] 
-       [:canvas {:class "pad" :width "198" :height "55" }  ]
-       [:input {:type "hidden" :name "output" :class "output" }  ]
-     ]
-   ]])
-
 (defn review-endorsement
   "A ReviewEndorsement widget allows the collector to review endorsements that were 
   collected during the consent process."
@@ -117,36 +93,11 @@
    to use in rendering the widget."
   [{:keys [widget value form review] :as m}]
 
-  ;;(debug "SIGNATURE: widget " widget " VALUE " (pprint-str value))
-  ;;(debug "SIGNATURE: widget " widget " jSON VALUE " (json-str value) )
-
- #_(if value (do
-              (debug "adding signature with a value ")
-              (let [jscript (str 
-"$(document).ready(function() { $('.sigPad').signaturePad().regenerate(" (json-str value) "); }")]
-                (debug "\n\njscript is " jscript "\n\n")
-                (session-put! :jscript 
-                              (str "\n<!-- ZZZZ HEY --><script> " jscript "</script>") ))))
-
   [:div.control.signature 
    (:name widget)
-  [:div.sigpad-control
-      [:div.sigPad  ; sigPad must be on div which directly contains sigNav
-       ;; [:script "var signature-api-" (:name widget) "= \"" (json-str value) "\";" ]
-      [:ul.sigNav 
-         #_[:li.clearButton [:a {:href "#clear"} "Clear" ] ] ; use an onclick event here
-         [:li (helper/submit-btn { :value (:clear-label widget)
-                                   :name (str "signature-btn-" (:name widget)) }) ] 
-      ] 
-      [:div {:class "sig sigWrapper" }
-        [:div.typed ] 
-          [:canvas {:class "pad" :width "198" :height "55" }  ]
-          [:input {:type "hidden" 
-                   :name (:name widget) 
-                   :class "output" 
-                   :value value } ]
-      ]]]
-   ])
+   (helper/signaturePadDiv (:name widget) value)
+   (helper/submit-btn { :value (:clear-label widget)
+                          :name (str "signature-btn-" (:name widget)) }) ])
 
 (defn- true-or-not-specified? 
   [v]
@@ -199,16 +150,35 @@
                    data-value ( (keyword data-name) model-data ) ]
                   [:div.ui-grid-b
                     [:div.ui-block-a.metadata (:label md) ]
+
                     [:div.ui-block-b.metadata 
-                     [:span {:class (if data-value "changed" "") } (:value md) ]
-                     (if data-value [:span
-                                     "This item has been flagged for change
-                                     and may be edited during the review process." ]) ]  
-                    [:div.ui-block-c (helper/submit-btn {:value "Change" 
-                                                         :name data-name } )] ])))) ])
+                     [:div {:class (str (:value md))}
+                       [:span {:class (if data-value "changed" "") :id (:mdid md) }(:value md)]]  
+                     ]
+
+                     [:input {:type "hidden" 
+                              :id (str "hidden-" (:mdid md)) 
+                              :name data-name 
+                              :value "NO"
+                              }]
+                    [:div.ui-block-c 
+                     [:p [:a 
+                          {:href "#popup" 
+                           :data-rel "dialog" 
+                           :onclick "org.healthsciencessc.rpms2.core.data_change_clicked(this)"
+                           :data-user (pr-str (session-get :user))
+                           :data-change-class (pr-str (str (:value md)))
+                           :mdid (pr-str (str (:mdid md)))
+                           :data-role "button" 
+                           :data-theme "a" } "Change" ] ]
+                     #_(helper/submit-btn {:value "Change" 
+                                         :name data-name 
+                                         :onclick 
+"alert('This item has been flagged for change and may be edited during the review process.');" } )] ])))) ])
 
 (defn policy-button
-  "Displays the policy button." 
+  "Displays the policy button. Once the button has been pushed,
+  the data in the model is set and the style is changed." 
 
   [{:keys [widget value form review] :as m}]
   [:div.control.policy-button 
@@ -331,10 +301,11 @@
            (display-page (:page s) s) 
            (navigation-buttons s)) 
        :title (form-title (:form s)) 
+       :second-page "HI TAMI"
 
 ;;       :end-of-page-stuff (if-let [ep (session-get :jscript)] 
- ;;                           (str "\n\n\n<script>" ep "</script>")
-  ;;                          (str "\n\n<!-- END OF PAGE STUFF -->"))
+;;                           (str "\n\n\n<script>" ep "</script>")
+;;                          (str "\n\n<!-- END OF PAGE STUFF -->"))
 
       )))
 
@@ -392,8 +363,6 @@
     (get-named-page (:form s) nxt) 
     nil))
 
-
-
 (defn perform
   "Collect consents."
 
@@ -406,8 +375,6 @@
 
     (helper/save-captured-data parms) 
 
-    ;; see if previous or continue was pressed
-    ;; either go to next page or show end of collection page
     (cond 
       (helper/get-return-page)
       (do
@@ -416,18 +383,18 @@
               (helper/set-page (get-named-page form pg-name))
               (helper/myredirect "/collect/consents")))
 
-      (has-any? parms helper/META_DATA_BTN_PREFIX )
-      (helper/myredirect (str "[meta-data button " (pprint-str (get-matching-btns parms helper/META_DATA_BTN_PREFIX )) "]")
-             "/collect/consents")
+;;  (has-any? parms helper/META_DATA_BTN_PREFIX )
+;;  (helper/myredirect (str "[meta-data button " (pprint-str (get-matching-btns parms helper/META_DATA_BTN_PREFIX )) "]")
+;;      "/collect/consents")
 
       ;; special buttons which are completely processed by save-captured-data
       (has-any? parms helper/ACTION_BTN_PREFIX )
       (helper/myredirect (str "[action button "  (pprint-str (get-matching-btns parms helper/ACTION_BTN_PREFIX )) "]")
                          "/collect/consents")
 
-      (has-any? parms "signature-btn-")
-      (helper/myredirect (str "[signature button "  (pprint-str (get-matching-btns parms "signature-btn-")) "]")
-           "/collect/consents")
+;;      (has-any? parms "signature-btn-")
+;;      (helper/myredirect (str "[signature button "  (pprint-str (get-matching-btns parms "signature-btn-")) "]")
+;;           "/collect/consents")
 
 
       (contains? parms :previous)

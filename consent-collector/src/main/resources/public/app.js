@@ -12787,69 +12787,48 @@ cljs.reader.read_string = function read_string(s) {
 goog.provide("org.healthsciencessc.rpms2.core");
 goog.require("cljs.core");
 goog.require("cljs.reader");
-org.healthsciencessc.rpms2.core.mylog = function mylog(msg) {
-  var details__2731 = $.call(null, "#consenter-details");
-  return details__2731.append(cljs.core.str.call(null, "<p>HI TAMI", msg, "</p>"))
-};
 org.healthsciencessc.rpms2.core.ajax_sexp_get = function ajax_sexp_get(path, callback) {
   return $.get(path, function(data) {
     return callback.call(null, cljs.reader.read_string.call(null, data))
   }, "text")
 };
-org.healthsciencessc.rpms2.core.search = function search() {
-  console.log("25 search() enter search");
-  org.healthsciencessc.rpms2.core.ajax_json.call(null, "/select/view/consenters");
-  org.healthsciencessc.rpms2.core.catch$.call(null, org.healthsciencessc.rpms2.core.e2732, cljs.core.truth_(cljs.core.instance_QMARK_.call(null, java.lang.Exception, org.healthsciencessc.rpms2.core.e2732)) ? function() {
-    var ex__2733 = org.healthsciencessc.rpms2.core.e2732;
-    return null
-  }() : cljs.core.truth_("\ufdd0'else") ? function() {
-    throw org.healthsciencessc.rpms2.core.e2732;
-  }() : null);
-  console.log(cljs.core.str.call(null, "29 search() EXCEPTION ", org.healthsciencessc.rpms2.core.ex));
-  return org.healthsciencessc.rpms2.core.ajax_sexp_get.call(null, "/sexp/search/consenters", function(data) {
-    return alert.call(null, cljs.core.str.call(null, "I got this data: ", cljs.core.pr_str.call(null, data)))
-  })
-};
-goog.exportSymbol("org.healthsciencessc.rpms2.core.search", org.healthsciencessc.rpms2.core.search);
-org.healthsciencessc.rpms2.core.try_ajax = function try_ajax() {
-  return org.healthsciencessc.rpms2.core.ajax_sexp_get.call(null, "/collect/some/ajax/data", function(data) {
-    return alert.call(null, cljs.core.str.call(null, "I got this data: ", cljs.core.pr_str.call(null, data)))
-  })
-};
-org.healthsciencessc.rpms2.core.consenter_search_clicked = function consenter_search_clicked(div) {
-  var details__2734 = $.call(null, "#consenter-details");
-  return $.call(null, div).append("<p>HI TAMI</p>")
-};
-goog.exportSymbol("org.healthsciencessc.rpms2.core.consenter_search_clicked", org.healthsciencessc.rpms2.core.consenter_search_clicked);
-org.healthsciencessc.rpms2.core.consenter_confirmed_clicked = function consenter_confirmed_clicked() {
-  var url__2735 = "http://localhost:8081/collect/view/select/consenters";
-  org.healthsciencessc.rpms2.core.ajax_json.call(null, url__2735);
-  return alert.call(null, cljs.core.str.call(null, "This patient is confirmed! "))
-};
-goog.exportSymbol("org.healthsciencessc.rpms2.core.consenter_confirmed_clicked", org.healthsciencessc.rpms2.core.consenter_confirmed_clicked);
 org.healthsciencessc.rpms2.core.consenter_search_result_clicked = function consenter_search_result_clicked(div) {
-  console.log("b consenter-search-result-clicked");
-  var user__2737 = cljs.reader.read_string.call(null, div.getAttribute("data-user"));
-  var details__2738 = $.call(null, "#consenter-details");
-  var other_section__2739 = $.call(null, "#other-section");
-  var map__2736__2740 = user__2737;
-  var map__2736__2741 = cljs.core.truth_(cljs.core.seq_QMARK_.call(null, map__2736__2740)) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2736__2740) : map__2736__2740;
-  var last_name__2742 = cljs.core.get.call(null, map__2736__2741, "\ufdd0'last-name");
-  var first_name__2743 = cljs.core.get.call(null, map__2736__2741, "\ufdd0'first-name");
-  console.log("c users is ", user__2737);
+  console.log("consenter-search-result-clicked");
+  var user__2732 = cljs.reader.read_string.call(null, div.getAttribute("data-user"));
+  var details__2733 = $.call(null, "#consenter-details");
+  var other_section__2734 = $.call(null, "#other-section");
+  var map__2731__2735 = user__2732;
+  var map__2731__2736 = cljs.core.truth_(cljs.core.seq_QMARK_.call(null, map__2731__2735)) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2731__2735) : map__2731__2735;
+  var last_name__2737 = cljs.core.get.call(null, map__2731__2736, "\ufdd0'last-name");
+  var first_name__2738 = cljs.core.get.call(null, map__2731__2736, "\ufdd0'first-name");
   $.call(null, ".user-selected").removeClass("user-selected");
   $.call(null, div).addClass("user-selected");
-  console.log("d users is ", cljs.core.str.call(null, "\ufdd0'first-name".call(null, user__2737)));
-  console.log("e ", details__2738.find(cljs.core.str.call(null, "#consenter-name")));
-  details__2738.find(cljs.core.str.call(null, "#consenter-name")).text(cljs.core.str.call(null, "\ufdd0'first-name".call(null, user__2737), " ", "\ufdd0'last-name".call(null, user__2737)));
-  details__2738.find(cljs.core.str.call(null, "#consenter-zipcode")).text("\ufdd0'zipcode".call(null, user__2737));
-  details__2738.find("#consenter-date-of-birth").text("\ufdd0'date-of-birth".call(null, user__2737));
-  details__2738.find("#consenter-dob").text("\ufdd0'dob".call(null, user__2737));
-  details__2738.find("#consenter-consenter-id").text("\ufdd0'consenter-id".call(null, user__2737));
-  other_section__2739.find(cljs.core.str.call(null, "#patient-name")).val(cljs.core.str.call(null, first_name__2743, " ", last_name__2742));
-  console.log("f patient name set ", cljs.core.str.call(null, first_name__2743, " ", last_name__2742));
-  other_section__2739.find(cljs.core.str.call(null, "#patient-encounter-date")).val("\ufdd0'consenter-encounter-date".call(null, user__2737));
-  other_section__2739.find(cljs.core.str.call(null, "#patient-id")).val("\ufdd0'medical-record-number".call(null, user__2737));
-  return other_section__2739.find(cljs.core.str.call(null, "#current-patient-selection")).val(user__2737)
+  details__2733.find(cljs.core.str.call(null, "#consenter-name")).text(cljs.core.str.call(null, "\ufdd0'first-name".call(null, user__2732), " ", "\ufdd0'last-name".call(null, user__2732)));
+  details__2733.find(cljs.core.str.call(null, "#consenter-zipcode")).text("\ufdd0'zipcode".call(null, user__2732));
+  details__2733.find("#consenter-date-of-birth").text("\ufdd0'date-of-birth".call(null, user__2732));
+  details__2733.find("#consenter-dob").text("\ufdd0'dob".call(null, user__2732));
+  details__2733.find("#consenter-consenter-id").text("\ufdd0'consenter-id".call(null, user__2732));
+  other_section__2734.find(cljs.core.str.call(null, "#patient-name")).val(cljs.core.str.call(null, first_name__2738, " ", last_name__2737));
+  console.log("patient name set ", cljs.core.str.call(null, first_name__2738, " ", last_name__2737));
+  other_section__2734.find(cljs.core.str.call(null, "#patient-encounter-date")).val("\ufdd0'consenter-encounter-date".call(null, user__2732));
+  other_section__2734.find(cljs.core.str.call(null, "#patient-id")).val("\ufdd0'medical-record-number".call(null, user__2732));
+  return other_section__2734.find(cljs.core.str.call(null, "#current-patient-selection")).val(user__2732)
 };
 goog.exportSymbol("org.healthsciencessc.rpms2.core.consenter_search_result_clicked", org.healthsciencessc.rpms2.core.consenter_search_result_clicked);
+org.healthsciencessc.rpms2.core.data_change_clicked = function data_change_clicked(div) {
+  var user__2740 = cljs.reader.read_string.call(null, div.getAttribute("data-user"));
+  var data_change_class__2741 = cljs.reader.read_string.call(null, div.getAttribute("data-change-class"));
+  var mdid__2742 = cljs.reader.read_string.call(null, div.getAttribute("mdid"));
+  var details__2743 = $.call(null, cljs.core.str.call(null, "#", mdid__2742));
+  var data_change_section__2744 = $.call(null, "div.control.data-change");
+  var h__2745 = $.call(null, cljs.core.str.call(null, "#hidden-", mdid__2742));
+  var map__2739__2746 = user__2740;
+  var map__2739__2747 = cljs.core.truth_(cljs.core.seq_QMARK_.call(null, map__2739__2746)) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2739__2746) : map__2739__2746;
+  var last_name__2748 = cljs.core.get.call(null, map__2739__2747, "\ufdd0'last-name");
+  var first_name__2749 = cljs.core.get.call(null, map__2739__2747, "\ufdd0'first-name");
+  console.log("mdid is ", mdid__2742);
+  console.log("h is ", h__2745);
+  $.call(null, details__2743).addClass("changed");
+  return data_change_section__2744.find(cljs.core.str.call(null, "#hidden-", mdid__2742)).val("CHANGED")
+};
+goog.exportSymbol("org.healthsciencessc.rpms2.core.data_change_clicked", org.healthsciencessc.rpms2.core.data_change_clicked);

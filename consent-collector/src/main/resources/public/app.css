@@ -310,40 +310,10 @@ div.control > .title { font-size: 1.1em; font-weight: bold; }
 
 div.control > .text { padding-bottom: 10px; }
 
-//div.control.review-endorsement { border: thin solid red; padding: 5px; background-color: pink; }
-//div.control.review { border: thin solid navy; padding: 5px; background-color: pink; }
-
-//div.control > policy-button-selected { border: thick solid purple; }
-//div.control > policy-button-not-selected { border: thick solid orange; }
-//div.control.policy-button { border: thin dashed purple; background-color: pink; }
-
-div.ccsig { border: thin solid navy; background-color: pink; }
 
 form.debug { background-color: gray; border: thick solid navy; }
 
 .changed { color: red; padding-left: 5px; }
 
 div.ui-block-a.metadata,  div.ui-block-b.metadata { padding-top: 15px; }
-
-/* #signature-id  // this is item  we want to appear after */
-#signature-pad-item { 
-	padding: 10px; 
-	border: thin solid navy; 
-	display: block;
-	background-color: pink; 
-	position: absolute;
-	bottom: 5px;
-	left: 10px;
-}
-
-div.sigpad-control { 
-	padding: 3px; 
-	//border: thin solid green; 
-	display: block;
-	xbackground-color: #ccccff; 
-}
-
-.ui-btn-up-e {
-	border: 1px solid #29abe2 /*{e-bup-border}*/;
-}
 

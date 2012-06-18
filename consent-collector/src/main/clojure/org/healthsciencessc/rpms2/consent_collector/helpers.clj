@@ -153,6 +153,20 @@
       [:div.submit-area submit-buttons ] ]] ) 
 
 
+(defn signaturePadDiv
+  "Outputs a Signature Pad div which corresponds to custom sigpad
+  styles (eg. related to size - width, height, the signature line,etc).
+  
+  see http://thomasjbradley.ca/lab/signature-pad/ "
+
+  [nm value]
+  [:div.sigPad
+  [:div {:class "sig sigWrapper" }
+     [:div.typed ] 
+     [:canvas.pad {:width "700" :height "198"}]
+     [:input.output {:type "hidden" :name nm :value value } ] ]])
+
+
 (defn collect-consent-form 
   "the style is the only difference."
   [path body & submit-buttons ]
@@ -247,9 +261,8 @@
   "Enable signature pad."
   []
   (if (session-get :collect-consent-status) 
-      [:script "// var api = $('.sigPad').signaturePad();
-               $(document).ready( function() { $('.sigPad').signaturePad({drawOnly: true}); });" 
-      ]))  
+    (hpage/include-js 
+     (absolute-path "collect-sigpad.js"))))  
 
 (defn- footer
   []
@@ -267,7 +280,7 @@
 
 (defn rpms2-page
   "Emits a standard RPMS2 page."
-  [content & {:keys [title cancel-btn end-of-page-stuff]}]
+  [content & {:keys [title cancel-btn end-of-page-stuff second-page]}]
 
   (let [resp (hpage/html5 {:class ipad-html5-class }
     [:head
@@ -286,23 +299,33 @@
      (absolute-path "jquery.mobile-1.1.0.min.js")
       ;; see http://thomasjbradley.ca/lab/signature-pad/
      (absolute-path "jquery.signaturepad.js")
-     (absolute-path "json2.js")
+     (absolute-path "json2.min.js")
      (absolute-path "flashcanvas.js")
      (absolute-path "app.js")) ]
    [:body 
-    [:div {:data-role "page" :data-theme "a"  }  
+    [:div {:data-role "page" :data-theme "a"  :id "#one" }  
       (header title cancel-btn)
       [:div#content {:data-role "content" :data-theme "d" } 
       content
       (after-content)
-       "<!-- ZZZ BEGIN END OF PAGE -->"
-      end-of-page-stuff 
-       "<!-- ZZZ AFTER END OF PAGE -->"
-       ]
+      end-of-page-stuff ]
       (footer) 
-     ]])] 
+     ]
+
+    (if second-page
+      [:div {:data-role "page" :id "popup" } 
+       [:div {:data-role "header" :data-theme "d" } "Data Change" ]
+       [:div {:data-role "content" :data-theme "d" } 
+        [:div "This item has been flagged for change and may be edited during the review process." ]
+        [:a {:href "#one"  
+             :data-rel "back" 
+             :data-role "button" 
+             :data-inline "true"
+             :data-icon "back"}]]])
+    ])] 
       (pg-dbg (str "Page: " title " is\n" (pprint-str resp) "\n"))
       resp))
+
 
 (defn rpms2-page-two-column
   "Emits a standard two-column RPMS2 page."
@@ -445,15 +468,23 @@
 
 (defn- preprocess-parameters
   "Some parameter names must be adjusted, because they have been modified to enable
-  special processing.  For instance, action buttons start with action-btn-"
+  special processing.  For instance, action buttons start with action-btn- "
   [m]
   (let [action-btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))
-        meta-btns (filter #(.startsWith (str (name %)) META_DATA_BTN_PREFIX) (m keys))]
-        (if (> (count action-btns) 0)
+        meta-btns (filter #(and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
+                                (= (get m %) "CHANGED")) (keys m))
+        ;; remove any meta data buttons that are not changed
+        keep-keys (filter #(or (and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
+                                       (= (get m %) "CHANGED")) 
+                               (not (.startsWith (str (name %)) META_DATA_BTN_PREFIX)))
+                               (keys m)) ]
+        (do
+          (if (> (count action-btns) 0)
             (assoc m (make-keyword-from-button action-btns ACTION_BTN_PREFIX ) "selected")
-            (if (> (count meta-btns) 0)
-                (assoc m (make-keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "selected")
-                m))))
+            (if (> (count meta-btns) 0) ; save data for changed meta item using the name without the prefix
+              (assoc (select-keys m keep-keys)
+                     (make-keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "CHANGED")
+              (select-keys m keep-keys))))))
 
 (defn save-captured-data
   "Updates model with the information from the map.
@@ -462,8 +493,6 @@
   [parms-orig]
   (let [m (preprocess-parameters parms-orig) 
         _ (debug "save-captured-data: after preprocess " m)
-        action-btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) m)
-        meta-btns (filter #(.startsWith (str (name %)) META_DATA_BTN_PREFIX) m)
         orig (session-get :model-data) 
         m1 (dissoc (merge orig m) :next :previous) ]
         (session-put! :model-data  m1)))
@@ -514,7 +543,7 @@
   (keyword (str "form-" n)) )
 
 (defn pr-truncate 
-  "there's probably an output settig for this"
+  "there's probably an output setting for this"
   [n]
   (let [s (pprint-str n)
         len (count s)]
