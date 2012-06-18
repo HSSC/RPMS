@@ -203,7 +203,7 @@
   [record node relation]
   (let [{:keys [related-to relation-path]} relation
         path (conj relation-path related-to)]
-    (vec (map #(node->record % related-to) (walk-types-path node path)))))
+    (vec (filter identity (map #(node->record % related-to) (walk-types-path node path))))))
 
 (defmethod get-related-obj :many-to-many
   [record node relation]
@@ -406,7 +406,12 @@
   [type id]
   (let [node (get-node-by-index type id)
         props (assoc (neo/props node) :active false)
-        child-nodes (filter identity (flatten (map #(children-nodes-by-type node %) (keys schema))))]
+        child-types (filter (fn [child-type]
+                              (some (fn [relation]
+                                      (and (:deletable-by-parent relation) (= type (:related-to relation))))
+                                    (domain/get-parent-relations child-type schema)))
+                            (keys schema))
+        child-nodes (flatten (map #(children-nodes-by-type node %) child-types))]
     (neo/with-tx
       (neo/set-props! node props)
       (doseq [child-node child-nodes] (delete (get-type child-node) (:id (neo/props child-node)))))
