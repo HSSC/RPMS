@@ -323,30 +323,10 @@
       (add-rolemapping-helper assignee-id assignee-type role-id loc-id))))
 
 (defn remove-rolemapping
-  [{:keys [assignee-id
-           assignee-type
-           role
-           location]
-    :as remove-params}]
-  (let [location (if location
-                   {:location location})
-        qry-params (merge {:role role
-                           (keyword assignee-type) assignee-id}
-                          location)]
-  #_(with-open [w (io/writer "/tmp/remove-role")]
-    (binding [*out* w]
-      (prn qry-params)
-      (flush)))
-    (let [a-type (keyword assignee-type)]
-      (case a-type
-        :user
-        (DELETE "/security/userrole" 
-                qry-params
-                nil nil)
-        :group
-        (DELETE "/security/grouprole" 
-                qry-params
-                nil nil)))))
+  [role-mapping-id]
+  (DELETE "/security/role-mapping" 
+          {:role-mapping role-mapping-id}
+          nil nil))
 
 (defn add-group-member
   [g u]

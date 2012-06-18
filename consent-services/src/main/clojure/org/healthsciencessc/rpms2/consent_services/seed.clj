@@ -83,13 +83,14 @@
 (defn- create-roles 
   "Creates the roles that are to be made available globally if they do not exist."
   [def-org]
-  (doseq [[name code] [["Administrator" code-role-admin]
-                       ["Consent Collector" code-role-collector]
-                       ["Consent Designer" code-role-designer]
-                       ["Consent Manager" code-role-consentmanager]
-                       ["Consent System" code-role-externalsystem]]]
+  (doseq [[name code reqloc] [["Administrator" code-role-admin false]
+                       ["Consent Collector" code-role-collector true]
+                       ["Consent Designer" code-role-designer true]
+                       ["Consent Manager" code-role-consentmanager true]
+                       ["Consent System" code-role-externalsystem false]]]
     (create "role" {:name name
                     :code code
+                    :requires-location reqloc
                     :organization def-org} match/roles-match?)))
 
 (defn- create-langs 
@@ -115,7 +116,7 @@
   []
   (let [org (create organization {:name "Default Organization" :code code-base-org} match/orgs-match?)
         sadmin-role (create "role" 
-                            {:name "Super Administrator" :code code-role-superadmin :organization org} 
+                            {:name "Super Administrator" :code code-role-superadmin :organization org :requires-location false} 
                             match/roles-match?)
         sadmin (create user 
                        {:first-name "Super" :last-name "Administrator" :organization org

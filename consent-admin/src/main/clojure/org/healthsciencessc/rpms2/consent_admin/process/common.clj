@@ -7,6 +7,13 @@
 
 (def lookup-organization (lookup/gen-organization-lookup-in-query security/current-org-id))
 
+(defn make-truthy
+  [m props & true-values]
+  (let [troofs (set true-values)
+        current (select-keys m props)
+        replacements (into {} (for [[k v] current] [k (if (troofs v) true false)]))]
+    (merge m replacements)))
+
 ;; Provide Process Generation Functions
 (defn gen-api-type-delete
   "Generates a function that implements a common pattern for deleting a type using an ajax request."

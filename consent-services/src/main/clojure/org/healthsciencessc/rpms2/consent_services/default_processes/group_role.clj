@@ -1,43 +1,40 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.group-role
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data])
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.utils :as utils])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (def group-role-processes
   [{:name "put-security-grouprole"
-    :runnable-fn (fn [params]
-                   (let [current-user (get-in params [:session :current-user])
-                         current-user-org-id (get-in current-user [:organization :id])
-                         role-id (get-in params [:query-params :role])
-                         group-id (get-in params [:query-params :group])
-                         loc-id (get-in params [:query-params :location])
-                         org-id (get-in params [:query-params :organization])]
-                     (or (and (super-admin? current-user) org-id role-id group-id)
-                         (and (admin? current-user)
-                              (and role-id (data/belongs-to? "role" role-id "organization" current-user-org-id))
-                              (and group-id (data/belongs-to? "group" group-id "organization" current-user-org-id))
-                              (if org-id (= org-id current-user-org-id) true)
-                              (if loc-id (data/belongs-to? "location" loc-id "organization" current-user-org-id) true)))))
+    :runnable-fn (runnable/gen-super-or-admin-record-check utils/current-user utils/get-group-record)
     :run-fn (fn [params]
-              (let [current-user (get-in params [:session :current-user])
-                    current-user-org-id (get-in current-user [:organization :id])
-                    role-id (get-in params [:query-params :role])
+              (let [role-id (get-in params [:query-params :role])
+                    role (data/find-record "role" role-id)
                     group-id (get-in params [:query-params :group])
-                    loc-id (get-in params [:query-params :location])
-                    q-org-id (get-in params [:query-params :organization])
-                    org-id (or q-org-id current-user-org-id)]
-                (if loc-id
-                  (data/create "role-mapping" {:organization {:id org-id}
+                    group (data/find-record "group" group-id)
+                    group-org (:organization group)
+                    loc-id (get-in params [:query-params :location])]
+                (if (:requires-location role)
+                  (if loc-id
+                    (data/create "role-mapping" {:organization group-org
+                                                 :role {:id role-id}
+                                                 :group group
+                                                 :location {:id loc-id}})
+                    (let [loc-ids (map :id (data/find-children "organization" (:id group-org) "location"))]
+                      (if (empty? loc-ids)
+                        (data/create "role-mapping" {:organization group-org
+                                                     :role {:id role-id}
+                                                     :group group})
+                        (doall (map #(data/create "role-mapping" {:organization group-org
+                                                                  :role {:id role-id}
+                                                                  :group group
+                                                                  :location {:id %}})
+                                    loc-ids)))))
+                  (data/create "role-mapping" {:organization group-org
                                                :role {:id role-id}
-                                               :group {:id group-id}
-                                               :location {:id loc-id}})
-                  (let [loc-ids (map :id (data/find-children "organization" org-id "location"))]
-                    (map #(data/create "role-mapping" {:organization {:id org-id}
-                                                       :role {:id role-id}
-                                                       :group {:id group-id}
-                                                       :location {:id %}})
-                         loc-ids)))
+                                               :group group}))
                 (data/find-record "group" group-id)))
     :run-if-false forbidden-fn}
    

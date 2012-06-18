@@ -60,4 +60,29 @@
     (is (adminfn {}))
     (is (adminfn ctx))
     (is (not (adminfn basectx)))))
-    
+
+(defn org-record-from-query
+  [ctx]
+  (let [org-id (get-organization-in-query ctx)]
+    {:organization {:id org-id}}))
+
+(deftest test-gen-super-or-admin-record-check
+  (let [superfn (gen-super-or-admin-record-check get-test-super org-record-from-query)
+        adminfn (gen-super-or-admin-record-check get-test-admin org-record-from-query)
+        ctx {:query-params {:organization (:id roles/test-org)}}
+        basectx {:query-params {:organization (:id roles/test-baseorg)}}]
+    (is (superfn {}))
+    (is (superfn ctx))
+    (is (superfn basectx))
+    (is (not (adminfn {})))
+    (is (adminfn ctx))
+    (is (not (adminfn basectx)))))
+
+
+(deftest test-gen-admin-record-check
+  (let [adminfn (gen-admin-record-check get-test-admin org-record-from-query)
+        ctx {:query-params {:organization (:id roles/test-org)}}
+        basectx {:query-params {:organization (:id roles/test-baseorg)}}]
+    (is (not (adminfn {})))
+    (is (adminfn ctx))
+    (is (not (adminfn basectx)))))

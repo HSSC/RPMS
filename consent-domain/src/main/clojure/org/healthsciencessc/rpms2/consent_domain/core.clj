@@ -33,7 +33,8 @@
 
    role {:attributes (merge base
                             {:name {:persisted true :required true}
-                             :code {:persisted true}})
+                             :code {:persisted true}
+                             :requires-location {:persisted true}})
          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}]}
 
    language {:attributes (merge base

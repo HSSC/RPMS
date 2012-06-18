@@ -9,6 +9,7 @@
             [org.healthsciencessc.rpms2.consent-services.default-processes.policy-definition]
             [org.healthsciencessc.rpms2.consent-services.default-processes.policy]
             [org.healthsciencessc.rpms2.consent-services.default-processes.role]
+            [org.healthsciencessc.rpms2.consent-services.default-processes.role-mapping]
             [org.healthsciencessc.rpms2.consent-services.default-processes.user-group]
             [org.healthsciencessc.rpms2.consent-services.default-processes.user]
             [org.healthsciencessc.rpms2.consent-services.default-processes.user-role]

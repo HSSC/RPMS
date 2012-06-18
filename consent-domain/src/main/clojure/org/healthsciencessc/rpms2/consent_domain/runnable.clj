@@ -106,3 +106,22 @@
           (and (roles/admin? user) 
                (or (nil? org-id)
                    (= org-id user-org-id)))))))
+
+(defn gen-admin-record-check
+  "Creates a runnable? function that checks if a user is a protocol designer within an organization."
+  [userfn lookupfn]
+  (fn [ctx]
+    (let [user (userfn ctx)
+          record (lookupfn ctx)
+          org-id (get-in record [:organization :id])]
+      (roles/admin? user :organization {:id org-id}))))
+
+(defn gen-super-or-admin-record-check
+  "Creates a runnable? function that checks if a user is a protocol designer within an organization."
+  [userfn lookupfn]
+  (fn [ctx]
+    (let [user (userfn ctx)]
+      (or (roles/superadmin? user)
+          (let [record (lookupfn ctx)
+                org-id (get-in record [:organization :id])]
+            (roles/admin? user :organization {:id org-id}))))))

@@ -90,7 +90,8 @@
                      (actions/delete-action {:label "Remove Member"
                                              :url "/api/group/member"
                                              :params {:user :selected#id
-                                                      :group group-id}})
+                                                      :group group-id}
+                                             :action-on-success "refresh"})
                      (actions/back-action)))))
 
 (defn get-view-group-adduser [ctx]

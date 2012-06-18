@@ -6,6 +6,7 @@
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
@@ -100,6 +101,7 @@
   [ctx]
   (if-let [location-id (get-in ctx [:query-params :location])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
+          body (common/make-truthy body [:required :select-by-default] "true")
           user (security/current-user)
           location-role (first (roles/protocol-designer-mappings user :location {:id location-id}))
           location (:location location-role)
@@ -117,6 +119,7 @@
   [ctx]
   (if-let [protocol-id (get-in ctx [:query-params :protocol])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
+          body (common/make-truthy body [:required :select-by-default] "true")
           resp (services/update-protocol protocol-id body)]
       ;; Handle Error or Success
       (if (services/service-error? resp)

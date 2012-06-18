@@ -9,6 +9,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
+            [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             [sandbar.stateful-session :as sess]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
             [hiccup.core :as html]
@@ -35,24 +36,18 @@
              (actions/new-action {:url "/view/role/add"})
              (actions/back-action))))))
 
-(def role-fields ;; probably should be i18nized
-  (let [text-fields [:name "Role name"
-                     :code "Code"]]
-    (map #(zipmap [:name :label] %)
-         (partition 2 text-fields))))
-
-(defn render-role-fields
-  "Create some field boxes from a map of [kw text-label]"
-  ([] (render-role-fields {}))
-  ([role]
-    (map formui/record->editable-field 
-         (repeat role)
-         role-fields))) 
+;; Prepare For Requires Location
+(def fields [{:name :name :label "Name"}
+             {:name :code :label "Code"}
+             {:name :requires-location :label "Requires Location" :type :checkbox}
+             ])
 
 (defn get-view-role-add
   [ctx]
   (layout/render ctx "Create Role"
-                 (container/scrollbox (formui/dataform (render-role-fields)))
+                 (container/scrollbox 
+                   (formui/dataform 
+                     (formui/render-fields {} fields {})))
                  (actions/actions 
                    (actions/save-action {:method :post :url "/api/role/add"})
                    (actions/back-action))))
@@ -60,11 +55,14 @@
 (defn get-view-role-edit
   [ctx]
   (if-let [role-id (-> ctx :query-params :role)]
-    (let [role (service/get-role role-id)]
+    (let [role (service/get-role role-id)
+          editable (= (get-in role [:organization :id]) (security/current-org-id))]
       (if (service/service-error? role)
         (ajax/error (meta role))
         (layout/render ctx "Edit Role"
-                   (container/scrollbox (formui/dataform (render-role-fields role)))
+                   (container/scrollbox 
+                     (formui/dataform 
+                       (formui/render-fields {:editable editable} fields role)))
                    (actions/actions 
                      (actions/save-action {:method :post :url "/api/role/edit" :params {:role role-id}})
                      (actions/delete-action {:url "/api/role" :params {:role role-id}})
@@ -81,7 +79,8 @@
 (defn post-api-role-add
   [ctx]
   (let [role (select-keys (:body-params ctx)
-                          (map :name role-fields))
+                          (map :name fields))
+        role (common/make-truthy role [:requires-location] "true")
         resp (service/add-role role)]
     (if (service/service-error? resp)
       (ajax/error (meta resp))
@@ -90,7 +89,8 @@
 (defn post-api-role-edit
   [ctx]
   (let [keys (select-keys (:body-params ctx)
-                          (map :name role-fields))
+                          (map :name fields))
+        keys (common/make-truthy keys [:requires-location] "true")
         resp (service/edit-role (-> ctx :query-params :role)
                                 keys)]
     (if (service/service-error? resp)
@@ -171,8 +171,9 @@
     (:name (:role rm))))
 
 (defn delete-api-rolemapping
-  [{prms :query-params}]
-  (let [resp (service/remove-rolemapping prms)]
+  [ctx]
+  (let [role-mapping-id (get-in ctx [:query-params :role-mapping])
+        resp (service/remove-rolemapping role-mapping-id)]
     (if (service/service-error? resp)
       (ajax/error (meta resp))
       (ajax/success resp))))
@@ -192,10 +193,7 @@
   (if-let [{{:keys [assignee-id assignee-type]} :query-params} ctx]
     (let [assignee-type (keyword assignee-type)
           rolemappings (service/get-assigned-roles assignee-id assignee-type)
-          delete-params {:params {:assignee-type assignee-type
-                                  :assignee-id assignee-id
-                                  :location :selected#location#id
-                                  :role :selected#role#id}
+          delete-params {:params {:role-mapping :selected#id}
                          :method :delete
                          :action-on-success "refresh"
                          :url "/api/rolemapping"}
@@ -216,7 +214,7 @@
                                                                        (->friendly-name %)))
                                                           (sort-by :friendly-name))]
                                                   {:label (:friendly-name x)
-                                                   :data x})))
+                                                   :data (select-keys x [:id])})))
                        (actions/actions 
                          (actions/new-action add-params)
                          (actions/delete-action delete-params)

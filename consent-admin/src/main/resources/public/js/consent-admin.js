@@ -157,7 +157,7 @@ var RPMS = {
 		if(map){
 			return RPMS.mapToParams(map);
 		}
-		return PaneManager.cache();
+		return {};
 	},
 	getForm: function(){
 		return PaneManager.current.pane.find("form").first();
