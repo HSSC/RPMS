@@ -24,7 +24,8 @@
   [body]
   (let [body-str (slurp body)]
     (if (not (blank? body-str))
-      (read-string body-str))))
+      (binding [*read-eval* false]
+        (read-string body-str)))))
 
 (defn keyify-params
   [params]
