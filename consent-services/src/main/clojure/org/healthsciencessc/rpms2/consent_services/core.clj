@@ -48,8 +48,8 @@
   (fn [req]
     (try+
      (handler req)
-     (catch [:type :org.healthsciencessc.rpms2.consent-services.data/invalid-record] {errors :errors}
-       (process-ws/format-response-body {:status 422 :headers {} :body {:errors errors}} req))
+     (catch [:type :org.healthsciencessc.rpms2.consent-services.data/invalid-record] {:keys [errors data]}
+       (process-ws/format-response-body {:status 422 :headers {} :body {:data data :errors errors}} req))
      (catch [:type :org.healthsciencessc.rpms2.consent-services.data/record-not-found] {:keys [record-type id]}
          (process-ws/format-response-body {:status 404 :headers {} :body {:errors {:type record-type :id id}}} req)))))
 

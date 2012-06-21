@@ -6,6 +6,8 @@
 
 (def ^:private hash-times 11)
 
+(def ^:dynamic *current-user*)
+
 ;; Using bcrypt for hashing
 ;; http://codahale.com/how-to-safely-store-a-password/
 (defn generate-salt 
@@ -58,6 +60,7 @@
                      (re-find #":(.*)$" cred)))]
       (if (and user pass)
           (if-let [auth-user (authenticate user pass)]
-            (handler (add-user-to-session request auth-user))
+            (binding [*current-user* auth-user]
+              (handler (add-user-to-session request auth-user)))
             unauthorized-response)
           unauthorized-response-browser))))

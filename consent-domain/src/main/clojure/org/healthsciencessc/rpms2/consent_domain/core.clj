@@ -172,6 +172,11 @@
 (def default-value-types
   ["role" "policy" "language"])
 
+(def audit-relationships
+  {:create  :created-by
+   :update  :modified-by
+   :destroy :deleted-by})
+
 (defn get-relations
   "Returns all the relation maps for a given type"
   [type data-defs]

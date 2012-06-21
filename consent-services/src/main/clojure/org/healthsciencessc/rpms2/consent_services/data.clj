@@ -1,7 +1,8 @@
 (ns org.healthsciencessc.rpms2.consent-services.data
   (:use [clojure.set :only (difference)]
         [clojure.string :only (blank? capitalize)]
-        [slingshot.slingshot :only (throw+)])
+        [slingshot.slingshot :only (throw+)]
+        [org.healthsciencessc.rpms2.consent-services.auth :only (*current-user*)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             [borneo.core :as neo]
@@ -320,6 +321,20 @@
     (flatten (for [rel rels]
                (map #(assoc % :record-type (second rel)) ((first rel) children-by-rel))))))
 
+;; Data audits
+
+(defn create-audit
+  [node audit-type]
+  (let [current-time (System/currentTimeMillis)
+        audit-rel (audit-type domain/audit-relationships)
+        current-user-node (get-node-by-index "user" (:id *current-user*))]
+    (if current-user-node
+      (neo/with-tx
+        (neo/set-prop!
+         (create-relationship node audit-rel current-user-node)
+         :timestamp current-time))))
+  node)
+
 ;; Data Validations
 
 (defn validate-required-props
@@ -331,9 +346,10 @@
 
 (defn validate-unique-fields
   [type record]
-  (let [unique-props (domain/get-attrs type schema :unique)]
+  (let [unique-props (domain/get-attrs type schema :unique)
+        current-node (get-node-by-index type (:id record))]
     (->> unique-props
-         (filter (fn [prop] (not (empty? (find-nodes-by-props type (select-keys record (list prop)))))))
+         (filter (fn [prop] (not (empty? (remove (partial = current-node) (find-nodes-by-props type (select-keys record (list prop))))))))
          (map (fn [prop] (str (capitalize (name prop)) " must be unique."))))))
 
 (defn custom-validations
@@ -369,7 +385,7 @@
                  (validate-record type record))]
     (if (empty? errors)
       (execfn)
-      (throw+ {:type ::invalid-record :errors errors}))))
+      (throw+ {:type ::invalid-record :errors errors :data record}))))
 
 ;; Public API
 (defn find-all
@@ -415,9 +431,11 @@
   [type properties & extra-relationships]
   "extra-relationships is a sequence of maps with either :from or :to, plus a relationtype"
   (node->record
-   (with-validation type properties
-     #(neo/with-tx
-        (create-node-with-default-relationships type properties extra-relationships)))
+   (create-audit
+    (with-validation type properties
+      #(neo/with-tx
+         (create-node-with-default-relationships type properties extra-relationships)))
+    :create)
    type))
 
 (defn create-records
@@ -440,7 +458,8 @@
                 rel-name (if relation (domain/get-relation-name relation))
                 neo-data (if rel-name (assoc child-node rel-name (:neo-data parent-node)) child-node)
                 record (node->record
-                        (with-validation child-type neo-data #(create-node-with-default-relationships child-type neo-data nil))
+                        (create-audit (with-validation child-type neo-data #(create-node-with-default-relationships child-type neo-data nil))
+                                      :create)
                         child-type)]
             (recur
              (zip/next (zip/replace loc (assoc child-node :neo-data record))))))))))
@@ -451,10 +470,11 @@
     (let [merged-data (merge (neo/props update-node) data)
           update-data (domain/validate-persistent-record
                        (clean-nils merged-data) type schema)]
-      (with-validation type update-data
-        #(neo/with-tx
-           (neo/set-props! update-node update-data))
-        validate-properties)))
+      (neo/with-tx
+        (with-validation type (assoc update-data :id id)
+          #(neo/set-props! update-node update-data)
+          validate-properties)
+        (create-audit update-node :update))))
   (find-record type id))
 
 (defn delete
@@ -469,7 +489,8 @@
         child-nodes (flatten (map #(children-nodes-by-type node %) child-types))]
     (neo/with-tx
       (neo/set-props! node props)
-      (doseq [child-node child-nodes] (delete (get-type child-node) (:id (neo/props child-node)))))
+      (doseq [child-node child-nodes] (delete (get-type child-node) (:id (neo/props child-node))))
+      (create-audit node :destroy))
     true))
 
 (defn relate-records
