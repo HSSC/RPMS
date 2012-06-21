@@ -160,9 +160,9 @@
                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to protocol :relationship :version-of :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to form :relationship :described-by}
-                                 {:type :has-many :related-to policy :name :policies}
-                                 {:type :has-many :related-to endorsement}
-                                 {:type :has-many :related-to language}
+                                 {:type :many-to-many :related-to policy :name :policies :relationship :has-policy}
+                                 {:type :many-to-many :related-to endorsement :relationship :has-endorsement}
+                                 {:type :many-to-many :related-to language :relationship :has-language}
                                  {:type :many-to-many :related-to meta-item :relationship :has-meta-item}]}
 
    text-i18n {:attributes (merge base
