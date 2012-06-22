@@ -200,8 +200,10 @@
    {:name "get-protocol-versions-published"
     :runnable-fn (runnable/gen-collector-location-check utils/current-user lookup/get-location-in-query)
     :run-fn (fn [params]
-              (let [loc (get-in params [:query-params :location])]
-                (filter (partial = types/status-published) (data/find-children types/location loc types/protocol))))
+              (let [loc (get-in params [:query-params :location])
+                    protocols (data/find-children types/location loc types/protocol)]
+                (flatten (for [p protocols]
+                  (filter types/published? (data/find-children types/protocol (:id p) types/protocol-version))))))
     :run-if-false forbidden-fn}
    
    {:name "get-protocol-versions-published-meta"
