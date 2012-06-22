@@ -1,4 +1,4 @@
-;; Provides a singular location by which the names of types and type instance identifiers can be 
+\;; Provides a singular location by which the names of types and type instance identifiers can be 
 ;; defined for the base release.
 (ns org.healthsciencessc.rpms2.consent-domain.types)
 
@@ -44,6 +44,9 @@
 (def code-role-designer "!design!")
 (def code-role-consentmanager "!manage!")
 (def code-role-externalsystem "!csys!")
+
+(def code-endorsement-type-witness "!witness.signature!")
+(def code-endorsement-type-witness2 "!witness.signature.secondary!")
 
 ;; STANDARD STATUSES FOR FINALIZING RECORDS - ie: PROTOCOL VERSION, POLICY, POLICY DERPS, META-ITEM, etc
 (def status-draft "Draft")

@@ -115,8 +115,8 @@
 (defn- create-endorsement-types 
   "Creates the languages that are available from the base organization if they do not exist."
   [def-org]
-  (doseq [[name code] [["Primary Witness Signature" "!witness.signature.primary!"]
-                       ["Secondary Witness Signature" "!witness.signature.second!"]
+  (doseq [[name code] [["Primary Witness Signature" types/code-endorsement-type-witness]
+                       ["Secondary Witness Signature" types/code-endorsement-type-witness2]
                        ["Consenter Signature" "!consenter.signature!"]
                        ["Consenter Initials" "!consenter.initials!"]
                        ["Guardian Signature" "!guardian.signature!"]
