@@ -42,19 +42,24 @@
 (defn view-endorsements
   [ctx]
   (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-endorsements org-id)]
+        nodes (services/get-endorsements org-id)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
       (layout/render ctx (str type-label "s")
                      (container/scrollbox 
                        (selectlist/selectlist {:action :.detail-action}
                                               (for [n nodes]
-                                                {:label (:name n) :data n})))
+                                                {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                       (if protocol-version-id
+                         (actions/assign-action 
+                           {:url (str "/api/" type-path "/assign") 
+                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}})
+                         (actions/details-action 
+                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}}))
                        (actions/new-action 
-                         {:url (str "/view/" type-path "/new") :params {:organization org-id}})
+                         {:url (str "/view/" type-path "/new") :params {:organization org-id :protocol-version protocol-version-id}})
                        (actions/back-action))))))
 
 (defn view-endorsement
@@ -97,9 +102,23 @@
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})
                      (actions/back-action)))))
-    
+
+(defn- api-assign-endorsement
+  [ctx]
+  (let [endorsement-id (lookup/get-endorsement-in-query ctx)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)
+        resp (services/assign-endorsement-to-protocol-version endorsement-id protocol-version-id)]
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
 (def process-defns
   [{:name (str "get-view-" type-name "s")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
+    :run-fn view-endorsements
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "get-view-protocol-version-" type-name "-add")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
     :run-fn view-endorsements
     :run-if-false ajax/forbidden}
@@ -132,6 +151,11 @@
     :run-fn (common/gen-api-type-delete 
               services/delete-endorsement 
               lookup/get-endorsement-in-query (str "A valid " type-label " is required."))
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "post-api-" type-name "-assign")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
+    :run-fn api-assign-endorsement
     :run-if-false ajax/forbidden}])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))

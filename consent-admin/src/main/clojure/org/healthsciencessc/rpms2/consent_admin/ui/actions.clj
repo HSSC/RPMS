@@ -89,6 +89,11 @@ prior to calling the server, and the execution of a client-side action when the 
 (defn delete-action
   [options]
   (ajax-action (merge {:method :delete :label "Delete" :action-on-success ".back-action" :confirm default-confirm} options)))
+;;
+
+(defn assign-action
+  [options]
+  (ajax-action (merge {:method :post :label "Assign" :action-on-success ".back-action"} options)))
 
 ;;
 (defn save-action
@@ -105,18 +110,19 @@ prior to calling the server, and the execution of a client-side action when the 
 
 (defn push-list-action
   "Generates an action that will push a new request to the PaneManager."
-  [{url :url params :params label :label confirm :confirm classes :classes}]
-  (let [props {:data-url url :data-map (to-attr-value params)}
+  [{url :url params :params label :label confirm :confirm classes :classes on-select :on-select}]
+  (let [props {:data-url url :data-map (to-attr-value params) :data-onselect (true? on-select)}
         conf-props (if confirm {:data-confirm (confirm-to-attr confirm)} {})]
     [(tag-class :div jquery-classes :.push-listaction.listaction classes) (merge props conf-props)
       [:span.ui-button-text (or label "Push")]]))
 
 (defn ajax-list-action
   "Generates an action that will push a new request to the PaneManager."
-  [{url :url params :params label :label confirm :confirm classes :classes
-    action-on-success :action-on-success
+  [{method :method url :url params :params 
+    label :label confirm :confirm classes :classes 
+    action-on-success :action-on-success on-select :on-select
     include-data :include-data}]
-  (let [props {:data-url url :data-map (to-attr-value params)}
+  (let [props {:data-method method :data-url url :data-map (to-attr-value params) :data-onselect (true? on-select)}
         action-props (if action-on-success {:data-action-on-success action-on-success} {})
         conf-props (if confirm {:data-confirm (confirm-to-attr confirm)} {})
         data-props (if include-data {:data-include-data true} {})]
@@ -131,9 +137,10 @@ prior to calling the server, and the execution of a client-side action when the 
 (defn edit-list-action
   "Generates an action redirect "
   [options]
-  (push-list-action (merge options {:label "Edit"})))
+  (push-list-action (merge options {:label "Edit" :on-select true})))
 
 (defn delete-list-action
   "Generates an action that will delete the selected item."
   [options]
-  (ajax-list-action (merge options {:method :post :label "Delete" :confirm {:title "Confirm Delete" :message "Are you sure you want to delete the selected item?"}})))
+  (ajax-list-action (merge options {:method :delete :label "Delete" :on-select true :action-on-success "refresh"
+                                    :confirm {:title "Confirm Delete" :message "Are you sure you want to delete the selected item?"}})))

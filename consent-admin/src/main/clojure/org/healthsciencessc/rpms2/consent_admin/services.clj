@@ -207,7 +207,6 @@
   [id]
   (GET "/security/organization" {:organization id}))
 
-
 ;; ROLES
 (defn get-roles
   []
@@ -361,6 +360,33 @@
                nil))
       usr-resp)))  ;; pass this back directly
 
+;; LANGUAGES
+(defn get-languages
+  []
+  (GET "/library/languages" {}))
+
+(defn get-language
+  [language-id]
+  (GET "/library/language" {:language language-id}))
+
+(defn add-language
+  [r]
+  (PUT "/library/language"
+        nil
+        nil
+        (with-out-str (prn (merge-with-curr-org r)))))
+
+(defn edit-language
+  [language-id data]
+  (POST "/library/language"
+        {:language language-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn delete-language
+  [language-id]
+  (DELETE "/library/language" {:language language-id} nil nil))
+
 ;; PROTOCOLS
 (defn get-protocols
   "Gets all of the available protocols within a location."
@@ -406,7 +432,7 @@
 (defn get-protocol-version
   "Gets a single protocol version by it's ID."
   [protocol-version-id]
-  (GET "/protocol/version" {:version protocol-version-id}))
+  (GET "/protocol/version" {:protocol-version protocol-version-id}))
 
 (defn add-protocol-version
   "Adds a new protoco version to a protocol."
@@ -420,7 +446,7 @@
   "Deletes a new protocol version from a protocol."
   [protocol-version-id]
   (DELETE "/protocol/version"
-        {:version protocol-version-id}
+        {:protocol-version protocol-version-id}
         nil
         nil))
 
@@ -428,7 +454,7 @@
   "Updates a protocol version with data changes."
   [protocol-version-id data]
   (POST "/protocol/version"
-        {:version protocol-version-id}
+        {:protocol-version protocol-version-id}
         nil
         (with-out-str (prn data))))
 
@@ -436,7 +462,7 @@
   "Updates a protocol version with data changes."
   [protocol-version-id]
   (POST "/protocol/publish"
-        {:version protocol-version-id}
+        {:protocol-version protocol-version-id}
         nil
         nil))
 
@@ -444,7 +470,7 @@
   "Updates a protocol version with data changes."
   [protocol-version-id]
   (POST "/protocol/retire"
-        {:version protocol-version-id}
+        {:protocol-version protocol-version-id}
         nil
         nil))
 
@@ -452,9 +478,50 @@
   "Updates a protocol version with data changes."
   [protocol-version-id]
   (POST "/protocol/draft"
-        {:version protocol-version-id}
+        {:protocol-version protocol-version-id}
         nil
         nil))
+
+
+(defn assign-language-to-protocol-version
+  [language-id protocol-version-id]
+  (PUT "/protocol/version/language" 
+       {:language language-id :protocol-version protocol-version-id} nil nil))
+
+(defn assign-endorsement-to-protocol-version
+  [endorsement-id protocol-version-id]
+  (PUT "/protocol/version/endorsement" 
+       {:endorsement endorsement-id :protocol-version protocol-version-id} nil nil))
+
+(defn assign-meta-item-to-protocol-version
+  [meta-item-id protocol-version-id]
+  (PUT "/protocol/version/meta-item" 
+       {:meta-item meta-item-id :protocol-version protocol-version-id} nil nil))
+
+(defn assign-policy-to-protocol-version
+  [policy-id protocol-version-id]
+  (PUT "/protocol/version/policy" 
+       {:policy policy-id :protocol-version protocol-version-id} nil nil))
+
+(defn remove-language-from-protocol-version
+  [language-id protocol-version-id]
+  (DELETE "/protocol/version/language" 
+          {:language language-id :protocol-version protocol-version-id} nil nil))
+
+(defn remove-endorsement-from-protocol-version
+  [endorsement-id protocol-version-id]
+  (DELETE "/protocol/version/endorsement" 
+          {:endorsement endorsement-id :protocol-version protocol-version-id} nil nil))
+
+(defn remove-meta-item-from-protocol-version
+  [meta-item-id protocol-version-id]
+  (DELETE "/protocol/version/meta-item" 
+          {:meta-item meta-item-id :protocol-version protocol-version-id} nil nil))
+
+(defn remove-policy-from-protocol-version
+  [policy-id protocol-version-id]
+  (DELETE "/protocol/version/policy" 
+          {:policy policy-id :protocol-version protocol-version-id} nil nil))
 
 ;; Endorsement Types
 (defn get-endorsement-types
@@ -516,30 +583,30 @@
 
 ;; Meta Items
 (defn get-meta-items
-  [_]
+  []
   (GET "/library/meta-items" {}))
 
 (defn get-meta-item
-  [id]
-  (GET "/library/meta-item" {:meta-item id}))
+  [meta-item-id]
+  (GET "/library/meta-item" {:meta-item meta-item-id}))
 
 (defn add-meta-item
-  [o]
+  [data]
   (PUT "/library/meta-item"
        nil
        nil
-       (with-out-str (prn o))))
+       (with-out-str (prn data))))
 
 (defn edit-meta-item
-  [id o]
+  [meta-item-id data]
   (POST "/library/meta-item"
-        {:meta-item id}
+        {:meta-item meta-item-id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn data))))
 
 (defn delete-meta-item
-  [id]
-  (DELETE "/library/meta-item" {:meta-item id} nil nil))
+  [meta-item-id]
+  (DELETE "/library/meta-item" {:meta-item meta-item-id} nil nil))
 
 
 ;; Policy Definitions
@@ -571,29 +638,29 @@
 
 ;; Policy
 (defn get-policys
-  [_]
+  []
   (GET "/library/policies" {}))
 
 (defn get-policy
-  [id]
-  (GET "/library/policy" {:policy id}))
+  [policy-id]
+  (GET "/library/policy" {:policy policy-id}))
 
 (defn add-policy
-  [o]
+  [data]
   (PUT "/library/policy"
        nil
        nil
-       (with-out-str (prn o))))
+       (with-out-str (prn data))))
 
 (defn edit-policy
-  [id o]
+  [policy-id data]
   (POST "/library/policy"
-        {:policy id}
+        {:policy policy-id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn data))))
 
 (defn delete-policy
-  [id]
-  (DELETE "/library/policy" {:policy id} nil nil))
+  [policy-id]
+  (DELETE "/library/policy" {:policy policy-id} nil nil))
 
 

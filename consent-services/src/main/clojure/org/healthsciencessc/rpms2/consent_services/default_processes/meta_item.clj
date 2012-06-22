@@ -3,9 +3,16 @@
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.utils :as utils]
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+
+(defn- authorize-read-node
+  [ctx]
+  (let [user (utils/current-user ctx)]
+    (and (roles/protocol-designer? user)
+         (utils/record-belongs-to-user-org ctx types/meta-item))))
 
 (def meta-item-processes
   [{:name "get-library-meta-items"
@@ -14,7 +21,7 @@
     :run-if-false forbidden-fn}
 
    {:name "get-library-meta-item"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-meta-item-record)
+    :runnable-fn authorize-read-node
     :run-fn utils/get-meta-item-record
     :run-if-false forbidden-fn}
 

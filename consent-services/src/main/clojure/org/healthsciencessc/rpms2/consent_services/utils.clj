@@ -19,6 +19,27 @@
 
 (def lookup-organization (lookup/gen-organization-lookup-in-query current-org-id))
 
+;; Define methods to help with process authorization
+(defn record-belongs-to-user-org
+  "Checks if an ID value with the query parameters belongs to a record which is linked to 
+   the requestors organization.  It assumes that the ID value is stored in a parameter 
+   named the same as the record type."
+  [ctx record-type]
+  (let [org-id (current-org-id ctx)
+        record-id (get-in ctx [:query-params (keyword record-type)])]
+    (data/belongs-to? record-type record-id types/organization org-id)))
+
+(defn record-owned-by-user-org
+  "Checks if an ID value with the query parameters belongs to a record which is owned by 
+   the requestors organization.  It assumes that the ID value is stored in a parameter 
+   named the same as the record type."
+  [ctx record-type]
+  (let [org-id (current-org-id ctx)
+        record-id (get-in ctx [:query-params (keyword record-type)])
+        record (data/find-record record-type record-id)
+        record-org-id (get-in record [:organization :id])]
+    (= org-id record-org-id)))
+
 ;; Generates Common Process Functions For Working With Data
 (defn gen-type-delete
   "Generates a function that deletes a node using the provided type and the ID value lookup function."
@@ -88,7 +109,7 @@
 (def get-meta-item-record (gen-record-lookup types/meta-item lookup/get-meta-item-in-query))
 (def get-organization-record (gen-record-lookup types/organization lookup/get-organization-in-query))
 (def get-policy-record (gen-record-lookup types/policy lookup/get-policy-in-query))
-(def get-policy-definition-record (gen-record-lookup types/policy lookup/get-policy-definition-in-query))
+(def get-policy-definition-record (gen-record-lookup types/policy-definition lookup/get-policy-definition-in-query))
 (def get-protocol-record (gen-record-lookup types/protocol lookup/get-protocol-in-query))
 (def get-protocol-version-record (gen-record-lookup types/protocol-version lookup/get-protocol-version-in-query))
 (def get-role-record (gen-record-lookup types/role lookup/get-role-in-query))

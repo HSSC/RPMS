@@ -60,16 +60,19 @@
 (defn view-endorsement-type
  [ctx]
   (if-let [node-id (lookup/get-endorsement-type-in-query ctx)]
-    (let [n (services/get-endorsement-type node-id)]
+    (let [n (services/get-endorsement-type node-id)
+          editable (= (get-in n [:organization :id]) (security/current-org-id))]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
-                       (container/scrollbox (form/dataform (form/render-fields {} fields n)))
+                       (container/scrollbox (form/dataform (form/render-fields {:editable editable} fields n)))
                        (actions/actions
-                         (actions/save-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
-                         (actions/delete-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
+                         (if editable
+                           (list 
+                             (actions/save-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})
+                             (actions/delete-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})))
                          (actions/back-action)))))
     ;; Handle Error
     (layout/render-error ctx {:message "An endorsement type is required."})))

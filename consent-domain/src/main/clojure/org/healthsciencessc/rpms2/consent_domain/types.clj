@@ -45,24 +45,24 @@
 (def code-role-consentmanager "!manage!")
 (def code-role-externalsystem "!csys!")
 
-;; STANDARD PROTOCOL VERSION STATUSES
+;; STANDARD STATUSES FOR FINALIZING RECORDS - ie: PROTOCOL VERSION, POLICY, POLICY DERPS, META-ITEM, etc
 (def status-draft "Draft")
 (def status-submitted "Submitted")
 (def status-published "Published")
 (def status-retired "Retired")
 
 (defn draft?
-  [protocol-version]
-  (= status-draft (:status protocol-version)))
+  [record]
+  (= status-draft (:status record)))
 
 (defn submitted?
-  [protocol-version]
-  (= status-submitted (:status protocol-version)))
+  [record]
+  (= status-submitted (:status record)))
 
 (defn published?
-  [protocol-version]
-  (= status-published (:status protocol-version)))
+  [record]
+  (= status-published (:status record)))
 
 (defn retired?
-  [protocol-version]
-  (= status-retired (:status protocol-version)))
+  [record]
+  (= status-retired (:status record)))

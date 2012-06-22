@@ -4,6 +4,7 @@
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
+            [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
@@ -51,7 +52,7 @@
                               :data version})))
                        (actions/actions 
                          (actions/details-action 
-                           {:url "/view/protocol/version" :params {:version :selected#id}})
+                           {:url "/view/protocol/version" :params {:protocol-version :selected#id}})
                          (actions/ajax-action 
                            {:method :put :url "/api/protocol/version" :params {:protocol protocol-id}
                             :label "New" :action-on-success "refresh"})
@@ -61,24 +62,27 @@
 (defn view-protocol-version
   "Generates a detail/edit view for a single protocol version"
   [ctx]
-  (if-let [protocol-version-id (get-in ctx [:query-params :version])]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
     (let [protocol-version (services/get-protocol-version protocol-version-id)
           protocol (:protocol protocol-version)
-          editable (types/draft? protocol-version)
-          params (:version protocol-version-id)
+          editable (and (common/owned-by-user-org protocol)
+                     (types/draft? protocol-version))
+          params {:protocol-version protocol-version-id}
           
-          tabs [{:label "Policies" :type "policy" :items (:policies protocol-version)}
-                {:label "Endorsements" :type "endorsement" :items (:endorsement protocol-version)}
-                {:label "Meta Data" :type "metaitem" :items (:meta-item protocol-version)}
-                {:label "Languages" :type "language" :items (:language protocol-version)}]
-          tubs (map (fn [tab] 
-                      {:label (:label tab)
-                       :options {:editable editable
-                                 :add-url (str "/protocol/version/" (:type tab) "/add") :add-params params
-                                 :edit-url (str "/protocol/version/" (:type tab) "/edit") :edit-params params
-                                 :delete-url (str "/protocol/version/" (:type tab)) :delete-params params}
-                       :items (map (fn [item] {:label (:name item) :data {(:type tab) (:id item)}}) (:items tab))}) tabs)]
-       (if (meta protocol-version)
+          tabs [{:label "Policies" :type "policy" :items (:policies protocol-version) :edit false}
+                {:label "Endorsements" :type "endorsement" :items (:endorsements protocol-version) :edit false}
+                {:label "Meta Items" :type "meta-item" :items (:meta-items protocol-version) :edit false}
+                {:label "Languages" :type "language" :items (:languages protocol-version) :edit false}]
+          tubs (into [] 
+                     (for [tab tabs] 
+                       (let [edit-options (if (not (false? (:edit tab))) 
+                                            {:edit-url (str "/view/protocol/version/" (:type tab) "/edit") :edit-params params} {})]
+                         {:label (:label tab)
+                          :options (merge {:editable editable
+                                           :add-url (str "/view/protocol/version/" (:type tab) "/add") :add-params params
+                                           :delete-url (str "/api/protocol/version/" (:type tab)) :delete-params params} edit-options)
+                       :items (map (fn [item] {:label (:name item) :data {(:type tab) (:id item)}}) (:items tab))})))]
+      (if (meta protocol-version)
         (rutil/not-found (:message (meta protocol-version)))
         (layout/render ctx (render-label protocol " Version - " (version-name protocol-version))
                        (container/cutbox
@@ -93,44 +97,32 @@
                        (actions/actions         
                          (if (types/draft? protocol-version)
                            (list
-                             ;;(actions/push-action 
-                             ;;  {:url "/view/protocol/version/policies" :params {:version protocol-version-id} 
-                             ;;   :label "Edit Policies"})
-                             ;;(actions/push-action 
-                             ;;  {:url "/view/protocol/version/endorsements" :params {:version protocol-version-id} 
-                             ;;   :label "Edit Endorsements"})
-                             ;;(actions/push-action 
-                             ;;  {:url "/view/protocol/version/metaitem" :params {:version protocol-version-id} 
-                             ;;   :label "Edit Meta Items"})
                              (actions/push-action 
-                               {:url "/view/protocol/version/form" :params {:version protocol-version-id} 
+                               {:url "/view/protocol/version/form" :params {:protocol-version protocol-version-id} 
                                 :label "Layout"})
-                             
-                             ;;(actions/action-separator)
-                             
                              (actions/ajax-action 
-                               {:method :post :url "/api/protocol/version/submit" :params {:version protocol-version-id}
+                               {:method :post :url "/api/protocol/version/submit" :params {:protocol-version protocol-version-id}
                                 :label "Submit" :action-on-success "refresh"})
                              (actions/ajax-action 
-                               {:method :delete :url "/api/protocol/version" :params {:version protocol-version-id}
+                               {:method :delete :url "/api/protocol/version" :params {:protocol-version protocol-version-id}
                                 :label "Delete" :action-on-success ".back-action"})))
                              
                          (if (types/submitted? protocol-version)
                            (list
                              (actions/push-action 
-                               {:url "/view/protocol/version/review" :params {:version protocol-version-id} 
+                               {:url "/view/protocol/version/review" :params {:protocol-version protocol-version-id} 
                                 :label "Review"})
                              (actions/ajax-action 
-                               {:method :post :url "/api/protocol/version/draft" :params {:version protocol-version-id}
+                               {:method :post :url "/api/protocol/version/draft" :params {:protocol-version protocol-version-id}
                                 :label "Revert To Draft" :action-on-success "refresh"})
                              (actions/ajax-action 
-                               {:method :post :url "/api/protocol/version/publish" :params {:version protocol-version-id}
+                               {:method :post :url "/api/protocol/version/publish" :params {:protocol-version protocol-version-id}
                                 :label "Publish" :action-on-success "refresh"
                                 :confirm {:title "Confirm Publishing" :message "Publishing the current version will retire any currently published versions."}})))
                          
                          (if (types/published? protocol-version)
                            (actions/ajax-action 
-                             {:method :post :url "/api/protocol/version/retire" :params {:version protocol-version-id}
+                             {:method :post :url "/api/protocol/version/retire" :params {:protocol-version protocol-version-id}
                               :label "Retire" :action-on-success "refresh"
                               :confirm {:title "Confirm Retirement" :message "Retiring the current version will remove the protocol from the collection application."}}))
                          (actions/back-action)))))
@@ -167,7 +159,7 @@
 (defn delete-api-protocol-version
   "Deletes a specific version"
   [ctx]
-  (if-let [protocol-version-id (get-in ctx [:query-params :version])]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
     (let [resp (services/delete-protocol-version protocol-version-id)]
       ;; Handle Error or Success
       (if (services/service-error? resp)
@@ -179,7 +171,7 @@
 (defn post-api-protocol-version-submit
   "Puts a draft protocol version into a submitted status."
   [ctx]
-  (if-let [protocol-version-id (get-in ctx [:query-params :version])]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
     (let [resp (services/update-protocol-version protocol-version-id {:status types/status-submitted})]
       ;; Handle Error or Success
       (if (services/service-error? resp)
@@ -191,7 +183,7 @@
 (defn post-api-protocol-version-draft
   "Puts a submitted protocol version into a draft status."
   [ctx]
-  (if-let [protocol-version-id (get-in ctx [:query-params :version])]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
     (let [resp (services/draft-protocol-version protocol-version-id)]
       ;; Handle Error or Success
       (if (services/service-error? resp)
@@ -203,7 +195,7 @@
 (defn post-api-protocol-version-publish
   "Publishes a specific protocol version"
   [ctx]
-  (if-let [protocol-version-id (get-in ctx [:query-params :version])]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
     (let [resp (services/publish-protocol-version protocol-version-id)]
       ;; Handle Error or Success
       (if (services/service-error? resp)
@@ -215,7 +207,7 @@
 (defn post-api-protocol-version-retire
   "Publishes a specific protocol version"
   [ctx]
-  (if-let [protocol-version-id (get-in ctx [:query-params :version])]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
     (let [resp (services/retire-protocol-version protocol-version-id)]
       ;; Handle Error or Success
       (if (services/service-error? resp)
@@ -223,6 +215,50 @@
         (ajax/success resp)))
     ;; Handle Bad Request
     (ajax/error {:message "A protocol version is required."})))
+
+(defn delete-api-protocol-version-endorsement
+  "Removes an endorsement from a protocol version."
+  [ctx]
+  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
+        endorsement-id (get-in ctx [:query-params :endorsement])
+        resp (services/remove-endorsement-from-protocol-version endorsement-id protocol-version-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
+(defn delete-api-protocol-version-language
+  "Removes a language from a protocol version."
+  [ctx]
+  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
+        language-id (get-in ctx [:query-params :language])
+        resp (services/remove-language-from-protocol-version language-id protocol-version-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
+(defn delete-api-protocol-version-meta-item
+  "Removes a meta item from a protocol version."
+  [ctx]
+  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
+        meta-item-id (get-in ctx [:query-params :meta-item])
+        resp (services/remove-meta-item-from-protocol-version meta-item-id protocol-version-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
+(defn delete-api-protocol-version-policy
+  "Removes a policy from a protocol version."
+  [ctx]
+  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
+        policy-id (get-in ctx [:query-params :policy])
+        resp (services/remove-policy-from-protocol-version policy-id protocol-version-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
 
 (def process-defns
   [
@@ -240,38 +276,58 @@
    
    ;; Generates the view for editing/reviewing a protocol.
    {:name "get-view-protocol-version"
-    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :version])))
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version])))
     :run-fn view-protocol-version
     :run-if-false ajax/forbidden}
    
    ;; Service For Deleting Protocol Version
    {:name "delete-api-protocol-version"
-    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :version]) types/draft?))
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
     :run-fn delete-api-protocol-version
     :run-if-false ajax/forbidden}
    
    ;; Service For Submitting Protocol Version
    {:name "post-api-protocol-version-submit"
-    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :version]) types/draft?))
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
     :run-fn post-api-protocol-version-submit
     :run-if-false ajax/forbidden}
    
    ;; Service For Reverting Protocol Version To Draft
    {:name "post-api-protocol-version-draft"
-    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :version]) types/submitted?))
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/submitted?))
     :run-fn post-api-protocol-version-draft
     :run-if-false ajax/forbidden}
    
    ;; Service For Publishing Protocol Version
    {:name "post-api-protocol-version-publish"
-    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :version]) types/submitted?))
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/submitted?))
     :run-fn post-api-protocol-version-publish
     :run-if-false ajax/forbidden}
    
    ;; Service For Publishing Protocol Version
    {:name "post-api-protocol-version-retire"
-    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :version]) types/published?))
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/published?))
     :run-fn post-api-protocol-version-retire
+    :run-if-false ajax/forbidden}
+   
+   {:name "delete-api-protocol-version-endorsement"
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
+    :run-fn delete-api-protocol-version-endorsement
+    :run-if-false ajax/forbidden}
+   
+   {:name "delete-api-protocol-version-language"
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
+    :run-fn delete-api-protocol-version-language
+    :run-if-false ajax/forbidden}
+   
+   {:name "delete-api-protocol-version-meta-item"
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
+    :run-fn delete-api-protocol-version-meta-item
+    :run-if-false ajax/forbidden}
+   
+   {:name "delete-api-protocol-version-policy"
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
+    :run-fn delete-api-protocol-version-policy
     :run-if-false ajax/forbidden}
    ])
 
