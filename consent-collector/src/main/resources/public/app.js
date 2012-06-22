@@ -12810,9 +12810,8 @@ org.healthsciencessc.rpms2.core.consenter_search_result_clicked = function conse
   details__2733.find("#consenter-consenter-id").text("\ufdd0'consenter-id".call(null, user__2732));
   other_section__2734.find(cljs.core.str.call(null, "#patient-name")).val(cljs.core.str.call(null, first_name__2738, " ", last_name__2737));
   console.log("patient name set ", cljs.core.str.call(null, first_name__2738, " ", last_name__2737));
-  other_section__2734.find(cljs.core.str.call(null, "#patient-encounter-date")).val("\ufdd0'consenter-encounter-date".call(null, user__2732));
-  other_section__2734.find(cljs.core.str.call(null, "#patient-id")).val("\ufdd0'medical-record-number".call(null, user__2732));
-  return other_section__2734.find(cljs.core.str.call(null, "#current-patient-selection")).val(user__2732)
+  console.log("consenter id set: ", "\ufdd0'consenter-id".call(null, user__2732));
+  return $.call(null, "#consenter-id").val("\ufdd0'consenter-id".call(null, user__2732))
 };
 goog.exportSymbol("org.healthsciencessc.rpms2.core.consenter_search_result_clicked", org.healthsciencessc.rpms2.core.consenter_search_result_clicked);
 org.healthsciencessc.rpms2.core.data_change_clicked = function data_change_clicked(div) {
