@@ -25,6 +25,7 @@ and (max-device-width: 1024px) and (orientation:landscape) {
  *
  */
 .centered !important { text-align: center; }
+.right { text-align: right; }
 .left { text-align: left; }
 
 .value { margin-left: 5px; color: gray; line-height: 1.1em; }

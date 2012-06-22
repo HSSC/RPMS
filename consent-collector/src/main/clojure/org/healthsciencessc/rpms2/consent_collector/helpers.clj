@@ -335,7 +335,6 @@
     (hpage/include-css 
      (absolute-path "app.css")
      (absolute-path "jquery.mobile-1.1.0.min.css" )
-     (absolute-path "new-theme-e.css")
      (absolute-path "jquery.signaturepad.css" ))
 
     (helem/javascript-tag "var CLOSURE_NO_DEPS = true;")

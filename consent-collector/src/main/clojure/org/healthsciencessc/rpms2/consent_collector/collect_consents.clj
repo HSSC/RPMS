@@ -89,7 +89,9 @@
   "A ReviewPolicy widget provides a controller that allows the collector to 
   review consents collected for policies during the review process.
   The value will be the value associated with the named widget.
-  choicebuttons, policybutton checkbox-label"
+  choicebuttons, policybutton checkbox-label
+
+  Find the widget associated with the policy and use that value."
   [{:keys [widget] :as m}]
   [:div.control.review 
      (list 
@@ -112,14 +114,16 @@
 
   [:div.control.signature 
    (:name widget)
-   (helper/signaturePadDiv (:name widget) value)
-   [:div.ui-grid-b
-      [:div.ui-block-a
-        [:a {:href "#"
-             :data-role "button" 
-             :data-theme "a" 
-             :onclick "$('.sigPad').signaturePad().clearCanvas()" } 
-         (:clear-label widget) ]]]])
+    [:div.ui-grid-b
+       [:div.ui-block-a "" ]
+       [:div.ui-block-b "" ]
+       [:div.ui-block-c.right 
+          [:a {:href "#"
+               :data-role "button" 
+               :data-theme "a" 
+               :onclick "$('.sigPad').signaturePad().clearCanvas()"} 
+         (:clear-label widget)]]]
+   (helper/signaturePadDiv (:name widget) value) ])
 
 (defn- true-or-not-specified? 
   [v]
@@ -263,7 +267,8 @@
          (if-let [pn (:page-name s) ]
              [:span.standout pn ]) ])
     [:div (page-dbg p s)
-          [:div (map #(section % dm) (:contains p)) ]])
+      (if (helper/in-review?) [:h1 "Summary" ] )
+      [:div (map #(section % dm) (:contains p)) ]])
 
 (defn- form-title
   [f]
