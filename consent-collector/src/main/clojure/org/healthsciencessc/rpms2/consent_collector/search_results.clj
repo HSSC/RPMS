@@ -27,11 +27,9 @@
             (if consenter-id
 	        (do 
                    (helper/set-consenter (first (:json (dsa/dsa-search-consenters {:consenter-id consenter-id} nil))))
-                ;; THIS IS WHERE WE SHOULD SET THE ENCOUNTER
+                   (session-delete-key! :search-results)
+                   (session-delete-key! :search-params)
     		   (helper/myredirect "/view/select/encounter"))
-		   ;;  :encounter-id (str "#EN1239" (rand-int 1000))
-		   ;;  :patient-encounter-date patient-encounter-date})
-    		  ;; (helper/myredirect "/view/select/protocols")))
                 (do 
                    (flash-put! :header (i18n :flash-search-consenter-results-no-selection ) )
 	   	   (helper/myredirect "/view/select/consenter")))

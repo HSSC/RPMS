@@ -3,7 +3,7 @@
     [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
     [org.healthsciencessc.rpms2.consent-collector.helpers :as helper]
     [org.healthsciencessc.rpms2.process-engine.core :as process])
-  (:use [sandbar.stateful-session :only (session-get session-put! flash-get flash-put!)]
+  (:use [sandbar.stateful-session :only (session-get session-delete-key! session-put! flash-get flash-put!)]
         [org.healthsciencessc.rpms2.consent-collector.debug :only (debug!)]
         [clojure.tools.logging :only (debug info warn error)]
         [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]
@@ -19,7 +19,7 @@
 
 (defn view
   [request]
-  (session-put! :encounter nil)
+  (session-delete-key! :encounter)
   (let [encounters (:encounters (session-get :consenter))]
       (if (not (seq encounters))
         (helper/myredirect "/view/create/encounter")
@@ -44,11 +44,12 @@
 (defn perform
   [request]
   (let [enc-id (-> request :body-params :encounter)
-        create-button? (-> request :body-params :create-encounter)]
+        create-button? (-> request :body-params :create-encounter)
+        select-button? (-> request :body-params :select-encounter)]
     (cond
-      (not (empty create-button?))
+      create-button?
       (helper/myredirect "/view/create/encounter")
-      enc-id
+      (and enc-id select-button?)
       (do
         (set-encounter! enc-id)
         (helper/myredirect "/view/select/protocols"))

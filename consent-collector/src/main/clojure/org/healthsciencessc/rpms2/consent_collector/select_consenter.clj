@@ -4,7 +4,7 @@
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper]
    [org.healthsciencessc.rpms2.process-engine.core :as process])
 
-  (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
+  (:use [sandbar.stateful-session :only [session-delete-key! session-get session-put! flash-get flash-put! ]])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug!]]) 
   (:use [clojure.tools.logging :only (debug info warn error)])
   (:use [clojure.pprint])
@@ -15,9 +15,9 @@
 (defn view 
    "Returns form to search consenter and a button to create consenter"
   [ctx]
-
   (helper/clear-consenter)
   (helper/clear-consents)
+  (session-delete-key! :search-results)
   (helper/rpms2-page 
     (helper/post-form "/view/select/consenter" 
      (list 
