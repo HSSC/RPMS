@@ -5,7 +5,10 @@
         [ring.util.response :only (not-found)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
-            [org.healthsciencessc.rpms2.consent-services.data :as data])
+            [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.consent-services.utils :as utils])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]
            [java.util.regex Pattern]))
 
@@ -49,6 +52,16 @@
        (consent-collector? user :organization {:id user-org-id})
        (consent-manager? user :organization {:id user-org-id})))))
 
+(defn get-encounter-ids
+  [consent-encounter-data]
+  (for [[k v] consent-encounter-data] (get-in v [:encounter :id])))
+
+(defn have-same-encounter?
+  [data]
+  (let [encounter-ids (get-encounter-ids data)]
+    (and (every? #(not (nil? %)) encounter-ids)
+         (= 1 (count (distinct encounter-ids))))))
+
 (def consent-processes
   ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/consent/consenters?organization=<ID>
   [{:name "get-consent-consenter"
@@ -89,6 +102,20 @@
                 (if (< 0 (count results))
                   (filter regex-match? loc-consenters)
                   (not-found ""))))
+    :run-if-false forbidden-fn}
+
+   {:name "put-consent-collect"
+    :runnable (fn [params]
+                (let [current-user (utils/current-user params)
+                      encounter-consent-data (:body-params params)
+                      encounter-id (first (get-encounter-ids encounter-consent-data))
+                      encounter (data/find-record types/encounter encounter-id)]
+                  (and (have-same-encounter? encounter-consent-data)
+                       (runnable/can-collect-location current-user (:location encounter)))))
+    :run-fn (fn [params]
+              (let [encounter-consent-data (:body-params params)
+                    encounter-id (first (get-encounter-ids encounter-consent-data))]
+                (data/create-records "encounter" (assoc encounter-consent-data :id encounter-id))))
     :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) consent-processes))

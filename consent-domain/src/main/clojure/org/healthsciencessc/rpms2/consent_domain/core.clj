@@ -68,10 +68,20 @@
    encounter {:attributes (merge base
                                  {:encounter-id {:persisted true :required true}
                                   :date {:persisted true :required true}})
-              :relations [{:type :belongs-to :related-to organization :relationship :has-organization :deletable-by-parent true}
+              :relations [{:type :belongs-to :related-to organization :relationship :has-organization :required true :deletable-by-parent true}
                           {:type :belongs-to :related-to consenter :relationship :has-consenter :omit-rels true}
-                          {:type :belongs-to :related-to location :relationship :has-location}]}
+                          {:type :belongs-to :related-to location :relationship :has-location}
+                          {:type :has-many :related-to consent}
+                          {:type :has-many :related-to consent-endorsement}
+                          {:type :has-many :related-to consent-meta-item}]}
 
+   consent {:attributes (merge base
+                               {:consented {:persisted true}})
+            :relations [{:type :belongs-to :related-to organization :relationship :has-organization :required true :deletable-by-parent true}
+                        {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
+                        {:type :belongs-to :related-to policy :relationship :has-policy :required true}
+                        {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}]}
+   
    role-mapping {:attributes base
                  :relations [{:type :belongs-to :related-to user :relationship :has-user :omit-rels true :deletable-by-parent true}
                              {:type :belongs-to :related-to group :relationship :has-group :omit-rels true :deletable-by-parent true}
@@ -88,6 +98,13 @@
                                   :status {:persisted true}})
               :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                           {:type :belongs-to :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
+
+   consent-meta-item {:attributes (merge base
+                                         {:value {:persisted true}})
+                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
+                                  {:type :belongs-to :related-to meta-item :relationship :has-meta-item :required true}
+                                  {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
+                                  {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}]}
 
    policy {:attributes (merge base
                               {:name {:persisted true}
@@ -118,7 +135,7 @@
                                :type {:persisted true}
                                :status {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
-                       {:type :belongs-to :related-to form :relationship :in-form}
+                       {:type :belongs-to :related-to form :relationship :in-form :omit-rels true}
                        {:type :belongs-to :related-to widget :relationship :contained-in :name :contained-in :omit-rels true}
                        {:type :has-many :related-to widget :name :contains}
                        {:type :has-many :related-to widget-property :name :properties}]}
@@ -143,6 +160,13 @@
                                          :uri {:persisted true}
                                          :status {:persisted true}})
                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}]}
+
+   consent-endorsement {:attributes (merge base
+                                           {:value {:persisted true}})
+                        :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
+                                              {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
+                                    {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}
+                                    {:type :belongs-to :related-to endorsement :relationship :has-endorsement :required true}]}
 
    protocol {:attributes (merge base
                                 {:name {:persisted true}

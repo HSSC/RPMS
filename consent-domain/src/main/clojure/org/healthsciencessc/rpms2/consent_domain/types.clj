@@ -28,7 +28,7 @@
   widget-property
   encounter
   consent
-  consent-meta
+  consent-meta-item
   consent-endorsement
   protocol
   protocol-version

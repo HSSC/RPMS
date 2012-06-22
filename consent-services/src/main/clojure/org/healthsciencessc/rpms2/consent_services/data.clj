@@ -457,10 +457,12 @@
                 relation (domain/get-parent-relation parent-type child-type schema)
                 rel-name (if relation (domain/get-relation-name relation))
                 neo-data (if rel-name (assoc child-node rel-name (:neo-data parent-node)) child-node)
-                record (node->record
-                        (create-audit (with-validation child-type neo-data #(create-node-with-default-relationships child-type neo-data nil))
-                                      :create)
-                        child-type)]
+                record ((if (:id neo-data)
+                          (find-record child-type (:id neo-data))
+                          (node->record
+                          (create-audit (with-validation child-type neo-data #(create-node-with-default-relationships child-type neo-data nil))
+                                        :create)
+                          child-type)))]
             (recur
              (zip/next (zip/replace loc (assoc child-node :neo-data record))))))))))
 
