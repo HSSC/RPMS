@@ -2,7 +2,8 @@
   (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
-            [org.healthsciencessc.rpms2.consent-domain.match :as match])
+            [org.healthsciencessc.rpms2.consent-domain.match :as match]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types])
   (:use [org.healthsciencessc.rpms2.consent-domain.types])
   (:import [java.util Locale]))
 
@@ -93,11 +94,17 @@
                     :requires-location reqloc
                     :organization def-org} match/roles-match?)))
 
+(defn- create-default-lang
+  "Creates the languages that are available from the base organization if they do not exist."
+  [def-org]
+  (create "language"
+            {:name "English"
+             :code "en"
+             :organization def-org}))
 (defn- create-langs 
   "Creates the languages that are available from the base organization if they do not exist."
   [def-org]
-  (doseq [[code name] [["en" "English"]
-                       ["es" "Spanish"]
+  (doseq [[code name] [["es" "Spanish"]
                        ["fr" "French"]
                        ["de" "German"]]]
     (create "language"
@@ -105,6 +112,68 @@
              :code code
              :organization def-org})))
 
+(defn- create-endorsement-types 
+  "Creates the languages that are available from the base organization if they do not exist."
+  [def-org]
+  (doseq [[name code] [["Primary Witness Signature" "!witness.signature.primary!"]
+                       ["Secondary Witness Signature" "!witness.signature.second!"]
+                       ["Consenter Signature" "!consenter.signature!"]
+                       ["Consenter Initials" "!consenter.initials!"]
+                       ["Guardian Signature" "!guardian.signature!"]
+                       ["Guardian Initials" "!guardian.initials!"]
+                       ["Guarantor Signature" "!guarantor.signature!"]
+                       ["Guarantor Initials" "!guarantor.initials!"]]]
+    (create types/endorsement-type
+            {:name name
+             :code code
+             :status types/status-published
+             :organization def-org})))
+
+(defn- create-meta-items 
+  "Creates the languages that are available from the base organization if they do not exist."
+  [org lang]
+  (doseq [[name datatype] 
+          [["Signatory" "string"]
+           ["Signatory's Name" "string"]
+           ["Signatory's Relationship" "string"]
+           ["Guarantor" "string"]
+           ["Guarantor's Name" "string"]
+           ["Referring Physician's Name" "string"]
+           ["Referring Physician's City" "string"]
+           ["Primary Care Physician's Name" "string"]
+           ["Primary Care Physician's City" "string"]
+           ["Attending Physician's Name" "string"]
+           ["Advanced Directives Given" "boolean"]]]
+    (create types/meta-item
+            {:name name
+             :data-type datatype
+             :label {:value name :language lang}
+             :status types/status-published
+             :organization org})))
+
+(defn- create-policy-definitions 
+  "Creates the policy definitions that are available from the base organization if they do not exist."
+  [org]
+  (doseq [[name code description] 
+          [["Purpose" "purpose" "A statement that the study involves research, an explanation of the purposes of the research and the expected duration of the subject's participation, a description of the procedures to be followed, and identification of any procedures which are experimental."]
+           ["Risks" "risks" "A description of any reasonably foreseeable risks or discomforts to the subject."]
+           ["Benefits" "benefits" "A description of any benefits to the subject or to others which may reasonably be expected from the research."]
+           ["Alternative Procedures" "alternative-procedures" "A disclosure of appropriate alternative procedures or courses of treatment, if any, that might be advantageous to the subject."]
+           ["Confidentiality" "confidentiality" "A statement describing the extent, if any, to which confidentiality of records identifying the subject will be maintained."]
+           ["Compensation" "compensation" "For research involving more than minimal risk, an explanation as to whether any compensation and an explanation as to whether any medical treatments are available if injury occurs and, if so, what they consist of, or where further information may be obtained."]
+           ["Contact Procedure" "contact-procedure" "An explanation of whom to contact for answers to pertinent questions about the research and research subjects' rights, and whom to contact in the event of a research-related injury to the subject."]
+           ["Voluntary Participation" "voluntary-participation" "A statement that participation is voluntary, refusal to participate will involve no penalty or loss of benefits to which the subject is otherwise entitled, and the subject may discontinue participation at any time without penalty or loss of benefits to which the subject is otherwise entitled."]
+           ["Unforeseeable Risks" "unforeseeable-risks" "A statement that the particular treatment or procedure may involve risks to the subject (or to the embryo or fetus, if the subject is or may become pregnant) which are currently unforeseeable."]
+           ["Participant Termination" "participant-termination" "Anticipated circumstances under which the subject's participation may be terminated by the investigator without regard to the subject's consent."]
+           ["Costs" "costs" "Any additional costs to the subject that may result from participation in the research."]
+           ["Participant Withdrawal" "participant-withdrawal" "The consequences of a subject's decision to withdraw from the research and procedures for orderly termination of participation by the subject"]
+           ["Research Findings" "research-findings" "A statement that significant new findings developed during the course of the research which may relate to the subject's willingness to continue participation will be provided to the subject."]
+           ["Number Of Subjects" "number-of-subjects" "The approximate number of subjects involved in the study."]]]
+    (create types/policy-definition
+            {:name name
+             :description description
+             :code code
+             :organization org})))
 
 (defn- get-role-by-code
   "Looks up roles by there code value."
@@ -121,10 +190,15 @@
         sadmin (create user 
                        {:first-name "Super" :last-name "Administrator" :organization org
                         :username "admin" :password (auth/hash-password "root")} 
-                       match/users-match?)]
+                       match/users-match?)
+        lang (create-default-lang org)]
+    
     (create-role-mapping :user {:organization org :role sadmin-role :user sadmin})
     (create-roles org)
-    (create-langs org)))
+    (create-langs org)
+    (create-policy-definitions org)
+    (create-meta-items org lang)
+    (create-endorsement-types org)))
 
 (defn seed-example-org!
   "Creates an organization that will contain all of the example and best practice data."

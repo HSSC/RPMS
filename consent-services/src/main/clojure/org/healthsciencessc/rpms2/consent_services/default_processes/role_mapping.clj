@@ -6,16 +6,6 @@
             [org.healthsciencessc.rpms2.consent-services.utils :as utils])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(defn printit
-  [title obj]
-  (println)
-  (println "BEGIN: " title)
-  (println)
-  (println obj)
-  (println)
-  (println "END: " title)
-  (println))
-
 (def role-mapping-processes
   [{:name "delete-security-role-mapping"
     :runnable-fn (fn [params]

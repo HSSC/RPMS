@@ -7,12 +7,23 @@
 
 (def lookup-organization (lookup/gen-organization-lookup-in-query security/current-org-id))
 
-(defn make-truthy
-  [m props & true-values]
-  (let [troofs (set true-values)
-        current (select-keys m props)
-        replacements (into {} (for [[k v] current] [k (if (troofs v) true false)]))]
-    (merge m replacements)))
+(defn replace-truths
+  "Changes the values in a map to be either true or false depending if the value has been deemed
+   to be a truth."
+  [m & truths]
+  (let [serum (set truths)]
+    (into {} (for [[k v] m] [k (if (serum v) true false)]))))
+
+(defn find-and-replace-truths
+  "Replaces specific values in a map that are flagged for thruthfulness as either true or false."
+  [m props & truths]
+  (merge m (apply replace-truths (select-keys m props) truths)))
+
+(defn owned-by-user-org
+  [record]
+  (let [record-org-id (get-in record [:organization :id])
+        user-org-id (security/current-org-id {})]
+    (= record-org-id user-org-id)))
 
 ;; Provide Process Generation Functions
 (defn gen-api-type-delete
@@ -52,3 +63,4 @@
           (ajax/success resp)))
       ;; Handle Bad Request
       (ajax/error {:message missing-id-message}))))
+

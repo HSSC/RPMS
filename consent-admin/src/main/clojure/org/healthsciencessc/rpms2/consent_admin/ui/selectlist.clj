@@ -26,14 +26,13 @@
   [options items]
   [(tag-class :div.actionlist (:fill options))
    [(tag-class :div.actionlistitems.fill-rightto (if (:fill options) :fill-down)) {:data-fillto :.actionlistactions :data-fillbuffer 5}
-    [:div.actionlistitem "Test 1"]
-    [:div.actionlistitem "Test 2"]
-    [:div.actionlistitem "Test 3"]
-    [:div.actionlistitem "Test 4"]
     (map (fn [item]
            [:div.actionlistitem {:data-item (to-attr-value (:data item)) } (:label item)]) items)]
    [:div.actionlistactions 
     (if (:editable options)
-      (list (actions/add-list-action {:url (:add-url options "") :params (:add-params options "{}")})
-            (actions/edit-list-action {:url (:edit-url options "") :params (:edit-params options "{}")})
-            (actions/delete-list-action {:url (:delete-url options "") :params (:delete-params options "{}")}) ))]])
+      (list (if (:add-url options) 
+              (actions/add-list-action {:url (:add-url options) :params (:add-params options)}))
+            (if (:edit-url options) 
+              (actions/edit-list-action {:url (:edit-url options) :params (:edit-params options)}))
+            (if (:delete-url options) 
+              (actions/delete-list-action {:url (:delete-url options) :params (:delete-params options)}))))]])

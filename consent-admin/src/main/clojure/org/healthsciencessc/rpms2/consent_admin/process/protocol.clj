@@ -75,7 +75,7 @@
                            {:url "/view/protocol/versions" :params {:protocol protocol-id} :label "Versions"})
                          (actions/ajax-action 
                            {:method :post :url "/api/protocol" :params {:protocol protocol-id :location location-id}
-                            :label "Save" :action-on-success ".back-action" :include-data :true})
+                            :label "Save" :include-data :true})
                          (actions/ajax-action 
                            {:method :delete :url "/api/protocol" :params {:protocol protocol-id :location location-id}
                             :label "Delete" :action-on-success ".back-action"})
@@ -101,7 +101,7 @@
   [ctx]
   (if-let [location-id (get-in ctx [:query-params :location])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
-          body (common/make-truthy body [:required :select-by-default] "true")
+          body (common/find-and-replace-truths body [:required :select-by-default] "true")
           user (security/current-user)
           location-role (first (roles/protocol-designer-mappings user :location {:id location-id}))
           location (:location location-role)
@@ -119,7 +119,7 @@
   [ctx]
   (if-let [protocol-id (get-in ctx [:query-params :protocol])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
-          body (common/make-truthy body [:required :select-by-default] "true")
+          body (common/find-and-replace-truths body [:required :select-by-default] "true")
           resp (services/update-protocol protocol-id body)]
       ;; Handle Error or Success
       (if (services/service-error? resp)

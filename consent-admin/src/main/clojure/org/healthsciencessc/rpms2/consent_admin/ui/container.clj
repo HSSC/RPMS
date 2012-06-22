@@ -22,9 +22,11 @@
 
 (defn tabcontrol
   [options tabs]
-  [(tag-class :div.tabbox (:fill options))
-   [:div.tabcontrol
-    ;; Generate Labels
-    [:ul (map (fn [tab] [:li [:a {:href (gen-tab-name tab "#tab-")} (:label tab)]]) tabs)]
-    ;; Generate Content
-    (map (fn [tab] [(tag-class :div.tab (:fill options)) {:id (gen-tab-name tab "tab-")} (:content tab)]) tabs)]])
+  (let [id (or (:id options) (str "tabcontrol-" (count tabs)))
+        tctag (keyword (str "div#" id ".tabcontrol"))] 
+    [(tag-class :div.tabbox (:fill options))
+     [tctag
+      ;; Generate Labels
+      [:ul (map (fn [tab] [:li [:a {:href (gen-tab-name tab "#tab-")} (:label tab)]]) tabs)]
+      ;; Generate Content
+      (map (fn [tab] [(tag-class :div.tab (:fill options)) {:id (gen-tab-name tab "tab-")} (:content tab)]) tabs)]]))

@@ -64,8 +64,10 @@
                      (formui/dataform 
                        (formui/render-fields {:editable editable} fields role)))
                    (actions/actions 
-                     (actions/save-action {:method :post :url "/api/role/edit" :params {:role role-id}})
-                     (actions/delete-action {:url "/api/role" :params {:role role-id}})
+                     (if editable
+                       (list 
+                         (actions/save-action {:method :post :url "/api/role/edit" :params {:role role-id}})
+                         (actions/delete-action {:url "/api/role" :params {:role role-id}})))
                      (actions/back-action)))))))
 
 (defn delete-api-role
@@ -80,7 +82,7 @@
   [ctx]
   (let [role (select-keys (:body-params ctx)
                           (map :name fields))
-        role (common/make-truthy role [:requires-location] "true")
+        role (common/find-and-replace-truths role [:requires-location] "true")
         resp (service/add-role role)]
     (if (service/service-error? resp)
       (ajax/error (meta resp))
@@ -90,7 +92,7 @@
   [ctx]
   (let [keys (select-keys (:body-params ctx)
                           (map :name fields))
-        keys (common/make-truthy keys [:requires-location] "true")
+        keys (common/find-and-replace-truths keys [:requires-location] "true")
         resp (service/edit-role (-> ctx :query-params :role)
                                 keys)]
     (if (service/service-error? resp)

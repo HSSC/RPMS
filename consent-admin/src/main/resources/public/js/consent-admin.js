@@ -7,10 +7,13 @@ $(function(){
 	PaneManager.loader(function(content){
 		var target = content.find(".tabcontrol");
 		if(target.length > 0){
+			var index = RPMS.Tab.getFirstSelected(target);
 			target.tabs({show: function(e, ui){
 				var panel = $(ui.panel);
 				Utils.Size.refill(panel.parent());
-			}});
+				RPMS.Tab.cacheSelected(target, ui);
+			},
+			selected: index});
 		}
 	});
 	
@@ -87,11 +90,16 @@ $(function(){
 	// Register Event - Click Generic Push List Action
 	PaneManager.on("click", ".push-listaction", function(event){
 		var target = RPMS.findTarget(event, "div.push-listaction");
+		var onselect = Utils.DataSet.getBoolean(target, "data-onselect");
 		var selected = target.parent().siblings().children(".selected");
-		if(selected.length > 0){
+		if(!onselect || selected.length > 0){
 			var item = $(selected[0]);
 			var url = Utils.DataSet.get(target, "data-url");
-			var params = RPMS.List.getParams(target, item);
+			var params = RPMS.getParamMap(target, "data-map");
+			if(onselect){
+				var sparams = RPMS.getParamMap($(selected[0]), "data-item");
+				params = $.extend(params, sparams);
+			}
 			var confirm = Utils.DataSet.getObject(target, "data-confirm");
 			RPMS.Action.doPush(url, params, confirm);
 		}
@@ -100,12 +108,17 @@ $(function(){
 	// Register Event - Click Generic Push List Action
 	PaneManager.on("click", ".ajax-listaction", function(event){
 		var target = RPMS.findTarget(event, "div.ajax-listaction");
+		var onselect = Utils.DataSet.getBoolean(target, "data-onselect");
 		var selected = target.parent().siblings().children(".selected");
-		if(selected.length > 0){
+		if(!onselect || selected.length > 0){
 			var item = $(selected[0]);
 			var method = Utils.DataSet.get(target, "data-method");
 			var url = Utils.DataSet.get(target, "data-url");
-			var params = RPMS.List.getParams(target, item);
+			var params = RPMS.getParamMap(target, "data-map");
+			if(onselect){
+				var sparams = RPMS.getParamMap($(selected[0]), "data-item");
+				params = $.extend(params, sparams);
+			}
 			var fullUrl = Utils.Url.render(url, params);
 			var confirm = Utils.DataSet.getObject(target, "data-confirm");
 			var includeData = Utils.DataSet.getBoolean(target, "data-include-data");
@@ -119,7 +132,7 @@ $(function(){
 var RPMS = {
 	verify: function(target, action){
 		var verify = Utils.DataSet.getObject(target, "data-verify", null);
-		if(verify == null || RPMS.Action.doAction(verify.action)){
+		if(verify == null || RPMS.Action.doAction(verify.action, target)){
 			action();
 		}
 		else{
@@ -284,7 +297,7 @@ RPMS.Action = {
 		}
 		this.confirmAction(action, confirm);
 	},
-	doAction: function(action){
+	doAction: function(action, target){
 		var parms = action.split("::");
 		action = parms.shift();
 		for(var i = 0; i < parms.length; i++){
@@ -294,7 +307,7 @@ RPMS.Action = {
 			}
 		}
 		if(RPMS.Action.actions[action] != null){
-			return RPMS.Action.actions[action](parms);
+			return RPMS.Action.actions[action](parms, target);
 		}
 		
 		if(PaneManager[action] != null){
@@ -310,5 +323,38 @@ RPMS.Action = {
 RPMS.List = {
 	getParams: function(action, selected){
 		return {};
+	}
+};
+RPMS.Tab = {
+	cacheKey: "currenttabs",
+	cacheSelected: function(target, ui){
+		var id = Utils.Element.getAttribute(target, "id");
+		if(id == null) return;
+		var current = PaneManager.cache(RPMS.Tab.cacheKey);
+		if(current == null){
+			PaneManager.cache(RPMS.Tab.cacheKey, [{target: id, ui: ui}]);
+		}
+		else{
+			for(var i = 0; i < current.length; i++){
+				if(current[i].target == id){
+					current[i].ui = ui;
+					return;
+				}
+			}
+			current.push({target: id, ui: ui});
+		}
+	},
+	getFirstSelected: function(target){
+		var index = 0;
+		var id = Utils.Element.getAttribute(target, "id");
+		if(id != null){
+			var current = PaneManager.cache(RPMS.Tab.cacheKey);
+			if(current != null){
+				for(var i = 0; i < current.length; i++){
+					index = current[i].ui.index;
+				}
+			}
+		}
+		return index;
 	}
 };

@@ -160,17 +160,17 @@
                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to protocol :relationship :version-of :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to form :relationship :described-by}
-                                 {:type :many-to-many :related-to policy :name :policies :relationship :has-policy}
-                                 {:type :many-to-many :related-to endorsement :relationship :has-endorsement}
-                                 {:type :many-to-many :related-to language :relationship :has-language}
-                                 {:type :many-to-many :related-to meta-item :relationship :has-meta-item}]}
+                                 {:type :many-to-many :related-to policy :name :policies :relationship :has-policy :omit-rels true}
+                                 {:type :many-to-many :related-to endorsement :relationship :has-endorsement :omit-rels true}
+                                 {:type :many-to-many :related-to language :relationship :has-language :omit-rels true}
+                                 {:type :many-to-many :related-to meta-item :relationship :has-meta-item :omit-rels true}]}
 
    text-i18n {:attributes (merge base
                                  {:value {:persisted true}})
               :relations [{:type :belongs-to :related-to language :relationship :in-language :required true}]}})
 
 (def default-value-types
-  ["role" "policy" "language"])
+  [role policy-definition language endorsement-type meta-item])
 
 (def audit-relationships
   {:create  :created-by

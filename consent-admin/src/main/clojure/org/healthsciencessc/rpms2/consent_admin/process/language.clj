@@ -1,5 +1,5 @@
 ;; Provides the configuration of the protocol managemant UIs.
-(ns org.healthsciencessc.rpms2.consent-admin.process.policy-definition
+(ns org.healthsciencessc.rpms2.consent-admin.process.language
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
@@ -21,18 +21,19 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (def fields [{:name :name :label "Name" :required true}
-             {:name :description :label "Description"}
-             {:name :code :label "Code"}])
+             {:name :code :label "ANSI Language Code" :required true}])
 
-(def type-name types/policy-definition)
-(def type-label "Policy Definition")
-(def type-path "policy-definition")
+(def type-name types/language)
+(def type-label "Language")
+(def type-path "language")
 (def type-kw (keyword type-name))
 
-(defn view-policy-definitions
+
+(defn view-languages
   [ctx]
   (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-policy-definitions org-id)]
+        nodes (services/get-languages)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
       (layout/render ctx (str type-label "s")
@@ -41,18 +42,21 @@
                                               (for [n nodes]
                                                 {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                       (if protocol-version-id
+                         (actions/assign-action 
+                           {:url (str "/api/" type-path "/assign") 
+                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}})
+                         (actions/details-action 
+                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}}))
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))
 
-(defn view-policy-definition
+(defn view-language
  [ctx]
-  (if-let [node-id (lookup/get-policy-definition-in-query ctx)]
-    (let [n (services/get-policy-definition node-id)
-          org-id (get-in n [:organization :id])
-          editable (= (get-in n [:organization :id]) (security/current-org-id))]
+  (if-let [node-id (lookup/get-language-in-query ctx)]
+    (let [n (services/get-language node-id)
+          editable (common/owned-by-user-org n)]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
@@ -61,16 +65,16 @@
                            (form/render-fields {:editable editable} fields n)))
                        (actions/actions
                          (if editable
-                           (list 
+                           (list
                              (actions/save-action 
                                {:url (str "/api/" type-path) :params {type-kw node-id}})
                              (actions/delete-action 
                                {:url (str "/api/" type-path) :params {type-kw node-id}})))
                          (actions/back-action)))))
     ;; Handle Error
-    (layout/render-error ctx {:message "An policy-definition type is required."})))
+    (layout/render-error ctx {:message "An language type is required."})))
 
-(defn view-policy-definition-new
+(defn view-language-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
   (let [org-id (common/lookup-organization ctx)]
@@ -82,41 +86,60 @@
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})
                      (actions/back-action)))))
-    
+
+(defn- api-assign-language
+  [ctx]
+  (let [language-id (lookup/get-language-in-query ctx)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)
+        resp (services/assign-language-to-protocol-version language-id protocol-version-id)]
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
 (def process-defns
   [{:name (str "get-view-" type-name "s")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-definitions
+    :run-fn view-languages
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "get-view-protocol-version-" type-name "-add")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
+    :run-fn view-languages
     :run-if-false ajax/forbidden}
    
    {:name (str "get-view-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-definition
+    :run-fn view-language
     :run-if-false ajax/forbidden}
    
    {:name (str "get-view-" type-name "-new")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-definition-new
+    :run-fn view-language-new
     :run-if-false ajax/forbidden}
    
    {:name (str "put-api-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
     :run-fn (common/get-api-type-add 
-              services/add-policy-definition)
+              services/add-language)
     :run-if-false ajax/forbidden}
    
    {:name (str "post-api-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
     :run-fn (common/gen-api-type-update 
-              services/edit-policy-definition 
-              lookup/get-policy-definition-in-query (str "A valid " type-label " is required."))
+              services/edit-language 
+              lookup/get-language-in-query (str "A valid " type-label " is required."))
     :run-if-false ajax/forbidden}
    
    {:name (str "delete-api-" type-name)
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
     :run-fn (common/gen-api-type-delete 
-              services/delete-policy-definition 
-              lookup/get-policy-definition-in-query (str "A valid " type-label " is required."))
+              services/delete-language 
+              lookup/get-language-in-query (str "A valid " type-label " is required."))
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "post-api-" type-name "-assign")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
+    :run-fn api-assign-language
     :run-if-false ajax/forbidden}])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))

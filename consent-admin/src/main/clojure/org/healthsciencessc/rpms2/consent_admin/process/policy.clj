@@ -21,29 +21,43 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
 (def fields [{:name :name :label "Name" :required true}
-             {:name :description :label "Description"}
              {:name :code :label "Code"}
-             {:name :uri :label "URI"}])
+             {:name :policy-definition :label "Policy Definition" :type :singleselect :required true :blank true :parser :id}])
 
 (def type-name types/policy)
 (def type-label "Policy")
 (def type-path "policy")
 (def type-kw (keyword type-name))
 
+(defn- gen-policy-definition-items
+  [org-id]
+  (let [types (services/get-policy-definitions org-id)
+        items (map 
+                (fn [t] {:label (:name t) 
+                   :data (:id t) 
+                   :item (select-keys t [:id])}) 
+                types)]
+    items))
+
 (defn view-policys
   [ctx]
   (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-policys org-id)]
+        nodes (services/get-policys)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
-      (layout/render ctx "Policies"
+      (layout/render ctx (str type-label "s")
                      (container/scrollbox 
                        (selectlist/selectlist {:action :.detail-action}
                                               (for [n nodes]
                                                 {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                       (if protocol-version-id
+                         (actions/assign-action 
+                           {:url (str "/api/" type-path "/assign") 
+                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}})
+                         (actions/details-action 
+                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}}))
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))
@@ -52,14 +66,21 @@
  [ctx]
   (if-let [node-id (lookup/get-policy-in-query ctx)]
     (let [n (services/get-policy node-id)
-          org-id (get-in n [:organization :id])]
+          org-id (get-in n [:organization :id])
+          policy-definition (get-in n [:policy-definition :id])]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
                        (container/scrollbox 
                          (form/dataform 
-                           (form/render-fields {} fields n)))
+                           (form/render-fields 
+                             {:fields {:policy-definition {:readonly true
+                                                          :items (gen-policy-definition-items org-id)}}} fields n)))
                        (actions/actions
+                         (actions/details-action 
+                           {:url (str "/view/" type-path "/types") 
+                            :params {:organization org-id :policy node-id :policy-definition policy-definition}
+                            :label "Change Type"})
                          (actions/save-action 
                            {:url (str "/api/" type-path) :params {type-kw node-id}})
                          (actions/delete-action 
@@ -75,14 +96,29 @@
     (layout/render ctx (str "Create " type-label)
                    (container/scrollbox 
                      (form/dataform 
-                       (form/render-fields {} fields {})))
+                       (form/render-fields 
+                         {:fields {:policy-definition {:items (gen-policy-definition-items org-id)}}} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})
                      (actions/back-action)))))
-    
+
+(defn- api-assign-policy
+  [ctx]
+  (let [policy-id (lookup/get-policy-in-query ctx)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)
+        resp (services/assign-policy-to-protocol-version policy-id protocol-version-id)]
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
 (def process-defns
-  [{:name "get-view-policies"
+  [{:name (str "get-view-" type-name "s")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
+    :run-fn view-policys
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "get-view-protocol-version-" type-name "-add")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
     :run-fn view-policys
     :run-if-false ajax/forbidden}
@@ -115,6 +151,11 @@
     :run-fn (common/gen-api-type-delete 
               services/delete-policy 
               lookup/get-policy-in-query (str "A valid " type-label " is required."))
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "post-api-" type-name "-assign")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
+    :run-fn api-assign-policy
     :run-if-false ajax/forbidden}])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))

@@ -20,14 +20,14 @@
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
-(def ^:const fields [{:name :name :label "Name" :required true}
-                     {:name :description :label "Description"}
-                     {:name :data-type :label "Data Type" :type :single-select :items [{:value "string" :data "string"}
-                                                                                       {:value "date" :data "date"}
-                                                                                       {:value "number" :data "number"}
-                                                                                       {:value "boolean" :data "boolean"}]}
-                     {:name :choice-values :label "Choice Values"}
-                     {:name :default-value :label "Default Value"}])
+(def fields [{:name :name :label "Name" :required true}
+             {:name :description :label "Description"}
+             {:name :data-type :label "Data Type" :type :singleselect :items [{:label "String" :data "string"}
+                                                                               {:label "Date" :data "date"}
+                                                                               {:label "Number" :data "number"}
+                                                                               {:label "Boolean" :data "boolean"}]}
+             ;;{:name :choice-values :label "Choice Values"}
+             {:name :default-value :label "Default Value"}])
 
 (def type-name types/meta-item)
 (def type-label "Meta Item")
@@ -37,7 +37,8 @@
 (defn view-meta-items
   [ctx]
   (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-meta-items org-id)]
+        nodes (services/get-meta-items)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
       (layout/render ctx (str type-label "s")
@@ -46,8 +47,12 @@
                                               (for [n nodes]
                                                 {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                       (if protocol-version-id
+                         (actions/assign-action 
+                           {:url (str "/api/" type-path "/assign") 
+                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}})
+                         (actions/details-action 
+                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}}))
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))
@@ -56,18 +61,20 @@
  [ctx]
   (if-let [node-id (lookup/get-meta-item-in-query ctx)]
     (let [n (services/get-meta-item node-id)
-          org-id (get-in n [:organization :id])]
+          editable (common/owned-by-user-org n)]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
                        (container/scrollbox 
                          (form/dataform 
-                           (form/render-fields {} fields n)))
+                           (form/render-fields {:editable editable} fields n)))
                        (actions/actions
-                         (actions/save-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
-                         (actions/delete-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
+                         (if editable
+                           (list
+                             (actions/save-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})
+                             (actions/delete-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})))
                          (actions/back-action)))))
     ;; Handle Error
     (layout/render-error ctx {:message "An meta-item type is required."})))
@@ -84,9 +91,24 @@
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})
                      (actions/back-action)))))
-    
+
+
+(defn- api-assign-meta-item
+  [ctx]
+  (let [meta-item-id (lookup/get-meta-item-in-query ctx)
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)
+        resp (services/assign-meta-item-to-protocol-version meta-item-id protocol-version-id)]
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp))))
+
 (def process-defns
   [{:name (str "get-view-" type-name "s")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
+    :run-fn view-meta-items
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "get-view-protocol-version-" type-name "-add")
     :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
     :run-fn view-meta-items
     :run-if-false ajax/forbidden}
@@ -119,6 +141,11 @@
     :run-fn (common/gen-api-type-delete 
               services/delete-meta-item 
               lookup/get-meta-item-in-query (str "A valid " type-label " is required."))
+    :run-if-false ajax/forbidden}
+   
+   {:name (str "post-api-" type-name "-assign")
+    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
+    :run-fn api-assign-meta-item
     :run-if-false ajax/forbidden}])
 
 (process/register-processes (map #(DefaultProcess/create %) process-defns))
