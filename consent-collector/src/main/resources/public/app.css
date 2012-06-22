@@ -317,3 +317,4 @@ form.debug { background-color: gray; border: thick solid navy; }
 
 div.ui-block-a.metadata,  div.ui-block-b.metadata { padding-top: 15px; }
 
+.ui-dialog .ui-header { height: 30px;  padding-left: 35px; padding-top: 15px; }

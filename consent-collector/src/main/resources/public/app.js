@@ -12816,19 +12816,12 @@ org.healthsciencessc.rpms2.core.consenter_search_result_clicked = function conse
 };
 goog.exportSymbol("org.healthsciencessc.rpms2.core.consenter_search_result_clicked", org.healthsciencessc.rpms2.core.consenter_search_result_clicked);
 org.healthsciencessc.rpms2.core.data_change_clicked = function data_change_clicked(div) {
-  var user__2740 = cljs.reader.read_string.call(null, div.getAttribute("data-user"));
-  var data_change_class__2741 = cljs.reader.read_string.call(null, div.getAttribute("data-change-class"));
-  var mdid__2742 = cljs.reader.read_string.call(null, div.getAttribute("mdid"));
-  var details__2743 = $.call(null, cljs.core.str.call(null, "#", mdid__2742));
-  var data_change_section__2744 = $.call(null, "div.control.data-change");
-  var h__2745 = $.call(null, cljs.core.str.call(null, "#hidden-", mdid__2742));
-  var map__2739__2746 = user__2740;
-  var map__2739__2747 = cljs.core.truth_(cljs.core.seq_QMARK_.call(null, map__2739__2746)) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2739__2746) : map__2739__2746;
-  var last_name__2748 = cljs.core.get.call(null, map__2739__2747, "\ufdd0'last-name");
-  var first_name__2749 = cljs.core.get.call(null, map__2739__2747, "\ufdd0'first-name");
-  console.log("mdid is ", mdid__2742);
-  console.log("h is ", h__2745);
-  $.call(null, details__2743).addClass("changed");
-  return data_change_section__2744.find(cljs.core.str.call(null, "#hidden-", mdid__2742)).val("CHANGED")
+  var data_change_class__2739 = cljs.reader.read_string.call(null, div.getAttribute("data-change-class"));
+  var mdid__2740 = cljs.reader.read_string.call(null, div.getAttribute("mdid"));
+  var details__2741 = $.call(null, cljs.core.str.call(null, "#", mdid__2740));
+  var data_change_section__2742 = $.call(null, "div.control.data-change");
+  var h__2743 = $.call(null, cljs.core.str.call(null, "#hidden-", mdid__2740));
+  $.call(null, details__2741).addClass("changed");
+  return data_change_section__2742.find(cljs.core.str.call(null, "#hidden-", mdid__2740)).val("CHANGED")
 };
 goog.exportSymbol("org.healthsciencessc.rpms2.core.data_change_clicked", org.healthsciencessc.rpms2.core.data_change_clicked);

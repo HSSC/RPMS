@@ -293,59 +293,6 @@
     }
 )
 
-(def policy-map
-  { :P00001 { :title "Your Permission Is Needed",
-         :text ["I, Bob R. Smith, consent to and authorize medical treatment and diagnostic procedures which may be ordered by my doctors and performed by MUSC Medical Center (\"The Hospital\"). I consent to have blood drawn and to be tested for infectious diseases, including but not limited to: syphilis, AIDS, hepatitis, and testing for drugs if my doctor orders these tests."],
-          :media  "http://obis-vac-stg.mdc.musc.edu/videos/bodpod.mp4" 
-           } ,
-    :P00003  {
-       :title "Your Agreement to Pay for Treatment",
-       :text [
-"I assign and transfer to The Hospital and / or my doctors all rights, and interest in benefits I may have under any insurance policy I may have, including but not limited to hospitalization, medical, third party liability insurance coverage, workers compensation benefits, or benefits paid by Medicare or Medicaid. This assignment is intended to include any interest in benefits that I may have relating to this date of service as well as any prior dates of service. I direct that any insurance company or other party make payment of such benefits to The Hospital or my doctor. I authorize The Hospital and / or my doctor to collect benefits from any responsible third party through whatever means may be deemed necessary, and to endorse benefit checks made payable directly to me.", 
-
-              "I understand that by signing below, I promise to pay all Hospital and doctor charges at the standard rates and terms of The Hospital or doctor including all charges not covered by my insurance or any other party. I promise to pay the patient's account at the rates stated in The Hospital's price list (known as the \"Charge Master\") and / or the doctor's fee schedule in effect on the date the charge is processed for the services provided. I understand that there will be a separate charge for the doctor and other professional services, but understand that The Hospital may bill for some professional fees.",
-"I understand that The Hospital files insurance as a courtesy to me, and agree that I am responsible for payment of my bill, including any charges that are denied by my insurance or any other responsible party. I understand that care that is experimental as determined by my insurance company may not be covered and that I will be responsible for those charges. I agree that if this account is not paid, it may be turned over to a collection agency or attorney, and I must pay the amount due plus all costs of collection, including reasonable attorney's fees.", 
-
-              "I understand that if I am unable to pay my bills, I may speak with a Financial Counselor to determine whether I qualify for assistance or for a discount. I may call (843) 792-2311 for information or questions about my hospital bill and (843) 792-6200 for information about my doctor bill."]
-    },
-   :P00004 {
-:title "Retention / Disposal and Use of Blood, Body Fluids, or Tissue",
-:text [ 
-     "I understand and agree that any blood, body fluids or tissues normally removed from my body by MUSC in the course of any diagnostic procedures, surgery, or medical treatment that would otherwise be disposed of may be retained and used for research, including research on the genetic material (DNA) or other information contained in those tissues or specimens. I acknowledge that such research by MUSC may result in new inventions that may have commercial value and I understand that there are no plans to compensate me should this occur, regardless of the value of any such invention. I understand that any research using these leftover specimens or tissues will be done in a way that will not identify me.", 
-"I also understand that if I do not want research to be done using my leftover blood, body fluids or tissue, I need to check the box shown below. If I have questions, I should call (843) 792-8300."]
-	},
-
-  :P00005 {
-	:title "Permission to Contact for Research Studies",
-	:text [
-"I agree to be contacted about future research studies at MUSC for which I may be eligible. I understand that if I do not want to be contacted about future research studies, I need to check the box shown below."]
-	},
-  :P00006 {
-	:title "Admission Photographs",
-	:text [
-"I agree that my photograph may be taken for purposes of identifying me, or providing treatment to me. This photograph may become part of my medical record and may be disclosed if copies of my medical record are disclosed."]
-	},
-   :P00007 {
-	:title "Responsibility for Personal Items",
-	:text [
-"I understand that The Hospital is not responsible for valuable items which I bring with me. I understand it is my responsibility to send any valuable items (such as medications, money, jewelry, electronics, etc.) home for safe keeping. Any items left at the hospital in excess of 30 days will be disposed of."]
-    },
-  :P00008 {
-	:title "I received a copy of the MUSC Notice of Privacy Practices.",
-	:text ["I received a copy of the MUSC Notice of Privacy Practices."]
-   },
-   :P00009 {
-	:title "Consent and Certifications",
-	:text [
-"I certify that I have read or have had read to me this consent and agree to its terms. I also certify that I am the patient, or am duly authorized by the patient, or am duly appointed to sign this agreement. I accept and understand its terms."]
-    } 
-   }  	
-)
-
-(defn get-policy
-  [p]
-  (get policy-map (keyword p)))
-
 (defn get-metadata
   [p]
   (debug "METADATA " p " IS " (get metadata-map (keyword p)))

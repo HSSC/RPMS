@@ -8,7 +8,6 @@
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info warn error)])
   (:use [clojure.pprint :only (pprint)])
-  (:use [clojure.data.json :only (json-str)])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
@@ -30,74 +29,97 @@
          [:pre (pprint-str m) ]] 
    [:span.control-type  (:type widget) ] widget ])
 
-(defn- process-control
+(defn- control
   "Displays widget by invoking the method with the widget's type.
   A map is passed in which contains the widget, the current value of the widget,
   the form and flag indicated whether this is in the review phase (so the widget
   can render itself appropriately)."
 
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget value data-model] :as m}]
 
   (list 
     (let [ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
           func  (if-let [f (resolve (symbol (str ns (:type widget))))] f unimplemented-widget)
-          wdata (helper/data-for widget) ]
+          wdata (helper/data-for widget data-model) ]
           [:div 
-             (func (merge m {:value wdata} )) 
+             (func (merge m {:value wdata } )) 
              (dbg [:div.debug [:span.standout (:name widget) ] [:span.data wdata ] widget ]) ])))
        
 (defn review-endorsement
-  "A ReviewEndorsement widget allows the collector to review endorsements that were 
-  collected during the consent process."
+  "A ReviewEndorsement widget is used to review endorsements 
+  collected during consent process."
 
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget value] :as m}]
   [:div.control.review-endorsement 
-    (dbg [:span "review-endorsement Signature Named " (:name widget) " current value is " (pprint-str value) ])
     [:div.ui-grid-b
-        [:div.ui-block-a.metadata (if-let [s (:endorsement-label widget)] 
-                                          s 
-                                          (if-let [t (:title widget)] t "Endorsement-label"))  ]
-        [:div.ui-block-c.metadata (helper/submit-btn {:value "Edit" 
-                                                      :name (str "review-edit-btn-" (:returnpage widget)) }) ]]])
+       [:div.ui-block-a.metadata 
+        (if-let [s (:endorsement-label widget)] 
+          s 
+          (if-let [t (:title widget)] t "Endorsement-label"))  
+            (helper/signaturePadDiv (:name widget) value ) ]
+        [:div.ui-block-c.metadata 
+         (helper/submit-btn {:value (:label widget) 
+                             :name (str "review-edit-btn-" (:returnpage widget)) }) ]]])
+
 (defn review-metaitem
-  [{:keys [widget value form review] :as m}]
+  "Display meta item. The widget's meta-item id is the key into
+  the current forms meta-data map."
+
+  [{:keys [widget] :as m}]
   [:div.control.review 
-    (dbg [:span "Review Meta Item Named " (:name widget) " current value is " (pprint-str val) ])
+     (let [mi (:meta-items (helper/current-form))
+           mitem ((keyword (:meta-item widget)) mi)
+           data-name (str helper/META_DATA_BTN_PREFIX (:meta-item widget))
+           model-data (session-get :model-data)
+           data-value ( (keyword data-name) model-data ) ]
     [:div.ui-grid-b
-        [:div.ui-block-a.metadata "Meta Item Label" (:metaitem-label widget) ]
-        [:div.ui-block-b.metadata "Meta Item Value" (:metaitem-value widget) ]
-        [:div.ui-block-c.metadata (helper/submit-btn {:value "Edit" 
-                                                      :name (str "review-edit-btn-" (:returnpage widget)) }) ]]])
+      [:div.ui-block-a.metadata (:label mitem) ]
+      [:div.ui-block-b.metadata 
+          [:span {:class (if data-value "changed" "") } (:value mitem) ]]
+       [:div.ui-block-c.metadata 
+          (helper/submit-btn {:value (:label widget) 
+                              :name (str "review-meta-edit-btn-" (:meta-item widget)) }) ]] )])
+
+(defn find-policy 
+  [p]
+  (let [policies (:policies (helper/current-form))]
+       ((keyword p) policies)))
 
 (defn review-policy 
   "A ReviewPolicy widget provides a controller that allows the collector to 
   review consents collected for policies during the review process.
   The value will be the value associated with the named widget.
   choicebuttons, policybutton checkbox-label"
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget] :as m}]
   [:div.control.review 
      (list 
-       (let [policy (dsa/get-policy (:policy widget)) ]
-             [:div.ui-grid-b
-                [:div.ui-block-a.metadata (:title widget) ]  
-                [:div.ui-block-b.metadata "Label" ]
+       (let [policy (find-policy (:policy widget))]
+           [:div.ui-grid-b
+                [:div.ui-block-a.metadata (:title policy) ]  
+                [:div.ui-block-b.metadata (:title widget) ]
                 [:div.ui-block-c.metadata 
                  (helper/submit-btn {:value (:label widget) 
                                      :name (str "review-edit-btn-" (:returnpage widget)) })]])) ])
+
 (defn media 
   [c m]
   [:div.control "Media" ])
 
 (defn signature
-  "Emits data for the signature widget. A map with the widgets state is passed
+  "Emits data for signature widget. A map with widgets state is passed
    to use in rendering the widget."
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget value] :as m}]
 
   [:div.control.signature 
    (:name widget)
    (helper/signaturePadDiv (:name widget) value)
-   (helper/submit-btn { :value (:clear-label widget)
-                          :name (str "signature-btn-" (:name widget)) }) ])
+   [:div.ui-grid-b
+      [:div.ui-block-a
+        [:a {:href "#"
+             :data-role "button" 
+             :data-theme "a" 
+             :onclick "$('.sigPad').signaturePad().clearCanvas()" } 
+         (:clear-label widget) ]]]])
 
 (defn- true-or-not-specified? 
   [v]
@@ -108,7 +130,7 @@
   [{:keys [widget value form review] :as m}]
   [:div.control.policy-text
    (list 
-     (let [policy (dsa/get-policy (:policy widget))]
+     (let [policy (find-policy (:policy widget))]
 
      ;; Display title if :render-title is missing or true 
      ;; and policy has a title
@@ -129,7 +151,7 @@
 (defn policy-choice-buttons
   "Creates two buttons that allow you to opt in or opt out of one or more
   policies. The widget's state is passed in to set current selection."
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget value] :as m}]
   [:div.control.policy-choice-buttons 
     (helper/radio-btn-group {:btnlist (list (:true-label widget) (:false-label widget)) 
                              :group-name (:name widget)
@@ -142,19 +164,22 @@
   [:div.control.data-change
    (list 
      (dbg [:div.debug "DATA CHANGE IS " (pprint-str value) ])
-     (for [t (:meta-items widget)] 
+     (for [nm (:meta-items widget)] 
            (list
-             (let [md (dsa/get-metadata t)
+             (let [md (dsa/get-metadata nm)
                    data-name (str helper/META_DATA_BTN_PREFIX (:mdid md))
                    model-data (session-get :model-data)
-                   data-value ( (keyword data-name) model-data ) ]
-                  [:div.ui-grid-b
-                    [:div.ui-block-a.metadata (:label md) ]
+                   data-value ( (keyword data-name) model-data ) 
 
+                   mi (:meta-items (helper/current-form))
+                   mitem ((keyword nm) mi)
+                   v (:value mitem) ]
+
+                  [:div.ui-grid-b
+                    [:div.ui-block-a.metadata (:label mitem) ] 
                     [:div.ui-block-b.metadata 
-                     [:div {:class (str (:value md))}
-                       [:span {:class (if data-value "changed" "") :id (:mdid md) }(:value md)]]  
-                     ]
+                       [:span {:class (if data-value "changed" "") 
+                               :id (:mdid md) } v ]]  
 
                      [:input {:type "hidden" 
                               :id (str "hidden-" (:mdid md)) 
@@ -166,51 +191,63 @@
                           {:href "#popup" 
                            :data-rel "dialog" 
                            :onclick "org.healthsciencessc.rpms2.core.data_change_clicked(this)"
-                           :data-user (pr-str (session-get :user))
                            :data-change-class (pr-str (str (:value md)))
                            :mdid (pr-str (str (:mdid md)))
                            :data-role "button" 
                            :data-theme "a" } "Change" ] ]
-                     #_(helper/submit-btn {:value "Change" 
-                                         :name data-name 
-                                         :onclick 
-"alert('This item has been flagged for change and may be edited during the review process.');" } )] ])))) ])
+                     ] ])))) ])
 
 (defn policy-button
   "Displays the policy button. Once the button has been pushed,
   the data in the model is set and the style is changed." 
 
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget value] :as m}]
   [:div.control.policy-button 
-   (dbg (if review 
-       [:div "in review values is " value [:div "the label is " (:label widget) ]] ))
-   (helper/submit-btn {:data-theme (if value "e" "d" )
+   (helper/submit-btn {:data-theme (if value "b" "d" )
                        :data-inline "false"
                        :name (str helper/ACTION_BTN_PREFIX (:name widget))
-                       :value (:label widget)
-                      }) ])
+                       :value (:label widget) }) ])
 
 (defn text
   "A Text widget generates a title and paragraph representations for 
   text values set on the control. The control requires that either the 
   title, the text, or both be set."
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget] :as m}]
   [:div.control.text
    (if (:title widget) [:h1.title (:title widget) ])
    (list (for [t (:text widget)] [:p t ])) ])
 
 (defn policy-checkbox
-  "Display the checkbox.  Remember the state of the checkbox."
-  [{:keys [widget value form review] :as m}]
+  "Displays checkbox, using the remembered state.  
+  A hidden input is created so we can clear the checkbox from the data
+  model if it is not checked and the form is submitted.
+  Checkboxes are included in form submission parameters if they are not checked."
+  [{:keys [widget value form] :as m}]
+
   [:div.control 
-    (helper/checkbox-group {:name (:name widget) :label (:label widget) :value value }) ])
+    [:input {:type "hidden" 
+             :name (str helper/CHECKBOX_BTN_PREFIX (:name widget)) } ]
+    (helper/checkbox-group {:name (:name widget) 
+                            :label (:label widget) 
+                            :value value  }) ])
+
+(defn- section
+  "Creates section div containing all widgets in this section."
+  [s dm]
+  [:div.section (map #(control {:widget % 
+                                :form (helper/current-form) 
+                                :data-model dm 
+                                }) (:contains s)) ])
 
 
-(defn- process-section
-  "Display section in a div. 
-  Displays all the widgets in the section"
-  [s]
-  [:div.section (map (fn [n] (process-control {:widget n :form (helper/current-form) })) (:contains s)) ])
+(defn- page-dbg
+  [p s]
+
+  (dbg [:div.debug
+       [:div.left"Page "  [:span.standout (:name (:page s)) ] " " (:title p)    
+       " Form #" [:span.standout (inc (:current-form-number s))] " of " 
+       [:span.standout (count (session-get :protocols-to-be-filled-out)) ] ]
+       [:div "Data  " (helper/pr-model-data) ] ]))
 
 (defn- display-page
   "Displays sections. Checks for missing page
@@ -219,20 +256,14 @@
   If page is available, displays each section of the page
   in a separate div." 
 
-  [p s]
+  [p s dm]
 
   (if (= nil p) 
     [:h1 "Unable to show page - missing page " 
          (if-let [pn (:page-name s) ]
              [:span.standout pn ]) ])
-    [:div
-       (dbg [:div.debug
-              [:div.left"Page "  [:span.standout (:name (:page s)) ] " " (:title p)    
-                " Form #" [:span.standout (inc (:current-form-number s))] " of " 
-               [:span.standout (count (session-get :protocols-to-be-filled-out)) ] ]
-              [:div "Data  " (helper/pr-model-data) ] ])
-       [:div (map process-section (:contains p)) ]
-     ])
+    [:div (page-dbg p s)
+          [:div (map #(section % dm) (:contains p)) ]])
 
 (defn- form-title
   [f]
@@ -243,8 +274,33 @@
   [f n]
   (first (filter #(= (:name %) n ) (:contains f) )))
 
+(defn- view-update-information
+  [ctx nm]
+
+  (let [s (session-get :collect-consent-status)
+        mi (:meta-items (helper/current-form))
+        mitem ((keyword nm) mi)
+        l (:label mitem)
+        v (:value mitem) ]
+      (helper/rpms2-page 
+       [:div.collect-consent-form
+          [:h2 "Update the following information: " nm]
+          (dbg [:div.debug (session-get :model-data) ])
+          [:form {:action (helper/mypath "/collect/consents") 
+                  :method "GET" 
+                  :data-ajax "false" 
+                  :data-theme "a" } 
+            [:div.ui-grid-b
+               [:div.ui-block-a  l ]
+               [:div.ui-block-b   
+                     [:input {:name nm 
+                              :value v } ] ] ]
+          [:div.submit-area (helper/submit-btn {:value "Update" :name "meta-data-update-btn-next" }) ]]] 
+       :title "Update Information" )))
+
+
 (defn- view-finished
-  "All the forms have been processed.  If we just finished collecting the consents,
+  "All forms have been processed.  If we just finished collecting the consents,
   display a Thank You page. Otherwise, go to the collect witness."
   [ctx]
 
@@ -278,17 +334,30 @@
 
 (defn- navigation-buttons
   "Displays the navigation button for the page, which will be
-  a Continue button and optionally a previous button."
+  a Continue button and optionally a previous button.
+  Don't display the previous button if there's a pending return page."
   [s]
 
   [:div 
-   (if (:previous (:page s))
+   (if (and (:previous (:page s))
+            (not (helper/get-return-page)))
        (helper/submit-btn {:value "Previous" :name "previous" }))
    (helper/submit-btn {:value "Continue" :name "next" }) ]) 
 
+(defn- emit-page
+  [s data-model]
+
+  (helper/rpms2-page 
+     (helper/collect-consent-form "/collect/consents"
+         (display-page (:page s) s data-model) 
+         (navigation-buttons s)) 
+       :title (form-title (:form s)) 
+       :second-page "placeholder" ))
+
 (defn view 
   "Collect and review consents processes. Displays current page."
-  [ctx]
+  ([] (view {}))
+  ([ctx]
 
   ;; first time here, initialize 
   (if-let [s (session-get :collect-consent-status)]
@@ -296,18 +365,7 @@
     (helper/init-consents))
 
   (let [s (session-get :collect-consent-status)]
-    (helper/rpms2-page 
-       (helper/collect-consent-form "/collect/consents"
-           (display-page (:page s) s) 
-           (navigation-buttons s)) 
-       :title (form-title (:form s)) 
-       :second-page "HI TAMI"
-
-;;       :end-of-page-stuff (if-let [ep (session-get :jscript)] 
-;;                           (str "\n\n\n<script>" ep "</script>")
-;;                          (str "\n\n<!-- END OF PAGE STUFF -->"))
-
-      )))
+    (emit-page s (session-get :model-data)))))
 
 (defn- get-matching-btns 
   "Get parameters with name starting with string 's'.
@@ -315,45 +373,18 @@
   [parms s]
   (filter #(.startsWith (str (name %)) s) (keys parms)))
 
-
-
-(defn- find-special-page
-  [parms str1 ]
-  (let [s str1
-        len (count s)
-        pg-name (map (fn [n] (.substring (name n) len)) (get-matching-btns parms str1))]
-        (first pg-name) ))
-
 (defn- find-review-edit-page
   [parms]
-  (find-special-page "review-edit-btn-"))
+  (helper/find-special-page parms "review-edit-btn-"))
 
-(defn- find-meta-item-page
+(defn- find-review-meta-edit-page
   [parms]
-  (find-special-page helper/META_DATA_BTN_PREFIX ))
-
-(defn- find-review-edit-or-meta-item-page-name
-  [parms]
-  (or (find-review-edit-page parms) 
-       (find-meta-item-page parms)))
-
-
-(defn- goto-special-page
-  [pg-nm]
-
-  (let [page (get-named-page (helper/current-form) pg-nm) ]
-       (do (helper/save-return-page)
-           (if page (helper/set-page page)
-                    (flash-put! :header "Unable to find edit page"))
-           (helper/myredirect "/collect/consents"))))
-
+  (helper/find-special-page parms "review-meta-edit-btn-"))
 
 (defn- has-any?
   "Are there any parameters starting with the string 's'?"
   [parms s]
-
   (> (count (get-matching-btns parms s)) 0))
-
 
 (defn get-next-page
   "Will need to do something different if in review Eg. If we have
@@ -371,47 +402,57 @@
   (debug "288 perform " ctx)
   (let [s (session-get :collect-consent-status)
         form (:form s) 
-        nxt  (get-next-page s) ]
-
-    (helper/save-captured-data parms) 
+        nxt  (get-next-page s) 
+        data-model (helper/save-captured-data parms) ]
 
     (cond 
-      (helper/get-return-page)
-      (do
-        (let [pg-name (helper/get-return-page)]
-              (helper/clear-return-page)
-              (helper/set-page (get-named-page form pg-name))
-              (helper/myredirect "/collect/consents")))
+      ; If there's a return page, go there
+      ; if meta-data has been updated, need to send that to the server
+      ; otherwise may also need to send the updated data to the server
+      (helper/get-return-page)  
+      (let [pg-name (helper/get-return-page)]
+         (do 
+           (debug "GOING TO RETURN PAGE " pg-name)
+           (helper/clear-return-page)
+           (helper/set-page (get-named-page form pg-name))
+           (view)))
 
-;;  (has-any? parms helper/META_DATA_BTN_PREFIX )
-;;  (helper/myredirect (str "[meta-data button " (pprint-str (get-matching-btns parms helper/META_DATA_BTN_PREFIX )) "]")
-;;      "/collect/consents")
+      ; If the user wants to edit a reviewed item
+      (find-review-edit-page parms)
+      (let [pg-name (find-review-edit-page parms)]
+            (do 
+              (debug "GOING TO REVIEW EDIT PAGE: [" pg-name "]")
+              (helper/save-return-page)
+              (helper/set-page (get-named-page form pg-name))
+              (view)))
+
+      ; If the user wants to edit a meta data item
+      (find-review-meta-edit-page parms)
+      (let [pg-name (find-review-meta-edit-page parms)]
+            (do 
+              (debug "GOING meta-EDIT PAGE: [" pg-name "]")
+              (view-update-information ctx pg-name)))
 
       ;; special buttons which are completely processed by save-captured-data
       (has-any? parms helper/ACTION_BTN_PREFIX )
-      (helper/myredirect (str "[action button "  (pprint-str (get-matching-btns parms helper/ACTION_BTN_PREFIX )) "]")
-                         "/collect/consents")
+      (view)
 
-;;      (has-any? parms "signature-btn-")
-;;      (helper/myredirect (str "[signature button "  (pprint-str (get-matching-btns parms "signature-btn-")) "]")
-;;           "/collect/consents")
-
+      (has-any? parms "signature-btn-")
+      (view)
 
       (contains? parms :previous)
-      (if-let [pg-name (:previous (:page s)) ]
-              (do (helper/set-page (get-named-page form pg-name))
-                  (helper/myredirect "/collect/consents"))
-              (helper/myredirect "Previous pressed, no previous page available." 
-                                 "/collect/consents"))
+      (do (if-let [pg-name (:previous (:page s)) ]
+             (helper/set-page (get-named-page form pg-name)))
+          (view))
 
       ;; if next page available
       nxt 
-      (do
-        (helper/set-page nxt)
-        (helper/myredirect "/collect/consents"))
+      (do (helper/set-page nxt)
+          (view))
 
       (helper/finish-form)
-      (helper/myredirect "/collect/consents")
+      (view)
 
      :else
      (view-finished ctx))))
+

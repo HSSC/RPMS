@@ -1,6 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-collector.select-lockcode
   (:require
-   [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! flash-get flash-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])

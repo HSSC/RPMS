@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.rpms2.consent-collector.helpers
-  "General purpose helpers used when creating views."
+(ns ^{:doc "General purpose helpers used when creating views"}
+      org.healthsciencessc.rpms2.consent-collector.helpers
   (:require [hiccup
                [page :as hpage]
                [element :as helem]])
@@ -9,8 +9,8 @@
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
-  (:use [clojure.pprint])
-
+  (:use [clojure.set :only (difference) ])
+  (:use [slingshot.slingshot :only (try+)])
   (:use [org.healthsciencessc.rpms2.consent-domain.tenancy :only [label-for-location label-for-protocol]])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
@@ -21,7 +21,9 @@
 (def COLLECT_START_PAGE :collect-start)
 (def REVIEW_START_PAGE :summary-start)
 
+
 (def ACTION_BTN_PREFIX "action-btn-")
+(def CHECKBOX_BTN_PREFIX "cb-btn-")
 (def META_DATA_BTN_PREFIX "meta-data-btn-")
 
 ;; web application context, bound in core
@@ -153,6 +155,7 @@
       [:div.submit-area submit-buttons ] ]] ) 
 
 
+
 (defn signaturePadDiv
   "Outputs a Signature Pad div which corresponds to custom sigpad
   styles (eg. related to size - width, height, the signature line,etc).
@@ -160,11 +163,12 @@
   see http://thomasjbradley.ca/lab/signature-pad/ "
 
   [nm value]
+  ;;[:script "var ccsigpad ;" (println "var signaturePadItem1;") ]
   [:div.sigPad
   [:div {:class "sig sigWrapper" }
      [:div.typed ] 
      [:canvas.pad {:width "700" :height "198"}]
-     [:input.output {:type "hidden" :name nm :value value } ] ]])
+     [:input.output {:type "hidden" :name "ccsigpad" :value value } ] ]])
 
 
 (defn collect-consent-form 
@@ -244,11 +248,41 @@
         [:div.ui-block-c (if-let [u (session-get :user)] (logout-form))]] 
      [:div (if-let [msg (flash-get :header)] [:div#flash msg ]) ] ] )
 
+(defn clear-return-page
+  []
+  (session-delete-key! :review-consent-page-in-progress))
+
+(defn get-return-page
+  []
+  (session-get :review-consent-page-in-progress))
+
+(defn save-return-page
+  []
+  (let [s (session-get :collect-consent-status)]
+       (session-put! :review-consent-page-in-progress (:page-name s))))
+
+(defprotocol PageFlowProtocol 
+    (save [this])
+    ;;(next-page [this])
+    ;;(get-return-to [this])
+    (clear [this]))
+
+#_(defrecord PageState [pg-nm] 
+  PageFlowProtocol
+  (save [this] (let [s (session-get :collect-consent-status)]
+                (session-put! :review-consent-page-in-progress (:page-name s))))
+  ;;(next-page [this] (pr-str "not done"))
+  ;;(get-return-to [this] (session-get :review-consent-page-in-progress))
+  (clear [this] (session-delete-key! :review-consent-page-in-progress))
+  )
+
+  
 (defrecord FormStatus [forms cform state])
 
 (defn make-form-status [forms cform state]
   {:pre [(>= (count forms) 0)] }   ; ensure there's at least one form
   (FormStatus. forms cform state))
+
 
 (defn- header
   [title cancel-btn]
@@ -256,12 +290,21 @@
       (header-collect-consents title)
       (header-standard title cancel-btn)))
 
+
+(defn in-review?
+  "Returns true if in the review process."
+  []
+  (let [s (session-get :collect-consent-status)]
+        (= (:which-flow s) REVIEW_START_PAGE)))
+
 (defn- after-content
   "Enable signature pad."
   []
   (if (session-get :collect-consent-status) 
     (hpage/include-js 
-     (absolute-path "collect-sigpad.js"))))  
+      (if (in-review?)
+        (absolute-path "review-sigpad.js")
+        (absolute-path "collect-sigpad.js")))))  
 
 (defn format-consenter []
   (if-let [{:keys [first-name last-name consenter-id]}
@@ -317,7 +360,7 @@
 
     (if second-page
       [:div {:data-role "page" :id "popup" } 
-       [:div {:data-role "header" :data-theme "d" } "Data Change" ]
+       [:div {:data-role "header" :data-theme "d" } [:h1 "Data Change" ]]
        [:div {:data-role "content" :data-theme "d" } 
         [:div "This item has been flagged for change and may be edited during the review process." ]
         [:a {:href "#one"  
@@ -439,66 +482,139 @@
   [f n]
   (first (filter #(= (:name %) n ) (:contains f) )))
 
+
+(defn- mx-data-for-widget [data-map c] 
+  (get data-map (keyword (:name c))))
+
+(defn- mx-clear-value [data-map c] 
+   (dissoc data-map (keyword (:name c)) ))
+
+(defn- mx-set-value [data-map c v valid-keys] 
+   (if (contains? valid-keys (keyword (:name c)))
+       (assoc data-map (keyword (:name c)) v) valid-keys))
+
 (defn data-for
-  [c]
-  (get (session-get :model-data) (keyword (:name c))))
+  ([c] (data-for (session-get :model-data) c))
+  ([c dm] (get dm (keyword (:name c)))))
 
-(defn clear-return-page
-  []
-  (session-delete-key! :review-consent-page-in-progress))
+  ;; mx-data-for-widget (session-get :model-data c))
 
-(defn get-return-page
-  []
-  (session-get :review-consent-page-in-progress))
+(defn- keyword-from-button 
+  "Remove prefix from the string and turn it into a keyword."
+  [btns ^String prefix]
+  (keyword (subs (name (first btns)) (count prefix))))
 
-(defn save-return-page
-  []
-  (let [s (session-get :collect-consent-status) 
-          cur-page (:page-name s)]
-        (do
-          (debug "save-return-page: " cur-page)
-          (session-put! :review-consent-page-in-progress cur-page))))
+(defn strip-prefix
+  [^String prefix s]
+  (subs (name s) (count prefix)))
 
+(defn- get-matching-btns 
+  "Get parameters with name starting with string 's'.
+  Returns a list, which will be empty if there are no matches."
+  [parms s]
+  (filter #(.startsWith (str (name %)) s) (keys parms)))
 
-(defn- make-keyword-from-button 
-  "Remove the prefix from the string (from list of matching button names)
-  and turn it into a keyword."
-  [btns prefix]
+(defn find-real-names 
+  "Finds all names from a parameters by removing a prefix.
+  e.g. review-edit-btn-page1 will return page1 if str1 is review-edit-btn-"
+  [parms str1]
+  (let [len (count str1)]
+        (map (fn [n] (subs (name n) len)) (get-matching-btns parms str1))))
 
-  (let [b (name (first btns))
-        len (count prefix)]
-        (keyword (.substring b len))))
+(defn find-special-page
+  "Finds a page name from a parameters by removing a prefix.
+  e.g. review-edit-btn-page1 will return page1 if str1 is review-edit-btn-"
+  [parms str1 ]
+  (first (find-real-names parms str1)))
 
-(defn- preprocess-parameters
-  "Some parameter names must be adjusted, because they have been modified to enable
-  special processing.  For instance, action buttons start with action-btn- "
-  [m]
-  (let [action-btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))
-        meta-btns (filter #(and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
+(defn- handle-meta-data
+  "Remove special meta data keys.  If there is a meta data with value CHANGED, 
+  remove the meta data prefix and set it in the model.
+  Only one should be set at a time."
+  [m] 
+
+  (let [meta-btns (filter #(and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
                                 (= (get m %) "CHANGED")) (keys m))
         ;; remove any meta data buttons that are not changed
         keep-keys (filter #(or (and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
                                        (= (get m %) "CHANGED")) 
                                (not (.startsWith (str (name %)) META_DATA_BTN_PREFIX)))
                                (keys m)) ]
-        (do
-          (if (> (count action-btns) 0)
-            (assoc m (make-keyword-from-button action-btns ACTION_BTN_PREFIX ) "selected")
-            (if (> (count meta-btns) 0) ; save data for changed meta item using the name without the prefix
-              (assoc (select-keys m keep-keys)
-                     (make-keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "CHANGED")
-              (select-keys m keep-keys))))))
+       (if (> (count meta-btns) 0) ; save data for changed meta item using the name without the prefix
+           (assoc (select-keys m keep-keys)
+              (keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "CHANGED")
+           (select-keys m keep-keys))))
+
+(defn- handle-action-btns
+  "Handles action buttons, which is once set must always stay set. 
+  Only one action button will be present at a time."
+  [m]
+
+  (let [btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))]
+   (let [retval
+       (if (> (count btns) 0)
+           (assoc m (keyword-from-button btns ACTION_BTN_PREFIX) "selected")
+            m)] 
+     (do (debug "handle action returning " retval) 
+     retval))))
+
+
+(defn remove-checkboxes-from-model
+  "Find checkboxes that are on the page but weren't submitted
+  as form parameters - any checkboxes that aren't checked, but were
+  previously set in the model.
+
+  A hidden field that starts with CHECKBOX_BTN_PREFIX will be on each
+  page with a checkbox, which is used to find these missing checkboxes.
+
+  parms is map of post parameters.  
+
+  e.g. if the map contains :cb-btn-TissueCheckbox but not :TissueCheckbox,
+  then unset :TissueCheckbox in the model.
+
+  This is needed because the checkbox does not get sent on a form submission
+  if the checkbox is not checked.
+  "
+  [parms]
+  (let [col (find-real-names parms CHECKBOX_BTN_PREFIX)
+        cbs (set (map keyword col))]
+        (if (> (count cbs) 0) 
+            (doall (for [nm (into [] cbs)]
+                 (session-put! :model-data 
+                               (dissoc (session-get :model-data) 
+                                       (keyword nm))))))))
 
 (defn save-captured-data
-  "Updates model with the information from the map.
-  parms-orig contains form POST parameters. "
+  "Updates model with information from the form parameters. 
+  Start with original model, remove checkboxes on this page (which
+  won't be sent with post parameters if not checked), merge in the 
+  parameters after doing any special handling
+  for action buttons, and metadata items."
 
-  [parms-orig]
-  (let [m (preprocess-parameters parms-orig) 
-        _ (debug "save-captured-data: after preprocess " m)
-        orig (session-get :model-data) 
-        m1 (dissoc (merge orig m) :next :previous) ]
-        (session-put! :model-data  m1)))
+  [parms]
+
+  (debug "ENTER save captured data: " (session-get :model-data))
+  (remove-checkboxes-from-model parms)
+  (let [ m (session-get :model-data)
+        new-map (->  m
+                     (merge (-> parms
+                                (dissoc :next :previous) 
+                                handle-action-btns
+                                handle-meta-data))
+                     (dissoc (get-matching-btns parms CHECKBOX_BTN_PREFIX)) )
+
+        keep-keys (filter #(not 
+                             (or
+                              (.startsWith (name %) CHECKBOX_BTN_PREFIX)
+                              ;(.startsWith (name %) ACTION_BTN_PREFIX)
+                              ;(.startsWith (name %) META_DATA_BTN_PREFIX)
+                              )) (keys new-map))
+        fmap (select-keys new-map keep-keys)
+        _ (debug "save-capture-data (without output) " (dissoc fmap :output) )
+        ]
+        (session-put! :model-data fmap)
+        fmap))
+                 
 
 (defn clear-consents
   "Remove any in-progress consent information."
@@ -545,15 +661,6 @@
   [n]
   (keyword (str "form-" n)) )
 
-(defn pr-truncate 
-  "there's probably an output setting for this"
-  [n]
-  (let [s (pprint-str n)
-        len (count s)]
-    (if (> len 40) 
-        (str (.substring s 0 40) "...")
-        s)) )
-
 (defn pr-form
   "Prints the form without the :output value.
   Want to replace keys starting with out"
@@ -575,6 +682,7 @@
    [:div [:ol (for [f (keys ff) ]
          [:li "Form " [:span.standout f ] (pprint-str (pr-form (f ff) ) )] )]]))
 
+
 (defn current-form
   "Returns the current form which is being processed."
   []
@@ -585,6 +693,7 @@
   "If there is data saved for the nth form, return it.
   Otherwise return an empty map." 
   [n]
+  (debug "get data for nth form " n (count (session-get :finished-forms)))
   (let [forms-data (if-let [f (session-get :finished-forms)] f {}) ]
         (get forms-data (get-form-name-kw n))))
 
@@ -603,6 +712,8 @@
       (if (= (:which-flow s) COLLECT_START_PAGE ) 
           (session-put! :model-data {} )
           (session-put! :model-data (get-data-for-nth-finished-form (inc n))))
+
+      (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
 
       (if-let [next-form (get-nth-form (inc n))]
        (let [formval (:form next-form)

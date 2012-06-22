@@ -197,32 +197,18 @@
 (defn add-logging 
   [handler]
   (fn [req]
-    ;;(info "core 234: Got request: " (:uri req) " " req)
+    (info "core 234: Got request: " (:uri req) " " req)
     (let [resp (handler req)]
-      ;;(info "core 234: Got response " (:uri req) " " resp)
+      (info "core 234: Got response " (:uri req) " " resp)
       resp)))
-
-(defn add-path-info
-  [handler]
-  (fn [req] 
-    (handler (assoc req :xpath-info (:uri req)))
-    #_(handler req)
-    ))
-
-(defn middleware [handler] (-> handler
-                             (add-logging)
-                             (add-path-info)
-                             ))
-
 
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
-(def app (-> (ws/ws-constructor middleware )
-            ;; add middleware function
-             (wrap-dsa-auth)       ;; add basic authentication to request
-             (wrap-context-setter) ;; bind helper/*context*
+(def app (-> (ws/ws-constructor)
+             (add-logging)
+             (wrap-dsa-auth)       
+             (wrap-context-setter) 
              (wrap-exceptions)
-             #_(wrap-better-process-not-found-response)
              (wrap-last-page)
              (sandbar.stateful-session/wrap-stateful-session)
              (wrap-resource "public")))

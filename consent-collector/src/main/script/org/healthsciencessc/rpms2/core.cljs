@@ -50,16 +50,14 @@
 
   [div]
   ;(.log js/console "data-change-clicked")
-  (let [user (read-string (.getAttribute div "data-user"))
-        data-change-class (read-string (.getAttribute div "data-change-class"))
+  (let [data-change-class (read-string (.getAttribute div "data-change-class"))
         mdid (read-string (.getAttribute div "mdid"))
         details (js/$ (str "#" mdid) ) 
         data-change-section (js/$ "div.control.data-change")
-        h (js/$ (str "#hidden-" mdid) ) 
-        {:keys [first-name last-name]} user]
+        h (js/$ (str "#hidden-" mdid) ) ]
 
-        (.log js/console "mdid is " mdid) 
-        (.log js/console "h is " h) 
+        ;(.log js/console "mdid is " mdid) 
+        ;(.log js/console "h is " h) 
 
         ;; Set highlight style on clicked div
         (.addClass (js/$ details) "changed" )

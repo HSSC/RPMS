@@ -35,11 +35,6 @@
      [:label {:for nm :class "labelclass" } "CHECKBOX " nm  ]
      [:input { :type "checkbox" :id nm :name nm :class "inputclass" }] "CHECKBOX  " nm ])
 
-(defn- drop-down-field
-  [nm item]
-)
-
-
 (defn- other-field
   [nm item]
 
@@ -63,9 +58,6 @@
           (= (:data-type item) "yes-no") 
           (yes-no-field (:name item) item)
 
-          ;;(= (:data-type item) "dropdown") 
-          ;;(dropdown-field (:name item) item)
-
           :else
           (other-field (:name item) item)))
 
@@ -84,22 +76,5 @@
 (defn perform
   "Save meta data and prepare to enter the data."
   [{parms :body-params :as ctx}]
-
-  (debug "saving META data: " parms) 
-  ;; put value from form into the map, match on :mdid value 
-  ;; create a new collection with the save values and store it in needed 
-  ;; metadata
-  (try
-  (doall (for [item (session-get :needed-meta-data)]
-          (do
-            (if-let [mid (:mdid item)]
-              (do
-               ;;(debug "4 saving META item mdid : " (get parms (keyword mid)))
-               (debug "saving META item: " item 
-                 " value " (get parms (keyword mid))  
-                 ;;" PARMS " (pprint-str parms)
-                  ))))))
-    (catch Exception ex (do (println "Exception ex" ex) (debug "Exception " ex)
-                          (.printStackTrace ex))))
 
   (helper/myredirect "/collect/consents"))
