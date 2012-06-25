@@ -100,7 +100,7 @@
                                   :default-value {:persisted true}
                                   :status {:persisted true}})
               :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
-                          {:type :many-to-many :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
+                          {:type :many-to-many :related-to text-i18n :relationship :has-label :name :labels :can-create-parent true}]}
 
    consent-meta-item {:attributes (merge base
                                          {:value {:persisted true}})
@@ -116,8 +116,8 @@
                                :code {:persisted true}
                                :status {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
-                       {:type :many-to-many :related-to text-i18n :relationship :has-title :name :title :can-create-parent true}
-                       {:type :many-to-many :related-to text-i18n :relationship :has-text :name :text :can-create-parent true}]}
+                       {:type :many-to-many :related-to text-i18n :relationship :has-title :name :titles :can-create-parent true}
+                       {:type :many-to-many :related-to text-i18n :relationship :has-text :name :texts :can-create-parent true}]}
 
    policy-definition {:attributes (merge base
                                          {:name {:persisted true}
@@ -134,7 +134,7 @@
                              :status {:persisted true}})
          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                      {:type :has-many :related-to widget}
-                     {:type :many-to-many :related-to text-i18n :relationship :has-title :name :title :can-create-parent true}]}
+                     {:type :many-to-many :related-to text-i18n :relationship :has-title :name :titles :can-create-parent true}]}
 
    widget {:attributes (merge base
                               {:name {:persisted true}
@@ -158,7 +158,7 @@
                                     :status {:persisted true}})
                 :relations [{:type :belongs-to :related-to organization :relationship :owned-by :deletable-by-parent true}
                             {:type :belongs-to :related-to endorsement-type :relationship :has-type :omit-rels true}
-                            {:type :many-to-many :related-to text-i18n :relationship :has-label :name :label :can-create-parent true}]}
+                            {:type :many-to-many :related-to text-i18n :relationship :has-label :name :labels :can-create-parent true}]}
 
    endorsement-type {:attributes (merge base
                                         {:name {:persisted true}
