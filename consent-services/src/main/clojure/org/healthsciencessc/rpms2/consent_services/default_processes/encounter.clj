@@ -57,7 +57,7 @@
                 (data/find-children "encounter" encounter-id "consent")))
     :run-if-false forbidden-fn}
 
-   {:name "get-consent-encounter-consent-encounters"
+   {:name "get-consent-encounter-consent-endorsements"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
                          org-id (get-in user [:organization :id])
@@ -66,7 +66,7 @@
                           (data/belongs-to? "encounter" enc-id "organization" org-id))))
     :run-fn (fn [params]
               (let [encounter-id (get-in params [:query-params :encounter])]
-                (data/find-children "encounter" encounter-id "consent-encounter")))
+                (data/find-children "encounter" encounter-id "consent-endorsement")))
     :run-if-false forbidden-fn}
 
    {:name "get-consent-encounter-consent-meta-items"
