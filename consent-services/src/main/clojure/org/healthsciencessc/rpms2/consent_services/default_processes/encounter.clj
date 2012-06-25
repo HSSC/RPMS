@@ -45,6 +45,42 @@
                 (data/find-record "encounter" encounter-id)))
     :run-if-false forbidden-fn}
 
+   {:name "get-consent-encounter-consents"
+    :runnable-fn (fn [params]
+                   (let [user (get-in params [:session :current-user])
+                         org-id (get-in user [:organization :id])
+                         enc-id (get-in params [:query-params :encounter])]
+                     (and (allowed? user :organization {:id org-id})
+                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
+    :run-fn (fn [params]
+              (let [encounter-id (get-in params [:query-params :encounter])]
+                (data/find-children "encounter" encounter-id "consent")))
+    :run-if-false forbidden-fn}
+
+   {:name "get-consent-encounter-consent-encounters"
+    :runnable-fn (fn [params]
+                   (let [user (get-in params [:session :current-user])
+                         org-id (get-in user [:organization :id])
+                         enc-id (get-in params [:query-params :encounter])]
+                     (and (allowed? user :organization {:id org-id})
+                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
+    :run-fn (fn [params]
+              (let [encounter-id (get-in params [:query-params :encounter])]
+                (data/find-children "encounter" encounter-id "consent-encounter")))
+    :run-if-false forbidden-fn}
+
+   {:name "get-consent-encounter-consent-meta-items"
+    :runnable-fn (fn [params]
+                   (let [user (get-in params [:session :current-user])
+                         org-id (get-in user [:organization :id])
+                         enc-id (get-in params [:query-params :encounter])]
+                     (and (allowed? user :organization {:id org-id})
+                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
+    :run-fn (fn [params]
+              (let [encounter-id (get-in params [:query-params :encounter])]
+                (data/find-children "encounter" encounter-id "consent-meta-item")))
+    :run-if-false forbidden-fn}
+
    {:name "put-consent-encounter"
     :runnable-fn (fn [params]
                    (let [user (get-in params [:session :current-user])
