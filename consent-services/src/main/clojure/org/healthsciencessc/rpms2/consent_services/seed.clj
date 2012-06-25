@@ -203,8 +203,10 @@
 (defn seed-example-org!
   "Creates an organization that will contain all of the example and best practice data."
   []
-  (let [org (create organization 
-                    {:name "Example Organization" :code "example" :protocol-label "Form" :location-label "Division"}
+  (let [lang (first (filter #(= "en" (:code %)) (data/find-all language)))
+        org (create organization 
+                    {:name "Example Organization" :code "example" :protocol-label "Form" :location-label "Division"
+                     :language lang}
                     match/orgs-match?)
         org-id (:id org)
         
