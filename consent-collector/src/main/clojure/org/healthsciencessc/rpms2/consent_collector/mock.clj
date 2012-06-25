@@ -256,6 +256,7 @@
         :clear-label "Clear"}]}],
     :previous "page7",
     :next "page9"}
+
    {:name "revpage1",
     :title "Consent for Medical Treatment",
     :type "page",
@@ -352,7 +353,34 @@
     	:endorsement "E00001",
     	:label "Edit",
     	:returnpage "page8"}]}],
-    :previous "revpage2"}],
+    :next "revpage4"
+    :previous "revpage2"}
+
+   {:name "revpage4",
+    :title "Consent for Medical Treatment",
+    :type "page",
+    :contains
+    [{:name "section1",
+      :type "section",
+      :contains
+      [{:type "review-policy",
+    	:name "ReviewPersonalItemsButton",
+    	:title "PB Consent Certifications", 
+        :policy "P00007",
+    	:label "Edit",
+        :returnpage "page6"}]}
+     {:name "section2",
+      :type "section",
+      :contains
+      [{:type "review-endorsement", 
+    :name "ReviewEndorsement", 
+    	:title "Review Signature",
+    	:endorsement "E00001",
+    	:label "Edit",
+    	:returnpage "page8"}]}],
+    :previous "revpage3"}
+   
+   ],
   :footer {:title ["Patient Name: Bob R. Smith"]}
   
 

@@ -21,10 +21,10 @@
 (def COLLECT_START_PAGE :collect-start)
 (def REVIEW_START_PAGE :summary-start)
 
-
 (def ACTION_BTN_PREFIX "action-btn-")
 (def CHECKBOX_BTN_PREFIX "cb-btn-")
 (def META_DATA_BTN_PREFIX "meta-data-btn-")
+(def META_DATA_UPDATE_BTN_PREFIX "meta-data-update-btn-")
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
@@ -85,11 +85,6 @@
         (filter (comp #{"Consent Collector"} :name :role))
              (map :location)))
        
-(defn- pg-dbg 
-  [s]
-  (if-let [b (config "verbose-page")]
-    (debug s)))
-
 (defn current-org-id
   "The org-id from the currently logged in user."
   []
@@ -133,7 +128,6 @@
        :data-inline "true"
        :value v :name n } ])
 
-
   ([form-name v n] 
     [:input 
       {:type "submit" 
@@ -153,8 +147,6 @@
              :data-theme "a" } 
       [:div.innerform.centered body ] 
       [:div.submit-area submit-buttons ] ]] ) 
-
-
 
 (defn signaturePadDiv
   "Outputs a Signature Pad div which corresponds to custom sigpad
@@ -261,35 +253,11 @@
   (let [s (session-get :collect-consent-status)]
        (session-put! :review-consent-page-in-progress (:page-name s))))
 
-(defprotocol PageFlowProtocol 
-    (save [this])
-    ;;(next-page [this])
-    ;;(get-return-to [this])
-    (clear [this]))
-
-#_(defrecord PageState [pg-nm] 
-  PageFlowProtocol
-  (save [this] (let [s (session-get :collect-consent-status)]
-                (session-put! :review-consent-page-in-progress (:page-name s))))
-  ;;(next-page [this] (pr-str "not done"))
-  ;;(get-return-to [this] (session-get :review-consent-page-in-progress))
-  (clear [this] (session-delete-key! :review-consent-page-in-progress))
-  )
-
-  
-(defrecord FormStatus [forms cform state])
-
-(defn make-form-status [forms cform state]
-  {:pre [(>= (count forms) 0)] }   ; ensure there's at least one form
-  (FormStatus. forms cform state))
-
-
 (defn- header
   [title cancel-btn]
   (if (session-get :collect-consent-status) 
       (header-collect-consents title)
       (header-standard title cancel-btn)))
-
 
 (defn in-review?
   "Returns true if in the review process."
@@ -368,7 +336,6 @@
              :data-inline "true"
              :data-icon "back"}]]])
     ])] 
-      (pg-dbg (str "Page: " title " is\n" (pprint-str resp) "\n"))
       resp))
 
 
@@ -482,21 +449,10 @@
   (first (filter #(= (:name %) n ) (:contains f) )))
 
 
-(defn- mx-data-for-widget [data-map c] 
-  (get data-map (keyword (:name c))))
-
-(defn- mx-clear-value [data-map c] 
-   (dissoc data-map (keyword (:name c)) ))
-
-(defn- mx-set-value [data-map c v valid-keys] 
-   (if (contains? valid-keys (keyword (:name c)))
-       (assoc data-map (keyword (:name c)) v) valid-keys))
-
 (defn data-for
-  ([c] (data-for (session-get :model-data) c))
+  ([c] 
+   (get (session-get :model-data) (keyword (:name c))))
   ([c dm] (get dm (keyword (:name c)))))
-
-  ;; mx-data-for-widget (session-get :model-data c))
 
 (defn- keyword-from-button 
   "Remove prefix from the string and turn it into a keyword."
@@ -546,7 +502,9 @@
 
 (defn- handle-action-btns
   "Handles action buttons, which is once set must always stay set. 
-  Only one action button will be present at a time."
+  Only one action button will be present at a time.
+  If there is an action button, adds it to the map (where it will
+  get merged into the model as part of further processing)"
   [m]
 
   (let [btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))]
@@ -554,8 +512,28 @@
        (if (> (count btns) 0)
            (assoc m (keyword-from-button btns ACTION_BTN_PREFIX) "selected")
             m)] 
-     (do (debug "handle action returning " retval) 
-     retval))))
+     retval)))
+
+
+(defn- handle-meta-data-update-btns
+  "Handles update meta-data buttons.
+  If there is a meta data button in the parameter map,
+    Places the updated value in :changed-meta-data.
+    Removes the marker in the model data indicating this meta data item requires changing. "
+  [m]
+
+  (let [btns (filter #(.startsWith (str (name %)) META_DATA_UPDATE_BTN_PREFIX) (keys m))]
+     (if (> (count btns) 0)
+       (do
+         (let [mi (keyword-from-button btns META_DATA_UPDATE_BTN_PREFIX) 
+               v (get (session-get :model-data) mi) 
+               changed-metadata (if-let [smd (session-get :changed-meta-data)] smd {})
+               val (mi m) 
+               change-marker (keyword (str META_DATA_BTN_PREFIX (name mi))) ]
+              (session-put! :changed-meta-data (assoc changed-metadata mi val))
+              (session-put! :model-data (dissoc (session-get :model-data) change-marker)))
+          m))
+    m))
 
 
 (defn remove-checkboxes-from-model
@@ -599,6 +577,7 @@
                      (merge (-> parms
                                 (dissoc :next :previous) 
                                 handle-action-btns
+                                handle-meta-data-update-btns
                                 handle-meta-data))
                      (dissoc (get-matching-btns parms CHECKBOX_BTN_PREFIX)) )
 
@@ -606,7 +585,7 @@
                              (or
                               (.startsWith (name %) CHECKBOX_BTN_PREFIX)
                               ;(.startsWith (name %) ACTION_BTN_PREFIX)
-                              ;(.startsWith (name %) META_DATA_BTN_PREFIX)
+                              (.startsWith (name %) META_DATA_UPDATE_BTN_PREFIX)
                               )) (keys new-map))
         fmap (select-keys new-map keep-keys)
         _ (debug "save-capture-data (without output) " (dissoc fmap :output) )
@@ -671,17 +650,6 @@
             (pprint-str ff)))
       (str "not map " (pprint-str ff))))
 
-(defn pr-model-data
-  []
-  (pr-form (session-get :model-data)))
-
-(defn print-all-form-data
- []
- (let [ff (session-get :finished-forms)]
-   [:div [:ol (for [f (keys ff) ]
-         [:li "Form " [:span.standout f ] (pprint-str (pr-form (f ff) ) )] )]]))
-
-
 (defn current-form
   "Returns the current form which is being processed."
   []
@@ -707,10 +675,10 @@
         ] 
     (do
       (session-put! :finished-forms ff)
-      ;; if we are in review then load up saved data for the form
-      (if (= (:which-flow s) COLLECT_START_PAGE ) 
-          (session-put! :model-data {} )
-          (session-put! :model-data (get-data-for-nth-finished-form (inc n))))
+      ;; if we are in review then load up saved data for the form 
+      (if (in-review?) 
+          (session-put! :model-data (get-data-for-nth-finished-form (inc n)))
+          (session-put! :model-data {} ))
 
       (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
 
@@ -766,12 +734,6 @@
   []
   (init-flow COLLECT_START_PAGE ))
 
-(defn dbg-session
-  [msg]
-  (debug msg " user: " (pprint-str (session-get :user)))
-  (debug msg " location: " (pprint-str (session-get :location)))
-  (debug msg " org-location: " (pprint-str (session-get :org-location))))
-
 (defn clear-location
   "Removes location information from session."
   []
@@ -781,12 +743,12 @@
 (defn clear-consenter
   "Removes consenter information from session."
   []
-  (debug "clear consenter ")
   (session-delete-key! :consenter)
   (session-delete-key! :encounter))
 
 (defn set-consenter
   "Saves consenter info in the session."
   [c]
-  (debug "set consenter: " c)
   (session-put! :consenter c))
+
+;(debug! handle-meta-data-update-btns)

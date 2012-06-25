@@ -70,6 +70,21 @@
        (filter #(= (:name %) nm))
        first)) 
 
+
+(defn find-policy-in-page
+  "Returns the named widget in the page."
+  [page nm]
+  (->> page
+       :contains        ; sections
+       flatten
+       (map :contains)  ; widgets
+       flatten
+       (filter #(and (= (:policy %) nm)
+                     (or (= (:type %) "policy-choice-buttons")
+                         (= (:type %) "policy-button")
+                         (= (:type %) "policy-checkbox")))))) 
+
+
 (defn find-widget-in-form-on-page
   "Returns the named widget in the form which is contained on the page named 'page-nm'.
   Because there can be multiple pages with the same widget name (eg. one for the
@@ -78,6 +93,3 @@
   (let [page (find-page-in-form form page-nm)]
         (find-widget-in-page page w-nm) ))
 
-;;(debug! find-widget-in-page)
-;;(debug! find-widget-in-form)
-;;(debug! find-widget-in-form-on-page)
