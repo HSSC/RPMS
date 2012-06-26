@@ -156,9 +156,8 @@
          #_[[:input (en/attr= :name "last-name")]]
          )))
 
-(deftest select-metadata-view-test
+#_(deftest select-metadata-view-test
   "Verify that /view/meta-data renders."
-
 
 (comment
 ;; {:name Guarantor, :organization BLAH, :default-value Mr Smith, :uri urn:gurantor, 
@@ -182,7 +181,7 @@
          [[:form (en/attr= :action "/view/meta-data")]]
          )))
 
-(deftest metadata-tests
+#_(deftest metadata-tests
   (testing "Testing metadata submissions"
     (are [doc parms path in-session?]
          (testing doc

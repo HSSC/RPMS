@@ -46,12 +46,13 @@
 ;;=============================================
 (defn ^:export data-change-clicked
   "A data change button has been pressed. The name of the id
-   is passed in.  Add the 'changed' style to items with that id."
+   is passed in.  Add the 'changed' style to items with that id.
+   Also changes the value of the hidden input field named hidden-[id]
+   to CHANGED."
 
   [div]
   ;(.log js/console "data-change-clicked")
-  (let [data-change-class (read-string (.getAttribute div "data-change-class"))
-        mdid (read-string (.getAttribute div "mdid"))
+  (let [mdid (read-string (.getAttribute div "mdid"))
         details (js/$ (str "#" mdid) ) 
         data-change-section (js/$ "div.control.data-change")
         h (js/$ (str "#hidden-" mdid) ) ]

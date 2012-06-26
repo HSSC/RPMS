@@ -38,7 +38,7 @@
 (defn- other-field
   [nm item]
 
-  [:div.inputdata {:data-role "fieldcontain" }  "OTHER" nm ])
+  [:div.inputdata {:data-role "fieldcontain" }  "OTHER" nm " ITEM IS " (pprint-str item) ])
      
 (defn- emit-item
   [item]
@@ -67,7 +67,8 @@
   (rpms2-page 
     (helper/post-form "/view/meta-data"
      (list [:div.left "Enter the following information:" ]
-       (list (for [item (session-get :needed-meta-data)]
+       (list (for [item (dsa/get-published-protocols-meta-items 
+                          (session-get :needed-protocol-ids) )]
             (list (emit-item item)))))
        (helper/submit-btn { :value (i18n :meta-data-form-submit-button) } ))
     :title (i18n :hdr-metadata)

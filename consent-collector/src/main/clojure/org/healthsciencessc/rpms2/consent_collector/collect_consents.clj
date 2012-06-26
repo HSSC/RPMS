@@ -205,17 +205,15 @@
 
 (defn data-change
   "Displays meta-data item and a flag if it has been selected for change."
-  [{:keys [widget value form review] :as m}]
+  [{:keys [widget value] :as m}]
   [:div.control.data-change
    (list 
      (dbg [:div "DATA CHANGE IS " (pprint-str value) ])
      (for [nm (:meta-items widget)] 
            (list
-             (let [md (dsa/get-metadata nm)
-                   data-name (str helper/META_DATA_BTN_PREFIX (:mdid md))
+             (let [data-name (str helper/META_DATA_BTN_PREFIX nm)
                    model-data (session-get :model-data)
                    data-value ( (keyword data-name) model-data ) 
-
                    mi (:meta-items (helper/current-form))
                    mitem ((keyword nm) mi)
                    v (:value mitem) ]
@@ -224,10 +222,10 @@
                     [:div.ui-block-a.metadata (:label mitem) ] 
                     [:div.ui-block-b.metadata 
                        [:span {:class (if data-value "changed" "") 
-                               :id (:mdid md) } v ]]  
+                               :id nm } v ]]  
 
                      [:input {:type "hidden" 
-                              :id (str "hidden-" (:mdid md)) 
+                              :id (str "hidden-" nm) 
                               :name data-name 
                               :value "NO"
                               }]
@@ -236,8 +234,7 @@
                           {:href "#popup" 
                            :data-rel "dialog" 
                            :onclick "org.healthsciencessc.rpms2.core.data_change_clicked(this)"
-                           :data-change-class (pr-str (str (:value md)))
-                           :mdid (pr-str (str (:mdid md)))
+                           :mdid (pr-str (str nm))
                            :data-role "button" 
                            :data-theme "a" } "Change" ] ]
                      ] ])))) ])
@@ -267,7 +264,7 @@
   A hidden input is created so we can clear the checkbox from the data
   model if it is not checked and the form is submitted.
   Checkboxes are included in form submission parameters if they are not checked."
-  [{:keys [widget value form] :as m}]
+  [{:keys [widget value] :as m}]
 
   [:div.control 
     [:input {:type "hidden" 
@@ -291,7 +288,7 @@
   (dbg [:div.debug
        [:div.left"Page "  [:span.standout (:name (:page s)) ] " " (:title p)    
        " Form #" [:span.standout (inc (:current-form-number s))] " of " 
-       [:span.standout (count (session-get :protocols-to-be-filled-out)) ] ]
+       [:span.standout (count (session-get :needed-protocol-ids)) ] ]
        [:div "Data  " (session-get :model-data) ] ]))
 
 (defn- display-page
@@ -423,8 +420,7 @@
   (> (count (get-matching-btns parms s)) 0))
 
 (defn get-next-page
-  "Will need to do something different if in review Eg. If we have
-  gone back to edit something. "
+  "Returns the next page."
   [s]
   (if-let [nxt (:next (:page s))]
     (get-named-page (:form s) nxt) 

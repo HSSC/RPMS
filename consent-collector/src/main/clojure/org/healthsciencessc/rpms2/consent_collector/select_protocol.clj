@@ -3,38 +3,12 @@
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get 
-                                         session-put! 
-                                         session-delete-key!
-                                         flash-get 
-                                         flash-put! ]])
+                                         session-put!  ]])
   (:use [clojure.tools.logging :only (debug warn info error)])
   (:use [clojure.string :only (split)])
   (:use [clojure.pprint :only (pprint)])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
-
-(defn- find-published 
-   "Returns published protocol for protocol p."
-   [p published-protocols]
-
-   (first (filter #(= (:id (:protocol %)) 
-                      (:protocol-id p) ) published-protocols)))
-
- (defn- get-control
-   "Finds the specified protocol in the published protocol list
-   and returns a map with the properties needed to display the 
-   selections."
-   [p published-protocols]
-
-   (if-let [published (find-published p published-protocols)]
-       {:protocol-id (:protocol-id p)
-        :name (:name p)
-        :languages (:languages (:protocol published))
-       }
-     (do 
-       (warn "CANNOT FIND PUBLISHED Protocol for " p) 
-       {})
-     ))
 
 (defn- checkbox-map
   [cbname selected]
@@ -74,23 +48,23 @@
      [:label {:for nm } (:name p) ])))
 
 (defn view 
-  "Form to select protocols." 
-  [ctx]
+  "Display form to select protocols and the language to be used. 
+  User will select one language which will be applicable to all protocols." 
+
+  [_]
   (helper/rpms2-page 
     (helper/post-form "/view/select/protocols"
       [:div 
        (list 
-         (let [protlist (dsa/get-protocols)
-               publist (dsa/get-published-protocols) ]
+         (let [data (dsa/get-available-protocols-and-languages)
+               plist (:available-protocols data) ]
            (do
-                 (session-put! :published-protocols publist)
-                 (session-put! :protocols protlist)
-               (list  
+              (session-put! :protocols plist)
+              (list  
                  [:fieldset {:data-role "controlgroup" }
-                    [:div.sectionlegend (str "Select " (helper/org-protocol-label) "(s):") ]
-                    (map protocol-item protlist)]
-                 (select-language (dsa/get-languages) )))
-        ))]
+                   [:div.sectionlegend "Select " (helper/org-protocol-label) "(s):" ]
+                   (map protocol-item plist)]
+                   (select-language (:languages data) )))))]
       [:div.centered {:data-role "fieldcontain" }
        (helper/submit-btn { :value "Back" :name :go-back })
        (helper/submit-btn { :value "Continue" :name "select-protocols-form"  })
@@ -113,44 +87,25 @@
         resp  (flatten (conj required-ids selected-ids)) ]
         resp))
 
-(defn- my-find-published
-  [rid]
-  ;publist (session-get :published-protocols) 
-  (filter #(= rid (get-in % [:protocol :id])) (session-get :published-protocols) ))
-
-(defn- find-meta-data-items
-  "Returns a list with the meta data items for  each of the protocols in publist.
-  TODO: each item in the list is a vector, that should be flattened "
-  [orig]
-  (let [publist (flatten orig)]
-  (distinct (flatten (map (fn [n] (do 
-                   (get-in n  [:meta-items]))) (flatten publist) )))))
-
 (defn- is-go-back?
   "Returns true if the current request represents go-back"
   [ctx]
 
-  (let [ bp (:body-params ctx)
-        goback (:go-back bp)  ]
+  (let [bp (:body-params ctx)
+        goback (:go-back bp)]
   (not (empty? goback)) ))
 
 (defn- perform-select-protocols
   "Once protocols are selected, identify required meta-data items
-  and go to the meta-data page."
+  and go to meta-data page. "
 
   [ctx]
-  (let [needed (needed-protocol-ids (:body-params ctx))
-        protocols-to-be-filled-out  (map my-find-published needed)
-        metadata (find-meta-data-items protocols-to-be-filled-out)]
+  (let [needed (needed-protocol-ids (:body-params ctx))]
     (do
-      (session-put! :needed-protocol-ids needed-protocol-ids)
-      (session-put! :needed-meta-data metadata)
-      (session-put! :protocols-to-be-filled-out protocols-to-be-filled-out)
-
-      (debug "perform Needed Protocols " (pprint-str needed) 
-             " Num meta " (count metadata) 
-             " needed-meta-data "  (pprint-str metadata))
-
+      (session-put! :needed-protocol-ids needed)
+      (session-put! :selected-language (:sp-language ctx))
+      (debug "perform selected protocols " (pprint-str needed) )
+      (debug "perform selected language " (:sp-language ctx))
       (helper/myredirect "/view/meta-data")))) 
 
 (defn perform
@@ -165,4 +120,3 @@
         (helper/myredirect "/view/select/consenter"))
       (perform-select-protocols ctx)))
 
-;;(debug! perform)

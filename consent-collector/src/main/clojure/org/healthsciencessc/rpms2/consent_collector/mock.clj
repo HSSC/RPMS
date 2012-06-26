@@ -444,4 +444,24 @@
   
   )
 
+(def mock-published-protocols
+  #{ 
+     {:id "ABCDEF-01-234567",
+      :protocol {:id 100, 
+                 :name "Lewis Blackman Hospital Patient Safety Act Acknowledgement", 
+                 :code "mp", 
+                 :protocol-id "MO01"},
+      :version 1,
+      :status "published",
+      :languages [ {:id "LANG_EN01", :code "EN", :name "English"}
+                   {:id "LANG_SP02", :code "SP", :name "Spanish"} ]
+      :organization {:id 1, :name "My Org", :code "mo"}
+     } 
+
+    }
+  )
+
+(def languages (list {:id "LANG_EN01" :code "EN" :name "English" }
+                 {:id "LANG_SP01" :code "SP" :name "Spanish" }
+                 {:id "LANG_GE01" :code "GP" :name "German" } ) )
 
