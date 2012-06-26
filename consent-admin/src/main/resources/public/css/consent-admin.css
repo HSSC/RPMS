@@ -3,7 +3,7 @@
  */
 body {
 	font-family: Candara, Arial, sans-serif;
-	font-size: 100%;
+	font-size: 90%;
 }
 
 form {
@@ -390,4 +390,56 @@ select.single-select{
 	bottom: 0em;
 	left: 0em;
 	right: 0em;
+}
+
+/*
+Styling for custom form controls
+*/
+div.form-label{
+	position: relative;
+	display: block;
+	padding: .3em 0 .3em 0;
+	margin: .3em auto 0 auto;
+}
+
+div.i18ntext{
+	position: relative;
+	width:100%;
+}
+
+table.i18ntext{
+	width:100%;
+	border: solid 1px gray;
+}
+
+table.i18ntext th{
+	border-bottom: dashed 1px gray;
+}
+
+table.i18ntext td{
+	border-bottom: dashed 1px gray;
+}
+
+table.i18ntext img{
+	height: 1.0em;
+	width: 1.0em;
+	margin-left: .2em;
+}
+
+th.i18ntext-lang{
+	width: 10em;
+}
+
+th.i18ntext-action{
+	width: 4em;
+	text-align: right;
+}
+
+td.i18ntext-text{
+	overflow-y: scroll;
+}
+
+td.i18ntext-action{
+	width: 4em;
+	text-align: right;
 }

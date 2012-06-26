@@ -663,4 +663,28 @@
   [policy-id]
   (DELETE "/library/policy" {:policy policy-id} nil nil))
 
+;; Forms
+(defn get-form
+  [form-id]
+  (GET "/library/form" {:form form-id}))
 
+
+;; text-i18n
+(defn add-text-i18n
+  [parent-type parent-id property data]
+  (PUT "/library/text-i18n"
+       {:parent-type parent-type :parent-id parent-id :property property}
+       nil
+       (with-out-str (prn data))))
+
+(defn update-text-i18n
+  [parent-type parent-id property text-i18n-id data]
+  (POST "/library/text-i18n"
+        {:parent-type parent-type :parent-id parent-id :property property :text-i18n text-i18n-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn delete-text-i18n
+  [parent-type parent-id property text-i18n-id]
+  (DELETE "/library/text-i18n" 
+          {:parent-type parent-type :parent-id parent-id :property property :text-i18n text-i18n-id} nil nil))

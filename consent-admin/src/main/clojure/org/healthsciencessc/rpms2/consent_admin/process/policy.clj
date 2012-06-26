@@ -22,7 +22,9 @@
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :code :label "Code"}
-             {:name :policy-definition :label "Policy Definition" :type :singleselect :required true :blank true :parser :id}])
+             {:name :policy-definition :label "Policy Definition" :type :singleselect :required true :blank true :parser :id}
+             {:name :titles :label "Titles" :type :i18ntext}
+             {:name :texts :label "Texts" :type :i18ntext}])
 
 (def type-name types/policy)
 (def type-label "Policy")
@@ -67,7 +69,8 @@
   (if-let [node-id (lookup/get-policy-in-query ctx)]
     (let [n (services/get-policy node-id)
           org-id (get-in n [:organization :id])
-          policy-definition (get-in n [:policy-definition :id])]
+          policy-definition (get-in n [:policy-definition :id])
+          langs (services/get-languages)]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
@@ -75,7 +78,17 @@
                          (form/dataform 
                            (form/render-fields 
                              {:fields {:policy-definition {:readonly true
-                                                          :items (gen-policy-definition-items org-id)}}} fields n)))
+                                                          :items (gen-policy-definition-items org-id)}
+                                       :titles {:languages langs 
+                                                :url "/api/text/i18n"
+                                                :params {:parent-id node-id
+                                                         :parent-type type-name
+                                                         :property :titles}}
+                                       :texts {:languages langs 
+                                                :url "/api/text/i18n"
+                                                :params {:parent-id node-id
+                                                         :parent-type type-name
+                                                         :property :texts}}}} fields n)))
                        (actions/actions
                          (actions/details-action 
                            {:url (str "/view/" type-path "/types") 
@@ -92,12 +105,15 @@
 (defn view-policy-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
-  (let [org-id (common/lookup-organization ctx)]
+  (let [org-id (common/lookup-organization ctx)
+        langs (services/get-languages)]
     (layout/render ctx (str "Create " type-label)
                    (container/scrollbox 
                      (form/dataform 
                        (form/render-fields 
-                         {:fields {:policy-definition {:items (gen-policy-definition-items org-id)}}} fields {})))
+                         {:fields {:policy-definition {:items (gen-policy-definition-items org-id)}
+                                   :titles {:languages langs}
+                                   :texts {:languages langs}}} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})

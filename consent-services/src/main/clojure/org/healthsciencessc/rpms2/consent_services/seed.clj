@@ -127,7 +127,7 @@
             {:name name
              :code code
              :status types/status-published
-             :organization def-org})))
+             :organization def-org} match/codes-match?)))
 
 (defn- create-meta-items 
   "Creates the languages that are available from the base organization if they do not exist."
@@ -147,9 +147,9 @@
     (create types/meta-item
             {:name name
              :data-type datatype
-             :label {:value name :language lang}
+             :labels [{:value name :language lang}]
              :status types/status-published
-             :organization org})))
+             :organization org} match/orgs-names-match?)))
 
 (defn- create-policy-definitions 
   "Creates the policy definitions that are available from the base organization if they do not exist."
@@ -173,7 +173,7 @@
             {:name name
              :description description
              :code code
-             :organization org})))
+             :organization org} match/codes-match?)))
 
 (defn- get-role-by-code
   "Looks up roles by there code value."

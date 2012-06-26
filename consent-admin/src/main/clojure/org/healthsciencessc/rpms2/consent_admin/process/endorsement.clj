@@ -22,7 +22,8 @@
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :code :label "Code"}
-             {:name :endorsement-type :label "Type" :type :singleselect :required true :blank true :parser :id}])
+             {:name :endorsement-type :label "Type" :type :singleselect :required true :blank true :parser :id}
+             {:name :labels :label "Labels" :type :i18ntext}])
 
 (def type-name types/endorsement)
 (def type-label "Endorsement")
@@ -67,7 +68,8 @@
   (if-let [node-id (lookup/get-endorsement-in-query ctx)]
     (let [n (services/get-endorsement node-id)
           org-id (get-in n [:organization :id])
-          endorsement-type (get-in n [:endorsement-type :id])]
+          endorsement-type (get-in n [:endorsement-type :id])
+          langs (services/get-languages)]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
@@ -75,7 +77,12 @@
                          (form/dataform 
                            (form/render-fields 
                              {:fields {:endorsement-type {:readonly true
-                                                          :items (gen-endorsement-type-items org-id)}}} fields n)))
+                                                          :items (gen-endorsement-type-items org-id)}
+                                       :labels {:languages langs 
+                                                                  :url "/api/text/i18n"
+                                                                  :params {:parent-id node-id
+                                                                           :parent-type type-name
+                                                                           :property :labels}}}} fields n)))
                        (actions/actions
                          (actions/details-action 
                            {:url (str "/view/" type-path "/types") 
@@ -92,12 +99,14 @@
 (defn view-endorsement-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
-  (let [org-id (common/lookup-organization ctx)]
+  (let [org-id (common/lookup-organization ctx)
+        langs (services/get-languages)]
     (layout/render ctx (str "Create " type-label)
                    (container/scrollbox 
                      (form/dataform 
                        (form/render-fields 
-                         {:fields {:endorsement-type {:items (gen-endorsement-type-items org-id)}}} fields {})))
+                         {:fields {:endorsement-type {:items (gen-endorsement-type-items org-id)}
+                                   :labels {:languages langs}}} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})

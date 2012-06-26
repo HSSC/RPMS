@@ -127,6 +127,137 @@ $(function(){
 					confirm, {onsuccess: actionOnSuccess});
 		}
 	});
+	
+	// Register Event - Click Add Image On i18n Text Control
+	PaneManager.on("click", ".i18ntext-add", function(event){
+		var target = RPMS.findTarget(event, "div.i18ntext");
+		var editable = Utils.DataSet.getBoolean(target, "data-editable");
+		if(editable){
+			var langs = Utils.DataSet.getObject(target, "data-languages");
+			var rows = target.find("tr");
+			for(var r = 0; r < rows.length; r++){
+				var text = Utils.DataSet.getObject(rows[r], "data-text");
+				if(text != null){
+					for(var l = (langs.length - 1); l >= 0; l--){
+						if(text.language.code == langs[l].code){
+							langs.splice(l, 1);
+							break;
+						}
+					}
+				}
+			}
+			if(langs.length == 0){
+				Dialog.inform({message: "All of the available languages have text associated with them."});
+				return;
+			}
+			var url = Utils.DataSet.get(target, "data-url");
+			var params = Utils.DataSet.get(target, "data-params");
+			var onchange = function(orig, text, lang){
+				var item = {value: text, language: lang};
+				
+				var insertRow = function(x){
+					var row = $("<tr class='i18ntext'><td class='i18ntext-lang'>" + x.language.name + "</td>" +
+							"<td class='i18ntext-text'>" + x.value + 
+							"</td><td class='i18ntext-action'><img class='i18ntext-edit' src='" +
+							Utils.Url.render("/image/edit.png") + "' /><img class='i18ntext-delete' src='" + 
+							Utils.Url.render("/image/delete.png") + "' /></td></tr>");
+					row.appendTo(target.children("table"))
+					Utils.DataSet.set(row, "data-text", x);
+				};
+				
+				if(url != null){
+					var fullUrl = Utils.Url.render(url, params);
+					RPMS.Action.doAjax("put", fullUrl, JSON.stringify(item), null, null, {success: function(data, status, xhr){
+						var item = $.parseJSON(data);
+						insertRow(item);
+						Dialog.Progress.end();
+					}});
+				}
+				else{
+					var data = Utils.DataSet.get(target, "data-value", []);
+					data.push(item);
+					Utils.DataSet.set(target, "data-value", data);
+					Utils.DataSet.set(target, "data-changed", true);
+					insertRow(item);
+				}
+			}
+			Dialog.text({languages: langs, onchange: onchange});
+		}
+	});
+	
+	// Register Event - Click Delete Image On i18n Text Control
+	PaneManager.on("click", ".i18ntext-delete", function(event){
+		var target = RPMS.findTarget(event, "div.i18ntext");
+		var editable = Utils.DataSet.getBoolean(target, "data-editable");
+		if(editable){
+			var row = RPMS.findTarget(event, "tr");
+			var text = Utils.DataSet.getObject(row, "data-text");
+			var url = Utils.DataSet.get(target, "data-url");
+			var params = Utils.DataSet.getObject(target, "data-params", {});
+			if(url != null){
+				params["text-i18n"] = text.id;
+				var fullUrl = Utils.Url.render(url, params);
+				var confirm = Utils.DataSet.getObject(target, "data-confirm");
+				RPMS.Action.doAjax("delete", fullUrl, null, confirm, null, {success: function(data, status, xhr){
+					row.remove();
+					Dialog.Progress.end();
+				}});
+			}
+			else{
+				var texts = Utils.DataSet.getObject(target, "data-value", []);
+				for(var t = (texts.length - 1); t >= 0; t--){
+					if(text.language.code == texts[t].language.code){
+						texts.splice(t, 1);
+						break;
+					}
+				}
+				Utils.DataSet.set(target, "data-value", texts);
+				Utils.DataSet.set(target, "data-changed", true);
+				row.remove();
+			}
+		}
+	});
+	
+	// Register Event - Click Delete Image On i18n Text Control
+	PaneManager.on("click", ".i18ntext-edit", function(event){
+		var target = RPMS.findTarget(event, "div.i18ntext");
+		var editable = Utils.DataSet.getBoolean(target, "data-editable");
+		if(editable){
+			var langs = Utils.DataSet.getObject(target, "data-languages");
+			var row = RPMS.findTarget(event, "tr");
+			var data = Utils.DataSet.getObject(row, "data-text");
+			var url = Utils.DataSet.get(target, "data-url");
+			var params = Utils.DataSet.getObject(target, "data-params", {});
+			
+			var updateText = function(text){
+				data.value = text;
+				var cell = row.children("td.i18ntext-text");
+				cell.text(text);
+				var texts = Utils.DataSet.getObject(target, "data-value", []);
+				for(var t = (texts.length - 1); t >= 0; t--){
+					if(data.language.code == texts[t].language.code){
+						texts[t].value = text;
+						break;
+					}
+				}
+			}
+
+			var onchange = function(orig, text, lang){
+				if(url != null){
+					params["text-i18n"] = data.id;
+					var fullUrl = Utils.Url.render(url, params);
+					RPMS.Action.doAjax("post", fullUrl, JSON.stringify({value: text}), null, null, {success: function(data, status, xhr){
+						updateText(text);
+						Dialog.Progress.end();
+					}});
+				}
+				else{
+					updateText(text);
+				}
+			}
+			Dialog.text({current: {value: data.value, language: data.language}, onchange: onchange});
+		}
+	});
 });
 
 var RPMS = {
@@ -178,6 +309,7 @@ var RPMS = {
 	getDataMap: function(changes){
 		var data = {};
 		var form = RPMS.getForm();
+		// Get Formal Inputs
 		var inputs = form.find(":input");
 		inputs.each(function(i, e){
 			var name = e.name;
@@ -218,6 +350,18 @@ var RPMS = {
 			}
 			if(changes != true || value != origValue){
 				data[name] = value;
+			}
+		});
+		// Get Custom Inputs
+		var customs = form.find(".custom-input");
+		customs.each(function(i, e){
+			var persist = Utils.DataSet.getBoolean(e, "data-persist");
+			if(persist){
+				var name = Utils.DataSet.get(e, "data-name");
+				var value = Utils.DataSet.getObject(e, "data-value");
+				if(changes != true || Utils.DataSet.getBoolean(e, "data-changed")){
+					data[name] = value;
+				}
 			}
 		});
 		return data;

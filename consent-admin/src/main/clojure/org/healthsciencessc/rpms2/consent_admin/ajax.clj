@@ -8,7 +8,7 @@
   [status body]
   {:status status
    :headers headers
-   :body (if (and body (not= String body)) (json/json-str body) "")})
+   :body body})
 
 (defn success
   "Function called to return a successful response"

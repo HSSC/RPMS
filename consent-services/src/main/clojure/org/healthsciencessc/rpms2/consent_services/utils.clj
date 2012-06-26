@@ -103,6 +103,7 @@
 ;; Lookups Up Specifically Requested Types From The ID Passed In The Request
 (def get-endorsement-record (gen-record-lookup types/endorsement lookup/get-endorsement-in-query))
 (def get-endorsement-type-record (gen-record-lookup types/endorsement-type lookup/get-endorsement-type-in-query))
+(def get-form-record (gen-record-lookup types/form lookup/get-form-in-query))
 (def get-group-record (gen-record-lookup types/group lookup/get-group-in-query))
 (def get-language-record (gen-record-lookup types/language lookup/get-language-in-query))
 (def get-location-record (gen-record-lookup types/location lookup/get-location-in-query))
@@ -115,4 +116,5 @@
 (def get-role-record (gen-record-lookup types/role lookup/get-role-in-query))
 (def get-role-mapping-record (gen-record-lookup types/role-mapping lookup/get-role-mapping-in-query))
 (def get-user-record (gen-record-lookup types/user lookup/get-user-in-query))
+(def get-text-i18n-record (gen-record-lookup types/text-i18n lookup/get-text-i18n-in-query))
 (def get-widget-record (gen-record-lookup types/widget lookup/get-widget-in-query))

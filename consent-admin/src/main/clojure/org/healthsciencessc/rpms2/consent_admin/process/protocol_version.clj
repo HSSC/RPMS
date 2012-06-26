@@ -21,14 +21,14 @@
 (def fields [{:name :version :label "Version"}
              {:name :status :label "Status" :readonly true}])
 
-(defn- render-label
+(defn render-label
   [protocol & addons]
   (let [org (security/current-org)
         location (:location protocol)
         label (tenancy/label-for-protocol location org)]
     (str label (apply str addons))))
 
-(defn- version-name
+(defn version-name
   [version]
   (str (:version version) " [" (:status version) "]"))
 
@@ -98,7 +98,7 @@
                          (if (types/draft? protocol-version)
                            (list
                              (actions/push-action 
-                               {:url "/view/protocol/version/form" :params {:protocol-version protocol-version-id} 
+                               {:url "/view/protocol/version/designer" :params {:protocol-version protocol-version-id} 
                                 :label "Layout"})
                              (actions/ajax-action 
                                {:method :post :url "/api/protocol/version/submit" :params {:protocol-version protocol-version-id}
@@ -138,14 +138,16 @@
       (if (empty? in-progress)
         (let [protocol (services/get-protocol protocol-id)
               last-version (or (:last-version protocol) (count versions))
+              lang (or (get-in protocol [:organization :language])
+                       (first (filter #(= "en" (:code %)) (services/get-languages))))
               version {:version (+ 1 last-version)
                        :protocol protocol
                        :location (:location protocol)
-                       :organization (:organization protocol)}
+                       :organization (:organization protocol)
+                       :languages [lang] ;; TODO - Change When create-records is fixed.
+                       :form {:name (str (:name protocol) " Layout")  ;; TODO - Change When create-records is fixed.
+                              :titles [{:value (:name protocol) :language lang}]}}
               resp (services/add-protocol-version version)]
-          (info "Creating new version" version)
-          (info "Version Response" resp)
-              
           ;; Handle Error or Success
           (if (services/service-error? resp)
             (ajax/save-failed (meta resp))

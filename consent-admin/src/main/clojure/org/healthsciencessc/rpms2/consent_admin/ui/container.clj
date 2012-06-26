@@ -1,6 +1,7 @@
 ;; Provides helper functions for generating certain jquery scripts on the browser.
 (ns org.healthsciencessc.rpms2.consent-admin.ui.container
-  (:require [clojure.string :as twine])
+  (:require [clojure.string :as twine]
+            [hiccup.page :as page])
   (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
 
 ;; Defines a ScrollBox container that provides scrollbars when content goes
@@ -14,6 +15,20 @@
 (defn cutbox
   [& content]
   [:div.cutbox content])
+
+;; Defines a cutbox container that will cut off all content that goes outside
+;; it's boundaries.
+(defn designer
+  [options]
+  (let [protocol-version (:protocol-version options)
+        editable (if (:editable options) true false)
+        props {:data-protocol (to-attr-value protocol-version) :data-editable editable}
+        url-props (if editable {:data-url (:url options)
+                                :data-params (:params options)} {})]
+    (list
+      [:div#consent-designer (merge props url-props)]
+      (page/include-js "/js/consent-designer.js"))))
+
 
 ;; Defines a tab control.
 (defn- gen-tab-name
