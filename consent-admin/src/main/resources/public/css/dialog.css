@@ -9,3 +9,22 @@ div#progress{
 img.progress{
 	position: absolute;
 }
+
+select.language{
+	position: absolute;
+	margin: 0;
+	padding: 0;
+	top: .5em;
+	left: .5em;
+	width: 8em;
+}
+textarea.i18ntext{
+	overflow: scroll;
+	position: absolute;
+	margin: 0;
+	padding: 0;
+	top: .5em;
+	bottom: 0em;
+	left: 9em;
+	right: .5em;
+}

@@ -27,7 +27,8 @@
                                                                                {:label "Number" :data "number"}
                                                                                {:label "Boolean" :data "boolean"}]}
              ;;{:name :choice-values :label "Choice Values"}
-             {:name :default-value :label "Default Value"}])
+             {:name :default-value :label "Default Value"}
+             {:name :labels :label "Labels" :type :i18ntext}])
 
 (def type-name types/meta-item)
 (def type-label "Meta Item")
@@ -61,13 +62,19 @@
  [ctx]
   (if-let [node-id (lookup/get-meta-item-in-query ctx)]
     (let [n (services/get-meta-item node-id)
-          editable (common/owned-by-user-org n)]
+          editable (common/owned-by-user-org n)
+          langs (services/get-languages)]
       (if (meta n)
         (rutil/not-found (:message (meta n)))
         (layout/render ctx (str type-label ": " (:name n))
                        (container/scrollbox 
                          (form/dataform 
-                           (form/render-fields {:editable editable} fields n)))
+                           (form/render-fields {:editable editable
+                                                :fields {:labels {:languages langs 
+                                                                  :url "/api/text/i18n"
+                                                                  :params {:parent-id node-id
+                                                                           :parent-type type-name
+                                                                           :property :labels}}}} fields n)))
                        (actions/actions
                          (if editable
                            (list
@@ -82,11 +89,12 @@
 (defn view-meta-item-new
   "Generates a view that allows you to create a new protocol."
   [ctx]
-  (let [org-id (common/lookup-organization ctx)]
+  (let [org-id (common/lookup-organization ctx)
+        langs (services/get-languages)]
     (layout/render ctx (str "Create " type-label)
                    (container/scrollbox 
                      (form/dataform 
-                       (form/render-fields {} fields {})))
+                       (form/render-fields {:fields {:labels {:languages langs}}} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})

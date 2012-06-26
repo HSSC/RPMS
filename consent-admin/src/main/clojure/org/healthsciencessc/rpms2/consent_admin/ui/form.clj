@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.form
-  (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
+  (:use [org.healthsciencessc.rpms2.consent-admin.ui.common])
+  (:require [hiccup.element :as helement]))
 
 (def readonly-props {:disabled true})
 
@@ -104,6 +105,35 @@
      [(tag-class :label.relations-list classes) {:for name} label]
      [(tag-class :div.relations-list )]]))
 
+(defn i18ntext
+  [{label :label 
+    name :name
+    value :value
+    classes :classes
+    languages :languages
+    editable :editable
+    url :url
+    params :params}]
+  (let [editable (not (false? editable))
+        edit-props (if editable {:data-editable true} {})
+        props {:data-languages (to-attr-value languages)}
+        input-props (if url {:data-url url :data-params (to-attr-value params) :data-persist false} {:data-persist true :data-name name} )]
+    [(tag-class :div.form-control-wrapper.i18ntext.custom-input classes) (merge props edit-props input-props)
+     [:div.form-label label]
+     [:table.i18ntext
+      [:tr.i18ntext
+       [:th.i18ntext-lang "Language"]
+       [:th.i18ntext-text "Display Text"]
+       (if editable [:th.i18ntext-action (helement/image {:class "i18ntext-add"} "/image/add.png" ) ])]
+      (for [t value]
+        [:tr.i18ntext {:data-text (to-attr-value t)}
+         [:td.i18ntext-lang (get-in t [:language :name])]
+         [:td.i18ntext-text (:value t)]
+         (if editable [:td.i18ntext-action 
+                       (helement/image {:class "i18ntext-edit"} "/image/edit.png" )
+                       (helement/image {:class "i18ntext-delete"} "/image/delete.png" ) ])]
+        )]]))
+
 ;; Define the generic edit-field methods
 (defmulti edit-field :type)
 
@@ -126,6 +156,10 @@
 (defmethod edit-field :multiselect
   [field]
   (multiselect field))
+
+(defmethod edit-field :i18ntext
+  [field]
+  (i18ntext field))
 
 (defmethod edit-field :default
   [field]

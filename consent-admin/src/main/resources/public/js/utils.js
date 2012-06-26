@@ -154,40 +154,61 @@ Utils.Size = {
 	}
 };
 Utils.DataSet = {
-	dataAttribute: function(attribute){
-		if(attribute.indexOf("data-") != 0){
-			attribute = "data-" + attribute;
+	keyName: function(key){
+		if(key.indexOf("data-") == 0){
+			key = key.substring(5);
 		}
-		return attribute;
+		return key;
 	},
-	get: function(target, attribute, defaultValue){
-		attribute = this.dataAttribute(attribute);
-		return Utils.Element.getAttribute(target, attribute, defaultValue);
+	get: function(target, key, defaultValue){
+		key = this.keyName(key);
+		var value = null;
+		if(target.data){
+			value = target.data(key)
+		}
+		else{
+			value = $(target).data(key);
+		}
+		if(value == null){
+			return defaultValue;
+		}
+		return value;
 	},
 	
-	getBoolean: function(target, attribute, defaultValue){
-		attribute = this.dataAttribute(attribute);
-		var val = this.get(target, attribute, defaultValue);
-		if(val != null && (val == true || val == "true" || val == attribute)){
+	getBoolean: function(target, key, defaultValue){
+		var val = this.get(target, key, defaultValue);
+		if(val != null && (val == true || val == "true" || val == key || val == ("data-" + key))){
 			return true;
 		}
 		return false;
 	},
 	
-	getObject: function(target, attribute){
-		var value = this.get(target, attribute);
+	getObject: function(target, key, defaultValue){
+		var value = this.get(target, key);
 		if(value != null && typeof value == 'string'){
 			return $.parseJSON(value);
 		}
+		if(value == null){
+			return defaultValue;
+		}
 		return value;
 	},
-	getNumber: function(target, attribute, defaultValue){
-		var val = this.get(target, attribute);
+	getNumber: function(target, key, defaultValue){
+		var val = this.get(target, key);
 		if(!isNaN(val)){
 			return new Number(val).valueOf();
 		}
 		return defaultValue;
-	} 
+	},
+	set: function(target, key, value){
+		key = this.keyName(key);
+		if(target.data){
+			target.data(key, value);
+		}
+		else{
+			$(target).data(key, value);
+		}
+	}
 };
 Utils.Element = {
 	getAttribute: function(target, attribute, defaultValue){
@@ -222,11 +243,22 @@ Utils.Element = {
 		}
 		return defaultValue;
 	},
-	getNumber: function(target, attribute, defaultValue){
+	getNumberAttribute: function(target, attribute, defaultValue){
 		var value = this.get(target, attribute);
 		if(!isNaN(value)){
 			return new Number(value).valueOf();
 		}
 		return defaultValue;
-	} 
+	},
+	setAttribute: function(target, attribute, value){
+		if(target.setAttribute){
+			target.setAttribute(attribute, value);
+		}
+		else if(target.attr){
+			target.attr(attribute, value);
+		}
+		else{
+			throw "You are using the Utils.Element.setAttribute method wrong.";
+		}
+	}
 }

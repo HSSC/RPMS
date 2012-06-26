@@ -22,6 +22,7 @@
 ;; Lookups the search for the ID of the type in the request params using the common naming pattern.
 (def get-endorsement-in-query (gen-request-query-lookup [:endorsement]))
 (def get-endorsement-type-in-query (gen-request-query-lookup [:endorsement-type]))
+(def get-form-in-query (gen-request-query-lookup [:form]))
 (def get-group-in-query (gen-request-query-lookup [:group]))
 (def get-language-in-query (gen-request-query-lookup [:language]))
 (def get-location-in-query (gen-request-query-lookup [:location]))
@@ -33,6 +34,7 @@
 (def get-protocol-version-in-query (gen-request-query-lookup [:protocol-version]))
 (def get-role-in-query (gen-request-query-lookup [:role]))
 (def get-role-mapping-in-query (gen-request-query-lookup [:role-mapping]))
+(def get-text-i18n-in-query (gen-request-query-lookup [:text-i18n]))
 (def get-user-in-query (gen-request-query-lookup [:user]))
 (def get-widget-in-query (gen-request-query-lookup [:widget]))
 

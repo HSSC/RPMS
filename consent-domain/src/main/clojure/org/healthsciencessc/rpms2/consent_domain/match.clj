@@ -52,6 +52,30 @@
   [thing1 thing2]
   (deep-key-match? [:organization :id] thing1 thing2))
 
+(defn codes-match?
+  "Checks if two records have matching codes."
+  [thing1 thing2]
+  (keys-match? [:code] thing1 thing2))
+
+(defn names-match?
+  "Checks if two records have matching codes."
+  [thing1 thing2]
+  (keys-match? [:name] thing1 thing2))
+
+(defn orgs-codes-match?
+  "Checks if two records match each other based on the 
+   value of the code within the same organization."
+  [thing1 thing2]
+  (and (same-org? thing1 thing2)
+    (codes-match? thing1 thing2)))
+
+(defn orgs-names-match?
+  "Checks if two records match each other based on the 
+   value of the name within the same organization."
+  [thing1 thing2]
+  (and (same-org? thing1 thing2)
+    (names-match? thing1 thing2)))
+
 (defn users-match?
   "Checks if two roles match each other based on rules for metadata uniqueness, which is based on the value of
    the username."
@@ -62,27 +86,25 @@
   "Checks if two organizations match each other based on rules for metadata uniqueness, which is based on the 
    value of the code."
   [thing1 thing2]
-  (keys-match? [:code] thing1 thing2))
+  (codes-match? thing1 thing2))
 
 (defn roles-match?
   "Checks if two roles match each other based on rules for metadata uniqueness, which is based on the 
    value of the code."
   [thing1 thing2]
-  (keys-match? [:code] thing1 thing2))
+  (codes-match? thing1 thing2))
 
 (defn locations-match?
   "Checks if two locations match each other based on rules for metadata uniqueness, which is based on the 
    value of the code within the same organization."
   [thing1 thing2]
-  (and (same-org? thing1 thing2)
-    (keys-match? [:code] thing1 thing2)))
+  (orgs-codes-match? thing1 thing2))
 
 (defn groups-match?
   "Checks if two groups match each other based on rules for metadata uniqueness, which is based on the 
    value of the code within the same organization."
   [thing1 thing2]
-  (and (same-org? thing1 thing2)
-    (keys-match? [:name] thing1 thing2)))
+  (orgs-names-match? thing1 thing2))
 
 (defn role-mapping-match?
   "Checks if two role-mappings match each other based on rules for metadata uniqueness, which is based on the 

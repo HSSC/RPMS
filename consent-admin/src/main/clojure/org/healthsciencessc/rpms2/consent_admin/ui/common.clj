@@ -7,6 +7,8 @@
   [v]
   (cond
     (map? v) (json/json-str v)
+    (vector? v) (json/json-str v)
+    (seq? v) (json/json-str (vec v))
     :else
     v))
 

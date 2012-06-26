@@ -21,7 +21,7 @@ var PaneManager = {
 	
 	initContent: function(content){
 		this.content = content;
-		this.content.empty();
+		//this.content.empty();
 		var r = this.initRequest;
 		if(r != null){
 			this.stack(r.url, r.params, r.options);
