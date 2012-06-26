@@ -147,7 +147,7 @@
     (create types/meta-item
             {:name name
              :data-type datatype
-             :labels [{:value name :language lang}]
+             :labels [{:value [name] :language lang}]
              :status types/status-published
              :organization org} match/orgs-names-match?)))
 

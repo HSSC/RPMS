@@ -62,7 +62,8 @@
     (page/include-css "/css/clean.css"
                       "/css/redmond/jquery-ui-1.8.19.custom.css"
                       "/css/dialog.css"
-                      "/css/consent-admin.css")
+                      "/css/consent-admin.css"
+                      "/css/consent-designer.css")
     (page/include-js "/js/jquery-1.7.2.min.js"
                      "/js/jquery-ui-1.8.19.custom.min.js"
                      "/js/utils.js"

@@ -156,8 +156,9 @@ $(function(){
 				var item = {value: text, language: lang};
 				
 				var insertRow = function(x){
+					var val = x.value != null ? x.value.join("</br>") : "" ;
 					var row = $("<tr class='i18ntext'><td class='i18ntext-lang'>" + x.language.name + "</td>" +
-							"<td class='i18ntext-text'>" + x.value + 
+							"<td class='i18ntext-text'>" + val + 
 							"</td><td class='i18ntext-action'><img class='i18ntext-edit' src='" +
 							Utils.Url.render("/image/edit.png") + "' /><img class='i18ntext-delete' src='" + 
 							Utils.Url.render("/image/delete.png") + "' /></td></tr>");
@@ -231,8 +232,9 @@ $(function(){
 			
 			var updateText = function(text){
 				data.value = text;
+				var val = text != null ? text.join("</br>") : "" ;
 				var cell = row.children("td.i18ntext-text");
-				cell.text(text);
+				cell.text(val);
 				var texts = Utils.DataSet.getObject(target, "data-value", []);
 				for(var t = (texts.length - 1); t >= 0; t--){
 					if(data.language.code == texts[t].language.code){

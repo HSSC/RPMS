@@ -64,13 +64,24 @@ var Dialog = {
 		
 		var current = options.current;
 		var currentText = current != null ? current.value : null;
+		var originalText = null;
+		var originalTextArray = null;
+		if(currentText instanceof Array){
+			originalTextArray = currentText;
+			originalText = Dialog.Utils.arrayToText(currentText);
+		}
+		else{
+			originalText = currentText;
+			originalTextArray = Dialog.Utils.textToArray(currentText);
+		}
+		
 		var currentLang = current != null ? current.language : null;
 		var languages = options.languages;
 		this.textLanguage.empty();
 		this.textText.val("");
 		
 		if(current != null){
-			this.textText.val(currentText);
+			this.textText.val(originalText);
 			var option = new Option(currentLang.name, currentLang.code, true, true);
 			$(option).data("language", currentLang);
 			this.textLanguage.append(option);
@@ -100,8 +111,8 @@ var Dialog = {
 				$(this).dialog( "close" );
 				var text = textArea.val();
 				var option = langSelect.children("option:selected");
-				if((current == null && text != null) || text != currentText){
-					if(options.onchange) options.onchange(current, text, option.data("language"));
+				if((current == null && text != null) || text != originalText){
+					if(options.onchange) options.onchange(current, Dialog.Utils.textToArray(text), option.data("language"));
 				}
 			};
 		buts[cancelLabel] = function (){$(this).dialog( "close" );};
@@ -148,10 +159,35 @@ Dialog.Progress = {
 	}
 };
 
-Dialog.test = {
-	onchange: function(current, text, lang){
-		var c = current;
-		var t = text;
-		var l = lang;
+Dialog.Utils = {
+	validText: function(text){
+		if(text != null && typeof text == "string" && text.trim().length > 0){
+			return true;
+		}
+		return false;
+	},
+	textToArray: function(text){
+		if(text != null){
+			var items = text.split("\n");
+			for(var i = items.length - 1; i >= 0; i--){
+				if(!Dialog.Utils.validText(items[i])){
+					items.splice(i, 1);
+				}
+			}
+			return items;
+		}
+		return null;
+	},
+	arrayToText: function(texts){
+		if(texts instanceof Array){
+			var text = "";
+			for(var i = 0; i < texts.length; i++){
+				if(Dialog.Utils.validText(texts[i])){
+					text = text + texts[i] + "\n\n";
+				}
+			}
+			return text;
+		}
+		return null;
 	}
-};
+}

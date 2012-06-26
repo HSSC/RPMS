@@ -146,7 +146,7 @@
                        :organization (:organization protocol)
                        :languages [lang] ;; TODO - Change When create-records is fixed.
                        :form {:name (str (:name protocol) " Layout")  ;; TODO - Change When create-records is fixed.
-                              :titles [{:value (:name protocol) :language lang}]}}
+                              :titles [{:value [(:name protocol)] :language lang}]}}
               resp (services/add-protocol-version version)]
           ;; Handle Error or Success
           (if (services/service-error? resp)

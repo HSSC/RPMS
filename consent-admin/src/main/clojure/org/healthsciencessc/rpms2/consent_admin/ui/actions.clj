@@ -16,6 +16,14 @@
 (def default-verify 
   {:title "Confirm Action" :message "Please provide a user friendly verification message."})
 
+(defn gen-verify-a-selected
+  [item]
+  {:action :selected :title (str "Select " item) :message (str "Please select a " item " to continue.")})
+
+(defn gen-verify-an-selected
+  [item]
+  {:action :selected :title (str "Select " item) :message (str "Please select an " item " to continue.")})
+
 (defn- confirm-to-attr
   [conf]
   (cond

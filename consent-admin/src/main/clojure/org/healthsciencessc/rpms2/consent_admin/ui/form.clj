@@ -126,13 +126,14 @@
        [:th.i18ntext-text "Display Text"]
        (if editable [:th.i18ntext-action (helement/image {:class "i18ntext-add"} "/image/add.png" ) ])]
       (for [t value]
-        [:tr.i18ntext {:data-text (to-attr-value t)}
-         [:td.i18ntext-lang (get-in t [:language :name])]
-         [:td.i18ntext-text (:value t)]
-         (if editable [:td.i18ntext-action 
-                       (helement/image {:class "i18ntext-edit"} "/image/edit.png" )
-                       (helement/image {:class "i18ntext-delete"} "/image/delete.png" ) ])]
-        )]]))
+        (let [text (:value t)
+              inserted-text (if (coll? text) (interpose "<br />" text) text)]
+          [:tr.i18ntext {:data-text (to-attr-value t)}
+           [:td.i18ntext-lang (get-in t [:language :name])]
+           [:td.i18ntext-text inserted-text]
+           (if editable [:td.i18ntext-action 
+                         (helement/image {:class "i18ntext-edit"} "/image/edit.png" )
+                         (helement/image {:class "i18ntext-delete"} "/image/delete.png" ) ])]))]]))
 
 ;; Define the generic edit-field methods
 (defmulti edit-field :type)

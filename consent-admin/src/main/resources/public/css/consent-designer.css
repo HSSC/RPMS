@@ -1,0 +1,92 @@
+div#consent-designer{
+
+}
+
+div.consent-designer-pane{
+	position: relative;
+	height: 100%;
+	width: 100%;
+	top: 0;
+	left: 0;
+}
+
+div.consent-designer-selector{
+	background-color: #DFEFFC;
+	border-right: solid 1px blue;
+	width: 7.95em;
+	height: 100%;
+	position: relative;
+	float: left;
+}
+
+div.consent-designer-content{
+	background-color: #F5F8F9;
+	position: relative;
+	height: 100%;
+	float: left;
+}
+
+div.consent-designer-imput{
+	position: relative;
+}
+
+img.consent-designer-resize{
+	
+}
+
+ul.consent-designer-selector{
+	padding-left: 0;
+	width: 8em;
+}
+
+ul.consent-designer-selector li{
+	list-style-type: none;
+	padding: .25em .25em .25em .5em;
+	border-top: solid 1px #DFEFFC;
+	border-bottom: solid 1px #DFEFFC;
+	border-right: solid 1px blue;
+}
+
+ul.consent-designer-selector li.selected{
+	list-style-type: none;
+	padding: .25em .25em .25em 1em;
+	background-color: #F5F8F9;
+	border-top: solid 1px blue;
+	border-right: solid 1px #F5F8F9;
+	border-bottom: solid 1px blue;
+	font-weight: bold;
+}
+
+div.consent-designer-data{
+	position: relative;
+	width: 100%;
+	display: block;
+	margin-left: .5em;
+}
+
+div.consent-designer-data-fields{
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 16em;
+}
+
+div.consent-designer-data-actions{
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 16em;
+	text-align: center;
+}
+
+div.consent-designer-data-save{
+	margin-top: 1.25em;
+	width: 10em;
+	padding: .3em;
+}
+
+div.consent-designer-data-delete{
+	margin-top: 1.25em;
+	width: 10em;
+	padding: .3em;
+}
