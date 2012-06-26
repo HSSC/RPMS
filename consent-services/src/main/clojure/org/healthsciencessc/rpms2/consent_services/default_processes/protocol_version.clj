@@ -65,7 +65,7 @@
         protocol-id (get-in protocol-version [:protocol :id])
         user (get-in ctx [:session :current-user])]
     (if (protocol/user-is-designer-for-protocol user protocol-id)
-      protocol-version 
+      protocol-version
       false)))
 
 (defn auth-designer-for-protocol-draft
@@ -85,6 +85,59 @@
   (let [protocol-version (auth-designer-for-protocol ctx)]
     (and protocol-version (types/published? protocol-version))))
 
+(def reformatted-types
+  [:policies :endorsements :meta-items :form])
+
+(defn get-lang-value
+  [text-coll lang-map]
+  (let [lang-id (:id (:lang lang-map))
+        default-lang-id (:id (:default-lang lang-map))]
+    (:value (or (first (filter (fn [text] (= lang-id (get-in text [:language :id]))) text-coll))
+                (first (filter (fn [text] (= default-lang-id (get-in text [:language :id]))) text-coll))))))
+
+(defn map-by-id
+  [coll value-fn]
+  (into {}
+        (for [elem coll]
+          [(:id elem) (value-fn elem)])))
+
+(defmulti reformat-type
+  (fn [type data lang-map]
+    type))
+
+(defmethod reformat-type :policies
+  [type policies lang-map]
+  (map-by-id policies
+             (fn [policy]
+               {:title (get-lang-value (:titles policy) lang-map)
+                :text (get-lang-value (:texts policy) lang-map)})))
+
+(defmethod reformat-type :meta-items
+  [type meta-items lang-map]
+  (map-by-id meta-items
+             (fn [meta-item]
+               {:label (get-lang-value (:labels meta-item) lang-map)})))
+
+(defmethod reformat-type :endorsements
+  [type endorsements lang-map]
+  (map-by-id endorsements
+             (fn [endorsement]
+               {:label (get-lang-value (:labels endorsement) lang-map)
+                :endorsement-type (:endorsement-type endorsement)})))
+
+(defmethod reformat-type :form
+  [type form lang-map]
+  (assoc (select-keys form [:contains :collect-start :review-start])
+    :title (get-lang-value (:titles form) lang-map)))
+
+(defn reformat-version-data
+  [version-id lang-map]
+  (let [protocol-version (data/find-record types/protocol-version version-id)]
+    (assoc (into {}
+                 (for [type reformatted-types]
+                   [type (reformat-type type (type protocol-version) lang-map)]))
+      :id version-id)))
+
 (def protocol-version-processes
   [{:name "get-protocol-versions"
     :runnable-fn (fn [params]
@@ -101,6 +154,22 @@
     :run-fn (fn [params]
               (let [protocol-version-id (get-in params [:query-params :protocol-version])]
                 (data/find-record types/protocol-version protocol-version-id)))
+    :run-if-false forbidden-fn}
+
+   {:name "get-protocol-versions-published-form"
+    :runnable-fn (fn [params]
+                   (let [protocol-version (data/find-record types/protocol-version (get-in params [:query-params :protocol-version]))
+                         location (:location (data/find-record types/protocol (:protocol protocol-version)))]
+                     (or (runnable/can-design-protocol-version (utils/current-user params) protocol-version)
+                         (runnable/can-collect-location (utils/current-user params) location))))
+    :run-fn (fn [params]
+              (let [q-params (get-in params [:query-params :protocol-version])
+                    protocol-version-ids (if (coll? q-params) q-params (list q-params))
+                    default-lang (:language (utils/current-org params))
+                    lang-id (get-in params [:query-params :language])
+                    requested-lang (if lang-id (data/find-record types/language lang-id) default-lang)]
+                (map #(reformat-version-data % {:lang requested-lang :default-lang default-lang})
+                     protocol-version-ids)))
     :run-if-false forbidden-fn}
 
    {:name "put-protocol-version"
@@ -156,56 +225,56 @@
                     protocol-version (data/find-record types/protocol-version protocol-version-id)]
                 (data/update types/protocol-version protocol-version-id (assoc protocol-version :status types/status-draft))))
     :run-if-false forbidden-fn}
-   
+
    {:name "put-protocol-version-language"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn assign-language
     :run-if-false forbidden-fn}
-   
+
    {:name "put-protocol-version-endorsement"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn assign-endorsement
     :run-if-false forbidden-fn}
-   
+
    {:name "put-protocol-version-meta-item"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn assign-meta-item
     :run-if-false forbidden-fn}
-   
+
    {:name "put-protocol-version-policy"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn assign-policy
     :run-if-false forbidden-fn}
-   
+
    {:name "delete-protocol-version-language"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn remove-language
     :run-if-false forbidden-fn}
-   
+
    {:name "delete-protocol-version-endorsement"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn remove-endorsement
     :run-if-false forbidden-fn}
-   
+
    {:name "delete-protocol-version-meta-item"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn remove-meta-item
     :run-if-false forbidden-fn}
-   
+
    {:name "delete-protocol-version-policy"
     :runnable-fn auth-designer-for-protocol-draft
     :run-fn remove-policy
     :run-if-false forbidden-fn}
-   
+
    {:name "get-protocol-versions-published"
     :runnable-fn (runnable/gen-collector-location-check utils/current-user lookup/get-location-in-query)
     :run-fn (fn [params]
               (let [loc (get-in params [:query-params :location])
                     protocols (data/find-children types/location loc types/protocol)]
                 (flatten (for [p protocols]
-                  (filter types/published? (data/find-children types/protocol (:id p) types/protocol-version))))))
+                           (filter types/published? (data/find-children types/protocol (:id p) types/protocol-version))))))
     :run-if-false forbidden-fn}
-   
+
    {:name "get-protocol-versions-published-meta"
     :runnable-fn (runnable/gen-collector-check utils/current-user)
     :run-fn (fn [params]

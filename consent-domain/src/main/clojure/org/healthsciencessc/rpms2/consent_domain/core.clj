@@ -133,7 +133,7 @@
                              :review-start {:persisted true}
                              :status {:persisted true}})
          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
-                     {:type :has-many :related-to widget}
+                     {:type :has-many :related-to widget :name :contains}
                      {:type :many-to-many :related-to text-i18n :relationship :has-title :name :titles :can-create-parent true}]}
 
    widget {:attributes (merge base

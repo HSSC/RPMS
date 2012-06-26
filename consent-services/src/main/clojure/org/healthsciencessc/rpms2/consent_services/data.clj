@@ -260,19 +260,26 @@
               :to other-node)))
       (throw (IllegalArgumentException. "Bad relation")))))
 
+(defn parent-relationship
+  [parent {:keys [related-to relationship can-create-parent]}]
+  (let [parent-id (:id parent)
+        parent-node (if can-create-parent
+                      (find-or-create-node related-to parent-id parent)
+                      (get-node-by-index related-to parent-id))]
+    {:from :self
+     :to parent-node
+     :rel-type relationship}))
+
 (defn create-domain-relations
   [type props]
-  (for [{:keys [related-to relationship can-create-parent] :as relation} (domain/get-parent-relations type schema)
-        :let [rel-key (domain/get-relation-name relation)
-              parent-data (rel-key props)]
-        :when parent-data]
-    (let [parent-id (:id parent-data)
-          parent-node (if can-create-parent
-                        (find-or-create-node related-to parent-id parent-data)
-                        (get-node-by-index related-to parent-id))]
-      {:from :self
-       :to parent-node
-       :rel-type relationship})))
+  (flatten
+   (for [relation (domain/get-parent-relations type schema)
+         :let [rel-key (domain/get-relation-name relation)
+               parent-data (rel-key props)]
+         :when parent-data]
+     (if (map? parent-data)
+       (parent-relationship parent-data relation)
+       (map #(parent-relationship % relation) parent-data)))))
 
 (defn create-default-vaule-realtions
   [type props]
@@ -457,12 +464,12 @@
                 relation (domain/get-parent-relation parent-type child-type schema)
                 rel-name (if relation (domain/get-relation-name relation))
                 neo-data (if rel-name (assoc child-node rel-name (:neo-data parent-node)) child-node)
-                record ((if (:id neo-data)
-                          (find-record child-type (:id neo-data))
-                          (node->record
+                record (if (:id neo-data)
+                         (find-record child-type (:id neo-data))
+                         (node->record
                           (create-audit (with-validation child-type neo-data #(create-node-with-default-relationships child-type neo-data nil))
                                         :create)
-                          child-type)))]
+                          child-type))]
             (recur
              (zip/next (zip/replace loc (assoc child-node :neo-data record))))))))))
 
