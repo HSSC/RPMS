@@ -54,7 +54,8 @@
 
 (defn get-encounter-ids
   [consent-encounter-data]
-  (for [[k v] consent-encounter-data] (get-in v [:encounter :id])))
+  (flatten (for [[type type-coll] consent-encounter-data]
+            (for [record type-coll] (get-in record [:encounter :id])))))
 
 (defn have-same-encounter?
   [data]
@@ -105,7 +106,7 @@
     :run-if-false forbidden-fn}
 
    {:name "put-consent-collect"
-    :runnable (fn [params]
+    :runnable-fn (fn [params]
                 (let [current-user (utils/current-user params)
                       encounter-consent-data (:body-params params)
                       encounter-id (first (get-encounter-ids encounter-consent-data))
