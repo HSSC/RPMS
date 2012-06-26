@@ -69,10 +69,14 @@
       (.get "name" type-name)
       .getSingle))
 
+(defn rels-between
+  [node1 node2]
+  (filter #(= node2 (neo/other-node % node1)) (neo/rels node1)))
+
 (defn rel-between
   "Returns the Relationship of type rel between node1 and node2"
   [node1 node2 rel]
-  (first (filter #(= node2 (neo/other-node % node1)) (neo/rels node1 rel))))
+  (first (filter #(= rel (neo/rel-type %)) (rels-between node1 node2))))
 
 (defn find-parent
   [child-node relation]
@@ -503,28 +507,24 @@
     true))
 
 (defn relate-records
-  [type1 id1 type2 id2]
+  [type1 id1 type2 id2 & {rel-name :rel-name}]
   (let [node1 (get-node-by-index type1 id1)
         node2 (get-node-by-index type2 id2)
-        rel1 (domain/get-parent-relationship type2 type1 schema)
-        rel2 (domain/get-parent-relationship type1 type2 schema)]
+        {:keys [dir rel]} (domain/get-directed-relationship type1 type2 schema :rel-name rel-name)]
     (cond
-     rel1 (create-relationship node1 rel1 node2)
-     rel2 (create-relationship node2 rel2 node1))
+     (= :out dir) (create-relationship node1 rel node2)
+     (= :in dir) (create-relationship node2 rel node1))
     (find-record type1 id1)))
 
 (defn unrelate-records
   [type1 id1 type2 id2]
   (let [node1 (get-node-by-index type1 id1)
         node2 (get-node-by-index type2 id2)
-        rel (or (domain/get-parent-relationship type2 type1 schema)
-                (domain/get-parent-relationship type1 type2 schema))
-        neo-rel (rel-between node1 node2 rel)]
-    (if neo-rel
-      (do
-        (neo/with-tx
-          (neo/delete! neo-rel))
-        (find-record type1 id1)))))
+        rels (rels-between node1 node2)]
+    (neo/with-tx
+      (doseq [rel rels]
+        (neo/delete! rel)))
+    (find-record type1 id1)))
 
 ;; Yes, a terrible name.
 (defn re-relate-records
@@ -532,14 +532,13 @@
   (let [node (get-node-by-index type id)
         old-node (get-node-by-index old-type old-id)
         new-node (get-node-by-index old-type new-id)
-        rel1 (domain/get-parent-relationship type old-type schema)
-        rel2 (domain/get-parent-relationship old-type type schema)]
-    (cond rel1
-          (neo/with-tx
-            (neo/delete! (rel-between old-node node rel1))
-            (create-relationship new-node rel1 node))
-          rel2
-          (neo/with-tx
-            (neo/delete! (rel-between node old-node rel2))
-            (create-relationship node rel2 new-node)))
+        rel (first (rels-between node old-node))
+        rel-type (neo/rel-type rel)
+        start-node (neo/start-node rel)]
+    (neo/with-tx
+      (if rel-type
+        (cond
+         (= node start-node) (create-relationship node rel-type new-node)
+         (= old-node start-node) (create-relationship new-node rel-type node)))
+      (neo/delete! (rel-between node old-node rel-type)))
     (find-record type id)))

@@ -84,7 +84,7 @@
                         {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
                         {:type :belongs-to :related-to policy :relationship :has-policy :required true}
                         {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}]}
-   
+
    role-mapping {:attributes base
                  :relations [{:type :belongs-to :related-to user :relationship :has-user :omit-rels true :deletable-by-parent true}
                              {:type :belongs-to :related-to group :relationship :has-group :omit-rels true :deletable-by-parent true}
@@ -170,7 +170,7 @@
    consent-endorsement {:attributes (merge base
                                            {:value {:persisted true}})
                         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
-                                              {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
+                                    {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
                                     {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}
                                     {:type :belongs-to :related-to endorsement :relationship :has-endorsement :required true}]}
 
@@ -286,12 +286,18 @@
     (:relationship relation)))
 
 (defn get-directed-relationship
-  [start-type end-type data-defs]
-  (let [parent-relationship (get-parent-relationship start-type end-type data-defs)
-        child-relationship (get-parent-relationship end-type start-type data-defs)]
-    (cond
-     parent-relationship {:dir :in :rel parent-relationship}
-     child-relationship {:dir :out :rel child-relationship})))
+  [start-type end-type data-defs & {rel-name :rel-name}]
+  (if rel-name
+    (let [parent-relation (first (filter #(and (= start-type (:related-to %)) (= rel-name (:name %))) (get-parent-relations end-type data-defs)))
+          child-relation (first (filter #(and (= end-type (:related-to %)) (= rel-name (:name %))) (get-parent-relations start-type data-defs)))]
+      (cond
+       parent-relation {:dir :in :rel (:relationship parent-relation)}
+       child-relation {:dir :out :rel (:relationship child-relation)}))
+    (let [parent-relationship (get-parent-relationship start-type end-type data-defs)
+          child-relationship (get-parent-relationship end-type start-type data-defs)]
+      (cond
+       parent-relationship {:dir :in :rel parent-relationship}
+       child-relationship {:dir :out :rel child-relationship}))))
 
 (defn validate-record
   [record type data-defs]
