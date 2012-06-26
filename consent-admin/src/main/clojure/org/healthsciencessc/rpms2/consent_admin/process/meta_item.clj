@@ -39,7 +39,9 @@
   [ctx]
   (let [org-id (common/lookup-organization ctx)
         nodes (services/get-meta-items)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)]
+        protocol-version-id (lookup/get-protocol-version-in-query ctx)
+        prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
+        params (merge {:organization org-id} prot-props)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
       (layout/render ctx (str type-label "s")
@@ -51,9 +53,10 @@
                        (if protocol-version-id
                          (actions/assign-action 
                            {:url (str "/api/" type-path "/assign") 
-                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}})
-                         (actions/details-action 
-                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}}))
+                            :params (merge params {type-kw :selected#id})}))
+                       (actions/details-action 
+                         {:url (str "/view/" type-path) 
+                          :params (merge params {type-kw :selected#id})})
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))

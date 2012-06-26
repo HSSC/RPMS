@@ -25,12 +25,6 @@
         user-org-id (security/current-org-id {})]
     (= record-org-id user-org-id)))
 
-(defn update-text-i18n
-  [ctx]
-  (let [tid (lookup/get-text-i18n-in-query ctx)
-        body (:body-params ctx)]
-    (services/update-text-i18n tid {:value (:value body)})))
-
 ;; Provide Process Generation Functions
 (defn gen-api-type-delete
   "Generates a function that implements a common pattern for deleting a type using an ajax request."

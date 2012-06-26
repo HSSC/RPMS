@@ -109,14 +109,14 @@
       :items [{:url "/view/protocol/location" :label "Locations" :generator protocol-location-item-generator}]}
     {:group "Library" :use? designer?
       :items [{:url "/view/endorsement/types" :label "Endorsement Types"}
+              {:url "/view/endorsements" :label "Endorsements"}
               {:url "/view/languages" :label "Languages"}
               {:url "/view/policy/definitions" :label "Policy Definitions"}
               {:url "/view/policys" :label "Policies"}
               {:url "/view/meta-items" :label "Meta Items"}
               {:url "/view/widgets" :label "Widgets"}]}
     {:group "Management" :use? manager?
-      :items [{:url "/view/consenter/history" :label " History" :generator consenter-item-generator}
-              {:url "/view/audit" :label "Audit"}]}
+      :items [{:url "/view/consenter/history" :label " History" :generator consenter-item-generator}]}
   ])
 
 (defn- generate-group

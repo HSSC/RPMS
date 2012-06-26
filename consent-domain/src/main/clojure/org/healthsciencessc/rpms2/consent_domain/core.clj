@@ -116,6 +116,7 @@
                                :code {:persisted true}
                                :status {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
+                       {:type :belongs-to :related-to policy-definition :relationship :has-definition :required true :deletable-by-parent true}
                        {:type :many-to-many :related-to text-i18n :relationship :has-title :name :titles :can-create-parent true}
                        {:type :many-to-many :related-to text-i18n :relationship :has-text :name :texts :can-create-parent true}]}
 
