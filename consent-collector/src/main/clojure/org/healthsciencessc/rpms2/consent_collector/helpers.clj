@@ -148,19 +148,20 @@
       [:div.innerform.centered body ] 
       [:div.submit-area submit-buttons ] ]] ) 
 
+
 (defn signaturePadDiv
   "Outputs a Signature Pad div which corresponds to custom sigpad
   styles (eg. related to size - width, height, the signature line,etc).
-  
   see http://thomasjbradley.ca/lab/signature-pad/ "
-
-  [nm value]
-  ;;[:script "var ccsigpad ;" (println "var signaturePadItem1;") ]
-  [:div.sigPad
-  [:div {:class "sig sigWrapper" }
-     [:div.typed ] 
-     [:canvas.pad {:width "700" :height "198"}]
-     [:input.output {:type "hidden" :name "ccsigpad" :value value } ] ]])
+  [& {:keys [name value read-only?]}]
+  [:div.sigPad {:data-image value :data-read-only read-only?}
+   ;[:div.sigNav
+   ; [:div.clearButton (i18n :sig-clear-btn-label)]
+   ; [:p.drawItDesc (i18n :signatureInstruction)]]
+   ;[:div.sigError (i18n :signatureErrorInstruction)]
+   [:div {:class "sig sigWrapper"}
+    [:canvas.pad {:width 550 :height 200}]
+    [:input.output {:type "hidden" :name name}]]])
 
 
 (defn collect-consent-form 
@@ -268,11 +269,8 @@
 (defn- after-content
   "Enable signature pad."
   []
-  (if (session-get :collect-consent-status) 
-    (hpage/include-js 
-      (if (in-review?)
-        (absolute-path "review-sigpad.js")
-        (absolute-path "collect-sigpad.js")))))  
+  (hpage/include-js 
+    (absolute-path "collect-sigpad.js")))
 
 (defn format-consenter []
   (if-let [{:keys [first-name last-name consenter-id]}

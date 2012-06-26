@@ -109,8 +109,8 @@ input:required:invalid, input:focus:invalid
 
 div.innerform { 
 	border: 1px solid gray; 
-	margin: 5px; padding: 5px; border-radius: 15px; 
-	-moz-border-radius: 15px; margin: 50px; 
+	margin: 1.2em; padding: 1.4em; border-radius: 15px; 
+	-moz-border-radius: 15px; 
 	}
 
 .standout { font-weight: bold; }
@@ -319,3 +319,22 @@ form.debug { background-color: gray; border: thick solid navy; }
 div.ui-block-a.metadata,  div.ui-block-b.metadata { padding-top: 15px; }
 
 .ui-dialog .ui-header { height: 30px;  padding-left: 35px; padding-top: 15px; }
+
+div.sigPad { text-align: left; margin: 0;}
+
+canvas.pad {
+}
+
+.sigNav {
+	list-style-type: none;
+	padding: 0;
+	width: 60%;
+}
+
+.clearButton {
+	width: 100%;
+}
+
+.sigError {
+	display: none;
+}

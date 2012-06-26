@@ -28,7 +28,7 @@
         :type "policy-text",
         :render-text true}
        {:endorsement "E00001",
-        :name "Sign Here",
+        :name "consenter",
         :type "signature",
         :clear-label "Clear"}]}]}
 
@@ -63,7 +63,7 @@
       :type "section",
       :contains
       [{:type "review-endorsement", 
-        :name "ReviewEndorsement", 
+        :name "consenter", 
     	:title "Review Signature",
     	:endorsement "E00001",
     	:label "Edit",
@@ -348,7 +348,7 @@
       :type "section",
       :contains
       [{:type "review-endorsement", 
-    :name "ReviewEndorsement", 
+    :name "consenter", 
     	:title "Review Signature",
     	:endorsement "E00001",
     	:label "Edit",
@@ -373,7 +373,7 @@
       :type "section",
       :contains
       [{:type "review-endorsement", 
-    :name "ReviewEndorsement", 
+    :name "consenter", 
     	:title "Review Signature",
     	:endorsement "E00001",
     	:label "Edit",

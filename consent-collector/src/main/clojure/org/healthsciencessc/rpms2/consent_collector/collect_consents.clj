@@ -61,7 +61,7 @@
         (if-let [s (:endorsement-label widget)] 
           s 
           (if-let [t (:title widget)] t "Endorsement-label"))  
-            (helper/signaturePadDiv (:name widget) value ) ]
+            (helper/signaturePadDiv :name (:name widget) :value value :read-only? "true" ) ]
         [:div.ui-block-c.metadata 
          (helper/submit-btn {:value (:label widget) 
                              :name (str "review-edit-btn-" (:returnpage widget)) }) ]]])
@@ -164,7 +164,7 @@
                :data-theme "a" 
                :onclick "$('.sigPad').signaturePad().clearCanvas()"} 
          (:clear-label widget)]]]
-   (helper/signaturePadDiv (:name widget) value) ])
+   (helper/signaturePadDiv :name (:name widget) :value value)])
 
 (defn- true-or-not-specified? 
   [v]

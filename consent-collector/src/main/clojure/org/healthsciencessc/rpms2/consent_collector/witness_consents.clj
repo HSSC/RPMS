@@ -13,27 +13,10 @@
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
-(defn- my-signature
-  [widget] 
+(defn collector-name []
+  (let [{:keys [first-name last-name]} (session-get :user)]
+    (str first-name " " last-name)))
 
-  [:div.control.signature 
-   (:name widget)
-  [:div.sigpad-control
-      [:div.sigPad  ; sigPad must be on div which directly contains sigNav
-      [:ul.sigNav 
-         #_[:li.clearButton [:a {:href "#clear"} "Clear" ] ] ; use an onclick event here
-         [:li (helper/submit-btn { :value (:clear-label widget)
-                                   :name (str "signature-btn-" (:name widget)) }) ] 
-      ] 
-      [:div {:class "sig sigWrapper" }
-        [:div.typed ] 
-          [:canvas {:class "pad" :width "198" :height "55" }  ]
-          [:input {:type "hidden" 
-                   :name (:name widget) 
-                   :class "output" 
-                   } ]
-      ]]]
-   ])
 
 (defn view 
   "Returns witness consent form"
@@ -42,7 +25,8 @@
   (helper/rpms2-page 
      (helper/post-form "/view/unimplemented" 
         (list [:h1 "Witness Consent" ]
-              (my-signature {:name "NAME" :clear-label "Clear-The-Button" } ))
+              (helper/signaturePadDiv "FIXTHISNAME" nil))
+
         (helper/submit-btn { :value "Submit" } ))
    :title "Witness Consent Form" ))
 
