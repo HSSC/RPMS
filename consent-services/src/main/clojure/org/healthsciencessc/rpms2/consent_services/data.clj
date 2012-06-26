@@ -206,8 +206,8 @@
 
 (defmethod get-related-obj :many-to-many
   [record node relation]
-  (let [{related-to :related-to} relation]
-    (vec (filter identity (map #(node->record % related-to) (walk-types-path node (vector related-to)))))))
+  (let [{:keys [relationship related-to]} relation]
+    (vec (filter identity (map #(node->record % related-to) (neo/traverse node :1 :all-but-start relationship))))))
 
 (defn add-related-records
   [record node relations]
