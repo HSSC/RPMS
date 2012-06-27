@@ -158,10 +158,12 @@
 
    {:name "get-protocol-versions-published-form"
     :runnable-fn (fn [params]
-                   (let [protocol-version (data/find-record types/protocol-version (get-in params [:query-params :protocol-version]))
-                         location (:location (data/find-record types/protocol (:protocol protocol-version)))]
-                     (or (runnable/can-design-protocol-version (utils/current-user params) protocol-version)
-                         (runnable/can-collect-location (utils/current-user params) location))))
+                   (let [q-params (get-in params [:query-params :protocol-version])
+                         protocol-version-ids (if (coll? q-params) q-params (list q-params))
+                         protocol-versions (map (partial data/find-record types/protocol-version) protocol-version-ids)
+                         locations (map #(get-in % [:protocol :location]) protocol-versions)]
+                     (or (every? #(runnable/can-design-protocol-version (utils/current-user params) %) protocol-versions)
+                         (every? #(runnable/can-collect-location (utils/current-user params) %) locations))))
     :run-fn (fn [params]
               (let [q-params (get-in params [:query-params :protocol-version])
                     protocol-version-ids (if (coll? q-params) q-params (list q-params))
