@@ -568,7 +568,8 @@
 
   [parms]
 
-  (debug "ENTER save captured data: " (session-get :model-data))
+  (debug "ENTER save captured data: " 
+         (dissoc (session-get :model-data) :consenter ))
   (remove-checkboxes-from-model parms)
   (let [ m (session-get :model-data)
         new-map (->  m
@@ -608,10 +609,10 @@
 
 (defn get-nth-form
   "Uses hardcoded mock data. Should return the nth 
-  form (from :protocols-to-be-filled-out)."
+  form (from :needed-protocol-ids)."
   [n]
   (cond 
-    (>= n (count (session-get :protocols-to-be-filled-out)))
+    (>= n (count (session-get :needed-protocol-ids)))
     nil
 
     (= 0 n) 
@@ -750,3 +751,4 @@
   (session-put! :consenter c))
 
 ;(debug! handle-meta-data-update-btns)
+;(debug! handle-meta-data)

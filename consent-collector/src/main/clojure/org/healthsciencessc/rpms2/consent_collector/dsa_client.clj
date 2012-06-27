@@ -16,8 +16,6 @@
 
 (def ^:dynamic *dsa-auth* nil)
 
-
-
 ;; need required fields from consent domain
 (def consenter-search-fields  [:first-name
                                :last-name
@@ -183,80 +181,110 @@
 (def encounter-field-defs [[:encounter-id {:i18n-name "encounter-id" :required true}]
                            [:date {:type "date" :i18-name "encounter-date" :required true}]])
 
-(defn get-protocols-version
-  [protocols]
-  ;;for each protocol, collect the meta data fields into a set
-  ;;return the set
-  {}
+(defn get-published-protocols-form 
+  "Returns the form for a single protocol."
+  []
+  nil
 )
 
-(defn get-languages
-  []
-  (list 
-    {:id "LANG_EN01" :code "EN" :name "English" }
-    {:id "LANG_EN02" :code "SP" :name "Spanish" } 
-    {:id "LANG_EN03" :code "GP" :name "German" } ))
+(def metadata-mock
+   [
+     {:name "Guarantor", 
+      :organization "BLAH", 
+      :default-value "Mr Smith", 
+      :description "This person is the guarantor", 
+      :data-type "string"} 
+
+     {:mdid "MI002" 
+      :name "Referring Doctor", 
+      :organization "BLAH 2", 
+      :default-value "Dr Refer Ranger", 
+      :description "The referring doctor for this patient", 
+      :data-type "xsd:string"} 
+
+    {:mdid "MI001" 
+     :name "Primary Care Physician", 
+     :organization "BLAH 3", 
+     :default-value "Dr Primary Person", 
+     :description "The primary care physician for this patient", 
+     :data-type "xsd:string"} 
+
+    {:uri "urn:admission-date" :name "Admission Date", :organization "BLAH 4", 
+     :default-value "today", 
+     :description "The date the patient was admitted for this consent", 
+     :data-type "xsd:date"}
+   ]
+)
+
+(defn get-published-protocols-meta-items
+  "Returns meta-items for published protocols.
+  Sends the list of protocols and version ids and gets back
+  the list of meta data items for these forms.
+
+  TODO: call dsa method with specified ids to find the real meta data items"
+  [protocol-ids]
+
+  metadata-mock)
 
 (defn get-published-protocols
+  "Returns published protocols for the currently logged in user 
+  at the currently selected location."
+
   []
+  ;(println "get-published-protocols")
+  (let [resp (try+ 
+               (dsa-call :protocol-versions-published {:location (session-get :org-location) })
+               (catch Exception ex (do 
+                 (debug "get-published-protocols exception " ex) 
+                 #_(println "get-published-protocols exception " ex)))
+              (catch Object ex (do 
+                  (debug "get-published-protocols object " ex) 
+                  #_(println "get-published-protocols object " ex))))]
+      (do
+        #_(println "get-published-protocols ==> dsa resp is " resp)
+        (debug "get-published-protocols ==> dsa resp is " resp)
+
   (list {:protocol 
-          {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
+          {:status "published", 
+           :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
            :organization {:name "Some Org", :code "mo", :id "1"}, 
-           :languages [
-                       {:name "English", :code "EN", :id "LANG_EN01"} 
-                       {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
-           :id "P0001"}, 
+           :languages [ {:name "English", :code "EN", :id "LANG_EN01"} 
+                        {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
+           :id "P0001"
+           :protocol-id "MO01" }, } 
 
-:meta-items [
-{:uri "urn:gurantor" :name "Guarantor", :organization "BLAH", :default-value "Mr Smith", :description "This person is the guarantor", :data-type "string"} 
-
-{:mdid "MI002" :uri "urn:referring-doctor" :name "Referring Doctor", :organization "BLAH 2", :default-value "Dr Refer Ranger", :description "The referring doctor for this patient", :data-type "xsd:string"} 
-
-{:mdid "MI001" :uri "urn:primary-care-physician" :name "Primary Care Physician", :organization "BLAH 3", :default-value "Dr Primary Person", :description "The primary care physician for this patient", :data-type "xsd:string"} 
-
-{:uri "urn:admission-date" :name "Admission Date", :organization "BLAH 4", :default-value "today", :description "The date the patient was admitted for this consent", :data-type "xsd:date"}
-             ]
-
-} 
-
-               {:protocol 
-                    {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
-                     :organization {:name "Some Org", :code "mo", :id "1"}, 
-                     :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
-                                 {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
-                     :id "P0002"}, 
-                    :meta-items [
-{:uri "urn:gurantor" :name "Guarantor", :organization "BLAH", :default-value "Mr Smith", :description "This person is the guarantor", :data-type "string"} 
-{:uri "urn:admission-date" :name "Admission Date", :organization "BLAH 4", :default-value "today", :description "The date the patient was admitted for this consent", :data-type "xsd:date"}
-
-                ]} 
-
-
-               {:protocol 
+         {:protocol 
+            {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
+             :organization {:name "Some Org", :code "mo", :id "1"}, 
+             :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
+                         {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
+                 :id "P0002"}, 
+          } 
+          {:protocol 
                     {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
                      :organization {:name "Some Org", :code "mo", :id "1"}, 
                      :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
                                  {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
                      :id "P0003"}, 
-                    :meta-items [
-{:uri "urn:gurantor" :name "Guarantor", :organization "BLAH", :default-value "Mr Smith", :description "This person is the guarantor", :data-type "string"} 
-{:uri "MD-1" :name "Meta-1", :organization "BLAH", :default-value "Meta-1 Default Value", :description "This is meta-1", :data-type "xsd:string"} 
-{:uri "MD3-1" :name "Meta-2", :organization "BLAH 2", :default-value "Meta-2 Default Value", :description "This is meta-2", :data-type "xsd:string"} 
-{:uri "MD3-2" :name "Meta-3", :organization "BLAH 3", :default-value "Meta-3 Default Value", :description "This is meta-3", :data-type "xsd:string"} ]}
+           }
 
-{:protocol 
+        {:protocol 
            {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
-                     :organization {:name "Some Org", :code "mo", :id "1"}, 
-                     :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
-                                 {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
+             :organization {:name "Some Org", :code "mo", :id "1"}, 
+             :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
+                         {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
                      :id "P0004"}, 
-                    :meta-items [
+} 
+))))
 
-{:uri "urn:gurantor" :name "Guarantor", :organization "BLAH", :default-value "Mr Smith", :description "This person is the guarantor", :data-type "string"} 
 
-                                 ]} 
+(defn- get-languages
+  "Temporary method to return languages."
+  []
 
-))
+  (list {:id "LANG_EN01" :code "EN" :name "English" }
+        {:id "LANG_SP01" :code "SP" :name "Spanish" }
+        {:id "LANG_GE01" :code "GP" :name "German" } ) )
 
 (defn get-protocols
   []
@@ -286,17 +314,22 @@
      :description "Tricare stuff" } ))
 
 
-(def metadata-map
-    { 
-        :MI001 { :mdid "MI001" :label "Primary Care Physician", :value "Dr. Bob Smith" },
-        :MI002 { :mdid "MI002" :label "Refering Physician", :value "Dr. Bob Jones" }
-    }
-)
+(defn get-available-protocols-and-languages
+  "Returns a map with the available protocols 
+  and languages:
 
-(defn get-metadata
-  [p]
-  (debug "METADATA " p " IS " (get metadata-map (keyword p)))
-  (get metadata-map (keyword p)))
+  Example:
+
+  {:available-protocols [ {:id <Protocol1> ... } { <Protocol2> .. }  ... ] 
+   :languages [ <LANG-1> <LANG-2> ] 
+  }
+
+  TODO: compute languages by extract out the language component, getting the unique list"
+  []
+
+  {:available-protocols (get-protocols)
+   :languages (get-languages) 
+  })
 
 (let [ propname "rpms2.dsa.url" 
        dsa-url (config propname) ]
