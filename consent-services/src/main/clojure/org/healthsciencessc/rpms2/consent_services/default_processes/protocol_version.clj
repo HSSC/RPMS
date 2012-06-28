@@ -282,7 +282,7 @@
     :run-fn (fn [params]
               (let [ids (get-in params [:query-params :protocol-version])]
                 (distinct (if (coll? ids)
-                            (map #(data/find-related-records "protocol-version" % (list "meta-item")) ids)
+                            (apply concat (map #(data/find-related-records "protocol-version" % (list "meta-item")) ids))
                             (data/find-related-records "protocol-version" ids (list "meta-item"))))))
     :run-if-false forbidden-fn}])
 
