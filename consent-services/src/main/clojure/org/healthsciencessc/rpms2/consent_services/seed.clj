@@ -3,9 +3,8 @@
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-domain.match :as match]
-            [org.healthsciencessc.rpms2.consent-domain.types :as types])
-  (:use [org.healthsciencessc.rpms2.consent-domain.types])
-  (:import [java.util Locale]))
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.consent-services.seed-protocol :as seed-protocol]))
 
 (defn setup-default-schema!
   []
@@ -74,7 +73,7 @@
         match (some #(if (match/role-mapping-match? mapping (assoc % type owner)) %) roles)]
     (if match
       match
-      (let [data (data/create role-mapping mapping)
+      (let [data (data/create types/role-mapping mapping)
             newroles (conj roles data)
             newowner (assoc owner :role-mappings newroles)]
         (replace-in-cache (name type) newowner)
@@ -84,12 +83,12 @@
 (defn- create-roles 
   "Creates the roles that are to be made available globally if they do not exist."
   [def-org]
-  (doseq [[name code reqloc] [["Administrator" code-role-admin false]
-                       ["Consent Collector" code-role-collector true]
-                       ["Consent Designer" code-role-designer true]
-                       ["Consent Manager" code-role-consentmanager true]
-                       ["Consent System" code-role-externalsystem false]]]
-    (create "role" {:name name
+  (doseq [[name code reqloc] [["Administrator" types/code-role-admin false]
+                       ["Consent Collector" types/code-role-collector true]
+                       ["Consent Designer" types/code-role-designer true]
+                       ["Consent Manager" types/code-role-consentmanager true]
+                       ["Consent System" types/code-role-externalsystem false]]]
+    (create types/role {:name name
                     :code code
                     :requires-location reqloc
                     :organization def-org} match/roles-match?)))
@@ -97,7 +96,7 @@
 (defn- create-default-lang
   "Creates the languages that are available from the base organization if they do not exist."
   [def-org]
-  (create "language"
+  (create types/language
             {:name "English"
              :code "en"
              :organization def-org}))
@@ -107,7 +106,7 @@
   (doseq [[code name] [["es" "Spanish"]
                        ["fr" "French"]
                        ["de" "German"]]]
-    (create "language"
+    (create types/language
             {:name name
              :code code
              :organization def-org})))
@@ -178,16 +177,16 @@
 (defn- get-role-by-code
   "Looks up roles by there code value."
   [code]
-  (first (data/find-records-by-attrs role {:code code})))
+  (first (data/find-records-by-attrs types/role {:code code})))
 
 (defn seed-base-org! 
   "Creates the base organization that is used to define globally used data and the Super Administrators."
   []
-  (let [org (create organization {:name "Default Organization" :code code-base-org} match/orgs-match?)
-        sadmin-role (create "role" 
-                            {:name "Super Administrator" :code code-role-superadmin :organization org :requires-location false} 
+  (let [org (create types/organization {:name "Default Organization" :code types/code-base-org} match/orgs-match?)
+        sadmin-role (create types/role 
+                            {:name "Super Administrator" :code types/code-role-superadmin :organization org :requires-location false} 
                             match/roles-match?)
-        sadmin (create user 
+        sadmin (create types/user 
                        {:first-name "Super" :last-name "Administrator" :organization org
                         :username "admin" :password (auth/hash-password "root")} 
                        match/users-match?)
@@ -203,36 +202,39 @@
 (defn seed-example-org!
   "Creates an organization that will contain all of the example and best practice data."
   []
-  (let [lang (first (filter #(= "en" (:code %)) (data/find-all language)))
-        org (create organization 
+  (let [lang (first (filter #(= "en" (:code %)) (data/find-all types/language)))
+        org (create types/organization 
                     {:name "Example Organization" :code "example" :protocol-label "Form" :location-label "Division"
                      :language lang}
                     match/orgs-match?)
         org-id (:id org)
         
-        in-loc (create location {:name "In Patient" :code "inpatient" :organization org} match/locations-match?)
-        out-loc (create location {:name "Out Patient" :code "outpatient" :organization org} match/locations-match?)
-        sur-loc (create location {:name "Surgery" :code "surgery" :organization org} match/locations-match?)
+        in-loc (create types/location {:name "In Patient" :code "inpatient" :organization org} match/locations-match?)
+        out-loc (create types/location {:name "Out Patient" :code "outpatient" :organization org} match/locations-match?)
+        sur-loc (create types/location {:name "Surgery" :code "surgery" :organization org} match/locations-match?)
         
-        clerk (create user {:username "ex-collector" :password (auth/hash-password "password") :organization org 
+        clerk (create types/user {:username "ex-collector" :password (auth/hash-password "password") :organization org 
                               :first-name "Example" :last-name "Clerk"} match/users-match?)
-        sclerk (create user {:username "ex-scollector" :password (auth/hash-password "password") :organization org
+        sclerk (create types/user {:username "ex-scollector" :password (auth/hash-password "password") :organization org
                                 :first-name "Example" :last-name "SuperClerk"} match/users-match?)
-        admin (create user {:username "ex-admin" :password (auth/hash-password "password") :organization org
+        admin (create types/user {:username "ex-admin" :password (auth/hash-password "password") :organization org
                                :first-name "Example" :last-name "Admin"} match/users-match?)
-        designer (create user {:username "ex-designer" :password (auth/hash-password "password") :organization org
+        designer (create types/user {:username "ex-designer" :password (auth/hash-password "password") :organization org
                                   :first-name "Example" :last-name "Designer"} match/users-match?)
-        theman (create user {:username "ex-theman" :password (auth/hash-password "password") :organization org
+        theman (create types/user {:username "ex-theman" :password (auth/hash-password "password") :organization org
                                 :first-name "Example" :last-name "TheMan"} match/users-match?)
         
-        admin-grp (create group {:name "Example Admin Group" :organization org} match/groups-match?)
-        theman-grp (create group {:name "Example The Man Group" :organization org} match/groups-match?)
+        admin-grp (create types/group {:name "Example Admin Group" :organization org} match/groups-match?)
+        theman-grp (create types/group {:name "Example The Man Group" :organization org} match/groups-match?)
         
-        sadmin-role (get-role-by-code code-role-superadmin)
-        admin-role (get-role-by-code code-role-admin)
-        clerk-role (get-role-by-code code-role-collector)
-        manager-role (get-role-by-code code-role-consentmanager)
-        designer-role (get-role-by-code code-role-designer)]
+        sadmin-role (get-role-by-code types/code-role-superadmin)
+        admin-role (get-role-by-code types/code-role-admin)
+        clerk-role (get-role-by-code types/code-role-collector)
+        manager-role (get-role-by-code types/code-role-consentmanager)
+        designer-role (get-role-by-code types/code-role-designer)]
+    
+    ;; Create Bogus Protocols
+    (seed-protocol/add-protocols org)
     
     ;; Create Admin Role Mappings
     (create-role-mapping :user {:organization org :user admin :role admin-role})
