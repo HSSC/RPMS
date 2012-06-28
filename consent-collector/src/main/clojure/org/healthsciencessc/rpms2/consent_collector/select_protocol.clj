@@ -22,25 +22,24 @@
 (defn- select-language
   "Displays radio buttons to select language."
   [langs]
-
   [:fieldset {:data-role "controlgroup" }
      [:div.sectionlegend "Select Language:" ]
-        (list (for [l langs] 
+        (for [l langs] 
            (list [:input (merge {:type "radio" 
                                  :name "sp-language" 
                                  :id (:name l)
-                                 :value (:name l)
+                                 :value (:id l)
                                 } 
                                 (if (= "English" (:name l)) {:checked "checked" } {})) ]
-                   [:label {:for (:name l) } (:name l) ]  ))) ])
+                   [:label {:for (:name l) } (:name l) ]  )) ])
 
 
 
 (defn- protocol-item
   "Checkbox for a protocol"
-  [p]
-
- (let [ nm (str "cb-" (:protocol-id p)) ]
+  [protocol-version]
+ (let [p (:protocol protocol-version)
+       nm (:id protocol-version)]
    (list 
      (if (:required p) 
       [:input (merge (checkbox-map nm true) {:disabled "disabled"}) ]
@@ -57,9 +56,9 @@
       [:div 
        (list 
          (let [data (dsa/get-available-protocols-and-languages)
-               plist (:available-protocols data) ]
+               plist (:available-protocols data)]
            (do
-              (session-put! :protocols plist)
+              (session-put! :protocol-versions plist)
               (list  
                  [:fieldset {:data-role "controlgroup" }
                    [:div.sectionlegend "Select " (helper/org-protocol-label) "(s):" ]
@@ -73,19 +72,16 @@
     :cancel-btn (helper/cancel-form "/view/select/consenter")
     ))
 
-(defn- needed-protocol-ids
+(defn- needed-protocol-version-ids
   "Returns protocol ids that need to be filled out.  This is the required
   forms plus any protocols selected by the user (specified by a parameter named cb-<ProtocolID>)."
-  [cbmap]
-
-  (let [required-protocols (remove #(= (:required %) false) (session-get :protocols))
-        required-ids (map :protocol-id required-protocols)
-        selected-ids (->> (filter #(.startsWith (name %) "cb-" )(keys cbmap)) 
-                          (map name)
-                          (map (fn [n] (split n #"-")))
-                          (map last)) 
-        resp  (flatten (conj required-ids selected-ids)) ]
-        resp))
+  [checkboxmap]
+  (let [protocol-versions (session-get :protocol-versions)
+        required-protocol-version-ids (->> protocol-versions
+                                        (remove #(= false (get-in % [:protocol :required])))
+                                        (map :id))
+        selected-ids (map name (keys checkboxmap))]
+    (distinct (concat required-protocol-version-ids selected-ids))))
 
 (defn- is-go-back?
   "Returns true if the current request represents go-back"
@@ -100,10 +96,12 @@
   and go to meta-data page. "
 
   [ctx]
-  (let [needed (needed-protocol-ids (:body-params ctx))]
+  (let [needed (needed-protocol-version-ids (dissoc (:body-params ctx)
+                                            :sp-language
+                                            :select-protocols-form))]
     (do
-      (session-put! :needed-protocol-ids needed)
-      (session-put! :selected-language (:sp-language ctx))
+      (session-put! :selected-protocol-version-ids (vec needed))
+      (session-put! :selected-language (-> ctx :body-params :sp-language))
       (debug "perform selected protocols " (pprint-str needed) )
       (debug "perform selected language " (:sp-language ctx))
       (helper/myredirect "/view/meta-data")))) 

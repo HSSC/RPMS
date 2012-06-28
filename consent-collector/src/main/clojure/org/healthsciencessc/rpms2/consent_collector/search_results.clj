@@ -26,7 +26,7 @@
 	(if (not (empty? y)) 
             (if consenter-id
 	        (do 
-                   (helper/set-consenter (first (:json (dsa/dsa-search-consenters {:consenter-id consenter-id} nil))))
+                   (helper/set-consenter (first (:json (dsa/dsa-search-consenters {:consenter-id consenter-id}))))
                    (session-delete-key! :search-results)
                    (session-delete-key! :search-params)
     		   (helper/myredirect "/view/select/encounter"))

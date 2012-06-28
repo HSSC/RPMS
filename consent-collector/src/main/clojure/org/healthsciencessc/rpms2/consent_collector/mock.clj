@@ -465,3 +465,18 @@
                  {:id "LANG_SP01" :code "SP" :name "Spanish" }
                  {:id "LANG_GE01" :code "GP" :name "German" } ) )
 
+
+
+
+
+;; use :name :id :data-type
+(def mock-md [
+   {:labels [ {:language {:organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, 
+:id "f8f6fc37-7157-45b4-bef4-08ac20c2381e", :name "English", :code "en"}, :id "0869bfb1-9519-48c0-ba96-fe7428b0c4a7", :value "Guarantor"} ], :organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "dcd2092a-2df9-4c43-924a-2f38e045e64d", :status "Published", :name "Guarantor", :data-type "string"}
+
+{:labels [{:language {:organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "f8f6fc37-7157-45b4-bef4-08ac20c2381e", :name "English", :code "en"}, :id "d0bbb628-c55b-42ca-bbb6-59f4c9edf076", :value "Referring Physician's Name"}], :organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "e53f6862-2827-4893-aeb9-d18de39ff134", :status "Published", :name "Referring Physician's Name", :data-type "string"}
+               
+
+{:labels [{:language {:organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "f8f6fc37-7157-45b4-bef4-08ac20c2381e", :name "English", :code "en"}, :id "1d5f8dd2-7b9a-40b1-a8ae-584b7759ce99", :value "Primary Care Physician's Name"}], :organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "24f7d954-c1c7-417d-9545-2635c4da5e05", :status "Published", :name "Primary Care Physician's Name", :data-type "string"
+                }
+               ])

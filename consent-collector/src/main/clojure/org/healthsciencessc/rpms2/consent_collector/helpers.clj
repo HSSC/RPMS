@@ -5,6 +5,7 @@
                [element :as helem]])
   (:require [ring.util.response :as ring])
   (:require [org.healthsciencessc.rpms2.consent-collector.mock :as mock])
+  (:require [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa])
   (:require [org.healthsciencessc.rpms2.consent-collector.formutil :as formutil])
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
@@ -84,11 +85,6 @@
         :role-mappings
         (filter (comp #{"Consent Collector"} :name :role))
              (map :location)))
-       
-(defn current-org-id
-  "The org-id from the currently logged in user."
-  []
-  (get-in (session-get :user) [:organization :id]))
 
 (defn org-location-label
   "Returns location label, which is taken from the user's location
@@ -515,9 +511,17 @@
 
 (defn- handle-meta-data-update-btns
   "Handles update meta-data buttons.
-  If there is a meta data button in the parameter map,
-    Places the updated value in :changed-meta-data.
-    Removes the marker in the model data indicating this meta data item requires changing. "
+
+   If there is a meta data button in the parameter map,
+   Places the updated value in :changed-meta-data.
+   Removes the marker in the model data indicating this meta data item requires changing. 
+
+  Replace the value associated with a meta data item.
+  {:M1 {:id :name :value ... } :M2 {:id :name :value }
+
+  Get the map entry associated with the id, then update the value using assoc, 
+  the update the :all-meta-data with this new entry for this id.
+  "
   [m]
 
   (let [btns (filter #(.startsWith (str (name %)) META_DATA_UPDATE_BTN_PREFIX) (keys m))]
@@ -527,9 +531,20 @@
                v (get (session-get :model-data) mi) 
                changed-metadata (if-let [smd (session-get :changed-meta-data)] smd {})
                val (mi m) 
-               change-marker (keyword (str META_DATA_BTN_PREFIX (name mi))) ]
+               change-marker (keyword (str META_DATA_BTN_PREFIX (name mi))) 
+
+               orig-map (session-get :all-meta-data)  ; original meta-data map
+               entry (orig-map mi)  ; the entry for this meta-data item
+               new-entry (assoc entry :value val)  ; now with the new value
+               new-map (assoc orig-map mi new-entry) ; the updated meta-data map
+               _ (println "meta data --> NEW MAP " new-map)]
+           (do
+              ;(println "Updating meta data item: mi is " mi " v is " v " val is " val)
+              (debug "Updating meta data item: mi is " mi " v is " v " val is " val)
               (session-put! :changed-meta-data (assoc changed-metadata mi val))
+              (session-put! :all-meta-data new-map)
               (session-put! :model-data (dissoc (session-get :model-data) change-marker)))
+           )
           m))
     m))
 
@@ -607,22 +622,6 @@
   (let [n (if (seq? orig-n) (first orig-n) orig-n)]
      (get-in n [:protocol :name])))
 
-(defn get-nth-form
-  "Uses hardcoded mock data. Should return the nth 
-  form (from :needed-protocol-ids)."
-  [n]
-  (cond 
-    (>= n (count (session-get :needed-protocol-ids)))
-    nil
-
-    (= 0 n) 
-    mock/lewis-blackman-form 
-
-    (= 1 n) 
-    mock/sample-form 
-    
-    :else
-    mock/lewis-blackman-form))
 
 (defn update-session
   "Merges the map, logs the new map, saves in session, and returns merged map."
@@ -681,7 +680,7 @@
 
       (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
 
-      (if-let [next-form (get-nth-form (inc n))]
+      (if-let [next-form (dsa/get-nth-form (inc n))]
        (let [formval (:form next-form)
              start-page-nm ((:which-flow s) formval)
              p (get-named-page formval start-page-nm) ;; get first page form, using specified flow
@@ -699,7 +698,7 @@
   Sets :form to the the current form, initializes :page "
   [which-flow]
   (debug "init-flow: " which-flow)
-  (let [form (get-nth-form 0)
+  (let [form (dsa/get-nth-form 0)
         fform  (:form form)
         pg-nm (which-flow fform)
         m {:form fform 
@@ -711,7 +710,7 @@
     (do
       (if-not (:page m) 
               (do
-                (flash-put! :header "MISSING PAGE " pg-nm)
+                (flash-put! :header (str "MISSING PAGE " pg-nm))
                 (error "init-flow MISSING PAGE: " pg-nm )))
       (update-session m "init-flow") )))
 

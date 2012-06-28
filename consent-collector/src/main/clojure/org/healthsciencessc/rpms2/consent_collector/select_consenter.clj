@@ -48,8 +48,7 @@
   subsequent display.  Displays results and/or an appropriate flash message."
 
    [ctx]
-   (let [org-id  (helper/current-org-id)
-          response  (dsa/dsa-search-consenters (ctx :body-params) org-id)
+   (let [ response (dsa/dsa-search-consenters (ctx :body-params))
           status (:status response)
           results (:json response) ]
 

@@ -77,16 +77,17 @@
            mitem ((keyword (:meta-item widget)) mi)
            data-name (str helper/META_DATA_BTN_PREFIX (:meta-item widget))
            model-data (session-get :model-data)
-           changed-metadata (session-get :changed-meta-data)
+
+           changed-metadata (session-get :all-meta-data)
            data-value ( (keyword data-name) model-data ) 
-           changed-data-value (meta-item-kw changed-metadata)
-           ]
+           changed-data-value (:value (meta-item-kw changed-metadata)) ]
     [:div.ui-grid-b
       [:div.ui-block-a.metadata (:label mitem) ]
       [:div.ui-block-b.metadata 
           [:span {:class (if (and data-value
                                   (not changed-data-value)) "changed" "") } 
-           (if changed-data-value changed-data-value (:value mitem)) ]]
+           (if changed-data-value changed-data-value (:value mitem)) 
+           ]]
        [:div.ui-block-c.metadata 
           (helper/submit-btn {:value (:label widget) 
                               :name (str "review-meta-edit-btn-" (:meta-item widget)) }) ]] )])
@@ -213,10 +214,11 @@
            (list
              (let [data-name (str helper/META_DATA_BTN_PREFIX nm)
                    model-data (session-get :model-data)
-                   data-value ( (keyword data-name) model-data ) 
+                   data-value ( (keyword data-name) model-data)   ;changed marker
+                   v (:value ( (keyword nm) (session-get :all-meta-data)))
+                   _ (println "DATA VALUE FOR " (keyword nm) " IS " v " CHANGE MARKER: " data-value)
                    mi (:meta-items (helper/current-form))
-                   mitem ((keyword nm) mi)
-                   v (:value mitem) ]
+                   mitem ((keyword nm) mi) ]
 
                   [:div.ui-grid-b
                     [:div.ui-block-a.metadata (:label mitem) ] 
@@ -320,8 +322,8 @@
         mitem ((keyword nm) mi)
         meta-item-kw (keyword nm)
         l (:label mitem)
-        changed-metadata (session-get :changed-meta-data)
-        changed-data-value (meta-item-kw changed-metadata)
+        changed-metadata (session-get :all-meta-data)
+        changed-data-value (:value (meta-item-kw changed-metadata))
         v (:value mitem) ]
       (helper/rpms2-page 
        [:div.collect-consent-form

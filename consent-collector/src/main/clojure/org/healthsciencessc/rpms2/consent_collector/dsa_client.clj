@@ -1,7 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-collector.dsa-client
   (:require [clojure.string :as s]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
-            [org.healthsciencessc.rpms2.consent-collector.helpers :as helper]
+            [org.healthsciencessc.rpms2.consent-collector.mock :as mock]
             [clj-http.client :as http])
   (:import org.apache.http.auth.MalformedChallengeException
            org.apache.http.client.ClientProtocolException)
@@ -74,7 +74,7 @@
       (catch Object e (debug "calling: " r " object " e))
       (finally "after request " r )))
 
-(defn dsa-call
+(defn dsa-call-internal
   [process-name arguments]
   (let [[_ method path-dashes] 
         (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
@@ -103,6 +103,12 @@
         maybe-parse-json
       )))
 
+(def captured-calls (atom '()))
+
+(defn dsa-call [p a]
+  (swap! captured-calls conj [p a])
+  (dsa-call-internal p a))
+
 (defn authenticate
   "Call security/authenticate userid password"
   [user-id password]
@@ -129,12 +135,10 @@
 (defn dsa-search-consenters
   "Search consenters."
 
-  [params xorg-id]
-  (let [ org-id (helper/current-org-id)
+  [params]
+  (let [org-id (get-in (session-get :user) [:organization :id])
         m (remove-blank-vals (select-keys params consenter-search-fields))]
-      (dsa-call :get-consent-consenters  m
-                 ;;(assoc m :organization org-id)
-                )))
+      (dsa-call :get-consent-consenters  m)))
 
 (defn dsa-create-encounter 
   [e]
@@ -183,100 +187,79 @@
 
 (defn get-published-protocols-form 
   "Returns the form for a single protocol."
-  []
-  nil
-)
+  [pv-id]
+  (let [lang (session-get :selected-language)
+        resp (dsa-call :get-protocol-versions-published-form {:language lang
+                                                              :protocol-version pv-id})]
+    (-> resp :body first)))     ;; this dsa call returns a list, but we only call it with one param, so return first
 
 (def metadata-mock
    [
-     {:name "Guarantor", 
+     {:id "MI0099"
+      :name "Guarantor", 
       :organization "BLAH", 
       :default-value "Mr Smith", 
       :description "This person is the guarantor", 
       :data-type "string"} 
 
-     {:mdid "MI002" 
+     
+     {:id "MI002" 
       :name "Referring Doctor", 
       :organization "BLAH 2", 
       :default-value "Dr Refer Ranger", 
       :description "The referring doctor for this patient", 
-      :data-type "xsd:string"} 
+      :data-type "string"} 
 
-    {:mdid "MI001" 
+    {:id "MI001" 
      :name "Primary Care Physician", 
      :organization "BLAH 3", 
      :default-value "Dr Primary Person", 
      :description "The primary care physician for this patient", 
-     :data-type "xsd:string"} 
+     :data-type "string"} 
 
-    {:uri "urn:admission-date" :name "Admission Date", :organization "BLAH 4", 
-     :default-value "today", 
-     :description "The date the patient was admitted for this consent", 
-     :data-type "xsd:date"}
    ]
 )
+
+(defn- wrap-dsa 
+  [method args]
+  (try+
+    (dsa-call method args)
+  (catch Exception ex (do 
+    (debug "DSA FAILED: " method, " args " args,  " exception " ex) 
+    (println "DSA FAILED: " method, " args " args,  " exception " ex)))
+  (catch Object ex (do 
+         (debug "DSA OBJECT FAILED: " method, " args " args, " exception ", ex) 
+         (println "DSA OBJECT FAILED: " method, " args " args, " exception  " ex)))))
+
+(def authuser ["ex-collector" "password"])
+
+
+(defn- fix-metadata
+  "Ensure that meta data is a map with the key being the id."
+  [col]
+  (let [r (apply merge {} (for [a col] (hash-map (keyword (:id a)) a))) ]
+    (println "fix-metadata " r)
+    r))
 
 (defn get-published-protocols-meta-items
   "Returns meta-items for published protocols.
   Sends the list of protocols and version ids and gets back
   the list of meta data items for these forms.
 
-  TODO: call dsa method with specified ids to find the real meta data items"
+  TODO: call dsa method with specified ids to find the real meta data items
+  
+  curl -i http://ex-collector:password@obis-rpms-neodb-dev.mdc.musc.edu:8080/services/protocol/versions/published/meta?protocol-version=3ad4c806-8edf-494e-8256-eac2aa7fcc78
+  "
   [protocol-ids]
-
-  metadata-mock)
+  (:body (dsa-call :get-protocol-versions-published-meta 
+               {:protocol-version protocol-ids})))
 
 (defn get-published-protocols
   "Returns published protocols for the currently logged in user 
   at the currently selected location."
-
   []
-  ;(println "get-published-protocols")
-  (let [resp (try+ 
-               (dsa-call :protocol-versions-published {:location (session-get :org-location) })
-               (catch Exception ex (do 
-                 (debug "get-published-protocols exception " ex) 
-                 #_(println "get-published-protocols exception " ex)))
-              (catch Object ex (do 
-                  (debug "get-published-protocols object " ex) 
-                  #_(println "get-published-protocols object " ex))))]
-      (do
-        #_(println "get-published-protocols ==> dsa resp is " resp)
-        (debug "get-published-protocols ==> dsa resp is " resp)
-
-  (list {:protocol 
-          {:status "published", 
-           :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
-           :organization {:name "Some Org", :code "mo", :id "1"}, 
-           :languages [ {:name "English", :code "EN", :id "LANG_EN01"} 
-                        {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
-           :id "P0001"
-           :protocol-id "MO01" }, } 
-
-         {:protocol 
-            {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
-             :organization {:name "Some Org", :code "mo", :id "1"}, 
-             :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
-                         {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
-                 :id "P0002"}, 
-          } 
-          {:protocol 
-                    {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
-                     :organization {:name "Some Org", :code "mo", :id "1"}, 
-                     :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
-                                 {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
-                     :id "P0003"}, 
-           }
-
-        {:protocol 
-           {:status "published", :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement", 
-             :organization {:name "Some Org", :code "mo", :id "1"}, 
-             :languages [{:name "English", :code "EN", :id "LANG_EN01"} 
-                         {:name "Spanish", :code "SP", :id "LANG_EN02"}], 
-                     :id "P0004"}, 
-} 
-))))
-
+  (let [resp (dsa-call :get-protocol-versions-published {:location (:id (session-get :org-location)) })]
+    (:body resp)))
 
 (defn- get-languages
   "Temporary method to return languages."
@@ -313,6 +296,17 @@
      :required false 
      :description "Tricare stuff" } ))
 
+(defn get-nth-form
+  "Uses hardcoded mock data. Should return the nth 
+  form (from :needed-protocol-ids)."
+  [n]
+  (let [pv-id (nth (session-get :selected-protocol-version-ids) n)]
+    (get-published-protocols-form pv-id)))
+
+;; REMOVE THIS SHADOWED FN FIXME
+(defn get-nth-form
+  [n]
+  (get [mock/lewis-blackman-form mock/sample-form] n))
 
 (defn get-available-protocols-and-languages
   "Returns a map with the available protocols 
@@ -322,17 +316,17 @@
 
   {:available-protocols [ {:id <Protocol1> ... } { <Protocol2> .. }  ... ] 
    :languages [ <LANG-1> <LANG-2> ] 
-  }
-
-  TODO: compute languages by extract out the language component, getting the unique list"
+  }"
   []
-
-  {:available-protocols (get-protocols)
-   :languages (get-languages) 
-  })
+  (let [p (get-published-protocols)]
+    {:available-protocols p 
+     :languages (distinct (apply concat (map :languages p)))}))
 
 (let [ propname "rpms2.dsa.url" 
        dsa-url (config propname) ]
      (if dsa-url (debug "using " propname " value of " dsa-url)
          (warn "WARNING: no value for property " propname " configured")))
+
+(debug! get-published-protocols-meta-items)
+(debug! get-published-protocols-form)
 
