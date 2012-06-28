@@ -16,17 +16,20 @@ div.consent-designer-pane{
 div.consent-designer-selector{
 	background-color: #DFEFFC;
 	border-right: solid 1px blue;
+	left: 0;
+	top: 0;
+	bottom: 0;
 	width: 7.95em;
-	height: 100%;
-	position: relative;
-	float: left;
+	position: absolute;
 }
 
 div.consent-designer-content{
 	background-color: #F5F8F9;
-	position: relative;
-	height: 100%;
-	float: left;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	left: 8em;
+	position: absolute;
 }
 
 
