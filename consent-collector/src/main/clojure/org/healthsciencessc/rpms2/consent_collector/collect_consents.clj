@@ -2,7 +2,6 @@
   org.healthsciencessc.rpms2.consent-collector.collect-consents
   (:require
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
-   [org.healthsciencessc.rpms2.consent-collector.mock :as mock]
    [org.healthsciencessc.rpms2.consent-collector.formutil :as formutil]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
@@ -73,24 +72,23 @@
   [{:keys [widget] :as m}]
   [:div.control.review 
      (let [meta-item-kw (keyword (:meta-item widget))
-           mi (:meta-items (helper/current-form))
-           mitem ((keyword (:meta-item widget)) mi)
+
+           entry (get (session-get :all-meta-data) meta-item-kw)
+           mi-label (:name entry) ; (:label mitem)
+           mi-value (:value entry)
+
            data-name (str helper/META_DATA_BTN_PREFIX (:meta-item widget))
            model-data (session-get :model-data)
-
-           changed-metadata (session-get :all-meta-data)
            data-value ( (keyword data-name) model-data ) 
-           changed-data-value (:value (meta-item-kw changed-metadata)) ]
+           ; _ (println "review-meta " mi-label " value " mi-value " dv " data-value " dname " data-name)
+           ]
     [:div.ui-grid-b
-      [:div.ui-block-a.metadata (:label mitem) ]
+      [:div.ui-block-a.metadata mi-label]
       [:div.ui-block-b.metadata 
-          [:span {:class (if (and data-value
-                                  (not changed-data-value)) "changed" "") } 
-           (if changed-data-value changed-data-value (:value mitem)) 
-           ]]
-       [:div.ui-block-c.metadata 
-          (helper/submit-btn {:value (:label widget) 
-                              :name (str "review-meta-edit-btn-" (:meta-item widget)) }) ]] )])
+       [:span {:class (if (= data-value "CHANGED") "changed" "") } mi-value]]
+      [:div.ui-block-c.metadata 
+         (helper/submit-btn {:value (:label widget) 
+                             :name (str "review-meta-edit-btn-" (:meta-item widget)) }) ]] )])
 
 (defn find-policy 
   [p]
@@ -214,17 +212,19 @@
            (list
              (let [data-name (str helper/META_DATA_BTN_PREFIX nm)
                    model-data (session-get :model-data)
-                   data-value ( (keyword data-name) model-data)   ;changed marker
-                   v (:value ( (keyword nm) (session-get :all-meta-data)))
-                   _ (println "DATA VALUE FOR " (keyword nm) " IS " v " CHANGE MARKER: " data-value)
-                   mi (:meta-items (helper/current-form))
-                   mitem ((keyword nm) mi) ]
+                   data-value ( (keyword data-name) model-data) ;changed marker
+                   ; the meta data entry
+                   entry (get (session-get :all-meta-data) (keyword nm))
+                   mi-label (:name entry)
+                   mi-value (:value entry)
+                   ;_ (println "data-change mi-value " mi-value, " MARKER: " data-value)
+                   ]
 
                   [:div.ui-grid-b
-                    [:div.ui-block-a.metadata (:label mitem) ] 
+                    [:div.ui-block-a.metadata mi-label ] 
                     [:div.ui-block-b.metadata 
                        [:span {:class (if data-value "changed" "") 
-                               :id nm } v ]]  
+                               :id nm } mi-value ]]  
 
                      [:input {:type "hidden" 
                               :id (str "hidden-" nm) 
@@ -290,7 +290,7 @@
   (dbg [:div.debug
        [:div.left"Page "  [:span.standout (:name (:page s)) ] " " (:title p)    
        " Form #" [:span.standout (inc (:current-form-number s))] " of " 
-       [:span.standout (count (session-get :needed-protocol-ids)) ] ]
+       [:span.standout (count (session-get :selected-protocol-version-ids )) ] ]
        [:div "Data  " (session-get :model-data) ] ]))
 
 (defn- display-page
@@ -318,13 +318,10 @@
 (defn- view-update-information
   [ctx nm]
 
-  (let [mi (:meta-items (helper/current-form))
-        mitem ((keyword nm) mi)
-        meta-item-kw (keyword nm)
-        l (:label mitem)
-        changed-metadata (session-get :all-meta-data)
-        changed-data-value (:value (meta-item-kw changed-metadata))
-        v (:value mitem) ]
+  (let [meta-item-kw (keyword nm)
+        entry (get (session-get :all-meta-data) meta-item-kw)
+        mi-label (:name entry) 
+        mi-value (:value entry) ]
       (helper/rpms2-page 
        [:div.collect-consent-form
           [:h2 "Update the following information: " ]
@@ -334,10 +331,11 @@
                   :data-ajax "false" 
                   :data-theme "a" } 
             [:div.ui-grid-b
-               [:div.ui-block-a  l ]
+               [:div.ui-block-a mi-label]
                [:div.ui-block-b   
                      [:input {:name nm 
-                              :value (if changed-data-value changed-data-value v) } ] ] ]
+                              :value mi-value
+                              }]]]
           [:div.submit-area (helper/submit-btn {:value "Update" 
                                                 :name (str "meta-data-update-btn-" nm) }) ]]] 
        :title "Update Information" )))
@@ -441,8 +439,6 @@
 
     (cond 
       ; If there's a return page, go there
-      ; if meta-data has been updated, need to send that to the server
-      ; otherwise may also need to send the updated data to the server
       (helper/get-return-page)  
       (let [pg-name (helper/get-return-page)]
          (do 
@@ -460,7 +456,7 @@
               (helper/set-page (get-named-page form pg-name))
               (view)))
 
-      ; If the user wants to edit a meta data item
+      ; If user wants to edit meta data item
       (find-review-meta-edit-page parms)
       (let [pg-name (find-review-meta-edit-page parms)]
             (do 
@@ -490,4 +486,3 @@
 
      :else
      (view-finished ctx))))
-

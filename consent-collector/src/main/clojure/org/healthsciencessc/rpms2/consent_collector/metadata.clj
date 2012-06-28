@@ -1,18 +1,8 @@
 (ns org.healthsciencessc.rpms2.consent-collector.metadata
-  "Processes for the meta data view and actions. Generates a form for user to enter meta data
-  items.  
-  
-  The items are on the form are determined by the dsa call
-     (dsa/get-published-protocols-meta-items protocol-ids) which will return 
-     map of metadata items, which is a map where the key is the meta-data id
-     and the value is meta-data info for that key.
+  "Processes for meta data. Meta data is generated via dsa calls
+   and stored the session variable :all-meta-data 
+   which will now contain a map of metadata items"
 
-     This is stored in the session variable :all-meta-data 
-
-  When the form is submitted, the values are updated in the session variable :all-meta-data 
-     which will now contain a  map of metadata items, 
-     each of which is a map with [:name :id :data-type :value]
-  "
   (:require
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
@@ -32,13 +22,19 @@
   ;; or dig into the :labels on the map
 
 (defn- emit-mi-field
+  "TODO If field type is checkbox, need to style differently"
   [mi]
-  [:div.inputdata {:data-role "fieldcontain" } 
+  (if (= (:data-type mi) "boolean")
+    (helper/checkbox-group {:name (:id mi)
+                            :label (get-label mi)
+                            :value (:value mi)
+                            } )
+     [:div.inputdata {:data-role "fieldcontain" } 
       [:label {:for (:id mi) :class "labelclass" } (get-label mi)  ]
       [:input {:type (get field-type (:data-type mi) "text")
                :name (:id mi)
                :id (:id mi)
-               :class "inputclass"}]])
+               :class "inputclass"}]]))
 
 (defn- grab-metaitems
   [protocol-ids]
@@ -80,4 +76,7 @@
                                             :value
                                             (str answer))]))]
     (session-put! :all-meta-data answer-map)
+    ;(println "meta data " (pprint-str answer-map))
+    ;(println "meta data " (pprint-str (keys answer-map)))
     (helper/myredirect "/collect/consents")))
+

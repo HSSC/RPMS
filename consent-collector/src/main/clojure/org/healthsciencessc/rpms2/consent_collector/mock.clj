@@ -18,7 +18,11 @@
         :name "info",
         :title "Verify Information",
         :type "text"}
-       {:meta-items ["MI001" "MI002"], :name "", :type "data-change"}]}
+       {:meta-items [ "ee65929a-6aa8-4635-9034-99b1bb3efcae"
+                      "5a1b8929-730a-4063-ae6f-08568139494a"
+                      "e53f6862-2827-4893-aeb9-d18de39ff134" ], 
+        :name "", 
+        :type "data-change"}]}
      {:name "section2",
       :type "section",
       :contains
@@ -42,13 +46,13 @@
       [{:type "review-metaitem",
    	    :name "ReviewMetaItem1",
     	:title "Review Information",         
-        :meta-item "MI001",           
+        :meta-item "5a1b8929-730a-4063-ae6f-08568139494a",           
     	:label "Edit"}
 	   {:type "review-metaitem",
    	    :name "ReviewMetaItem2",
-    	:title "Review Information",         
-        :meta-item "MI002",           
-    	:label "Edit"}]}
+    	    :title "Review Information",         
+            :meta-item "ee65929a-6aa8-4635-9034-99b1bb3efcae"
+    	    :label "Edit"}]}
 	 {:name "section2",
       :type "section",
       :contains
@@ -94,7 +98,6 @@
 
 
 (def sample-form
-
 {:form
  {:collect-start "page1",
   :summary-start "revpage1",
@@ -129,7 +132,10 @@
      {:name "section3",
       :type "section",
       :contains
-      [{:meta-items ["MI002" "MI001"],
+      [{:meta-items [
+                     "019f6f67-410c-40e2-99f0-52f3f5c8add1"
+                     "5a1b8929-730a-4063-ae6f-08568139494a"
+                     ],
         :name "flagThemDoctors",
         :type "data-change"}]}],
     :next "page2"}
@@ -276,12 +282,12 @@
       [{:type "review-metaitem",
    	    :name "ReviewMetaItem1",
     	:title "Review Information",         
-        :meta-item "MI002",           
+        :meta-item "019f6f67-410c-40e2-99f0-52f3f5c8add1"
     	:label "Edit"}
 	   {:type "review-metaitem",
    	    :name "ReviewMetaItem2",
     	:title "Review Information",         
-        :meta-item "MI001",           
+        :meta-item "5a1b8929-730a-4063-ae6f-08568139494a"
     	:label "Edit"}]}
      {:name "section3",
       :type "section",
@@ -437,46 +443,6 @@
 "I certify that I have read or have had read to me this consent and agree to its terms. I also certify that I am the patient, or am duly authorized by the patient, or am duly appointed to sign this agreement. I accept and understand its terms."]
     } 
    }  	
-
   }
-
  } 
-  
   )
-
-(def mock-published-protocols
-  #{ 
-     {:id "ABCDEF-01-234567",
-      :protocol {:id 100, 
-                 :name "Lewis Blackman Hospital Patient Safety Act Acknowledgement", 
-                 :code "mp", 
-                 :protocol-id "MO01"},
-      :version 1,
-      :status "published",
-      :languages [ {:id "LANG_EN01", :code "EN", :name "English"}
-                   {:id "LANG_SP02", :code "SP", :name "Spanish"} ]
-      :organization {:id 1, :name "My Org", :code "mo"}
-     } 
-
-    }
-  )
-
-(def languages (list {:id "LANG_EN01" :code "EN" :name "English" }
-                 {:id "LANG_SP01" :code "SP" :name "Spanish" }
-                 {:id "LANG_GE01" :code "GP" :name "German" } ) )
-
-
-
-
-
-;; use :name :id :data-type
-(def mock-md [
-   {:labels [ {:language {:organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, 
-:id "f8f6fc37-7157-45b4-bef4-08ac20c2381e", :name "English", :code "en"}, :id "0869bfb1-9519-48c0-ba96-fe7428b0c4a7", :value "Guarantor"} ], :organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "dcd2092a-2df9-4c43-924a-2f38e045e64d", :status "Published", :name "Guarantor", :data-type "string"}
-
-{:labels [{:language {:organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "f8f6fc37-7157-45b4-bef4-08ac20c2381e", :name "English", :code "en"}, :id "d0bbb628-c55b-42ca-bbb6-59f4c9edf076", :value "Referring Physician's Name"}], :organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "e53f6862-2827-4893-aeb9-d18de39ff134", :status "Published", :name "Referring Physician's Name", :data-type "string"}
-               
-
-{:labels [{:language {:organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "f8f6fc37-7157-45b4-bef4-08ac20c2381e", :name "English", :code "en"}, :id "1d5f8dd2-7b9a-40b1-a8ae-584b7759ce99", :value "Primary Care Physician's Name"}], :organization {:id "1e904f9b-3cde-48c1-9348-e383e2f44f6c", :name "Default Organization", :code "!DEFAULTORGANIZATION!"}, :id "24f7d954-c1c7-417d-9545-2635c4da5e05", :status "Published", :name "Primary Care Physician's Name", :data-type "string"
-                }
-               ])

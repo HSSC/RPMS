@@ -4,7 +4,6 @@
                [page :as hpage]
                [element :as helem]])
   (:require [ring.util.response :as ring])
-  (:require [org.healthsciencessc.rpms2.consent-collector.mock :as mock])
   (:require [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa])
   (:require [org.healthsciencessc.rpms2.consent-collector.formutil :as formutil])
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
@@ -510,44 +509,29 @@
 
 
 (defn- handle-meta-data-update-btns
-  "Handles update meta-data buttons.
+  "Handles update meta-data buttons."
+  [parms]
 
-   If there is a meta data button in the parameter map,
-   Places the updated value in :changed-meta-data.
-   Removes the marker in the model data indicating this meta data item requires changing. 
-
-  Replace the value associated with a meta data item.
-  {:M1 {:id :name :value ... } :M2 {:id :name :value }
-
-  Get the map entry associated with the id, then update the value using assoc, 
-  the update the :all-meta-data with this new entry for this id.
-  "
-  [m]
-
-  (let [btns (filter #(.startsWith (str (name %)) META_DATA_UPDATE_BTN_PREFIX) (keys m))]
+  (let [btns (filter #(.startsWith (str (name %)) META_DATA_UPDATE_BTN_PREFIX) (keys parms))
+        mdata (session-get :model-data)]
      (if (> (count btns) 0)
-       (do
-         (let [mi (keyword-from-button btns META_DATA_UPDATE_BTN_PREFIX) 
-               v (get (session-get :model-data) mi) 
-               changed-metadata (if-let [smd (session-get :changed-meta-data)] smd {})
-               val (mi m) 
-               change-marker (keyword (str META_DATA_BTN_PREFIX (name mi))) 
+       (let [mi (keyword-from-button btns META_DATA_UPDATE_BTN_PREFIX) 
+             val (mi parms) 
+             marker (keyword (str META_DATA_BTN_PREFIX (name mi))) 
+             marker2 (keyword (name mi))
 
-               orig-map (session-get :all-meta-data)  ; original meta-data map
-               entry (orig-map mi)  ; the entry for this meta-data item
-               new-entry (assoc entry :value val)  ; now with the new value
-               new-map (assoc orig-map mi new-entry) ; the updated meta-data map
-               _ (println "meta data --> NEW MAP " new-map)]
-           (do
-              ;(println "Updating meta data item: mi is " mi " v is " v " val is " val)
-              (debug "Updating meta data item: mi is " mi " v is " v " val is " val)
-              (session-put! :changed-meta-data (assoc changed-metadata mi val))
-              (session-put! :all-meta-data new-map)
-              (session-put! :model-data (dissoc (session-get :model-data) change-marker)))
-           )
-          m))
-    m))
+             orig-map (session-get :all-meta-data)  ; original meta-data map
+             entry (orig-map mi)  ; the entry for this meta-data item
+             new-entry (assoc entry :value val)  ; now with the new value
+             new-map (assoc orig-map mi new-entry) ]
+             ;(println "Updating meta data item: mi is " mi " val " val)
+             (debug "Updating meta data item: mi is " mi " val " val)
+             (session-put! :all-meta-data new-map)
 
+             ; maybe this needs to be changed finished-forms
+             (session-put! :model-data (dissoc mdata marker marker2))
+             (dissoc parms marker marker2))
+          parms)))
 
 (defn remove-checkboxes-from-model
   "Find checkboxes that are on the page but weren't submitted
@@ -585,7 +569,10 @@
 
   (debug "ENTER save captured data: " 
          (dissoc (session-get :model-data) :consenter ))
-  (remove-checkboxes-from-model parms)
+
+  (remove-checkboxes-from-model parms) ;; may modify :model-data
+  (if (in-review?)
+      (handle-meta-data-update-btns parms)) ;; may modify :model-data
   (let [ m (session-get :model-data)
         new-map (->  m
                      (merge (-> parms
@@ -654,33 +641,57 @@
   (let [s (session-get :collect-consent-status)]
         (:form s))) 
 
+(defn- get-finished-form-key
+  [n]
+  (let [pvlist (session-get :selected-protocol-version-ids)]
+    (if (< n (count pvlist))
+      (keyword (nth pvlist n))
+      nil)))
+
+(defn- get-saved-finished-form
+  "Returns finished form n or nil if n is not a valid form."
+  [n]
+  (let [pvlist (session-get :selected-protocol-version-ids)
+        finished-form-key (get-finished-form-key n)]
+    (if finished-form-key
+        (get (if-let [f (session-get :finished-forms)] f {}) 
+             finished-form-key)
+        nil)))
+
 (defn- get-data-for-nth-finished-form
   "If there is data saved for the nth form, return it.
   Otherwise return an empty map." 
   [n]
   (debug "get data for nth form " n (count (session-get :finished-forms)))
-  (let [forms-data (if-let [f (session-get :finished-forms)] f {}) ]
-        (get forms-data (get-form-name-kw n))))
+  (let [pvlist (session-get :selected-protocol-version-ids) ]
+        (if-let [sf (get-saved-finished-form n)] sf {})))
 
 (defn finish-form
-  "Save data of the current form and prepare for the next one."
+  "Save data of current form and prepare for next one."
   []
   (let [s (session-get :collect-consent-status)
+        mdata (session-get :model-data)
         n (:current-form-number s)
-        finform  (if-let [finished-forms (session-get :finished-forms)] finished-forms {})
-        k  (get-form-name-kw n)
-        ff (assoc finform k (session-get :model-data))  ;; add current data to finished-forms
+
+        fkey (get-finished-form-key n)
+        orig-finished-forms (if-let [ff (session-get :finished-forms)] ff {})
         ] 
     (do
-      (session-put! :finished-forms ff)
+      ;; save current forms data into :finished-forms
+      (if fkey 
+        (session-put! :finished-forms (assoc orig-finished-forms fkey mdata)))  
+
       ;; if we are in review then load up saved data for the form 
       (if (in-review?) 
           (session-put! :model-data (get-data-for-nth-finished-form (inc n)))
           (session-put! :model-data {} ))
 
       (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
-
-      (if-let [next-form (dsa/get-nth-form (inc n))]
+      
+      ;; make sure we are not at last forms 
+      (if-let [next-form (if (get-finished-form-key (inc n)) 
+                                (dsa/get-nth-form (inc n))
+                                nil)]
        (let [formval (:form next-form)
              start-page-nm ((:which-flow s) formval)
              p (get-named-page formval start-page-nm) ;; get first page form, using specified flow

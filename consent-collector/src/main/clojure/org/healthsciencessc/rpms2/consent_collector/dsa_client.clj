@@ -74,7 +74,7 @@
       (catch Object e (debug "calling: " r " object " e))
       (finally "after request " r )))
 
-(defn dsa-call-internal
+(defn dsa-call
   [process-name arguments]
   (let [[_ method path-dashes] 
         (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
@@ -103,11 +103,6 @@
         maybe-parse-json
       )))
 
-(def captured-calls (atom '()))
-
-(defn dsa-call [p a]
-  (swap! captured-calls conj [p a])
-  (dsa-call-internal p a))
 
 (defn authenticate
   "Call security/authenticate userid password"
@@ -193,47 +188,6 @@
                                                               :protocol-version pv-id})]
     (-> resp :body first)))     ;; this dsa call returns a list, but we only call it with one param, so return first
 
-(def metadata-mock
-   [
-     {:id "MI0099"
-      :name "Guarantor", 
-      :organization "BLAH", 
-      :default-value "Mr Smith", 
-      :description "This person is the guarantor", 
-      :data-type "string"} 
-
-     
-     {:id "MI002" 
-      :name "Referring Doctor", 
-      :organization "BLAH 2", 
-      :default-value "Dr Refer Ranger", 
-      :description "The referring doctor for this patient", 
-      :data-type "string"} 
-
-    {:id "MI001" 
-     :name "Primary Care Physician", 
-     :organization "BLAH 3", 
-     :default-value "Dr Primary Person", 
-     :description "The primary care physician for this patient", 
-     :data-type "string"} 
-
-   ]
-)
-
-(defn- wrap-dsa 
-  [method args]
-  (try+
-    (dsa-call method args)
-  (catch Exception ex (do 
-    (debug "DSA FAILED: " method, " args " args,  " exception " ex) 
-    (println "DSA FAILED: " method, " args " args,  " exception " ex)))
-  (catch Object ex (do 
-         (debug "DSA OBJECT FAILED: " method, " args " args, " exception ", ex) 
-         (println "DSA OBJECT FAILED: " method, " args " args, " exception  " ex)))))
-
-(def authuser ["ex-collector" "password"])
-
-
 (defn- fix-metadata
   "Ensure that meta data is a map with the key being the id."
   [col]
@@ -242,63 +196,20 @@
     r))
 
 (defn get-published-protocols-meta-items
-  "Returns meta-items for published protocols.
-  Sends the list of protocols and version ids and gets back
-  the list of meta data items for these forms.
-
-  TODO: call dsa method with specified ids to find the real meta data items
-  
-  curl -i http://ex-collector:password@obis-rpms-neodb-dev.mdc.musc.edu:8080/services/protocol/versions/published/meta?protocol-version=3ad4c806-8edf-494e-8256-eac2aa7fcc78
-  "
+  "Returns meta-items for published protocols."
   [protocol-ids]
   (:body (dsa-call :get-protocol-versions-published-meta 
                {:protocol-version protocol-ids})))
 
 (defn get-published-protocols
-  "Returns published protocols for the currently logged in user 
+  "Returns published protocols for currently logged in user 
   at the currently selected location."
   []
   (let [resp (dsa-call :get-protocol-versions-published {:location (:id (session-get :org-location)) })]
     (:body resp)))
 
-(defn- get-languages
-  "Temporary method to return languages."
-  []
-
-  (list {:id "LANG_EN01" :code "EN" :name "English" }
-        {:id "LANG_SP01" :code "SP" :name "Spanish" }
-        {:id "LANG_GE01" :code "GP" :name "German" } ) )
-
-(defn get-protocols
-  []
-  (list 
-    {:protocol-id "P0001" 
-     :name "Lewis Blackman Hospital Patient Safety Act Acknowledgeement" 
-     :select-by-default true 
-     :required true 
-     :description "Inform patient of right of access to attending physician" } 
-
-    {:protocol-id "P0002"
-     :name "Consent for Medical Treatment" 
-     :select-by-default false 
-     :required false 
-     :description "Some consent for medical treatment stuff " } 
-
-    {:protocol-id "P0003"
-     :name "Medicare" 
-     :select-by-default false 
-     :required false 
-     :description "Medicare stuff" }  
-
-    {:protocol-id "P0004"
-     :name "Tricare" 
-     :select-by-default true 
-     :required false 
-     :description "Tricare stuff" } ))
-
 (defn get-nth-form
-  "Uses hardcoded mock data. Should return the nth 
-  form (from :needed-protocol-ids)."
+  "Return the nth form."
   [n]
   (let [pv-id (nth (session-get :selected-protocol-version-ids) n)]
     (get-published-protocols-form pv-id)))
@@ -306,13 +217,11 @@
 ;; REMOVE THIS SHADOWED FN FIXME
 (defn get-nth-form
   [n]
-  (get [mock/lewis-blackman-form mock/sample-form] n))
+  (if (= n 0) mock/lewis-blackman-form mock/sample-form))
 
 (defn get-available-protocols-and-languages
   "Returns a map with the available protocols 
   and languages:
-
-  Example:
 
   {:available-protocols [ {:id <Protocol1> ... } { <Protocol2> .. }  ... ] 
    :languages [ <LANG-1> <LANG-2> ] 
