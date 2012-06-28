@@ -88,21 +88,25 @@
     [swid1 swid2]))
 
 (defn gen-page
-  [org form operation policy endorsement langs sectionfn]
+  [org form operation policy endorsement langs sectionfn i total]
   (let [props [{:key "operation" :value operation }]
-        page {:name (next-name operation) :type "page" :organization org}
+        pprops (if (> i 0) [{:key "previous" :value (str operation (dec i))}] [])
+        nprops (if (< i (dec total)) [{:key "next" :value (str operation (inc i))}] [])
+        name (str operation i)
+        page {:name name :type "page" :organization org}
         sections (sectionfn org page operation policy endorsement langs)
-        page (merge page {:contains sections :properties props})
+        page (merge page {:contains sections :properties (concat props pprops nprops)})
         record (data/create-records types/widget page)]
     (data/relate-records types/widget (:id record) types/form (:id form))))
 
 (defn make-form
   [org form policies endorsements meta-items langs]
-  (let [po-pos (take (count endorsements) policies)]
-    (doseq [[policy endorsement] (map vector po-pos endorsements)]
-      (gen-page org form "collect" policy endorsement langs gen-sections-collect))
-    (doseq [[policy endorsement] (map vector po-pos endorsements)]
-      (gen-page org form "review" policy endorsement langs gen-sections-review))))
+  (let [total (count endorsements)
+        po-pos (take total policies)]
+    (doseq [[policy endorsement i] (map vector po-pos endorsements (range))]
+      (gen-page org form "collect" policy endorsement langs gen-sections-collect i total))
+    (doseq [[policy endorsement i] (map vector po-pos endorsements (range))]
+      (gen-page org form "review" policy endorsement langs gen-sections-review i total))))
 
 (defn add-protocols
   "Creates an organization that will contain all of the example and best practice data."
