@@ -1,13 +1,20 @@
 ;; Provides the reusable functions for dealing with our tenancy.
-(ns org.healthsciencessc.rpms2.consent-domain.tenancy)
+(ns org.healthsciencessc.rpms2.consent-domain.tenancy
+  (:require [org.healthsciencessc.rpms2.consent-domain.types :as types]))
 
 (defn only-my-org
+  "Returns only items in the collection that belong to the users organization."
   [user coll]
   (let [org-id (get-in user [:organization :id])]
     (filter #(= org-id (get-in % [:organization :id])) coll)))
 
+(defn only-base-org
+  "Returns only items in the collection that belong to the base organization."
+  [coll]
+  (filter #(= types/code-base-org (get-in % [:organization :code])) coll))
+
 (defn label-for
-  ""
+  "Looks for the first valid value within the organization and location for a specific label."
   [label location organization default]
   (let [labels [(label location)
                 (label (:organization location))

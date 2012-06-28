@@ -2,6 +2,9 @@ div#consent-designer{
 
 }
 
+/*
+ Top level containers
+*/
 div.consent-designer-pane{
 	position: relative;
 	height: 100%;
@@ -26,7 +29,32 @@ div.consent-designer-content{
 	float: left;
 }
 
-div.consent-designer-imput{
+
+/*
+ Labelling Controls
+*/
+div.consent-designer-header{
+	text-align: center;
+	font-weight: bold;
+}
+
+/*
+ Dashboard Control
+*/
+div.consent-designer-widget-dashboard{
+	position: relative;
+	width: 100%;
+	height: 3em;
+	text-align: center;
+}
+
+div.consent-designer-widget-dashboard img{
+	padding: .5em;
+	height: 32px;
+	width: 32px;
+}
+
+div.consent-designer-input{
 	position: relative;
 }
 
@@ -34,6 +62,9 @@ img.consent-designer-resize{
 	
 }
 
+/*
+ Selector Control
+*/
 ul.consent-designer-selector{
 	padding-left: 0;
 	width: 8em;
@@ -47,6 +78,12 @@ ul.consent-designer-selector li{
 	border-right: solid 1px blue;
 }
 
+
+ul.consent-designer-selector li.spacer{
+	text-decoration: underline;
+	padding: .25em .25em .25em .25em;
+}
+
 ul.consent-designer-selector li.selected{
 	list-style-type: none;
 	padding: .25em .25em .25em 1em;
@@ -57,6 +94,9 @@ ul.consent-designer-selector li.selected{
 	font-weight: bold;
 }
 
+/*
+ Data Container and Controls
+*/
 div.consent-designer-data{
 	position: relative;
 	width: 100%;
