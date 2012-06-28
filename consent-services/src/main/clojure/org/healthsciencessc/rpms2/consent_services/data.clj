@@ -419,17 +419,19 @@
   ([start-type start-id relation-path]
      (find-related-records start-type start-id relation-path true))
   ([start-type start-id relation-path include-defaults]
-     (let [start-node (get-node-by-index start-type start-id)
-           nodes (walk-types-path start-node relation-path (if include-defaults directed-default-rel))]
-       (filter identity (map #(node->record % (last relation-path)) nodes)))))
+     (if-let [start-node (get-node-by-index start-type start-id)]
+       (let [nodes (walk-types-path start-node relation-path (if include-defaults directed-default-rel))]
+         (filter identity (map #(node->record % (last relation-path)) nodes)))
+       (throw+ {:type ::record-not-found :record-type start-type :id start-id}))))
 
 (defn find-children
   ([parent-type parent-id child-type]
      (find-children parent-type parent-id child-type true))
   ([parent-type parent-id child-type include-defaults]
-     (let [parent-node (get-node-by-index parent-type parent-id)]
+     (if-let [parent-node (get-node-by-index parent-type parent-id)]
        (filter identity (map #(node->record % child-type)
-                             (children-nodes-by-type parent-node child-type (if include-defaults directed-default-rel)))))))
+                             (children-nodes-by-type parent-node child-type (if include-defaults directed-default-rel))))
+       (throw+ {:type ::record-not-found :record-type parent-type :id parent-id}))))
 
 (defn belongs-to?
   ([child-type child-id parent-type parent-id]
