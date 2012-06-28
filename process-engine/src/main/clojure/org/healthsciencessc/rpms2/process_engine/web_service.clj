@@ -64,6 +64,8 @@
   [body request]
   (let [requested-content-type (or (:content-type request) "NA")]
     (cond
+     (and (response? body) (not (empty? (:headers body))))
+     body
      (json-requested? requested-content-type)
      (if (response? body)
        (content-type (update-in body [:body] (fn [b] (with-out-str (pprint-json b)))) requested-content-type)

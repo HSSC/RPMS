@@ -13,6 +13,7 @@
             [org.healthsciencessc.rpms2.consent-services.default-processes.policy]
             [org.healthsciencessc.rpms2.consent-services.default-processes.protocol]
             [org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version]
+            [org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version-export]
             [org.healthsciencessc.rpms2.consent-services.default-processes.role]
             [org.healthsciencessc.rpms2.consent-services.default-processes.role-mapping]
             [org.healthsciencessc.rpms2.consent-services.default-processes.text-i18n]
