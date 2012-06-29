@@ -107,8 +107,7 @@
      (list 
        (dbg [:div
         [:div "FINISHED FORMS " (session-get :finished-forms) ]
-        [:p.debug "MODEL DATA" (pprint-str (session-get :model-data))]
-        [:div "widget title " (:title widget) " page " (get-named-page (helper/current-form) (:returnpage widget)) ] ])
+        [:div "widget " (:title widget) " returnpage " (get-named-page (helper/current-form) (:returnpage widget)) ] ])
 
        (let [policy (find-policy (:policy widget))
              other-widgets (formutil/find-policy-in-page 
@@ -127,8 +126,7 @@
 
                       (= (:type other) "policy-checkbox")
                       (if (= "on" v)
-                        (other :checked-value) 
-                        (other :unchecked-value))
+                        (other :label)) 
 
                       (= (:type other) "policy-button")
                       (:label other) 
