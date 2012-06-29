@@ -102,6 +102,9 @@
     (do
       (session-put! :selected-protocol-version-ids (vec needed))
       (session-put! :selected-language (-> ctx :body-params :sp-language))
+      ;; this removes any unselected protocols from the session
+      (session-put! :protocol-versions (filter #(some (set needed) %)
+                                               (session-get :protocol-versions)))
       (debug "perform selected protocols " (pprint-str needed) )
       (debug "perform selected language " (:sp-language ctx))
       (helper/myredirect "/view/meta-data")))) 

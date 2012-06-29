@@ -21,75 +21,41 @@
 (defn list-widgets-in-form
   "Lists names of all widgets in the form."
   [form]
-  (->> form
-       :contains        ; pages
-       (map :contains)  ; sections
-       flatten
-       (map :contains)  ; widgets
-       flatten
-       (map :name)))
+  (let [branch? #(seq (:contains %))]
+    (tree-seq branch? :contains form)))
 
-(defn list-pages-in-form
-  "Lists names of all pages in the form."
-  [form]
-  (->> form
-       :contains        ; pages
-       (map :name)))
+(defn signature-widget? [w]
+  (= "signature" (:type w)))
 
-(defn find-widget-in-form
-  "Returns the named widget in the form."
-  [form nm]
-  (->> form
-       :contains        ; pages
-       (map :contains)  ; sections
-       flatten
-       (map :contains)  ; widgets
-       flatten
-       (filter #(= (:name %) nm))
-       first)) 
-
-
-
-
-(defn find-page-in-form
-  "Returns the named page in the form."
-  [form nm]
-  (->> form
-       :contains        ; pages
-       (filter #(= (:name %) nm))
-       first)) 
-
-(defn find-widget-in-page
-  "Returns the named widget in the page."
-  [page nm]
-  (->> page
-       :contains        ; sections
-       flatten
-       (map :contains)  ; widgets
-       flatten
-       (filter #(= (:name %) nm))
-       first)) 
-
+(defn policy-widget? [{type :type}]
+  (or (= type "policy-choice-buttons")
+      (= type "policy-button")
+      (= type "policy-checkbox")))
 
 (defn find-policy-in-page
-  "Returns the named widget in the page."
+  "Returns the named widget in the page or section or form"
   [page nm]
-  (->> page
-       :contains        ; sections
-       flatten
-       (map :contains)  ; widgets
-       flatten
-       (filter #(and (= (:policy %) nm)
-                     (or (= (:type %) "policy-choice-buttons")
-                         (= (:type %) "policy-button")
-                         (= (:type %) "policy-checkbox")))))) 
+  (first (filter #(and (policy-widget? %)
+                       (= nm (:name %)))
+                 (list-widgets-in-form page))))
 
+(defn widget-by-guid [form guid]
+  (let [widget-map (into {} (for [{id :id :as widget}
+                                  (list-widgets-in-form form)]
+                              [id widget]))]
+    (get widget-map guid)))
 
-(defn find-widget-in-form-on-page
-  "Returns the named widget in the form which is contained on the page named 'page-nm'.
-  Because there can be multiple pages with the same widget name (eg. one for the
-  regular flow, and one for the review page)."
-  [form w-nm page-nm]
-  (let [page (find-page-in-form form page-nm)]
-        (find-widget-in-page page w-nm) ))
+(defn widget-properties [w]
+  (into {} (for [{:keys [key value]} (:properties w)]
+             [(keyword key) value])))
 
+(defn widget-props-localized-impl [w lang-id]
+  (let [props (:properties w)
+        localized-props (->> props 
+                          (filter #(= lang-id (:id (:language %)))))
+        normalprops (remove :language props)]
+    (into {} (for [{:keys [key value]} (concat props localized-props)]
+               [(keyword key) value]))))
+
+(defn widget-props-localized [w]
+  (widget-props-localized w (session-get :selected-language)))

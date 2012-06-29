@@ -187,6 +187,7 @@
              :lockcode
              :search-params
              :create-params
+             :witness-png
              :user]]
     (session-delete-key! k)))
 
@@ -599,8 +600,10 @@
   "Remove any in-progress consent information."
   []
   (debug "clearing consent data")
-  (session-delete-key! :collect-consent-status)
-  (session-delete-key! :model-data))
+  (doseq [k [:collect-consent-status
+             :model-data
+             :witness-png]]
+    (session-delete-key! k)))
 
 (defn print-form
   "If orig-n is a sequence, use the first item.
@@ -752,8 +755,16 @@
 (defn clear-consenter
   "Removes consenter information from session."
   []
-  (session-delete-key! :consenter)
-  (session-delete-key! :encounter))
+  (doseq [k [:protocols
+             :consenter
+             :encounter
+             :search-params
+             :collect-consent-status
+             :selected-language
+             :witness-png
+             :needed-protocol-ids
+             :finished-forms]]
+    (session-delete-key! k)))
 
 (defn set-consenter
   "Saves consenter info in the session."
