@@ -54,8 +54,8 @@
         localized-props (->> props 
                           (filter #(= lang-id (:id (:language %)))))
         normalprops (remove :language props)]
-    (into {} (for [{:keys [key value]} (concat props localized-props)]
+    (into {} (for [{:keys [key value]} (concat normalprops localized-props)]
                [(keyword key) value]))))
 
 (defn widget-props-localized [w]
-  (widget-props-localized w (session-get :selected-language)))
+  (widget-props-localized-impl w (session-get :selected-language)))
