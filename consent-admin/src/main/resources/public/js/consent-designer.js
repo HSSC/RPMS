@@ -10,6 +10,7 @@
 		consent.Keys = keys = {
 			collect: "collect",
 			review: "review",
+			form: "form",
 			page: "page",
 			section: "section",
 			control: "control"
@@ -78,32 +79,88 @@
 					found = found.concat(panes.splice(0, panes.length));
 				}
 				return found;
+			},
+			findProperties: function(name, props){
+				var found = [];
+				if(props != null){
+					for(var i = 0; i < props.length; i++){
+						if(props[i].key == name) found.push(props[i]);
+					}
+				}
+				return found;
+			},
+			findProperty: function(name, props, empty){
+				var found = utils.findProperties(name, props);
+				if(found.length > 0){
+					return found[0];
+				}
+				else if(empty){
+					return {key: name, value: null, language: null};
+				}
+				return null;
 			}
 		}
 	}
 	
 	var widgets = consent.Widgets;
 	if(widgets == null){
-		consent.Widgets = widgets = {
-			pages: [],
-			sections: [],
-			controls: [],
-			registerPage: function(widget){
-				widgets.pages.push(widget);
-			},
-			registerSection: function(widget){
-				widgets.sections.push(widget);
-			},
-			registerControl: function(widget){
-				widgets.controls.push(widget);
-			},
-			findWidget: function(kind, type){
-				var ws = widgets[kind];
-				if(ws != null && ws.length > 0){
-					return utils.findByKeyValue(items, "type", type, remove);
-				}
-				return null;
+		consent.Widgets = widgets = {};
+		widgets.control = {id: keys.control, label: "Control", widgets: []};
+		widgets.section = {id: keys.section, label: "Section", widgets: [], subtype: widgets.control};
+		widgets.page = {id: keys.page, label: "Page", widgets: [], subtype: widgets.section};
+		widgets.form = {id: keys.form, label: "Form", widgets: [], subtype: widgets.page};
+		widgets.registerPage =  function(widget){
+			widgets.page.widgets.push(widget);
+		};
+		widgets.registerSection =  function(widget){
+			widgets.section.widgets.push(widget);
+		};
+		widgets.registerControl =  function(widget){
+			widgets.control.widgets.push(widget);
+		};
+		widgets.findWidget = function(kind, type){
+			var ws = widgets[kind];
+			if(ws != null && ws.widgets.length > 0){
+				return utils.findByKeyValue(ws.widgets, "type", type);
 			}
+			return null;
+		};
+		widgets.generateName = function(widget){
+			return "New " + widget.label + new Date().getMilliseconds();
+		};
+	}
+	
+	var editors = consent.Editors;
+	if(editors == null){
+		consent.Editors = editors = {};
+		editors.editors = {};
+		editors.base = {
+				refresh: function(control, data){
+					var attrs = editors.lift(control);
+					var keyValue = Consent.Utils.findProperty(attrs.property.name, data.properties, true);
+					control.data("state", keyValue);
+				},
+				created: function(control){return []},
+				updated: function(control){return []},
+				deleted: function(control){return []}
+		};
+		editors.register = function(id, edit){
+			editors.editors[id] = $.extend({}, editors.base, edit);
+		};
+		editors.sync = function(container, property, data, operation, editable){
+			container.data("property", property);
+			container.data("data", data);
+			container.data("operation", operation);
+			container.data("editable", editable);
+		};
+		editors.lift = function(container){
+			var props = {
+				property: container.data("property"),
+				data: container.data("data"),
+				operation: container.data("operation"),
+				editable: container.data("editable")
+			};
+			return props;
 		}
 	}
 	
@@ -116,6 +173,9 @@
 			},
 			relativeContent: function(item){
 				return item.closest(".consent-designer-pane").children(".consent-designer-content");
+			},
+			relativeData: function(item){
+				return item.closest(".consent-designer-data");
 			},
 			createPane: function(container){
 				var pane = $("<div class='consent-designer-pane' />");
@@ -130,7 +190,6 @@
 			createContent: function(container){
 				var content = $("<div class='consent-designer-content' />");
 				content.appendTo(container);
-				Utils.Size.fillRight(content);
 				return content;
 			},
 			createMenu: function(container, items){
@@ -142,9 +201,7 @@
 						item.li = ui.addMenuItem(list, item);
 						item.li.appendTo(list);
 					}
-					if(items[0].launch){
-						items[0].li.click();
-					}
+					items[0].li.click();
 				}
 				return list;
 			},
@@ -165,7 +222,7 @@
 				}
 				return li;
 			},
-			createData: function(container, noDelete){
+			createFormData: function(container){
 				var pane = $("<div class='consent-designer-data' />");
 				pane.appendTo(container);
 				var fields = $("<div class='consent-designer-data-fields' />");
@@ -175,12 +232,7 @@
 					actions.appendTo(pane);
 					var save = $("<div class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only consent-designer-data-save'>Save</div>");
 					save.appendTo(actions);
-					save.bind("click", designer.save);
-					if(noDelete != true){
-						var del = $("<div class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only consent-designer-data-delete'>Delete</div>");
-						del.appendTo(actions);
-						del.bind("click", designer.delete);
-					}
+					save.bind("click", designer.saveForm);
 				}
 				return pane;
 			},
@@ -192,26 +244,21 @@
 				var dashboard = $("<div class='consent-designer-widget-dashboard' />");
 				dashboard.appendTo(container);
 
-				var add = $("<img src='" + Utils.Url.render("/image/add.png") + "' />")
-				add.appendTo(dashboard);
-				add.bind("click", function(){addAction(options);});
 				var sort = $("<img src='" + Utils.Url.render("/image/sort.png") + "' />")
 				sort.appendTo(dashboard);
 				sort.bind("click", function(){sortAction(options);});
+
+				var add = $("<img src='" + Utils.Url.render("/image/add.png") + "' />")
+				add.appendTo(dashboard);
+				add.bind("click", function(){addAction(options);});
 			},
-			createTextControl: function(container, label, parentType, parentId, property, texts){
+			createTextControl: function(container, label, property, texts){
 				var control = $("<div class='form-control-wrapper i18ntext consent-designer-input' />");
 				control.appendTo(container);
 				control.data("editable", designer.editable);
 				control.data("name", property);
 				control.data("languages", designer.protocol.languages);
-				if(parentId != null){
-					control.data("url", Utils.Url.render("/api/text/i18n"));
-					control.data("params", {"parent-type": parentType, "parent-id": parentId, "property": property});
-				}
-				else{
-					control.data("persist", designer.editable);
-				}
+				control.data("value", texts);
 				
 				var label = $("<div class='form-label'>" + label + "</div>");
 				label.appendTo(control);
@@ -243,14 +290,150 @@
 						row.data("text", text);
 					}
 				}
+				return control;
+			},
+			createInputControl: function(container, editable, field, label, value){
+				var wrap = ui.createControl(container);
+				ui.createLabel(wrap, field, label);
+				ui.createInput(wrap, editable, field, value);
+				return wrap;
+			},
+			createControl: function(container){
+				var wrap = $("<div class='consent-designer-input' />");
+				wrap.appendTo(container);
+				return wrap;
+			},
+			createInput: function(container, editable, field, value){
+				var input = $("<input class='consent-designer-input' />");
+				input.appendTo(container);
+				input.val(value);
+				input.data("field", field);
+				input.data("state", value);
+				if(!editable){
+					input.attr("disabled", "disabled");
+				}
+				return input;
+			},
+			createCheckboxControl: function(container, editable, field, label, value, checkedValue, uncheckedValue, defaultValue){
+				var wrap = ui.createControl(container);
+				wrap.data("checkedValue", checkedValue);
+				wrap.data("uncheckedValue", uncheckedValue);
+				wrap.data("value", value);
+				wrap.data("field", field);
+				var input = $("<input type='checkbox' class='consent-designer-checkbox' />");
+				input.appendTo(wrap);
+				if(value == checkedValue || (value == null && checkedValue == defaultValue)){
+					input.attr("checked", "checked");
+				}
+				if(!editable){
+					input.attr("disabled", "disabled");
+				}
+				ui.createLabel(wrap, field, label).addClass("consent-designer-checkbox");
+				return wrap;
+			},
+			createSelectControl: function(container, property, data, operation, editable, options){
+				var keyValue = utils.findProperty(property.name, data.properties, true);
+				var control = ui.createControl(container, editable);
+				control.data("state", keyValue);
+				ui.createLabel(control, property.name, property.label);
+				ui.createSelect(control, editable, property.name, keyValue.value, options);
+				return control;
+			},
+			createSelect: function(container, editable, field, value, options){
+				var select = $("<select class='consent-designer-input' />");
+				select.appendTo(container);
+				select.val(value);
+				if(options != null){
+					$.each(options, function(i,o){
+							var opt = $("<option>" + o.label + "</option>");
+							if(o.value){
+								opt[0].value = o.value;
+							}
+							if(value == o.value) opt.attr("selected", "selected");
+							opt.appendTo(select);
+						});
+				}
+				select.val(value);
+				select.data("field", field);
+				select.data("state", value);
+				if(!editable){
+					select.attr("disabled", "disabled");
+				}
+				return select;
+			},
+			createLabel: function(container, field, label){
+				var label = $("<label class='consent-designer-label' >" + label + "</label>");
+				label.appendTo(container);
+				return label;
+			},
+			createWidgetData: function(container, widget, parentData, parentType, data, type, operation, options){
+				var pane = $("<div class='consent-designer-data' />");
+				pane.appendTo(container);
+				var fieldPane = $("<div class='consent-designer-data-fields' />");
+				fieldPane.appendTo(pane);
+				if(designer.editable){
+					var actions = $("<div class='consent-designer-data-actions' />");
+					actions.appendTo(pane);
+					var save = $("<div class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only consent-designer-data-save'>Save</div>");
+					save.appendTo(actions);
+					save.bind("click", designer.saveWidget);
+					var del = $("<div class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only consent-designer-data-delete'>Delete</div>");
+					del.appendTo(actions);
+					del.bind("click", designer.deleteWidget);
+				}
+
+				ui.createInputControl(fieldPane, designer.editable, "name", "Name", data.name);
+				ui.createInputControl(fieldPane, false, "type", "Type", data.type);
+				
+				// Create Fields
+				var fields = [];
+				if(widget.properties != null){
+					var editable = designer.editable;
+					for(var i = 0; i < widget.properties.length; i++){
+						var property = widget.properties[i];
+						var editor = editors.editors[property.editor];
+						var control = editor.generate(fieldPane, property, data, operation, editable);
+						editors.sync(control, property, data, operation, editable);
+						fields.push({editor: editor, control: control});
+					}
+				}
+				if(data.id == null){
+					data[parentType] = parentData;
+				}
+				pane.data("parentData", parentData);
+				pane.data("parentType", parentType);
+				pane.data("operation", operation);
+				pane.data("data", data);
+				pane.data("type", type);
+				pane.data("widget", widget);
+				pane.data("options", options);
+				pane.data("fields", fields);
+				return pane;
 			}
-		}
+		};
 	}
-	var designer = consent.Designer;
 	
+	var designer = consent.Designer;
 	if(designer == null){
 		consent.Designer = designer = {
+			reset: function(){
+				if(designer.container){
+					designer.container.empty();
+				}
+				designer.container = null;
+				designer.main = null;
+				designer.collect = null;
+				designer.review = null;
+				designer.preview = null;
+				designer.protocol = null;
+			},
+			close: function(){
+				Dialog.Progress.start();
+				designer.reset();
+				PaneManager.pop();
+			},
 			init: function(){
+				designer.reset();
 				var container = $("#consent-designer");
 				if(container == null || container.length == 0){
 					var message = "The Consent Designer requires a div#consent-designer element that contains all of the data.";
@@ -291,259 +474,376 @@
 				main.resizer.appendTo(main.select);
 				main.resizer.bind("click", designer.resize);
 				
+				main.closer = $("<img class='consent-designer-close' src='" + Utils.Url.render("/image/close.png") + "'/>");
+				main.closer.appendTo(main.select);
+				main.closer.bind("click", designer.close);
+				
 				// Create Main Selector
-				var items = [{label: "Form", action: designer.formDetails},
-				             {label: "Collect", action: designer.collectDetails},
-				             {label: "Review", action: designer.reviewDetails},
-				             {label: "Preview", action: designer.previewDetails}];
+				var items = [{label: "Form", action: designer.showFormProperties},
+				             {label: "Collect", action: designer.showCollectPane},
+				             {label: "Review", action: designer.showReviewPane},
+				             {label: "Preview", action: designer.showPreviewPane}];
 				
 				main.selector = ui.createMenu(main.select, items);
 			},
 			resize: function(){
 				Dialog.inform({message: "Resizing of the layout manager is currently hibernating.  Try again later."})
 			},
-			formDetails: function(){
+			showFormProperties: function(){
 				if(designer.main.formPane == null){
 					var form = designer.protocol.form;
 					var pane = ui.createPane(designer.main.content);
-					var data = ui.createData(pane, true);
+					var data = ui.createFormData(pane, true);
 					data.data("data", form);
 					var fields = data.children().first();
-					ui.createTextControl(fields, "Title", "form", form.id, "titles", form.titles);
+					ui.createTextControl(fields, "Title", "titles", form.titles);
 					designer.main.formPane = pane;
 					designer.main.panes.push(pane);
 				}
 				ui.showPane(designer.main.formPane);
 			},
-			collectDetails: function(){
-				if(designer.collect == null){
-					var collect = designer.collect = {};
-					collect.pane = ui.createPane(designer.main.content);
-					collect.selector = ui.createSelector(collect.pane);
-					collect.content = ui.createContent(collect.pane);
+			showPagesPane: function(operation){
+				if(designer[operation] == null){
+					var pages = designer[operation] = {};
+					pages.pane = ui.createPane(designer.main.content);
+					pages.selector = ui.createSelector(pages.pane);
+					pages.content = ui.createContent(pages.pane);
 					
-					ui.createHeader(collect.selector, "Pages");
+					ui.createHeader(pages.selector, "Pages");
 					var form = designer.protocol.form;
-					var dashOptions = {parentType: "form", parent: form,
-							operation: keys.collect, type: keys.page};
-					ui.createWidgetDashboard(collect.selector, dashOptions, designer.addPage, designer.sortPageList);
+					var dashOptions = {
+							parentType: "form", 
+							parentData: form,
+							operation: operation, 
+							type: keys.page};
+					ui.createWidgetDashboard(pages.selector, dashOptions, designer.addWidget, designer.sortWidgets);
 					
 					var items = [];
 					// Get All Of The Page Widgets
-					if(form["collect-start"] != null){
-						var panes = utils.getPanePath(keys.collect, form["collect-start"]);
-						for(var i = 0 ; i < panes.length; i ++){
-							var p = panes[i];
-							items.push({label: p.name, 
+					var start = form[operation + "-start"];
+					var panes = utils.getPanePath(operation, (start || ""));
+					for(var i = 0 ; i < panes.length; i ++){
+						var p = panes[i];
+						items.push({label: p.name, 
+								action: designer.showWidgetPane,
+								parentData: form, 
+								parentType: "form", 
 								data: p, 
-								action: designer.selectPageDetails, 
-								operation: keys.collect, 
-								type: keys.page,
-								parent: form, 
-								parentType: "form"});
-						}
+								type: keys.page, 
+								operation: operation});
 					}
-					dashOptions.list = ui.createMenu(collect.selector, items);
+					dashOptions.list = ui.createMenu(pages.selector, items);
 				}
-				ui.showPane(designer.collect.pane);
+				ui.showPane(designer[operation].pane);
+				return designer[operation];
 			},
-			reviewDetails: function(){
-				//utils.showPane(designer.review.pane);
+			showCollectPane: function(){
+				return designer.showPagesPane(keys.collect);
+			},
+			showReviewPane: function(){
+				return designer.showPagesPane(keys.review);
+			},
+			showPreviewPane: function(){
+				if(designer.preview == null){
+					var preview = designer.preview = {};
+					preview.pane = ui.createPane(designer.main.content);
+					preview.pane.text("Coming to an application near you in 2012.");
+				}
+				ui.showPane(designer.preview.pane);
 			},
 			createWidgetView: function(container, item, li, options){
-				var data = item.data == null? {} : item.data;
-				var label = li == null ? options.newlabel : li.text();
+				var parentData = item.parentData;
+				var parentType = item.parentType;
+				var data = item.data;
+				var type = item.type;
+				var widgetType = widgets[type];
+				var widgetSubtype = widgetType.subtype;
+				var subtype = widgetSubtype != null ? widgetSubtype.id : null;
+				
+				var label = li.text();
+				
 				var operation = item.operation;
 				
 				var pane = ui.createPane(container);
 				var selector = ui.createSelector(pane);
 				var content = ui.createContent(pane);
+				pane.data("menuitem", li);
 				
 				// Create header
-				ui.createHeader(selector, label);
+				var header = ui.createHeader(selector, label);
 				
 				// Create Section Dashboard
-				var dashOptions = {parentType: "widget", parent: data,
-						operation: operation, type: keys.section};
-				ui.createWidgetDashboard(selector, dashOptions, options.newaction, options.sortaction);
+				var dashOptions = {
+						parentType: "widget", 
+						parentData: data,
+						operation: operation, 
+						type: subtype};
+				ui.createWidgetDashboard(selector, dashOptions, designer.addWidget, designer.sortWidgets);
 				
 				// Create 
 				var items = [];
-				items.push({label: "Details", action: designer.widgetDetails, data: data});
-				items.push({});
-				items.push({label: options.sublabel});
+				items.push({label: "Details", action: designer.showWidgetProperties, 
+					parentData: parentData, parentType: parentType,
+					data: data, type: type, operation: operation, options: {namelink: [li, header]}});
 				if(data != null && data.contains != null){
+					var action = designer.showWidgetProperties;
+					if(widgetSubtype != null){
+						items.push({});
+						items.push({label: widgetSubtype.label + "s"});
+						if(widgetSubtype.subtype != null){
+							action = designer.showWidgetPane;
+						}
+					}
 					for(var i = 0; i < data.contains.length; i++){
 						var widget = data.contains[i];
 						items.push({label: widget.name, 
+							action: action,
+							parentData: data, 
+							parentType: "widget",
 							data: widget, 
-							action: options.subaction, 
-							operation: operation, 
-							type: keys.section,
-							parent: data, 
-							parentType: "widget"});
+							type: subtype,
+							operation: operation});
 					}
 				}
 				dashOptions.list = ui.createMenu(selector, items);
 				return pane;
 			},
-			selectPageDetails: function(event){
+			showWidgetPane: function(event){
 				var li = $(event.target);
 				var item = li.data("item");
+				
 				if(item.pane == null){
-					var options = {newlabel: "New Page", sublabel: "Sections",
-						subaction: designer.selectSectionDetails,
-						newaction: designer.addSection,
-						sortaction: designer.sortSectionList,
-						widgets: widgets.pages}
 					var content = ui.relativeContent(li);
-					item.pane = designer.createWidgetView(content, item, li, options);
+					item.pane = designer.createWidgetView(content, item, li);
 				}
 				ui.showPane(item.pane);
 			},
-			addPage: function(options){
+			addWidget: function(options){
+				var type = options.type;
+				var widgetType = widgets[type];
+				var parentData = options.parentData;
 				var parentType = options.parentType;
-				var parent = options.parent;
+				var operation = options.operation;
 				var list = options.list;
-				var li = ui.addMenuItem(list, {label: "New Page", action: designer.selectPageDetails});
-				li.click();
+				
+				if(parentData == null || parentData.id == null){
+					var message = "You must save the parent before you can create a new " + widgetType.label;
+					Dialog.inform({message: message});
+					return;
+				}
+				
+				if(widgetType.widgets == null || widgetType.widgets.length == 0){
+					Dialog.inform({message: "There are currently no " + widgetType.label + " widgets registered."});
+					return;
+				}
+				
+				var action = widgetType.subtype == null ? designer.showWidgetProperties : designer.showWidgetPane;
+				var menuitem = {
+					label: "New " + widgetType.label, 
+					action: action,
+					parentType: parentType, 
+					parentData: parentData, 
+					type: type,
+					operation: operation, 
+					options: {}
+				};
+				
+				var temp = function(widget){
+					var name = widgets.generateName(widget);
+					menuitem.data = {name: name, type: widget.type};
+					menuitem.label = name;
+					var li = ui.addMenuItem(list, menuitem);
+					menuitem.options.namelink = [li];
+					li.click();
+				};
+				
+				if(widgetType.widgets.length == 1){
+					temp(widgetType.widgets[0]);
+				}
+				else{
+					var items = [];
+					$.each(widgetType.widgets, function(i,o){
+						if(o.operation == null || o.operation == operation){
+							items.push({value: o.type, label: o.label, data: o});
+						}
+					});
+					Dialog.choose({
+						title: "Choose " + widgetType.label,
+						multiple: false,
+						items: items,
+						onchoose: function(widget){
+							if(widget != null){
+								temp(widget);
+							}
+						}
+						});
+				}
 			},
-			sortPageList: function(options){
+			sortWidgets: function(options){
 				
 			},
-			selectSectionDetails: function(event){
+			showWidgetProperties: function(event){
 				var li = $(event.target);
 				var item = li.data("item");
+				
 				if(item.pane == null){
-					var options = {newlabel: "New Section", sublabel: "Controls",
-						subaction: designer.selectControlDetails,
-						newaction: designer.addControl,
-						sortaction: designer.sortControlList,
-						widgets: widgets.sections}
+					var type = item.type;
+					var data = item.data;
+					var widget = widgets.findWidget(type, data.type);
+					if(widget == null){
+						var message = "A '" + type + "' widget of type '" + data.type + "' is not registered.";
+						Dialog.inform({message: message});
+						return;
+					}
 					var content = ui.relativeContent(li);
-					item.pane = designer.createWidgetView(content, item, li, options);
+					item.pane = ui.createWidgetData(content, widget, 
+							item.parentData, item.parentType, data, type, item.operation, item.options);
+					item.pane.data("menuitem", li);
 				}
 				ui.showPane(item.pane);
 			},
-			addSection: function(options){
-				var parentType = options.parentType;
-				var parent = options.parent;
-				var list = options.list;
-				var li = ui.addMenuItem(list, {label: "New Section", action: designer.selectSectionDetails});
-				li.click();
-			},
-			sortSectionList: function(options){
+			saveForm: function(event){
+				var dataPane = ui.relativeData($(event.target));
+				var textControl = dataPane.find("div.i18ntext");
+				var values = textControl.data("value");
+				var updated = textControl.data("updated");
+				var deleted = textControl.data("deleted");
 				
-			},
-			selectControlDetails: function(event){
+				var created = [];
+				$.each(values, function(i,o){
+					if(o.id == null){
+						o.form = {id: designer.protocol.form.id};
+						created.push(o);
+					}
+				});
 				
-			},
-			addControl: function(options){
-				var parentType = options.parentType;
-				var parent = options.parent;
-				var list = options.list;
-				var li = ui.addMenuItem(list, {label: "New Control", action: designer.selectControlDetails});
-				li.click();
-			},
-			sortControlList: function(options){
+				var body = {
+						create:{title: created},
+						update:{title: updated},
+						"delete":{title: deleted}
+				};
 				
+				var params = {"protocol-version": designer.protocol.id, 
+						"protocol": designer.protocol.protocol.id, "form": designer.protocol.form.id};
+				var url = Utils.Url.render("/api/form", params);
+				var success = function(data, status, xhr){
+					var form = $.parseJSON(data);
+					textControl.data("value", form.titles);
+					textControl.data("updated", []);
+					textControl.data("deleted", []);
+					Dialog.Progress.end();
+				}
+				RPMS.Action.doAjax("POST", url, JSON.stringify(body), null, null, {success: success});
 			},
-			widgetDetails: function(event){
-				var li = $(event.target);
-			},
-			previewDetails: function(){
-				//utils.showPane(designer.preview.pane);
-			},
-			save: function(event){
+			saveWidget: function(event){
+				var dataPane = ui.relativeData($(event.target));
+				var nameField = dataPane.children().first().children().first().children("input");
 				
-			},
-			delete: function(event){
+				var fields = dataPane.data("fields");
+				var data = dataPane.data("data");
+				var operation = dataPane.data("operation");
+				var parentData = dataPane.data("parentData");
+				var parentType = dataPane.data("parentType");
+				var params = {"protocol-version": designer.protocol.id, 
+						"protocol": designer.protocol.protocol.id,
+						"form": designer.protocol.form.id};
+				if(parentType == "widget"){
+					params.widget = parentData.id;
+				}
+				var method = "POST";
+				var body = null;
 				
+				var crudData = {name: nameField.val(), type: data.type};
+				if(data.id == null){
+					method = "PUT";
+					crudData.properties = [{key: "operation", value: operation}];
+					$.each(fields, function(i,f){
+						Utils.Array.addAll(crudData.properties, f.editor.created(f.control));
+					});
+					body = crudData;
+				}
+				else{
+					params.widget = data.id;
+					body = {
+							create:{property:[]},
+							update:{property:[]},
+							delete:{property:[]}
+					};
+					if(crudData.name != data.name){
+						body.update.widget = crudData;
+					}
+					$.each(fields, function(i,f){
+						Utils.Array.addAll(body.create.property, f.editor.created(f.control));
+						Utils.Array.addAll(body.update.property, f.editor.updated(f.control));
+						Utils.Array.addAll(body.delete.property, f.editor.deleted(f.control));
+					});
+				}
+				
+				var success = function(data, status, xhr){
+					var form = $.parseJSON(data);
+ 					designer.syncWidget(dataPane, parentData, data, false);
+					Dialog.Progress.end();
+				}
+				var url = Utils.Url.render("/api/widget", params);
+				RPMS.Action.doAjax(method, url, JSON.stringify(body), null, null, {success: success});
+			},
+			deleteWidget: function(event){
+				var dataPane = ui.relativeData($(event.target));
+				var data = dataPane.data("data");
+				var parentData = dataPane.data("parentData");
+
+				if(data.id == null){
+					designer.syncWidget(dataPane, parentData, data, true);
+				}
+				else{
+					var params = {"protocol-version": designer.protocol.id, 
+							"protocol": designer.protocol.protocol.id,
+							"widget": data.id};
+					
+					var success = function(data, status, xhr){
+						var form = $.parseJSON(data);
+	 					designer.syncWidget(dataPane, parentData, data, true);
+						Dialog.Progress.end();
+					}
+					var url = Utils.Url.render("/api/widget", params);
+					RPMS.Action.doAjax("DELETE", url, null, null, null, {success: success});
+				}
+			},
+			syncWidget: function(pane, parentData, data, remove){
+				if(remove){
+					for(var i = parentData.contains.length - 1; i >=0 ; i--){
+						var o = parentData.contains[i];
+						if(o.id = data.id){
+							parentData.contains.splice(i, 1);
+						}
+					}
+					if(data.type == "section" | data.type == "page"){
+						pane = pane.closest(".consent-designer-pane");
+					}
+					var li = pane.data("menuitem");
+					if(li != null){
+						li.remove();
+					}
+					pane.remove();
+				}
+				else{
+					var container = pane.data("data");
+					if(container.name != data.name){
+						var options = pane.data("options");
+						if(options && options.namelink){
+							$.each(options.namelink, function(i,e){$(e).text(data.name)});
+						}
+					}
+					container.id = data.id;
+					container.name = data.name;
+					container.type = container.type;
+					
+					var fields = pane.data("fields");
+					$.each(fields, function(i,o){
+						o.editor.refresh(o.control, data);
+					});
+				}
 			}
 		};
 	}
 })(window);
-Consent.Designer.init();
-// Generic Page
-Consent.Widgets.registerPage({
-		type: "page",
-		properties: [{name: "title", datatype: "texti18n", required: true},
-			         {name: "next", datatype: "pagelist", required: false},
-			         {name: "previous", datatype: "pagelist", required: false}],
-		operation: null});
-
-// Generic Section
-Consent.Widgets.registerSection({
-		type: "section",
-		properties: [],
-		operation: null});
-
-// Controls
-Consent.Widgets.registerControl({
-		type: "data-change",
-		properties: [{name: "meta-items", datatype: "metaitems", required: true}],
-		operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-	type: "media",
-	properties: [{name: "title", datatype: "texti18n", required: true},
-		         {name: "media", datatype: "urls", required: true}],
-	operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-		type: "policy-button",
-		properties: [{name: "label", datatype: "texti18n", required: true},
-			         {name: "policy", datatype: "policies", required: true},
-        			 {name: "action-value", datatype: "boolean-picker", required: true}],
-		operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-		type: "policy-checkbox",
-		properties: [{name: "label", datatype: "texti18n", required: true},
-			         {name: "policy", datatype: "policies", required: true},
-			         {name: "checked-value", datatype: "boolean-picker", required: true},
-			         {name: "unchecked-value", datatype: "boolean-picker", required: true}],
-		operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-		type: "policy-choice-buttons",
-		properties: [{name: "policy", datatype: "policies", required: true},
-		             {name: "render-title", datatype: "boolean", required: true},
-		             {name: "render-text", datatype: "boolean", required: true},
-		             {name: "render-media", datatype: "boolean", required: true}],
-		operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-		type: "signature",
-		properties: [{name: "endorsement", datatype: "endorsement", required: true},
-			         {name: "clear-label:", datatype: "texti18n", required: true}],
-		operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-		type: "text",
-		properties: [{name: "title", datatype: "texti18n", required: true},
-			         {name: "text", datatype: "texti18n", required: true}],
-		operation: Consent.Keys.collect});
-
-Consent.Widgets.registerControl({
-		type: "review-endorsement",
-		properties: [{name: "title", datatype: "texti18n", required: false},
-			         {name: "endorsement", datatype: "endorsement", required: true},
-			         {name: "label", datatype: "texti18n", required: true},
-			         {name: "returnpage", datatype: "pagelist", required: true}],
-		operation: Consent.Keys.review});
-
-Consent.Widgets.registerControl({
-		type: "review-metaitem",
-		properties: [{name: "title", datatype: "texti18n", required: false},
-			         {name: "meta-item", datatype: "metaitem", required: true},
-			         {name: "label", datatype: "texti18n", required: true}],
-		operation: Consent.Keys.review});
-
-Consent.Widgets.registerControl({
-		type: "review-policy",
-		properties: [{name: "title", datatype: "texti18n", required: false},
-			         {name: "policy", datatype: "policy", required: true},
-			         {name: "label", datatype: "texti18n", required: true},
-			         {name: "returnpage", datatype: "pagelist", required: true}],
-		operation: Consent.Keys.review});

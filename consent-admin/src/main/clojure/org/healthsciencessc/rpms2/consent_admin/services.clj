@@ -688,3 +688,32 @@
   [parent-type parent-id property text-i18n-id]
   (DELETE "/library/text-i18n" 
           {:parent-type parent-type :parent-id parent-id :property property :text-i18n text-i18n-id} nil nil))
+
+;; Designer Services
+(defn update-designer-form
+  [protocol-version-id form-id data]
+  (POST "/designer/form"
+        {:protocol-version protocol-version-id :form form-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn create-designer-form-widget
+  [protocol-version-id form-id widget-id data]
+  (let [form-props (if form-id {:form form-id} {})
+        widget-props (if widget-id {:widget widget-id} {})]
+    (PUT "/designer/form/widget"
+         (merge {:protocol-version protocol-version-id} form-props widget-props)
+         nil
+         (with-out-str (prn data)))))
+
+(defn update-designer-form-widget
+  [protocol-version-id widget-id data]
+  (POST "/designer/form/widget"
+        {:protocol-version protocol-version-id :widget widget-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn delete-designer-form-widget
+  [protocol-version-id widget-id]
+  (DELETE "/designer/form/widget"
+          {:protocol-version protocol-version-id :widget widget-id} nil nil))

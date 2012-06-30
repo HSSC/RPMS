@@ -30,7 +30,14 @@ Utils.Url = {
 		return path;
 	}
 };
-
+Utils.Array = {
+	addAll: function(target, extra){
+		$.each(extra, function(i, a){
+			target.push(a);
+		});
+		return target;
+	}
+}
 Utils.Map = {
 	// Ensures that a valid map is available
 	map: function(map){
@@ -67,7 +74,23 @@ Utils.Map = {
 	}
 };
 Utils.Misc = {
-	nothing: function(){}
+	nothing: function(){},
+	isWithin: function(item, coll){
+		if(coll != null && coll.length > 0){
+			for(var i = 0; i < coll.length; i++){
+				if(coll[i] == item) return true;
+			}
+		}
+		return false;
+	},
+	ifWithinRemove: function(item, coll){
+		if(coll != null && coll.length > 0){
+			for(var i = 0; i < coll.length; i++){
+				if(coll[i] == item) return coll.splice(i, 1)[0];
+			}
+		}
+		return null;
+	}
 };
 Utils.Size = {
 	fill: function(target){

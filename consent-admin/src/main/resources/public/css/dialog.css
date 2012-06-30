@@ -28,3 +28,8 @@ textarea.i18ntext{
 	left: 9em;
 	right: .5em;
 }
+
+select.dialog-choose{
+	width: 80%;
+	left: 10%;
+}

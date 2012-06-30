@@ -52,6 +52,54 @@ var Dialog = {
 			buttons: buts
 		});
 	},
+	choose: function(options){
+		if(this.chooseDialog == null){
+			this.chooseDialog = $("<div class='dialog' />");
+			this.chooseDialog.appendTo($("body"));
+			this.chooseSelect = $("<select class='dialog-choose' />")
+			this.chooseSelect.appendTo(this.chooseDialog);
+		}
+		
+		this.chooseSelect.empty();
+		this.chooseSelect.val("");
+		var select = this.chooseSelect;
+		
+		var items = Utils.Map.mapped$rq(options, "items");
+		$.each(items, function(i,o){
+			var opt = $("<option value='" + o.value + "'>" + (o.label || o.value) + "</option>");
+			opt.appendTo(select);
+			opt.data("data", (o.data || o));
+		});
+		
+		var title = Utils.Map.mapped(options, "title", "Choose");
+		var multiple = Utils.Map.mapped(options, "multiple", false);
+		var chooseLabel = Utils.Map.mapped(options, "choose", "Choose");
+		var cancelLabel = Utils.Map.mapped(options, "cancel", "Cancel");
+		var height = Utils.Map.mapped(options, "height", "auto");
+		
+		var selected = function(){
+			var sels = [];
+			select.children("option:selected").each(function(){
+				sels.push($(this).data("data"))});
+			if(multiple){
+				return sels;
+			}
+			if(sels.length == 0){
+				return null;
+			};
+			return sels[0];
+		};
+		var buts = {};
+		buts[chooseLabel] = function (){$(this).dialog( "close" ); if(options.onchoose) options.onchoose(selected());};
+		buts[cancelLabel] = function (){$(this).dialog( "close" ); if(options.oncancel) options.oncancel();};
+		this.chooseDialog.dialog({
+			title: title,
+			resizable: false,
+			height: height,
+			modal: true,
+			buttons: buts
+		});
+	},
 	text: function(options){
 		if(this.textDialog == null){
 			this.textDialog = $("<div class='dialog'><select class='language'></select><textarea class='i18ntext' /></div>");

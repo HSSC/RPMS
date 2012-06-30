@@ -69,7 +69,9 @@
                      "/js/utils.js"
                      "/js/dialog.js"
                      "/js/pane.js"
-                     "/js/consent-admin.js")
+                     "/js/consent-admin.js"
+                     "/js/consent-designer.js"
+                     "/js/consent-designer-ext.js")
     [:script (str "Utils.Url.initBasePath(\"" (:context ctx) "\");")]])
 
 (defn- layout 

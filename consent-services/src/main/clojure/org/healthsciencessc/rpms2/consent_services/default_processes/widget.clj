@@ -2,8 +2,76 @@
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
-            [org.healthsciencessc.rpms2.consent-domain.roles :as role])
+            [org.healthsciencessc.rpms2.consent-domain.roles :as role]
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
+            [borneo.core :as neo])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+
+(defn post-designer-form
+  [ctx]
+  (let [body (:body-params ctx)
+        form-id (get-in ctx [:query-params :form])]
+    (neo/with-tx
+      (doseq [text (get-in body[:create :title])] 
+        (let [node (data/create types/text-i18n text)]
+          (data/relate-records types/text-i18n (:id node) types/form form-id)))
+      (doseq [text (get-in body[:update :title])] 
+        (data/update types/text-i18n (:id text) text))
+      (doseq [text (get-in body[:delete :title])] 
+        (data/delete types/text-i18n (:id text))))
+    (dissoc (data/find-record types/form form-id) :contains)))
+
+(defn put-designer-form-widget
+  [ctx]
+  (let [protocol-version (utils/get-protocol-version-record ctx)
+        widget (:body-params ctx)
+        widget-id (get-in ctx [:query-params :widget])
+        form-id (get-in ctx [:query-params :form])
+        widget (if widget-id (merge widget {:contained-in {:id widget-id}}))
+        widget (assoc widget :organization (:organization protocol-version))
+        widget (data/create-records types/widget widget)]
+    (if (= "page" (:type widget)) (data/relate-records types/widget (:id widget) types/form form-id))
+    widget))
+
+(defn post-designer-form-widget
+  [ctx]
+  (let [body (:body-params ctx)
+        widget-id (get-in ctx [:query-params :widget])
+        widget (get-in body[:update :widget])]
+    (neo/with-tx
+      (data/update types/widget widget-id widget)
+      (doseq [prop (get-in body[:create :property])] 
+        (let [node (data/create types/widget-property prop)]
+          (data/relate-records types/widget-property (:id node) types/widget widget-id)))
+      (doseq [prop (get-in body[:update :property])] 
+        (data/update types/widget-property (:id prop) prop))
+      (doseq [prop (get-in body[:delete :property])] 
+        (data/delete types/widget-property (:id prop))))
+    (dissoc (data/find-record types/widget widget-id) :contains)))
+
+(defn delete-designer-form-widget
+  [ctx]
+  (let [body (:body-params ctx)
+        widget-id (get-in ctx [:query-params :widget])]
+    (data/delete types/widget widget-id)))
+
+(defn printit
+  [title obj]
+  (println)
+  (println "BEGIN: " title)
+  (println)
+  (prn obj)
+  (println)
+  (println "END: " title)
+  (println))
+
+(defn trueprint
+  [ctx]
+  (printit "QUERY PARAMS" (:query-params ctx))
+  (printit "BODY PARAMS" (:body-params ctx))
+  true)
 
 (def widget-processes
   [{:name "get-library-widgets"
@@ -86,6 +154,29 @@
     :run-fn (fn [params]
               (let [widget-id (get-in params [:query-params :widget])]
                 (data/delete "widget" widget-id)))
-    :run-if-false forbidden-fn}])
+    :run-if-false forbidden-fn}
+   
+   ;; Services specifically to adhere to the quirks of the designer with the widget/widget-property relations
+   {:name "post-designer-form"
+    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :run-fn post-designer-form
+    :run-if-false forbidden-fn}
+
+   {:name "put-designer-form-widget"
+    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :run-fn put-designer-form-widget
+    :run-if-false forbidden-fn}
+
+   ;; TODO - Add a owns data method to search throught multiple levels of widgets.
+   {:name "post-designer-form-widget"
+    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :run-fn post-designer-form-widget
+    :run-if-false forbidden-fn}
+
+   {:name "delete-designer-form-widget"
+    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :run-fn delete-designer-form-widget
+    :run-if-false forbidden-fn}
+   ])
 
 (process/register-processes (map #(DefaultProcess/create %) widget-processes))

@@ -24,7 +24,7 @@ $(function(){
 	// Register Event - Click Select List Item
 	PaneManager.on("click", ".selectlistitem", function(event){
 		var target = RPMS.findTarget(event, ".selectlistitem");
-		var data = Utils.DataSet.getObject(target, "data-item");
+		var data = Utils.DataSet.getObject(target, "item");
 		PaneManager.cache("selected", data);
 		target.parent().children().removeClass("selected");
 		target.addClass("selected");
@@ -40,9 +40,9 @@ $(function(){
 	// Register Event - Double Click Select List Item
 	PaneManager.on("dblclick", ".selectlistitem", function(event){
 		var target = RPMS.findTarget(event, ".selectlistitem");
-		var action = Utils.DataSet.get(target, "data-action");
+		var action = Utils.DataSet.get(target, "action");
 		if(action != null){
-			var data = Utils.DataSet.getObject(target, "data-item");
+			var data = Utils.DataSet.getObject(target, "item");
 			PaneManager.cache("selected", data);
 			target.parent().children().removeClass("selected");
 			target.addClass("selected");
@@ -53,9 +53,9 @@ $(function(){
 	// Register Event - Click Generic Push Action
 	PaneManager.on("click", ".push-action", function(event){
 		var target = RPMS.findTarget(event, "div.push-action");
-		var url = Utils.DataSet.get(target, "data-url");
-		var params = RPMS.getParamMap(target, "data-map");
-		var confirm = Utils.DataSet.getObject(target, "data-confirm");
+		var url = Utils.DataSet.get(target, "url");
+		var params = RPMS.getParamMap(target, "map");
+		var confirm = Utils.DataSet.getObject(target, "confirm");
 		RPMS.verify(target, function(){
 			RPMS.Action.doPush(url, params, confirm);
 		});
@@ -65,14 +65,14 @@ $(function(){
 	PaneManager.on("click", ".ajax-action", function(event){
 		var target = RPMS.findTarget(event, "div.ajax-action");
 		
-		var method = Utils.DataSet.get(target, "data-method");
-		var url = Utils.DataSet.get(target, "data-url");
-		var params = RPMS.getParamMap(target, "data-map");
+		var method = Utils.DataSet.get(target, "method");
+		var url = Utils.DataSet.get(target, "url");
+		var params = RPMS.getParamMap(target, "map");
 		var fullUrl = Utils.Url.render(url, params);
 		
-		var confirm = Utils.DataSet.getObject(target, "data-confirm");
-		var includeData = Utils.DataSet.getBoolean(target, "data-include-data");
-		var actionOnSuccess = Utils.DataSet.get(target, "data-action-on-success");
+		var confirm = Utils.DataSet.getObject(target, "confirm");
+		var includeData = Utils.DataSet.getBoolean(target, "include-data");
+		var actionOnSuccess = Utils.DataSet.get(target, "action-on-success");
 
 		RPMS.verify(target, function(){
 			RPMS.Action.doAjax(method, fullUrl, includeData ? RPMS.getDataMapString() : null, 
@@ -83,24 +83,24 @@ $(function(){
 	// Register Event - Click Back Button
 	PaneManager.on("click", ".back-action", function(event){
 		var target = RPMS.findTarget(event, "div.back-action");
-		var params = RPMS.getParamMap(target, "data-map");
+		var params = RPMS.getParamMap(target, "map");
 		PaneManager.pop(params);
 	});
 
 	// Register Event - Click Generic Push List Action
 	PaneManager.on("click", ".push-listaction", function(event){
 		var target = RPMS.findTarget(event, "div.push-listaction");
-		var onselect = Utils.DataSet.getBoolean(target, "data-onselect");
+		var onselect = Utils.DataSet.getBoolean(target, "onselect");
 		var selected = target.parent().siblings().children(".selected");
 		if(!onselect || selected.length > 0){
 			var item = $(selected[0]);
-			var url = Utils.DataSet.get(target, "data-url");
-			var params = RPMS.getParamMap(target, "data-map");
+			var url = Utils.DataSet.get(target, "url");
+			var params = RPMS.getParamMap(target, "map");
 			if(onselect){
-				var sparams = RPMS.getParamMap($(selected[0]), "data-item");
+				var sparams = RPMS.getParamMap($(selected[0]), "item");
 				params = $.extend(params, sparams);
 			}
-			var confirm = Utils.DataSet.getObject(target, "data-confirm");
+			var confirm = Utils.DataSet.getObject(target, "confirm");
 			RPMS.Action.doPush(url, params, confirm);
 		}
 	});
@@ -108,21 +108,21 @@ $(function(){
 	// Register Event - Click Generic Push List Action
 	PaneManager.on("click", ".ajax-listaction", function(event){
 		var target = RPMS.findTarget(event, "div.ajax-listaction");
-		var onselect = Utils.DataSet.getBoolean(target, "data-onselect");
+		var onselect = Utils.DataSet.getBoolean(target, "onselect");
 		var selected = target.parent().siblings().children(".selected");
 		if(!onselect || selected.length > 0){
 			var item = $(selected[0]);
-			var method = Utils.DataSet.get(target, "data-method");
-			var url = Utils.DataSet.get(target, "data-url");
-			var params = RPMS.getParamMap(target, "data-map");
+			var method = Utils.DataSet.get(target, "method");
+			var url = Utils.DataSet.get(target, "url");
+			var params = RPMS.getParamMap(target, "map");
 			if(onselect){
-				var sparams = RPMS.getParamMap($(selected[0]), "data-item");
+				var sparams = RPMS.getParamMap($(selected[0]), "item");
 				params = $.extend(params, sparams);
 			}
 			var fullUrl = Utils.Url.render(url, params);
-			var confirm = Utils.DataSet.getObject(target, "data-confirm");
-			var includeData = Utils.DataSet.getBoolean(target, "data-include-data");
-			var actionOnSuccess = Utils.DataSet.get(target, "data-action-on-success");
+			var confirm = Utils.DataSet.getObject(target, "confirm");
+			var includeData = Utils.DataSet.getBoolean(target, "include-data");
+			var actionOnSuccess = Utils.DataSet.get(target, "action-on-success");
 			RPMS.Action.doAjax(method, fullUrl, includeData ? RPMS.getDataMapString() : null, 
 					confirm, {onsuccess: actionOnSuccess});
 		}
@@ -131,12 +131,13 @@ $(function(){
 	// Register Event - Click Add Image On i18n Text Control
 	PaneManager.on("click", ".i18ntext-add", function(event){
 		var target = RPMS.findTarget(event, "div.i18ntext");
-		var editable = Utils.DataSet.getBoolean(target, "data-editable");
+		var editable = Utils.DataSet.getBoolean(target, "editable");
 		if(editable){
-			var langs = Utils.DataSet.getObject(target, "data-languages");
+			var langs = Utils.DataSet.getObject(target, "languages");
+			langs = [].concat(langs);
 			var rows = target.find("tr");
 			for(var r = 0; r < rows.length; r++){
-				var text = Utils.DataSet.getObject(rows[r], "data-text");
+				var text = Utils.DataSet.getObject(rows[r], "text");
 				if(text != null){
 					for(var l = (langs.length - 1); l >= 0; l--){
 						if(text.language.code == langs[l].code){
@@ -150,8 +151,8 @@ $(function(){
 				Dialog.inform({message: "All of the available languages have text associated with them."});
 				return;
 			}
-			var url = Utils.DataSet.get(target, "data-url");
-			var params = Utils.DataSet.get(target, "data-params");
+			var url = Utils.DataSet.get(target, "url");
+			var params = Utils.DataSet.get(target, "params");
 			var onchange = function(orig, text, lang){
 				var item = {value: text, language: lang};
 				
@@ -163,7 +164,7 @@ $(function(){
 							Utils.Url.render("/image/edit.png") + "' /><img class='i18ntext-delete' src='" + 
 							Utils.Url.render("/image/delete.png") + "' /></td></tr>");
 					row.appendTo(target.children("table"))
-					Utils.DataSet.set(row, "data-text", x);
+					Utils.DataSet.set(row, "text", x);
 				};
 				
 				if(url != null){
@@ -175,10 +176,10 @@ $(function(){
 					}});
 				}
 				else{
-					var data = Utils.DataSet.get(target, "data-value", []);
+					var data = Utils.DataSet.get(target, "value", []);
 					data.push(item);
-					Utils.DataSet.set(target, "data-value", data);
-					Utils.DataSet.set(target, "data-changed", true);
+					Utils.DataSet.set(target, "value", data);
+					Utils.DataSet.set(target, "changed", true);
 					insertRow(item);
 				}
 			}
@@ -189,31 +190,37 @@ $(function(){
 	// Register Event - Click Delete Image On i18n Text Control
 	PaneManager.on("click", ".i18ntext-delete", function(event){
 		var target = RPMS.findTarget(event, "div.i18ntext");
-		var editable = Utils.DataSet.getBoolean(target, "data-editable");
+		var editable = Utils.DataSet.getBoolean(target, "editable");
 		if(editable){
 			var row = RPMS.findTarget(event, "tr");
-			var text = Utils.DataSet.getObject(row, "data-text");
-			var url = Utils.DataSet.get(target, "data-url");
-			var params = Utils.DataSet.getObject(target, "data-params", {});
+			var text = Utils.DataSet.getObject(row, "text");
+			var url = Utils.DataSet.get(target, "url");
+			var params = Utils.DataSet.getObject(target, "params", {});
 			if(url != null){
 				params["text-i18n"] = text.id;
 				var fullUrl = Utils.Url.render(url, params);
-				var confirm = Utils.DataSet.getObject(target, "data-confirm");
+				var confirm = Utils.DataSet.getObject(target, "confirm");
 				RPMS.Action.doAjax("delete", fullUrl, null, confirm, null, {success: function(data, status, xhr){
 					row.remove();
 					Dialog.Progress.end();
 				}});
 			}
 			else{
-				var texts = Utils.DataSet.getObject(target, "data-value", []);
+				var texts = Utils.DataSet.getObject(target, "value", []);
 				for(var t = (texts.length - 1); t >= 0; t--){
 					if(text.language.code == texts[t].language.code){
-						texts.splice(t, 1);
+						var node = texts.splice(t, 1)[0];
+						if(node.id != null){
+							var cache = Utils.DataSet.getObject(target, "deleted", []);
+							cache.push(node);
+							Utils.DataSet.set(target, "deleted", cache);
+							Utils.Misc.ifWithinRemove(node, Utils.DataSet.getObject(target, "updated",[]));
+						}
 						break;
 					}
 				}
-				Utils.DataSet.set(target, "data-value", texts);
-				Utils.DataSet.set(target, "data-changed", true);
+				Utils.DataSet.set(target, "value", texts);
+				Utils.DataSet.set(target, "changed", true);
 				row.remove();
 			}
 		}
@@ -222,23 +229,31 @@ $(function(){
 	// Register Event - Click Delete Image On i18n Text Control
 	PaneManager.on("click", ".i18ntext-edit", function(event){
 		var target = RPMS.findTarget(event, "div.i18ntext");
-		var editable = Utils.DataSet.getBoolean(target, "data-editable");
+		var editable = Utils.DataSet.getBoolean(target, "editable");
 		if(editable){
-			var langs = Utils.DataSet.getObject(target, "data-languages");
+			var langs = Utils.DataSet.getObject(target, "languages");
 			var row = RPMS.findTarget(event, "tr");
-			var data = Utils.DataSet.getObject(row, "data-text");
-			var url = Utils.DataSet.get(target, "data-url");
-			var params = Utils.DataSet.getObject(target, "data-params", {});
+			var data = Utils.DataSet.getObject(row, "text");
+			var url = Utils.DataSet.get(target, "url");
+			var params = Utils.DataSet.getObject(target, "params", {});
 			
 			var updateText = function(text){
 				data.value = text;
 				var val = text != null ? text.join("</br>") : "" ;
 				var cell = row.children("td.i18ntext-text");
-				cell.text(val);
-				var texts = Utils.DataSet.getObject(target, "data-value", []);
+				cell.html(val);
+				var texts = Utils.DataSet.getObject(target, "value", []);
 				for(var t = (texts.length - 1); t >= 0; t--){
-					if(data.language.code == texts[t].language.code){
-						texts[t].value = text;
+					var node = texts[t];
+					if(data.language.code == node.language.code){
+						node.value = text;
+						if(node.id != null){
+							var cache = Utils.DataSet.getObject(target, "updated", []);
+							if(!Utils.Misc.isWithin(node, cache)){
+								cache.push(node);
+								Utils.DataSet.set(target, "updated", cache);
+							}
+						}
 						break;
 					}
 				}
@@ -264,7 +279,7 @@ $(function(){
 
 var RPMS = {
 	verify: function(target, action){
-		var verify = Utils.DataSet.getObject(target, "data-verify", null);
+		var verify = Utils.DataSet.getObject(target, "verify", null);
 		if(verify == null || RPMS.Action.doAction(verify.action, target)){
 			action();
 		}
@@ -315,12 +330,12 @@ var RPMS = {
 		var inputs = form.find(":input");
 		inputs.each(function(i, e){
 			var name = e.name;
-			var origValue = Utils.DataSet.get(e, "data-value");
+			var origValue = Utils.DataSet.get(e, "value");
 			var value = null;
 			var tag = e.tagName.toLowerCase();
 			if(tag == "input" && e.type.toLowerCase() == "checkbox"){
-				var checkVal = Utils.DataSet.get(e, "data-checked-value", true);
-				var uncheckVal = Utils.DataSet.get(e, "data-unchecked-value", false);
+				var checkVal = Utils.DataSet.get(e, "checked-value", true);
+				var uncheckVal = Utils.DataSet.get(e, "unchecked-value", false);
 				if(e.checked){
 					value = checkVal;
 				}
@@ -333,7 +348,7 @@ var RPMS = {
 				var options = $(e).children("option:selected");
 				if(options != null){
 					options.each(function(index, e){
-						var item = Utils.DataSet.getObject(e, "data-item");
+						var item = Utils.DataSet.getObject(e, "item");
 						if(item == null){
 							item = e.value;
 						}
@@ -357,11 +372,11 @@ var RPMS = {
 		// Get Custom Inputs
 		var customs = form.find(".custom-input");
 		customs.each(function(i, e){
-			var persist = Utils.DataSet.getBoolean(e, "data-persist");
+			var persist = Utils.DataSet.getBoolean(e, "persist");
 			if(persist){
-				var name = Utils.DataSet.get(e, "data-name");
-				var value = Utils.DataSet.getObject(e, "data-value");
-				if(changes != true || Utils.DataSet.getBoolean(e, "data-changed")){
+				var name = Utils.DataSet.get(e, "name");
+				var value = Utils.DataSet.getObject(e, "value");
+				if(changes != true || Utils.DataSet.getBoolean(e, "changed")){
 					data[name] = value;
 				}
 			}

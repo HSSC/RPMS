@@ -204,8 +204,7 @@
   []
   (let [lang (first (filter #(= "en" (:code %)) (data/find-all types/language)))
         org (create types/organization 
-                    {:name "Example Organization" :code "example" :protocol-label "Form" :location-label "Division"
-                     :language lang}
+                    {:name "Example Organization" :code "example" :language lang}
                     match/orgs-match?)
         org-id (:id org)
         

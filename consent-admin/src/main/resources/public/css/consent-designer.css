@@ -57,12 +57,12 @@ div.consent-designer-widget-dashboard img{
 	width: 32px;
 }
 
-div.consent-designer-input{
-	position: relative;
-}
-
 img.consent-designer-resize{
 	
+}
+
+img.consent-designer-close{
+	margin-left: 3em;
 }
 
 /*
@@ -111,25 +111,55 @@ div.consent-designer-data-fields{
 	position: absolute;
 	top: 0;
 	left: 0;
-	right: 16em;
+	right: 12em;
 }
 
 div.consent-designer-data-actions{
 	position: absolute;
 	top: 0;
 	right: 0;
-	width: 16em;
+	width: 12em;
 	text-align: center;
 }
 
 div.consent-designer-data-save{
 	margin-top: 1.25em;
-	width: 10em;
+	width: 8em;
 	padding: .3em;
 }
 
 div.consent-designer-data-delete{
 	margin-top: 1.25em;
-	width: 10em;
+	width: 8em;
 	padding: .3em;
+}
+
+div.consent-designer-input{
+	position: relative;
+	width: 100%;
+}
+
+div.consent-designer-label{
+	position: relative;
+	width: 100%;
+}
+
+input.consent-designer-input{
+	position: relative;
+	width: 100%;
+}
+
+select.consent-designer-input{
+	position: relative;
+	width: 100%;
+}
+
+label.consent-designer-checkbox{
+	float: left;
+	margin-left: .25em;
+}
+
+input.consent-designer-checkbox{
+	float: left;
+	margin-top: .6em;
 }

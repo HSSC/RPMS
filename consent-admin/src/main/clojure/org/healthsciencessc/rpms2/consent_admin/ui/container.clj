@@ -1,7 +1,7 @@
 ;; Provides helper functions for generating certain jquery scripts on the browser.
 (ns org.healthsciencessc.rpms2.consent-admin.ui.container
   (:require [clojure.string :as twine]
-            [hiccup.page :as page])
+            [hiccup.element :as element])
   (:use [org.healthsciencessc.rpms2.consent-admin.ui.common]))
 
 ;; Defines a ScrollBox container that provides scrollbars when content goes
@@ -27,7 +27,7 @@
                                 :data-params (:params options)} {})]
     (list
       [:div#consent-designer (merge props url-props)]
-      (page/include-js "/js/consent-designer.js"))))
+      (element/javascript-tag "Consent.Designer.init();"))))
 
 
 ;; Defines a tab control.

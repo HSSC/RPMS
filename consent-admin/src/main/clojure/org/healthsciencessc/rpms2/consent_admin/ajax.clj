@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ajax
-  (:use [ring.util.response :as response]))
+  (:require [ring.util.response :as response]))
 
 (defn success
   "Function called to return a successful response"
@@ -9,12 +9,12 @@
 (defn error
   "Function called to return error."
   [{msg :message :as m}]
-  (status (response/response {:message msg}) 500))
+  (response/status (response/response {:message msg}) 500))
 
 (defn save-failed
   "Function called to return error."
   [{msg :message :as m}]
-  (status (response/response {:message msg}) 500))
+  (response/status (response/response {:message msg}) 500))
 
 (defn lookup-failed
   "Function called to return error."
@@ -24,4 +24,4 @@
 (defn forbidden
   "Function called to return a forbiddent error."
   [_]
-  (status (response/response {}) 403))
+  (response/status (response/response {}) 403))
