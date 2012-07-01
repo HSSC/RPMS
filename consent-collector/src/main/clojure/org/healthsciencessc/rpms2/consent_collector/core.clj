@@ -205,7 +205,7 @@
 ;; Enable session handling via sandbar 
 ;; Make resources/public items in search path
 (def app (-> (ws/ws-constructor)
-             (add-logging)
+             ;;(add-logging)
              (wrap-dsa-auth)       
              (wrap-context-setter) 
              (wrap-exceptions)

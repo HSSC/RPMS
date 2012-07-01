@@ -84,6 +84,7 @@
        ]}]}
    ],
   :footer {:title ["Patient Name: Bob R. Smith"]},
+ }
  :meta-items
  {:MI002 {:label "Gaurantor", :value "Medical Services Foundation"},
   :MI001 {:label "Admission Date", :value "05-24-2012"}
@@ -102,7 +103,8 @@
  {:E00001
   {:endorsement "the base64/png encoded signature value.",
    :label "Signature of Consenter"}}
-     }}
+     }
+ 
 )
 
 
@@ -397,6 +399,7 @@
    
    ],
   :footer {:title ["Patient Name: Bob R. Smith"]}
+  }
   
 
  :meta-items
@@ -453,5 +456,5 @@
     } 
    }  	
   }
- } 
+  
   )

@@ -9,7 +9,6 @@
   (:use [sandbar.stateful-session :only [session-get session-put! session-delete-key! destroy-session! flash-get flash-put!]])
   (:use [clojure.tools.logging :only (debug info error)])
   (:use [clojure.string :only (replace-first join)])
-  (:use [clojure.set :only (difference) ])
   (:use [slingshot.slingshot :only (try+)])
   (:use [org.healthsciencessc.rpms2.consent-domain.tenancy :only [label-for-location label-for-protocol]])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
@@ -19,12 +18,14 @@
                                                                        i18n-placeholder-for)]))
 
 (def COLLECT_START_PAGE :collect-start)
-(def REVIEW_START_PAGE :summary-start)
+(def REVIEW_START_PAGE :review-start)
+(def OLD_REVIEW_START_PAGE :summary-start)
+(def HAS_RETURN_PAGE :review-consent-page-in-progress)
 
-(def ACTION_BTN_PREFIX "action-btn-")
-(def CHECKBOX_BTN_PREFIX "cb-btn-")
-(def META_DATA_BTN_PREFIX "meta-data-btn-")
-(def META_DATA_UPDATE_BTN_PREFIX "meta-data-update-btn-")
+(def ACTION_BTN_PREFIX "action_btn_")
+(def CHECKBOX_BTN_PREFIX "cb_btn_")
+(def META_DATA_BTN_PREFIX "md_btn_")
+(def META_DATA_UPDATE_BTN_PREFIX "md_btn_")
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
@@ -239,16 +240,16 @@
 
 (defn clear-return-page
   []
-  (session-delete-key! :review-consent-page-in-progress))
+  (session-delete-key! HAS_RETURN_PAGE))
 
 (defn get-return-page
   []
-  (session-get :review-consent-page-in-progress))
+  (session-get HAS_RETURN_PAGE))
 
 (defn save-return-page
   []
-  (let [s (session-get :collect-consent-status)]
-       (session-put! :review-consent-page-in-progress (:page-name s))))
+  (println "SAVING PAGE " (session-get :page-name))
+  (session-put! HAS_RETURN_PAGE (session-get :page-name)))
 
 (defn- header
   [title cancel-btn]
@@ -259,8 +260,7 @@
 (defn in-review?
   "Returns true if in the review process."
   []
-  (let [s (session-get :collect-consent-status)]
-        (= (:which-flow s) REVIEW_START_PAGE)))
+  (= (session-get :which-flow) REVIEW_START_PAGE))
 
 (defn- after-content
   "Enable signature pad."
@@ -438,16 +438,32 @@
                      (i18n-label-for form-name normalized-field) ]
             [:input m ]])))))
 
+(defn current-form
+  "Returns the current form which is being processed."
+  []
+  (-> (session-get :published-version) :form))
+
+(defn- add-properties-to-map 
+  [m]
+  (apply merge {} (for [item m] (hash-map (keyword (:key item)) (:value item)))))
+
 (defn get-named-page
-  "Find page named 'n' in form 'f'"
-  [f n]
-  (first (filter #(= (:name %) n ) (:contains f) )))
+  "Find page named 'n' in form 'f'
+  Add data in properties to the resulting page."
+  [n]
+
+  (debug "Get named page |" n "|")
+  (let [f (current-form)
+        raw-page (first (filter #(= (:name %) n ) (:contains f) ))
+        page (merge raw-page (add-properties-to-map (:properties raw-page))) 
+        ]
+        page))
 
 
 (defn data-for
   ([c] 
    (get (session-get :model-data) (keyword (:name c))))
-  ([c dm] (get dm (keyword (:name c)))))
+  ([c dm] (get dm (keyword (:id c)))))
 
 (defn- keyword-from-button 
   "Remove prefix from the string and turn it into a keyword."
@@ -477,10 +493,26 @@
   [parms str1 ]
   (first (find-real-names parms str1)))
 
+(defn- update-meta-item
+  "Add the key value to the specified meta item.
+  Used for updating the value and the changed marker.
+
+  mi is a keyword of the meta-data item id"
+  [mi m]
+
+  (let [orig-map (session-get :all-meta-data)  ; original meta-data map
+        entry (orig-map mi)  ; the entry for this meta-data item
+        new-entry (merge entry m)  ; merge in the new values 
+        new-map (assoc orig-map mi new-entry) ]
+
+        (debug "Updating meta data item: mi is " mi " new " m )
+        #_(println "Updating meta data item: mi is " (select-keys new-entry [:id :value :name])  " added " m )
+        (session-put! :all-meta-data new-map)))
+
 (defn- handle-meta-data
   "Remove special meta data keys.  If there is a meta data with value CHANGED, 
-  remove the meta data prefix and set it in the model.
-  Only one should be set at a time."
+  remove the meta data prefix and set it in the :all-meta-data.
+  There should only be one at a time."
   [m] 
 
   (let [meta-btns (filter #(and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
@@ -491,8 +523,15 @@
                                (not (.startsWith (str (name %)) META_DATA_BTN_PREFIX)))
                                (keys m)) ]
        (if (> (count meta-btns) 0) ; save data for changed meta item using the name without the prefix
+         (do
+           (println "META BUTTONS " (pprint-str meta-btns))
+           (println "all parms BUTTONS " (pprint-str (dissoc m :consenter)))
+           (update-meta-item (keyword-from-button meta-btns META_DATA_BTN_PREFIX) 
+                                  {:value (get m (first meta-btns))
+                                   :changed "CHANGED" } )
            (assoc (select-keys m keep-keys)
               (keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "CHANGED")
+           )
            (select-keys m keep-keys))))
 
 (defn- handle-action-btns
@@ -509,7 +548,6 @@
             m)] 
      retval)))
 
-
 (defn- handle-meta-data-update-btns
   "Handles update meta-data buttons."
   [parms]
@@ -520,15 +558,9 @@
        (let [mi (keyword-from-button btns META_DATA_UPDATE_BTN_PREFIX) 
              val (mi parms) 
              marker (keyword (str META_DATA_BTN_PREFIX (name mi))) 
-             marker2 (keyword (name mi))
+             marker2 (keyword (name mi)) ]
 
-             orig-map (session-get :all-meta-data)  ; original meta-data map
-             entry (orig-map mi)  ; the entry for this meta-data item
-             new-entry (assoc entry :value val)  ; now with the new value
-             new-map (assoc orig-map mi new-entry) ]
-             ;(println "Updating meta data item: mi is " mi " val " val)
-             (debug "Updating meta data item: mi is " mi " val " val)
-             (session-put! :all-meta-data new-map)
+             (update-meta-item mi {:value val :changed "NO" })
 
              ; maybe this needs to be changed finished-forms
              (session-put! :model-data (dissoc mdata marker marker2))
@@ -569,9 +601,7 @@
 
   [parms]
 
-  (debug "ENTER save captured data: " 
-         (dissoc (session-get :model-data) :consenter ))
-
+  (debug "ENTER save captured data: " (pprint-str (session-get :model-data) ))
   (remove-checkboxes-from-model parms) ;; may modify :model-data
   (if (in-review?)
       (handle-meta-data-update-btns parms)) ;; may modify :model-data
@@ -590,10 +620,9 @@
                               ;(.startsWith (name %) ACTION_BTN_PREFIX)
                               (.startsWith (name %) META_DATA_UPDATE_BTN_PREFIX)
                               )) (keys new-map))
-        fmap (select-keys new-map keep-keys)
-        _ (debug "save-capture-data (without output) " (dissoc fmap :output) )
-        ]
+        fmap (select-keys new-map keep-keys) ]
         (session-put! :model-data fmap)
+        (debug "EXIT save captured data: " (pprint-str fmap))
         fmap))
                  
 
@@ -613,16 +642,6 @@
   (let [n (if (seq? orig-n) (first orig-n) orig-n)]
      (get-in n [:protocol :name])))
 
-
-(defn update-session
-  "Merges the map, logs the new map, saves in session, and returns merged map."
-  ([m] (update-session m ""))
-  ([m msg]
-   (let [new-map (merge (session-get :collect-consent-status) m)]
-       (debug "update-session: " msg " " new-map)
-       (session-put! :collect-consent-status new-map)
-       new-map)))
-
 (defn- get-form-name-kw
   "Each form is named by form-n where n is the number."
   [n]
@@ -639,11 +658,11 @@
             (pprint-str ff)))
       (str "not map " (pprint-str ff))))
 
-(defn current-form
-  "Returns the current form which is being processed."
+(defn current-policies 
+  "Returns policies for form being processed."
   []
-  (let [s (session-get :collect-consent-status)]
-        (:form s))) 
+  (-> (session-get :published-version) :policies))
+
 
 (defn- get-finished-form-key
   [n]
@@ -673,13 +692,11 @@
 (defn finish-form
   "Save data of current form and prepare for next one."
   []
-  (let [s (session-get :collect-consent-status)
-        mdata (session-get :model-data)
-        n (:current-form-number s)
-
+  (debug "FINISH FORM")
+  (let [mdata (session-get :model-data)
+        n     (session-get :current-form-number)
         fkey (get-finished-form-key n)
-        orig-finished-forms (if-let [ff (session-get :finished-forms)] ff {})
-        ] 
+        orig-finished-forms (if-let [ff (session-get :finished-forms)] ff {}) ] 
     (do
       ;; save current forms data into :finished-forms
       (if fkey 
@@ -691,43 +708,46 @@
           (session-put! :model-data {} ))
 
       (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
-      
-      ;; make sure we are not at last forms 
-      (if-let [next-form (if (get-finished-form-key (inc n)) 
-                                (dsa/get-nth-form (inc n))
-                                nil)]
-       (let [formval (:form next-form)
-             start-page-nm ((:which-flow s) formval)
-             p (get-named-page formval start-page-nm) ;; get first page form, using specified flow
-             modified-state {:form formval
-                             :page p
-                             :page-name (:name p)
-                             :current-form-number (inc n) 
-                            }]
-            (update-session modified-state "finish-form" ))
-       nil ))))
-  
+
+      (session-put! :current-form-number (inc n))
+      (if-let [next-published-version (dsa/get-nth-form (inc n))]
+        (do
+          (println "GOT ANOTHER FORM")
+          (session-put! :published-version next-published-version))
+          (let [formval (current-form)
+                start-page-nm ((session-get :which-flow) (current-form))
+                p (get-named-page start-page-nm)]
+            (session-put! :page p) 
+            (session-put! :page-name (:name p)) 
+         )))))
 
 (defn- init-flow 
   "Initializes consent collection data structures.
-  Sets :form to the the current form, initializes :page "
+  Sets :form to current form, initializes :page "
   [which-flow]
+
   (debug "init-flow: " which-flow)
-  (let [form (dsa/get-nth-form 0)
-        fform  (:form form)
-        pg-nm (which-flow fform)
-        m {:form fform 
-           :page (get-named-page fform pg-nm)
-           :page-name pg-nm
-           :current-form-number 0
-           :which-flow which-flow
-          }]
+  (let [form (dsa/get-nth-form 0)]
     (do
-      (if-not (:page m) 
-              (do
-                (flash-put! :header (str "MISSING PAGE " pg-nm))
-                (error "init-flow MISSING PAGE: " pg-nm )))
-      (update-session m "init-flow") )))
+      (session-put! :current-form-number 0)
+      (session-put! :published-version form)
+      (session-put! :which-flow which-flow)))
+
+  (let [pg-nm (which-flow (current-form) )
+        _ (debug "init-flow pg-name " pg-nm)
+        raw-page (get-named-page pg-nm)
+        page (if raw-page 
+               (merge raw-page (add-properties-to-map (:properties raw-page))) 
+               nil) ]
+
+    (session-put! :page page)
+    (session-put! :page-name pg-nm)
+
+    (if-not (session-get :page) 
+       (do (debug "init-flow MISSING PAGE " which-flow)
+           (debug "init-flow MISSING PAGE form " (current-form) )
+           (flash-put! :header (str "MISSING PAGE [" pg-nm "]" ))
+           (error "init-flow MISSING PAGE: " pg-nm )))))
 
 (defn init-review
   "Initializes consent collection data structures
@@ -737,14 +757,20 @@
   (session-put! :model-data (get-data-for-nth-finished-form 0)))
 
 (defn set-page
-  [page]
-  (debug "Setting page: " (:name page) " " page)
-  (update-session {:page page :page-name (:name page) }))
+  [raw-page]
+
+  (debug "Setting page: " (:name raw-page) " " raw-page)
+  (let [page (if raw-page 
+               (merge raw-page (add-properties-to-map (:properties raw-page))) 
+               nil)]
+    (session-put! :page page) 
+    (session-put! :page-name (:name page)) ))
 
 (defn init-consents
   "Initializes the consent collection data structures
   for collection."
   []
+  (session-put! :collect-consent-status "true") 
   (init-flow COLLECT_START_PAGE ))
 
 (defn clear-location

@@ -8,7 +8,7 @@
   (:use [slingshot.slingshot :only (try+)])
   (:use [org.healthsciencessc.rpms2.consent-collector  [config :only (config)]
                                                        [i18n :only [i18n i18n-label-for i18n-placeholder-for]]
-                                                       [debug :only (debug!)] ]
+                                                       [debug :only (debug! pprint-str)] ]
         [clojure.tools.logging :only (debug info error warn)]
         [clojure.pprint :only (pprint)]
         [sandbar.stateful-session :only (session-get session-put!)]
@@ -208,16 +208,21 @@
   (let [resp (dsa-call :get-protocol-versions-published {:location (:id (session-get :org-location)) })]
     (:body resp)))
 
-(defn get-nth-form
+
+(defn get-nth-form-raw
   "Return the nth form."
   [n]
-  (let [pv-id (nth (session-get :selected-protocol-version-ids) n)]
-    (get-published-protocols-form pv-id)))
+  (if (< n (count (session-get :selected-protocol-version-ids)))
+    (let [pv-id (nth (session-get :selected-protocol-version-ids) n)]
+      (get-published-protocols-form pv-id))))
 
-;; REMOVE THIS SHADOWED FN FIXME
 (defn get-nth-form
   [n]
-  (if (= n 0) mock/lewis-blackman-form mock/sample-form))
+  (if (< n (count (session-get :selected-protocol-version-ids)))
+    (let [b (get-nth-form-raw n) ]
+      (if (config "mock-data") 
+          (if (= n 1) mock/lewis-blackman-form mock/sample-form)
+          b))))
 
 (defn get-available-protocols-and-languages
   "Returns a map with the available protocols 
@@ -228,6 +233,7 @@
   }"
   []
   (let [p (get-published-protocols)]
+    ;(spit "published_protocols.txt" (pprint-str p))
     {:available-protocols p 
      :languages (distinct (apply concat (map :languages p)))}))
 
@@ -236,6 +242,6 @@
      (if dsa-url (debug "using " propname " value of " dsa-url)
          (warn "WARNING: no value for property " propname " configured")))
 
-(debug! get-published-protocols-meta-items)
-(debug! get-published-protocols-form)
+;;(debug! get-published-protocols-meta-items)
+;;(debug! get-published-protocols-form)
 
