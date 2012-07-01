@@ -55,15 +55,18 @@
     (helper/post-form "/view/select/protocols"
       [:div 
        (list 
-         (let [data (dsa/get-available-protocols-and-languages)
-               plist (:available-protocols data)]
+         (let [plist (dsa/get-published-protocols)
+               languages (distinct (apply concat (map :languages plist)))
+               meta-data (distinct (apply concat (map :meta-items plist)))
+               ]
            (do
-              (session-put! :protocol-versions plist)
+             ;;(spit "pubprot.txt" (pprint-str plist))
+             (session-put! :protocol-versions plist)
               (list  
                  [:fieldset {:data-role "controlgroup" }
                    [:div.sectionlegend "Select " (helper/org-protocol-label) "(s):" ]
                    (map protocol-item plist)]
-                   (select-language (:languages data) )))))]
+                   (select-language languages )))))]
       [:div.centered {:data-role "fieldcontain" }
        (helper/submit-btn { :value "Back" :name :go-back })
        (helper/submit-btn { :value "Continue" :name "select-protocols-form"  })
@@ -72,9 +75,9 @@
     :cancel-btn (helper/cancel-form "/view/select/consenter")
     ))
 
-(defn- needed-protocol-version-ids
-  "Returns protocol ids that need to be filled out.  This is the required
-  forms plus any protocols selected by the user (specified by a parameter named cb-<ProtocolID>)."
+(defn- needed-pv-ids
+  "Returns selected protocol version ids along
+  with any required protocol versions. "
   [checkboxmap]
   (let [protocol-versions (session-get :protocol-versions)
         required-protocol-version-ids (->> protocol-versions
@@ -92,19 +95,29 @@
   (not (empty? goback)) ))
 
 (defn- perform-select-protocols
-  "Once protocols are selected, identify required meta-data items
+  "Once protocols are selected, update 
+  :protocol-versions to contain only the selected protocols
   and go to meta-data page. "
 
   [ctx]
-  (let [needed (needed-protocol-version-ids (dissoc (:body-params ctx)
-                                            :sp-language
-                                            :select-protocols-form))]
+  (let [needed (set (needed-pv-ids (dissoc (:body-params ctx)
+                                       :sp-language
+                                       :select-protocols-form)))
+        protocols (session-get :protocol-versions)
+        needed-protocols (filter #(contains? needed (:id %))
+                                 protocols )
+        ]
     (do
       (session-put! :selected-protocol-version-ids (vec needed))
       (session-put! :selected-language (-> ctx :body-params :sp-language))
       ;; this removes any unselected protocols from the session
-      (session-put! :protocol-versions (filter #(some (set needed) %)
-                                               (session-get :protocol-versions)))
+      (debug "# Needed pvs " (count needed-protocols))
+      
+      (session-put! :protocol-versions  needed-protocols)
+      (debug "AFTER FILTERING NUM PROTOCOL VERSIONS "
+               (count (session-get :protocol-versions)))
+      
+      (debug "perform need-protocols " (pprint-str needed-protocols) )
       (debug "perform selected protocols " (pprint-str needed) )
       (debug "perform selected language " (:sp-language ctx))
       (helper/myredirect "/view/meta-data")))) 

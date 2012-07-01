@@ -224,19 +224,6 @@
           (if (= n 1) mock/lewis-blackman-form mock/sample-form)
           b))))
 
-(defn get-available-protocols-and-languages
-  "Returns a map with the available protocols 
-  and languages:
-
-  {:available-protocols [ {:id <Protocol1> ... } { <Protocol2> .. }  ... ] 
-   :languages [ <LANG-1> <LANG-2> ] 
-  }"
-  []
-  (let [p (get-published-protocols)]
-    ;(spit "published_protocols.txt" (pprint-str p))
-    {:available-protocols p 
-     :languages (distinct (apply concat (map :languages p)))}))
-
 (let [ propname "rpms2.dsa.url" 
        dsa-url (config propname) ]
      (if dsa-url (debug "using " propname " value of " dsa-url)

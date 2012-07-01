@@ -1,14 +1,13 @@
 (ns org.healthsciencessc.rpms2.consent-collector.metadata
-  "Processes for meta data. Meta data is generated via dsa calls
-   and stored the session variable :all-meta-data 
-   which will now contain a map of metadata items"
+  "Processes for meta data. Meta data is 
+   stored in the session variable :all-meta-data 
+   which is a map of metadata items"
 
   (:require
    [org.healthsciencessc.rpms2.consent-collector.dsa-client :as dsa]
    [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
-  (:use [sandbar.stateful-session :only [session-get session-put! flash-get flash-put! ]])
+  (:use [sandbar.stateful-session :only [session-get session-put! ]])
   (:use [clojure.tools.logging :only (debug info error)])
-  (:use [clojure.pprint :only (pprint)])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
 
@@ -36,24 +35,26 @@
                :id (:id mi)
                :class "inputclass"}]]))
 
-(defn- grab-metaitems
-  [protocol-ids]
-  (let [selected (set protocol-ids) 
-        proto-vers (session-get :protocol-versions)]
-    (->> proto-vers
-      (filter #(contains? selected (:id %)))
-      (map :meta-items)
-      (apply concat)
-      distinct)))
- 
 (defn view 
-  "Returns Consenter Information ( meta data ) form"
+  "Returns Consenter Information ( meta data ) form.
+  Identity meta-data items used in the selected forms.
+
+  :protocol-versions contains only the protocol versions
+  that need to be filled out 
+
+  Save transformed meta-data into :all-meta-data"
   [ctx]
-  (let [ids (session-get :selected-protocol-version-ids) 
-        meta-data (into {} (for [{id :id :as mi} (grab-metaitems ids)]
-                             [(keyword id) mi]))]
+  (let [smeta  (->> (session-get :protocol-versions)
+                    (map :meta-items)
+                    (apply concat)
+                    (distinct))
+        meta-data (into {} (for [{id :id :as mi} smeta]
+                            [(keyword id) mi]))
+        ]
     ;meta-data (dsa/get-published-protocols-meta-items protocol-ids)]  probably call the service when it works?
+    
     (session-put! :all-meta-data meta-data)
+    (debug "INITIAL META DATA IS " (session-get :all-meta-data))
     (if (empty? meta-data)
       (helper/myredirect "/collect/consents")
       (helper/rpms2-page 

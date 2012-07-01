@@ -51,23 +51,20 @@
   the form and flag indicated whether this is in the review phase (so the widget
   can render itself appropriately)."
 
-  [{:keys [widget value data-model] :as m}]
+  [{:keys [widget value] :as m}]
 
   (debug "AA CONTROL: " (pprint-str widget))
   (list 
     (let [ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
           func  (if-let [f (resolve (symbol (str ns (:type widget))))] f unimplemented-widget)
-          wdata (helper/data-for widget data-model) ]
+          wdata (helper/data-for widget) ]
           [:div 
              (func (merge m {:value wdata 
-                             :data-model data-model 
-                             ;:widget  (dissoc (merge widget (gen-properties-to-map (:properties widget))) :properties)
-                                      
                              :widget  (if (config "mock-data") 
                                         widget
                                         (merge widget (formutil/widget-props-localized widget)))
                              } )) 
-             (dbg [:div [:span.standout (:name widget) " " (:id widget) " " (:type widget) ] [:span.data wdata ] widget ]) ])))
+             (dbg [:div [:span.standout (:name widget) " " (:id widget) " " (:type widget) ] [:span.data "--> VALUE [" wdata "]" ] widget ]) ])))
        
 (defn review-endorsement
   "A ReviewEndorsement widget is used to review endorsements 
@@ -255,19 +252,24 @@
 (defn data-change
   "Displays meta-data item and a flag if it has been selected for change.
   Look up the flag in all-meta-data"
-  [{:keys [widget value data-model] :as m}]
+  [{:keys [widget value] :as m}]
   [:div.control.data-change
    (list 
-     (dbg [:div "DATA CHANGE IS " (pprint-str value) ])
+     (dbg [:div "DATA CHANGE value " (pprint-str value) 
+           " widget  " (pprint-str widget) 
+           [:div "Meta items " (pprint-str (:meta-items widget)) ]
+           [:div ":all-meta-data " (pprint-str (session-get :all-meta-data)) ]
+           ])
      (for [nm (:meta-items widget)] 
            (list
              (let [kw (keyword nm)
                    ; the meta data entry
                    entry (get (session-get :all-meta-data) (keyword nm))
+                   _ (debug "data-change ENTRY " (pprint-str entry))
                    changed (= (:changed entry) "CHANGED")
                    mi-label (:name entry)
                    mi-value (:value entry)
-                   _ (debug  "dc " (pprint-str entry) " mi-val " mi-value,  " kw " kw)
+                   _ (debug  "data-change  " (pprint-str entry) " mi-val " mi-value,  " kw " kw)
                    ]
 
                   [:div.ui-grid-b
@@ -328,10 +330,9 @@
 
 (defn- section
   "Creates section div containing all widgets in this section."
-  [s dm]
+  [s]
   [:div.section (map #(control {:widget % 
                                 :form (helper/current-form) 
-                                :data-model dm 
                                 }) (:contains s)) ])
 
 
@@ -366,7 +367,7 @@
              [:span.standout pn ]) ])
     [:div (page-dbg p)
       (if (helper/in-review?) [:h1 "Summary" ] )
-      [:div (map #(section % dm) (:contains p)) ]])))
+      [:div (map section (:contains p)) ]])))
 
 (defn- form-title
   [f]

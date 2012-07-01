@@ -144,6 +144,8 @@
       :type "section",
       :contains
       [{:meta-items [
+                     "afddc07d-fafd-45ff-8211-0b189e86e46b"
+                     "61769da5-06eb-4566-978f-83ae7862b228"
                      "019f6f67-410c-40e2-99f0-52f3f5c8add1"
                      "5a1b8929-730a-4063-ae6f-08568139494a"
                      ],

@@ -22,7 +22,7 @@
 (def OLD_REVIEW_START_PAGE :summary-start)
 (def HAS_RETURN_PAGE :review-consent-page-in-progress)
 
-(def ACTION_BTN_PREFIX "action_btn_")
+(def ACTION_BTN_PREFIX "abtn_")
 (def CHECKBOX_BTN_PREFIX "cb_btn_")
 (def META_DATA_BTN_PREFIX "md_btn_")
 (def META_DATA_UPDATE_BTN_PREFIX "md_btn_")
@@ -541,12 +541,13 @@
   get merged into the model as part of further processing)"
   [m]
 
-  (let [btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))]
-   (let [retval
-       (if (> (count btns) 0)
+  (let [btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))
+        retval (if (> (count btns) 0)
            (assoc m (keyword-from-button btns ACTION_BTN_PREFIX) "selected")
-            m)] 
-     retval)))
+            m)
+        ;_ (debug "handle action button: " retval)
+        ] 
+     retval))
 
 (defn- handle-meta-data-update-btns
   "Handles update meta-data buttons."
