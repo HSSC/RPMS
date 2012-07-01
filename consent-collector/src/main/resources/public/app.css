@@ -338,3 +338,43 @@ canvas.pad {
 .sigError {
 	display: none;
 }
+
+.media-gallery {
+    border: 2px solid black;
+    border-radius: 15px;
+    float: left;
+    width: auto;
+    padding: 0 15px 10px 15px;
+    margin: 10px 0 10px 0;
+    background: rgb(206,242,250);
+}
+
+.media-gallery .media-title {
+    text-align: center;
+}
+
+.video-thumbnails {
+    padding-top: 10px;
+    overflow: hidden;
+}
+
+.video-thumbnails img {
+    padding: 6px;
+    background-color: black;
+}
+
+.clear {
+    clear: both;
+}
+
+.ui-page-active {
+    height: 100% !important;
+}
+
+.ui-dialog .ui-header, 
+.ui-dialog .ui-content, 
+.ui-dialog .ui-footer {
+    margin: 0px auto 0px auto;
+    max-width: 700px; 
+    max-height: 500px;
+}

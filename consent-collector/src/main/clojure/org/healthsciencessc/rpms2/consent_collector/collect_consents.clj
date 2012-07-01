@@ -141,9 +141,28 @@
                  (helper/submit-btn {:value (:label widget) 
                                      :name (str "review-edit-btn-" (:returnpage widget)) })]])) ])
 
-(defn media 
-  [c m]
-  [:div.control "Media" ])
+(defn media
+  [{{:keys [name title] :as widget} :widget}]
+  (let [{:keys [sources posters]} (formutil/widget-properties widget)
+               videos-data (map vector posters sources (drop 1 (range)))]
+    (list [:div.media-gallery
+           [:h4.media-title title]
+           [:div.video-thumbnails
+            (for [[poster source id] videos-data]
+                 (let [video-page (str name "_" id)]
+                   (list [:a {:href (str "#" video-page) :data-rel "dialog" :data-role "button" :data-inline "true"}
+                             [:img {:src poster :width 100 :height 100}]]
+                         [:div {:id video-page :class "video-pages" :data-role "page" :data-fullscreen "true"}
+                               [:div {:data-role "header"}
+                                     [:h2 title]]
+                               [:div {:data-role "content"}
+                                     [:video
+                                      {:controls ""
+                                      :width "480"
+                                      :height "300"}
+                                      [:source {:src source}]]]
+                               [:div {:data-role "footer"} [:h1 ""]]])))]]
+          [:div.clear])))
 
 (defn signature
   "Emits data for signature widget. A map with widgets state is passed

@@ -31,6 +31,15 @@
         :policy "P00001",
         :type "policy-text",
         :render-text true}
+       {:type "media"
+        :name "cat-video"
+        :title "Awesome Cat Videos!"
+        :properties [{:key "sources" :value ["http://html5demos.com/assets/dizzy.mp4"
+                                             "http://shruwey.com/Demos/Videos/cat.mp4"
+                                             "http://dherna.homeip.net/videopresentacion/media/rock_star_cat_acting_cute_online-convert_com.ogg"]}
+                     {:key "posters" :value ["http://cvcl.mit.edu/hybrid/cat2.jpg"
+                                             "http://mikecane.files.wordpress.com/2007/03/kitten.jpg"
+                                             "http://25.media.tumblr.com/tumblr_lzaeceIRPD1r7fzdvo1_400.jpg"]}]}
        {:endorsement "E00001",
         :name "consenter",
         :type "signature",

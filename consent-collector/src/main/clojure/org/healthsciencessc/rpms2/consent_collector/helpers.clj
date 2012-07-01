@@ -308,9 +308,10 @@
      (absolute-path "jquery.signaturepad.js")
      (absolute-path "json2.min.js")
      (absolute-path "flashcanvas.js")
-     (absolute-path "app.js")) ]
+     (absolute-path "app.js")
+     (absolute-path "rpms2.media.js"))]
    [:body 
-    [:div {:data-role "page" :data-theme "a"  :id "#one" }  
+    [:div {:data-role "page" :data-theme "a"  :id "one" }  
       (header title cancel-btn)
       [:div#content {:data-role "content" :data-theme "d" } 
       content
