@@ -65,7 +65,7 @@
                                   :dob {:persisted true :required true}
                                   :zipcode {:persisted true :required true}})
               :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
-                          {:type :has-many :related-to encounter}
+                          {:type :has-many :related-to encounter :omit-rels true}
                           {:type :belongs-to :related-to location :relationship :in-location}]}
 
    encounter {:attributes (merge base
@@ -83,7 +83,7 @@
             :relations [{:type :belongs-to :related-to organization :relationship :has-organization :required true :deletable-by-parent true}
                         {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
                         {:type :belongs-to :related-to policy :relationship :has-policy :required true}
-                        {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}]}
+                        {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true :omit-rels true}]}
 
    role-mapping {:attributes base
                  :relations [{:type :belongs-to :related-to user :relationship :has-user :omit-rels true :deletable-by-parent true}
@@ -107,7 +107,7 @@
                       :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                                   {:type :belongs-to :related-to meta-item :relationship :has-meta-item :required true}
                                   {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
-                                  {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}]}
+                                  {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true :omit-rels true}]}
 
    policy {:attributes (merge base
                               {:name {:persisted true}
@@ -172,7 +172,7 @@
                                            {:value {:persisted true}})
                         :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                                     {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
-                                    {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true}
+                                    {:type :belongs-to :related-to protocol-version :relationship :has-protocol-version :required true :omit-rels true}
                                     {:type :belongs-to :related-to endorsement :relationship :has-endorsement :required true}]}
 
    protocol {:attributes (merge base
