@@ -78,7 +78,5 @@
                                             :value
                                             (str answer))]))]
     (session-put! :all-meta-data answer-map)
-    ;(println "meta data " (pprint-str answer-map))
-    ;(println "meta data " (pprint-str (keys answer-map)))
     (helper/myredirect "/collect/consents")))
 
