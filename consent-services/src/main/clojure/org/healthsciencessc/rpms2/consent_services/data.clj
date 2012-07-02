@@ -195,19 +195,19 @@
                          (:record-type record)
                          (:related-to relation)
                          schema)]
-    (vec (filter identity (map #(node->record % (:related-to relation))
+    (vec (filter identity (map #(node->record % (:related-to relation) :omit-rels (:omit-rels relation))
                                (children-nodes-by-rel node relationship))))))
 
 (defmethod get-related-obj :has-many-through
   [record node relation]
-  (let [{:keys [related-to relation-path]} relation
+  (let [{:keys [related-to relation-path omit-rels]} relation
         path (conj relation-path related-to)]
-    (vec (filter identity (map #(node->record % related-to) (walk-types-path node path))))))
+    (vec (filter identity (map #(node->record % related-to omit-rels) (walk-types-path node path))))))
 
 (defmethod get-related-obj :many-to-many
   [record node relation]
-  (let [{:keys [relationship related-to]} relation]
-    (vec (filter identity (map #(node->record % related-to) (neo/traverse node :1 :all-but-start relationship))))))
+  (let [{:keys [relationship related-to omit-rels]} relation]
+    (vec (filter identity (map #(node->record % related-to omit-rels) (neo/traverse node :1 :all-but-start relationship))))))
 
 (defn add-related-records
   [record node relations]
