@@ -69,10 +69,22 @@ var Dialog = {
 			var opt = $("<option value='" + o.value + "'>" + (o.label || o.value) + "</option>");
 			opt.appendTo(select);
 			opt.data("data", (o.data || o));
+			if(o.selected){
+				opt.attr("selected", "selected");
+			}
 		});
 		
 		var title = Utils.Map.mapped(options, "title", "Choose");
 		var multiple = Utils.Map.mapped(options, "multiple", false);
+		if(multiple){
+			select.attr("multiple", "multiple");
+			select.attr("size", 4);
+		}
+		else{
+			select.attr("multiple", false);
+			select.attr("size", 1);
+		}
+		
 		var chooseLabel = Utils.Map.mapped(options, "choose", "Choose");
 		var cancelLabel = Utils.Map.mapped(options, "cancel", "Cancel");
 		var height = Utils.Map.mapped(options, "height", "auto");

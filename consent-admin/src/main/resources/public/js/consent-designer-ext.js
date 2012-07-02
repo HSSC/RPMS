@@ -169,7 +169,7 @@ Consent.Editors.register("pagelist", {
 		if(keyValue.id == null){
 			var options = control.find("select option:selected");
 			var value = options[0].value;
-			if(value != null && value != "null"){
+			if(!Consent.Editors.valueIsNull(value)){
 				items.push({key: key, value: value});
 			}
 		}
@@ -181,7 +181,7 @@ Consent.Editors.register("pagelist", {
 		if(keyValue.id != null){
 			var options = control.find("select option:selected");
 			var value = options[0].value;
-			if(value != null && value != "null"){
+			if(!Consent.Editors.valueIsNull(value)){
 				items.push({id: keyValue.id, value: value});
 			}
 		}
@@ -193,7 +193,7 @@ Consent.Editors.register("pagelist", {
 		if(keyValue.id != null){
 			var options = control.find("select option:selected");
 			var value = options[0].value;
-			if(value == null || value == "null"){
+			if(Consent.Editors.valueIsNull(value)){
 				items.push({id: keyValue.id});
 			}
 		}
@@ -202,7 +202,7 @@ Consent.Editors.register("pagelist", {
 });
 Consent.Editors.register("boolean", {
 	generate: function(container, property, data, operation, editable){
-		var keyValue = Consent.Utils.findProperty(property.name, data.properties);
+		var keyValue = Consent.Utils.findProperty(property.name, data.properties, true);
 		return Consent.UI.createCheckboxControl(container, editable, keyValue.key, property.label, keyValue.value, 
 				true, false, property.defaultValue);}
 });
@@ -235,11 +235,16 @@ Consent.Editors.register("policy", {
 });
 Consent.Editors.register("policies", {
 	generate: function(container, property, data, operation, editable){
-		return ShowBogus(container, "policies", property, data, operation, editable);}
+		var options = [];
+		var nodes = Consent.Designer.protocol.policies;
+		if(nodes != null){
+			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
+		}
+		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);}
 });
 Consent.Editors.register("metaitem", {
 	generate: function(container, property, data, operation, editable){
-		var options = [{value: null, label: "{none}"}];
+		var options = [];
 		var nodes = Consent.Designer.protocol["meta-items"];
 		if(nodes != null){
 			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
@@ -248,7 +253,12 @@ Consent.Editors.register("metaitem", {
 });
 Consent.Editors.register("metaitems", {
 	generate: function(container, property, data, operation, editable){
-		return ShowBogus(container, "metaitems", property, data, operation, editable);}
+		var options = [{value: null, label: "{none}"}];
+		var nodes = Consent.Designer.protocol["meta-items"];
+		if(nodes != null){
+			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
+		}
+		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);}
 });
 Consent.Editors.register("input", {
 	generate: function(container, property, data, operation, editable){

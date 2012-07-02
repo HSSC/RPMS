@@ -161,7 +161,11 @@
 				editable: container.data("editable")
 			};
 			return props;
-		}
+		};
+		editors.valueIsNull = function(val){
+			if(val == null || val == "null" || val == "{none}") return true;
+			return false;
+		};
 	}
 	
 	var ui = consent.UI;
@@ -339,10 +343,17 @@
 				ui.createSelect(control, editable, property.name, keyValue.value, options);
 				return control;
 			},
+			createMultiSelectControl: function(container, property, data, operation, editable, options){
+				var keyValue = utils.findProperty(property.name, data.properties, true);
+				var control = ui.createControl(container, editable);
+				control.data("state", keyValue);
+				ui.createLabel(control, property.name, property.label);
+				ui.createMultiSelect(control, editable, property.name, keyValue.value, options);
+				return control;
+			},
 			createSelect: function(container, editable, field, value, options){
 				var select = $("<select class='consent-designer-input' />");
 				select.appendTo(container);
-				select.val(value);
 				if(options != null){
 					$.each(options, function(i,o){
 							var opt = $("<option>" + o.label + "</option>");
@@ -355,7 +366,37 @@
 				}
 				select.val(value);
 				select.data("field", field);
-				select.data("state", value);
+				if(!editable){
+					select.attr("disabled", "disabled");
+				}
+				return select;
+			},
+			createMultiSelect: function(container, editable, field, values, options){
+				var select = $("<select class='consent-designer-input' multiple='multiple' size='4'/>");
+				select.appendTo(container);
+				var selected = []
+				if(options && values){
+					for(var o = (options.length - 1); o >= 0; o--){
+						$.each(values, function(i, v){
+							if(o.value == v){
+								o.selected == true;
+								selected.push(options.splice(o, 1));
+							}
+						});
+					}
+					options = selected.concat(options);
+				}
+				if(options != null){
+					$.each(options, function(i,o){
+							var opt = $("<option>" + o.label + "</option>");
+							if(o.value){
+								opt[0].value = o.value;
+							}
+							if(o.selected) opt.attr("selected", "selected");
+							opt.appendTo(select);
+						});
+				}
+				select.data("field", field);
 				if(!editable){
 					select.attr("disabled", "disabled");
 				}
