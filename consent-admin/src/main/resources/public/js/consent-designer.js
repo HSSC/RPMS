@@ -381,8 +381,9 @@
 						var opt = options[o];
 						$.each(values, function(i, v){
 							if(opt.value == v){
-								opt.selected == true;
-								selected.push(options.splice(o, 1)[0]);
+								opt.selected = true;
+								selected.push(opt);
+								options.splice(o, 1);
 							}
 						});
 					}
@@ -394,8 +395,10 @@
 							if(o.value){
 								opt[0].value = o.value;
 							}
-							if(o.selected) opt.attr("selected", "selected");
 							opt.appendTo(select);
+							if(o.selected){
+								opt[0].selected = true;
+							}
 						});
 				}
 				select.data("field", field);

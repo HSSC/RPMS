@@ -140,6 +140,7 @@
    widget {:attributes (merge base
                               {:name {:persisted true}
                                :type {:persisted true}
+                               :order {:persisted true}
                                :status {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                        {:type :belongs-to :related-to form :relationship :in-form :omit-rels true}
