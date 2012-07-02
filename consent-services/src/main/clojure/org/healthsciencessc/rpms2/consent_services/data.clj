@@ -191,12 +191,9 @@
 
 (defmethod get-related-obj :has-many
   [record node relation]
-  (if-let [relationship (domain/get-relationship-from-child
-                         (:record-type record)
-                         (:related-to relation)
-                         schema)]
-    (vec (filter identity (map #(node->record % (:related-to relation) :omit-rels (:omit-rels relation))
-                               (children-nodes-by-rel node relationship))))))
+  (let [{:keys [related-to omit-rels]} relation]
+    (vec (filter identity (map #(node->record % related-to :omit-rels omit-rels)
+                               (children-nodes-by-type node related-to))))))
 
 (defmethod get-related-obj :has-many-through
   [record node relation]
