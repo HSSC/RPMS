@@ -53,18 +53,21 @@
 
   [{:keys [widget value] :as m}]
 
-  (debug "AA CONTROL: " (pprint-str widget))
-  (list 
-    (let [ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
-          func  (if-let [f (resolve (symbol (str ns (:type widget))))] f unimplemented-widget)
-          wdata (helper/data-for widget) ]
-          [:div 
-             (func (merge m {:value wdata 
-                             :widget  (if (config "mock-data") 
-                                        widget
-                                        (merge widget (formutil/widget-props-localized widget)))
-                             } )) 
-             (dbg [:div [:span.standout (:name widget) " " (:id widget) " " (:type widget) ] [:span.data "--> VALUE [" wdata "]" ] widget ]) ])))
+  ;(debug "AA CONTROL: " (pprint-str widget))
+
+  (let [ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
+        func  (if-let [f (resolve (symbol (str ns (:type widget))))] f unimplemented-widget)
+        wid   (if (config "mock-data") 
+                  widget
+                 (merge widget (formutil/widget-props-localized widget))) 
+        ;(debug "BB CONTROL: " (pprint-str wid))
+        wdata (helper/data-for wid) 
+        ;;_ (debug "DD CONTROL: " (pprint-str wdata))
+        ]
+      [:div (func (merge m {:value wdata :widget wid } )) 
+            (dbg [:div [:span.standout (:name widget) " " 
+                        (:id widget) " " (:type widget) ] 
+                  [:span.data " VALUE [" wdata "]" ] widget ]) ]))
        
 (defn review-endorsement
   "A ReviewEndorsement widget is used to review endorsements 

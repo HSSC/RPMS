@@ -460,10 +460,17 @@
         page))
 
 
+(defn- wid-id
+  "Return widget identifier (name for mock data, id for published-versions data)."
+  [widget]
+  (if (config "mock-data") (:name widget) (:id widget)))
+
 (defn data-for
   ([c] 
-   (get (session-get :model-data) (keyword (:name c))))
-  ([c dm] (get dm (keyword (:id c)))))
+  (get (session-get :model-data) (keyword (wid-id c))))
+  ([c dm] (get dm (keyword (wid-id c)))))
+
+
 
 (defn- keyword-from-button 
   "Remove prefix from the string and turn it into a keyword."
@@ -544,9 +551,9 @@
   (let [btns (filter #(.startsWith (str (name %)) ACTION_BTN_PREFIX) (keys m))
         retval (if (> (count btns) 0)
            (assoc m (keyword-from-button btns ACTION_BTN_PREFIX) "selected")
-            m)
-        ;_ (debug "handle action button: " retval)
-        ] 
+            m) ] 
+        (debug "handle action button: " retval)
+        ;(println "handle action button: " retval)
      retval))
 
 (defn- handle-meta-data-update-btns
@@ -624,6 +631,7 @@
         fmap (select-keys new-map keep-keys) ]
         (session-put! :model-data fmap)
         (debug "EXIT save captured data: " (pprint-str fmap))
+        ;(println "EXIT save captured data: " (pprint-str fmap))
         fmap))
                  
 
