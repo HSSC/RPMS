@@ -36,6 +36,22 @@ Utils.Array = {
 			target.push(a);
 		});
 		return target;
+	},
+	compare: function(a1, a2){
+		if(a1 == null && a2 == null) return true;
+		if(a1 == null || a2 == null) return false;
+		var c1 = a1.concat([]);
+		var c2 = a2.concat([]);
+		for(var fi = (c1.length - 1); fi >= 0; fi--){
+			for(var si = (c2.length - 1); si >= 0; si--){
+				if(c1[fi] == c2[si]){
+					c1.splice(fi, 1);
+					c2.splice(si, 1);
+				}
+			}
+		}
+		if((c1.length + c2.length) > 0) return false;
+		return true;
 	}
 }
 Utils.Map = {

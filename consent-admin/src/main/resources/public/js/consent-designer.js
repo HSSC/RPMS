@@ -134,6 +134,7 @@
 	if(editors == null){
 		consent.Editors = editors = {};
 		editors.editors = {};
+		editors.common = {};
 		editors.base = {
 				refresh: function(control, data){
 					var attrs = editors.lift(control);
@@ -377,10 +378,11 @@
 				var selected = []
 				if(options && values){
 					for(var o = (options.length - 1); o >= 0; o--){
+						var opt = options[o];
 						$.each(values, function(i, v){
-							if(o.value == v){
-								o.selected == true;
-								selected.push(options.splice(o, 1));
+							if(opt.value == v){
+								opt.selected == true;
+								selected.push(options.splice(o, 1)[0]);
 							}
 						});
 					}

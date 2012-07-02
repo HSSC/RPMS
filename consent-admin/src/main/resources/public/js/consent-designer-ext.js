@@ -129,6 +129,77 @@ var ShowBogus = function(container, text, property, data, operation, editable){
 	return ctl;
 }
 
+Consent.Editors.common.selectCreated = function(control){
+	var keyValue = control.data("state");
+	var attrs = Consent.Editors.lift(control);
+	var key = attrs.property.name;
+	var items = [];
+	if(keyValue.id == null){
+		var options = control.find("select option:selected");
+		var value = options[0].value;
+		if(!Consent.Editors.valueIsNull(value)){
+			items.push({key: key, value: value});
+		}
+	}
+	return items;
+};
+
+Consent.Editors.common.selectUpdated = function(control){
+	var items = [];
+	var keyValue = control.data("state");
+	if(keyValue.id != null){
+		var options = control.find("select option:selected");
+		var value = options[0].value;
+		if(!Consent.Editors.valueIsNull(value)){
+			items.push({id: keyValue.id, value: value});
+		}
+	}
+	return items;
+};
+
+Consent.Editors.common.selectDeleted = function(control){
+	var items = [];
+	var keyValue = control.data("state");
+	if(keyValue.id != null){
+		var options = control.find("select option:selected");
+		var value = options[0].value;
+		if(Consent.Editors.valueIsNull(value)){
+			items.push({id: keyValue.id});
+		}
+	}
+	return items;
+};
+
+Consent.Editors.common.multiSelectCreated = function(control){
+	var keyValue = control.data("state");
+	var attrs = Consent.Editors.lift(control);
+	var key = attrs.property.name;
+	var items = [];
+	if(keyValue.id == null){
+		var options = control.find("select option:selected");
+		var value = [];
+		$.each(options, function(i,o){value.push(o.value)});
+		if(!Consent.Editors.valueIsNull(value)){
+			items.push({key: key, value: value});
+		}
+	}
+	return items;
+};
+
+Consent.Editors.common.multiSelectUpdated = function(control){
+	var items = [];
+	var keyValue = control.data("state");
+	if(keyValue.id != null){
+		var options = control.find("select option:selected");
+		var value = [];
+		$.each(options, function(i,o){value.push(o.value)});
+		if(!Utils.Array.compare(value, keyValue.value)){
+			items.push({id: keyValue.id, value: value});
+		}
+	}
+	return items;
+};
+
 Consent.Editors.register("texti18n", {
 	generate: function(container, property, data, operation, editable){
 		var keyValues = Consent.Utils.findProperties(property.name, data.properties);
@@ -152,6 +223,7 @@ Consent.Editors.register("texti18n", {
 	updated: function(control){return Utils.DataSet.get(control, "updated", [])},
 	deleted: function(control){return Utils.DataSet.get(control, "deleted", [])}
 });
+
 Consent.Editors.register("pagelist", {
 	generate: function(container, property, data, operation, editable){
 		var options = [{value: null, label: "{none}"}];
@@ -160,61 +232,58 @@ Consent.Editors.register("pagelist", {
 			$.each(panes, function(i,p){options.push({value: p.name, label:p.name, data: p})});
 		}
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
-	refresh: function(control, data){},
+	created: Consent.Editors.common.selectCreated,
+	updated: Consent.Editors.common.selectUpdated,
+	deleted: Consent.Editors.common.selectDeleted
+});
+
+Consent.Editors.register("boolean", {
+	generate: function(container, property, data, operation, editable){
+		var keyValue = Consent.Utils.findProperty(property.name, data.properties, true);
+		var ctl =  Consent.UI.createCheckboxControl(container, editable, keyValue.key, property.label, keyValue.value, 
+				true, false, property.defaultValue);
+		ctl.data("state", keyValue);
+		return ctl;},
 	created: function(control){
 		var keyValue = control.data("state");
-		var attrs = Consent.Editors.lift(control);
-		var key = attrs.property.name;
 		var items = [];
 		if(keyValue.id == null){
-			var options = control.find("select option:selected");
-			var value = options[0].value;
-			if(!Consent.Editors.valueIsNull(value)){
-				items.push({key: key, value: value});
-			}
+			var attrs = Consent.Editors.lift(control);
+			var key = attrs.property.name;
+			var value = (control.find("input:checked").length > 0);
+			items.push({key: key, value: value});
 		}
 		return items;
 	},
 	updated: function(control){
-		var items = [];
 		var keyValue = control.data("state");
-		if(keyValue.id != null){
-			var options = control.find("select option:selected");
-			var value = options[0].value;
-			if(!Consent.Editors.valueIsNull(value)){
-				items.push({id: keyValue.id, value: value});
-			}
-		}
-		return items;
-	},
-	deleted: function(control){
 		var items = [];
-		var keyValue = control.data("state");
 		if(keyValue.id != null){
-			var options = control.find("select option:selected");
-			var value = options[0].value;
-			if(Consent.Editors.valueIsNull(value)){
-				items.push({id: keyValue.id});
+			var attrs = Consent.Editors.lift(control);
+			var key = attrs.property.name;
+			var value = (control.find("input:checked").length > 0);
+			if(keyValue != value){
+				items.push({id: keyValue.id, key: key, value: (checkbox.length > 0)});
 			}
 		}
 		return items;
 	}
 });
-Consent.Editors.register("boolean", {
-	generate: function(container, property, data, operation, editable){
-		var keyValue = Consent.Utils.findProperty(property.name, data.properties, true);
-		return Consent.UI.createCheckboxControl(container, editable, keyValue.key, property.label, keyValue.value, 
-				true, false, property.defaultValue);}
-});
+
 Consent.Editors.register("boolean-picker", {
 	generate: function(container, property, data, operation, editable){
 		var options = [{value: null, label: "{none}"}, {value: true, label: "true"}, {value: false, label: "false"}];
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);}
+		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		created: Consent.Editors.common.selectCreated,
+		updated: Consent.Editors.common.selectUpdated,
+		deleted: Consent.Editors.common.selectDeleted
 });
+
 Consent.Editors.register("urls", {
 	generate: function(container, property, data, operation, editable){
 		return ShowBogus(container, "urls", property, data, operation, editable);}
 });
+
 Consent.Editors.register("endorsement", {
 	generate: function(container, property, data, operation, editable){
 		var options = [{value: null, label: "{none}"}];
@@ -222,8 +291,12 @@ Consent.Editors.register("endorsement", {
 		if(nodes != null){
 			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
 		}
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);}
+		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		created: Consent.Editors.common.selectCreated,
+		updated: Consent.Editors.common.selectUpdated,
+		deleted: Consent.Editors.common.selectDeleted
 });
+
 Consent.Editors.register("policy", {
 	generate: function(container, property, data, operation, editable){
 		var options = [{value: null, label: "{none}"}];
@@ -231,8 +304,12 @@ Consent.Editors.register("policy", {
 		if(nodes != null){
 			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
 		}
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);}
+		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		created: Consent.Editors.common.selectCreated,
+		updated: Consent.Editors.common.selectUpdated,
+		deleted: Consent.Editors.common.selectDeleted
 });
+
 Consent.Editors.register("policies", {
 	generate: function(container, property, data, operation, editable){
 		var options = [];
@@ -240,8 +317,11 @@ Consent.Editors.register("policies", {
 		if(nodes != null){
 			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
 		}
-		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);}
+		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);},
+		created: Consent.Editors.common.multiSelectCreated,
+		updated: Consent.Editors.common.multiSelectUpdated
 });
+
 Consent.Editors.register("metaitem", {
 	generate: function(container, property, data, operation, editable){
 		var options = [];
@@ -249,8 +329,12 @@ Consent.Editors.register("metaitem", {
 		if(nodes != null){
 			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
 		}
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);}
+		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		created: Consent.Editors.common.selectCreated,
+		updated: Consent.Editors.common.selectUpdated,
+		deleted: Consent.Editors.common.selectDeleted
 });
+
 Consent.Editors.register("metaitems", {
 	generate: function(container, property, data, operation, editable){
 		var options = [{value: null, label: "{none}"}];
@@ -258,8 +342,11 @@ Consent.Editors.register("metaitems", {
 		if(nodes != null){
 			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
 		}
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);}
+		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		created: Consent.Editors.common.multiSelectCreated,
+		updated: Consent.Editors.common.multiSelectUpdated
 });
+
 Consent.Editors.register("input", {
 	generate: function(container, property, data, operation, editable){
 		var keyValue = Consent.Utils.findProperty(property.name, data.properties);
