@@ -71,6 +71,7 @@
         eid (:id endorsement)
         clear (for [lang langs] {:key "clear-label" :language lang :value (str "Clear " (:code lang)) })
         agree (for [lang langs] {:key "true-label" :language lang :value (str "Agree " (:code lang)) })
+        chk-agree (for [lang langs] {:key "label" :language lang :value (str "Agree " (:code lang))})
         noagree (for [lang langs] {:key "false-label" :language lang :value (str "No Agree " (:code lang)) })
         cprops [{:key "operation" :value operation }]
         pprops [{:key "policy" :value pid }
@@ -82,8 +83,10 @@
         
         pwid {:name (next-name operation) :type "policy-text" :organization org :properties (concat pprops cprops)}
         bwid {:name (next-name operation) :type "policy-choice-buttons" :organization org :properties (concat bprops cprops agree noagree)}
+        cbwid {:name (next-name operation) :type "policy-checkbox" :organization org :properties (concat bprops cprops chk-agree [{:key "checked-value" :value true}
+                                                                                                                                  {:key "unchecked-value" :value false}])}
         ewid {:name (next-name operation) :type "signature" :organization org :properties (concat eprops cprops clear)}
-        swid1 {:name (next-name operation) :type "section" :organization org :contains [pwid bwid]}
+        swid1 {:name (next-name operation) :type "section" :organization org :contains [pwid (rand-nth [bwid cbwid])]}
         swid2 {:name (next-name operation) :type "section" :organization org :contains [ewid]}]
     [swid1 swid2]))
 
