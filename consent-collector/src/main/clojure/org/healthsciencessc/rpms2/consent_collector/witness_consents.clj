@@ -5,7 +5,6 @@
     [org.healthsciencessc.rpms2.consent-collector.formutil :as formutil]
     [org.healthsciencessc.rpms2.consent-collector.helpers :as helper])
   (:use [sandbar.stateful-session :only (session-get session-put! flash-get flash-put!)]
-        [org.healthsciencessc.rpms2.consent-domain.types :only (code-endorsement-type-witness)]
         [clojure.tools.logging :only (debug info warn error)]
         [clojure.pprint :only (pprint)]
         [clojure.data.json :only (json-str)]
@@ -14,13 +13,10 @@
         [org.healthsciencessc.rpms2.consent-collector.config :only (config)]
         [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n)]))
 
-(defn add-endorsement! [e])
+(defn protocol-has-witnesses?
+  []
+  (seq (formutil/witnesses-needed)))
 
-(defn collector-name []
-  (let [{:keys [first-name last-name]} (session-get :user)]
-    (str first-name " " last-name)))
-
-(def protocol-has-witnesses? (constantly true))
 ;; check for prescence of code-endorsement-type-witness
 ;; remove remaining endorsements from session
 
@@ -36,7 +32,7 @@
   (persist-session!)
   (helper/rpms2-page
     [:div
-     [:h1 (i18n :witness-finished)]
+     [:h1 (i18n :witness-finished) " Your data has been saved."]
      [:a {:href "/view/select/consenter"} "Return to forever"]]
     :title "Consent Collection Completed"))
 

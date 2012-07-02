@@ -49,17 +49,60 @@
          (repeat (current-organization))
          metas)))
 
-(defn collect-consents [])
-(defn collect-endorsements [])
+(defn assemble-consents
+  []
+  (flatten 
+    (for [[pv-id answers] (session-get :finished-forms)]  ;; note pv-id is kw 
+      (let [pvform (get-form-by-id (name pv-id))]
+        (for [[widget-guid widget-value] answers]  ;; widget-guid is also a kw
+          (let [wprops (widget-properties (widget-by-guid pvform (name widget-guid)))]
+            (merge 
+              (select-keys wprops [:endorsement :policy])
+              {:value widget-value
+               :protocol-version {:id (name pv-id)}})))))))
 
+(defn flatten-consents 
+  "Widgets refer to lists of consents, so this flattens them out"
+  [xs]
+  (for [{policies :policy :as consent} xs
+        pol-id policies]
+    (-> (assoc consent :policy {:id pol-id}
+                   :consented (:value consent))
+      (dissoc :value))))
+
+(defn get-policies-endorsements
+  [assembled-answers]
+  (let [raw-consents (map merge
+                          (repeat (current-encounter))
+                          (repeat (current-organization))
+                          assembled-answers)
+        {:keys [policy endorsement]} (group-by #(some #{:policy :endorsement} (keys %)) raw-consents)]
+    {:consents (flatten-consents policy)
+     :consent-endorsements (map #(assoc % :endorsement
+                                        {:id (get % :endorsement)})
+                                endorsement)}))
 
 (defn persist
   "This should take finished forms, endorsements, and witness consents and persist them all"
   [])
 
+(defn add-witnesses [persisted-data]
+  (if-let [witness-sig (session-get :witness-png)]
+    (let [endorsements (map merge 
+                            (repeat {:value witness-sig})
+                            (repeat (current-encounter))
+                            (repeat (current-organization))
+                            (witnesses-needed))]
+      (update-in persisted-data [:consent-endorsements]
+                 #(concat % endorsements)))
+    persisted-data))
+
 (defn persist-session!
   "Main entry to persistence, grabs everything from session"
   []
-  (session-put! :persist-meta (collect-meta-items))
-  (session-put! :persist-consents (collect-consents))
-  (session-put! :persist-endorsements (collect-endorsements)))
+  (let [pdata (-> (get-policies-endorsements (assemble-consents))
+                (assoc :consent-meta-items (collect-meta-items))
+                (add-witnesses))]
+    (session-put! :persist-data pdata)
+    (dsa-call :put-consent-collect pdata)))
+

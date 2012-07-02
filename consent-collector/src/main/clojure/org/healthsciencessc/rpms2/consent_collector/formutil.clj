@@ -12,6 +12,7 @@
   (:use [clojure.pprint])
 
   (:use [org.healthsciencessc.rpms2.consent-domain.tenancy :only [label-for-location label-for-protocol]])
+  (:use [org.healthsciencessc.rpms2.consent-domain.types :only (code-endorsement-type-witness)])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only (i18n i18n-existing
@@ -59,3 +60,19 @@
 
 (defn widget-props-localized [w]
   (widget-props-localized-impl w (session-get :selected-language)))
+
+(defn get-form-by-id [id]
+  (let [id->form (into {} (for [{:keys [form id]} (session-get :protocol-versions)]
+                            [id form]))]
+      (get id->form id)))
+
+(defn witnesses-needed
+  "Returns a seq of needed endorsements"
+  []
+  (for [{:keys [endorsements id]}
+        (session-get :protocol-versions)
+        e endorsements
+        :when (= code-endorsement-type-witness (:code (:endorsement-type e)))]
+    {:protocol-version {:id id}
+     :endorsement {:id (:id e)}}))
+ 
