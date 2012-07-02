@@ -48,12 +48,14 @@
   [ctx]
   (let [body (:body-params ctx)
         widget-id (get-in ctx [:query-params :widget])
-        widget (get-in body[:update :widget])]
+        widget (data/find-record types/widget widget-id)
+        record (get-in body[:update :widget])]
     (neo/with-tx
-      (data/update types/widget widget-id widget)
+      (data/update types/widget widget-id record)
       (doseq [prop (get-in body[:create :property])] 
-        (let [node (data/create types/widget-property prop)]
-          (data/relate-records types/widget-property (:id node) types/widget widget-id)))
+        (let [prop1 (assoc prop :organization (:organization widget))
+              prop2 (assoc prop1 :widget widget)]
+              (data/create types/widget-property prop2)))
       (doseq [prop (get-in body[:update :property])] 
         (data/update types/widget-property (:id prop) prop))
       (doseq [prop (get-in body[:delete :property])] 

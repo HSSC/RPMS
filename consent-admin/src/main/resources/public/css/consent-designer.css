@@ -58,11 +58,19 @@ div.consent-designer-widget-dashboard img{
 }
 
 img.consent-designer-resize{
-	
+	position: relative;
+	width: 32px;
+	height: 32px;
+	vertical-align: top;
 }
 
 img.consent-designer-close{
-	margin-left: 3em;
+	position: relative;
+	width: 24px;
+	height: 24px;
+	margin-left: 3.9em;
+	vertical-align: top;
+	padding-top: 6px;
 }
 
 /*

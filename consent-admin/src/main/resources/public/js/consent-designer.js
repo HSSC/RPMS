@@ -321,7 +321,7 @@
 								Utils.Url.render("/image/add.png") + "'/>");
 					addimg.appendTo(addth);
 					
-					// add script
+					addimg.bind("click", function(){Dialog.inform({message: "NO!"});});
 				}
 				
 				if(urlValue.value){
@@ -872,8 +872,8 @@
 				}
 				
 				var success = function(data, status, xhr){
-					var form = $.parseJSON(data);
- 					designer.syncWidget(dataPane, parentData, data, false);
+					var dataObj = $.parseJSON(data);
+ 					designer.syncWidget(dataPane, parentData, dataObj, false);
 					Dialog.Progress.end();
 				}
 				var url = Utils.Url.render("/api/widget", params);
