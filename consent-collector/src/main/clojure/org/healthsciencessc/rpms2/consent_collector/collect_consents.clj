@@ -423,7 +423,7 @@
                     [:li "Form " [:span.standout f ] (pprint-str (helper/pr-form (f ff) ) )] )]])])
            [:div.finished1 "Thank You!" ]
            [:div.finished2 "Your selected " (helper/org-protocol-label) "s are complete." ]
-           [:div.finished3 "Return the device to the clerk." ] ]
+           [:div.finished3 "Please return the device." ] ]
          [:div.submit-area (helper/submit-btn {:value "Continue" :name "next" }) ]]] 
        :title "Consents Complete" ) ))
 

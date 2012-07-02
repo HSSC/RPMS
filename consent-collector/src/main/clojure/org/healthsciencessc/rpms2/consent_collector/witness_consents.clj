@@ -23,18 +23,25 @@
 (defn display-witness-form []
     (helper/rpms2-page 
       (helper/post-form "/witness/consents"
-                        (list [:h1 "Witness Consent"]
+                        (list [:h1 "Witness Signature"]
                               (helper/signaturePadDiv :name "witness"))
                         (helper/submit-btn {:name "witness-submit" :value "Submit"}))
-      :title "Witness Consent Form"))
+      :title "Witness Signature"))
 
 (defn finished-page []
   (persist-session!)
-  (helper/rpms2-page
-    [:div
-     [:h1 (i18n :witness-finished) " Your data has been saved."]
-     [:a {:href "/view/select/consenter"} "Return to forever"]]
-    :title "Consent Collection Completed"))
+  (helper/rpms2-page 
+    [:div.collect-consent-form
+     [:form {:action (helper/mypath "/view/select/consenter") 
+             :method "GET" 
+             :data-ajax "false" 
+             :data-theme "a" } 
+      [:div.centered 
+       [:div.finished1 (format "All %ss have been saved.
+                               Press Continue to complete the verification process.
+                               Thank you!" (helper/org-protocol-label))]]
+      [:div.submit-area (helper/submit-btn {:value "Continue" :name "next"})]]]
+    :title "Review Complete"))
 
 (defn view 
   "Returns witness consent form"
