@@ -17,11 +17,9 @@
 
 (defn- get-label [mi]
   (:name mi))
-  ;; FIXME Either call the service that returns the right language,
-  ;; or dig into the :labels on the map
 
 (defn- emit-mi-field
-  "TODO If field type is checkbox, need to style differently"
+  "If field type is checkbox, need to style differently"
   [mi]
   (if (= (:data-type mi) "boolean")
     (helper/checkbox-group {:name (:id mi)
@@ -44,17 +42,20 @@
 
   Save transformed meta-data into :all-meta-data"
   [ctx]
-  (let [smeta  (->> (session-get :protocol-versions)
-                    (map :meta-items)
-                    (apply concat)
-                    (distinct))
-        meta-data (into {} (for [{id :id :as mi} smeta]
-                            [(keyword id) mi]))
-        ]
-    ;meta-data (dsa/get-published-protocols-meta-items protocol-ids)]  probably call the service when it works?
-    
+  (let [selected-id (->> (session-get :protocol-versions)
+                         (map :id)
+                         (distinct))
+        raw-meta (dsa/get-published-protocols-meta-items 
+                   (vec selected-id) 
+                   (session-get :selected-language))
+        _ (debug "raw-meta lang: " (session-get :selected-language) " " 
+                 (pprint-str raw-meta))
+        meta-data (into {} (for [{id :id :as mi} raw-meta]
+                            [(keyword id) mi])) ] 
+        
     (session-put! :all-meta-data meta-data)
     (debug "INITIAL META DATA IS " (session-get :all-meta-data))
+    (debug "INITIAL META DATA IS " (pprint-str (session-get :all-meta-data)))
     (if (empty? meta-data)
       (helper/myredirect "/collect/consents")
       (helper/rpms2-page 

@@ -197,11 +197,13 @@
 
 (defn get-published-protocols-meta-items
   "Returns meta-items for published protocols."
-  [protocol-ids]
-  (:body (dsa-call :get-protocol-versions-published-meta 
-               {:protocol-version protocol-ids})))
+  [protocol-ids lang]
 
-(defn get-published-protocols
+  (:body (dsa-call :get-protocol-versions-published-meta 
+                    {:language lang
+                      :protocol-version protocol-ids } )))
+
+(defn get-protocol-versions-published
   "Returns published protocols for currently logged in user 
   at the currently selected location."
   []

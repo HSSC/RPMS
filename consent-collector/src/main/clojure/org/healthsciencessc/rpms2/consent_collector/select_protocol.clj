@@ -55,7 +55,7 @@
     (helper/post-form "/view/select/protocols"
       [:div 
        (list 
-         (let [plist (dsa/get-published-protocols)
+         (let [plist (dsa/get-protocol-versions-published)
                languages (distinct (apply concat (map :languages plist)))
                meta-data (distinct (apply concat (map :meta-items plist)))
                ]
