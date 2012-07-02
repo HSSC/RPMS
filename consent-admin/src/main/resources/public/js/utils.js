@@ -31,10 +31,16 @@ Utils.Url = {
 	}
 };
 Utils.Array = {
-	addAll: function(target, extra){
+	clear: function(a){
+		a.splice(0, a.length);
+	},
+	addAll: function(target, extra, remove){
 		$.each(extra, function(i, a){
 			target.push(a);
 		});
+		if(remove){
+			Utils.Array.clear(extra);
+		}
 		return target;
 	},
 	compare: function(a1, a2){

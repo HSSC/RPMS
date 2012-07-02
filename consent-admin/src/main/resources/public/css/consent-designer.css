@@ -163,3 +163,32 @@ input.consent-designer-checkbox{
 	float: left;
 	margin-top: .6em;
 }
+
+table.consent-designer-media{
+	width:100%;
+	border: solid 1px gray;
+}
+tr.consent-designer-media{
+	
+}
+th.consent-designer-media{
+	border-bottom: dashed 1px gray;
+}
+td.consent-designer-media{
+	border-bottom: dashed 1px gray;
+}
+th.consent-designer-media-action{
+	border-bottom: dashed 1px gray;
+	width: 4em;
+	text-align: right;
+}
+td.consent-designer-media-action{
+	border-bottom: dashed 1px gray;
+	width: 4em;
+	text-align: right;
+}
+img.consent-designer-media-action{
+	height: 1.0em;
+	width: 1.0em;
+	margin-left: .2em;
+}

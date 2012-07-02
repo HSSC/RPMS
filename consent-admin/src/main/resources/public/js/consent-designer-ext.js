@@ -281,7 +281,7 @@ Consent.Editors.register("boolean-picker", {
 
 Consent.Editors.register("urls", {
 	generate: function(container, property, data, operation, editable){
-		return ShowBogus(container, "urls", property, data, operation, editable);}
+		return Consent.UI.createMediaControl(container, property, data, operation, editable);},
 });
 
 Consent.Editors.register("endorsement", {

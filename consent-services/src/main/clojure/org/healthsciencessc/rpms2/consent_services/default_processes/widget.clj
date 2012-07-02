@@ -9,6 +9,16 @@
             [borneo.core :as neo])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
+(defn printit
+  [title obj]
+  (println)
+  (println "BEGIN: " title)
+  (println)
+  (prn obj)
+  (println)
+  (println "END: " title)
+  (println))
+
 (defn post-designer-form
   [ctx]
   (let [body (:body-params ctx)
@@ -29,11 +39,10 @@
         widget (:body-params ctx)
         widget-id (get-in ctx [:query-params :widget])
         form-id (get-in ctx [:query-params :form])
-        widget (if widget-id (merge widget {:contained-in {:id widget-id}}))
-        widget (assoc widget :organization (:organization protocol-version))
-        widget (data/create-records types/widget widget)]
-    (if (= "page" (:type widget)) (data/relate-records types/widget (:id widget) types/form form-id))
-    widget))
+        widget1 (if widget-id (merge widget {:contained-in {:id widget-id}})
+                 (merge widget {:form {:id form-id}}))
+        widget2 (assoc widget1 :organization (:organization protocol-version))]
+    (data/create-records types/widget widget2)))
 
 (defn post-designer-form-widget
   [ctx]
@@ -56,16 +65,6 @@
   (let [body (:body-params ctx)
         widget-id (get-in ctx [:query-params :widget])]
     (data/delete types/widget widget-id)))
-
-(defn printit
-  [title obj]
-  (println)
-  (println "BEGIN: " title)
-  (println)
-  (prn obj)
-  (println)
-  (println "END: " title)
-  (println))
 
 (defn trueprint
   [ctx]

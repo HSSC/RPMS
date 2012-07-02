@@ -68,15 +68,15 @@
 							utils.getPanePath(operation, nextProp.value, panes, found);
 						}
 						else{
-							found = found.concat(panes.splice(0, panes.length));
+							Utils.Array.addAll(found, panes, true);
 						}
 					}
 					else{
-						found = found.concat(panes.splice(0, panes.length));
+						Utils.Array.addAll(found, panes, true);
 					}
 				}
 				else{
-					found = found.concat(panes.splice(0, panes.length));
+					Utils.Array.addAll(found, panes, true);
 				}
 				return found;
 			},
@@ -293,6 +293,52 @@
 										"<td class='i18ntext-text'>" + val + "</td>" + action + "</tr>");
 						row.appendTo(table);
 						row.data("text", text);
+					}
+				}
+				return control;
+			},
+			createMediaControl: function(container, property, data, operation, editable){
+				var urlValue = utils.findProperty(property.name, data.properties, true);
+				var posterValue = utils.findProperty(property.posterProp, data.properties, true);
+				
+				var control = ui.createControl(container, editable);
+				control.data("state", {url: urlValue, poster: posterValue});
+				ui.createLabel(control, property.name, property.label);
+				
+				control.data("editable", designer.editable);
+				
+				var table = $("<table class='consent-designer-media' />");
+				table.appendTo(control);
+				var header = $("<tr class='consent-designer-media'>" + 
+							"<th class='consent-designer-media'>Media URL</th>" + 
+							"<th class='consent-designer-media'>Poster URL</th></tr>")
+				header.appendTo(table);
+				var action = "";
+				if(editable){
+					var addth = $("<th class='consent-designer-media-action' />");
+					addth.appendTo(header);
+					var addimg = $("<img class='consent-designer-media-action' src='" +
+								Utils.Url.render("/image/add.png") + "'/>");
+					addimg.appendTo(addth);
+					
+					// add script
+				}
+				
+				if(urlValue.value){
+					for(var i = 0; i < urlValue.value.length; i++){
+						var row = $("<tr class='consent-designer-media'>");
+						row.appendTo(table);
+						var url = urlValue.value[i];
+						var poster = posterValue.value.length > i ? posterValue.value[i] : "" ;
+						$("<td class='consent-designer-media'>" + url + "</td>").appendTo(row); 
+						$("<td class='consent-designer-media'>" + poster + "</td>").appendTo(row);
+						if(editable){
+							var cell = $("<td class='consent-designer-media-action'>");
+							cell.appendTo(row);
+							var img = $("<img class='consent-designer-media' src='" + 
+									Utils.Url.render("/image/delete.png") + "'/>");
+							img.appendTo(cell);
+						}
 					}
 				}
 				return control;
