@@ -192,10 +192,10 @@
                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to protocol :relationship :version-of :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to form :relationship :described-by :can-create-parent true}
-                                 {:type :many-to-many :related-to policy :name :policies :relationship :has-policy :omit-rels true}
-                                 {:type :many-to-many :related-to endorsement :relationship :has-endorsement :omit-rels true}
+                                 {:type :many-to-many :related-to policy :name :policies :relationship :has-policy}
+                                 {:type :many-to-many :related-to endorsement :relationship :has-endorsement}
                                  {:type :many-to-many :related-to language :relationship :has-language :omit-rels true}
-                                 {:type :many-to-many :related-to meta-item :relationship :has-meta-item :omit-rels true}]}
+                                 {:type :many-to-many :related-to meta-item :relationship :has-meta-item}]}
 
    text-i18n {:attributes (merge base
                                  {:value {:persisted true}})
