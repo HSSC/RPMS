@@ -22,8 +22,10 @@
 (defn post-designer-form
   [ctx]
   (let [body (:body-params ctx)
-        form-id (get-in ctx [:query-params :form])]
+        form-id (get-in ctx [:query-params :form])
+        form (get-in body[:update :form])]
     (neo/with-tx
+      (if form (data/update types/form form-id form))
       (doseq [text (get-in body[:create :title])] 
         (let [node (data/create types/text-i18n text)]
           (data/relate-records types/text-i18n (:id node) types/form form-id)))

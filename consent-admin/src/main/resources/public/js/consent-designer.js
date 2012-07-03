@@ -45,40 +45,65 @@
 				}
 				return null;
 			},
-			getPanesByOperation: function(operation){
-				var panes = consent.Designer.protocol.form.contains;
+			findWidgetPropertyById: function(widget, id){
+				if(widget != null && widget.properties != null){
+					var props = widget.properties;
+					for(var i = 0; i < props.length; i++){
+						if(props[i].id == id) return props[i];
+					}
+				}
+				return null;
+			},
+			getPagesByOperation: function(operation){
+				var pages = consent.Designer.protocol.form.contains;
 				var found = [];
-				for(var i = 0; i < panes.length; i++){
-					var prop = utils.findWidgetProperty(panes[i], "operation");
+				for(var i = 0; i < pages.length; i++){
+					var prop = utils.findWidgetProperty(pages[i], "operation");
 					if(prop != null && operation == prop.value){
-						found.push(panes[i]);
+						found.push(pages[i]);
 					}
 				}
 				return found;
 			},
-			getPanePath: function(operation, name, panes, found){
+			getOrderedPages: function(operation, name, pageList, found){
 				if(found == null) found = [];
-				if(panes == null) panes = utils.getPanesByOperation(operation);
+				if(pageList == null) pageList = utils.getPagesByOperation(operation);
 				if(utils.findByName(found, name) == null){
-					var pane = utils.findByName(panes, name, true);
-					if(pane != null){
-						found.push(pane);
-						var nextProp = utils.findWidgetProperty(pane, "next");
+					var page = utils.findByName(pageList, name, true);
+					if(page != null){
+						found.push(page);
+						var nextProp = utils.findWidgetProperty(page, "next");
 						if(nextProp != null){
-							utils.getPanePath(operation, nextProp.value, panes, found);
+							utils.getOrderedPages(operation, nextProp.value, pageList, found);
 						}
 						else{
-							Utils.Array.addAll(found, panes, true);
+							Utils.Array.addAll(found, pageList, true);
 						}
 					}
 					else{
-						Utils.Array.addAll(found, panes, true);
+						Utils.Array.addAll(found, pageList, true);
 					}
 				}
 				else{
-					Utils.Array.addAll(found, panes, true);
+					Utils.Array.addAll(found, pageList, true);
 				}
 				return found;
+			},
+			pageOptions: function(operation, value){
+				var none = {value: null, label: "{none}", selected: true, data: null};
+				var options = [none];
+				var pages = Consent.Utils.getOrderedPages(operation, value);
+				if(pages != null){
+					$.each(pages, function(i,p){
+						var option = {value: p.name, label:p.name, data: p};
+						if(value == p.name){
+							option.selected = true;
+							none.selected = false;
+						}
+						options.push(option);
+					});
+				}
+				return options;
 			},
 			findProperties: function(name, props){
 				var found = [];
@@ -384,6 +409,14 @@
 				ui.createLabel(wrap, field, label).addClass("consent-designer-checkbox");
 				return wrap;
 			},
+			createPageSelectControl: function(container, property, data, operation, editable){
+				var keyValue = utils.findProperty(property.name, data.properties, true);
+				var control = ui.createControl(container, editable);
+				control.data("state", keyValue);
+				ui.createLabel(control, property.name, property.label);
+				ui.createPageSelect(control, editable, property.name, keyValue.value, operation);
+				return control;
+			},
 			createSelectControl: function(container, property, data, operation, editable, options){
 				var keyValue = utils.findProperty(property.name, data.properties, true);
 				var control = ui.createControl(container, editable);
@@ -400,8 +433,72 @@
 				ui.createMultiSelect(control, editable, property.name, keyValue.value, options);
 				return control;
 			},
+			addSelectOption : function(select, option){
+				var opt = $("<option>" + option.label + "</option>");
+				opt.appendTo(select);
+				
+				if(option.value){
+					opt[0].value = option.value;
+				}
+				if(option.selected){
+					opt.attr("selected", "selected");
+					if(option.value){
+						select.value = option.value;
+					}
+				}
+				opt.data("optionData", option.data);
+			},
+			createPageSelect: function(container, editable, field, value, operation){
+				var select = $("<select class='consent-designer-input' />");
+				select.attr("name", field);
+				select.appendTo(container);
+				
+				var options = utils.pageOptions(operation, value);
+				if(options != null){
+					$.each(options, function(i,o){
+						ui.addSelectOption(select, o);
+					});
+				}
+				if(!editable){
+					select.attr("disabled", "disabled");
+				}
+				
+				var updateOptions = function(e){
+					var opts = select.children("option");
+					var optsData = [];
+					opts.each(function(i,o){
+						o = $(o);
+						var data = o.data("optionData");
+						if(data != null){
+							optsData.push({opt: o, data: data});
+						}
+					});
+					var options = utils.pageOptions(operation, value);
+					options.shift(); // Get Rid of {none}
+					for(var i = (options.length - 1); i >= 0; i--){
+						var option = options[i];
+						for(var x = (optsData.length - 1); x >= 0; x--){
+							var o = optsData[x];
+							if(option.data.id == o.data.id){
+								o.opt.value = option.value;
+								o.opt.text(option.label);
+								o.opt.data("optionData", option.data);
+								options.splice(i, 1);
+								optsData.splice(x, 1);
+							}
+						}
+					}
+					// Remove Old, Add New
+					$.each(options, function(i, o){
+						ui.addSelectOption(select, o);
+					});
+				}
+				select.bind("focus", updateOptions);
+				return select;
+			},
 			createSelect: function(container, editable, field, value, options){
 				var select = $("<select class='consent-designer-input' />");
+				select.attr("name", field);
 				select.appendTo(container);
 				if(options != null){
 					$.each(options, function(i,o){
@@ -422,6 +519,7 @@
 			},
 			createMultiSelect: function(container, editable, field, values, options){
 				var select = $("<select class='consent-designer-input' multiple='multiple' size='4'/>");
+				select.attr("name", field);
 				select.appendTo(container);
 				var selected = []
 				if(options && values){
@@ -591,6 +689,17 @@
 					data.data("data", form);
 					var fields = data.children().first();
 					ui.createTextControl(fields, "Title", "titles", form.titles);
+					
+					var makePageControl = function(property, label, operation){
+						var value = form[property]
+						var control = ui.createControl(fields, designer.editable);
+						ui.createLabel(control, property, label);
+						ui.createPageSelect(control, designer.editable, property, value, operation);
+					}
+					
+					makePageControl("collect-start", "Collect Start Page", keys.collect);
+					makePageControl("review-start", "Review Start Page", keys.review);
+					
 					designer.main.formPane = pane;
 					designer.main.panes.push(pane);
 				}
@@ -615,7 +724,7 @@
 					var items = [];
 					// Get All Of The Page Widgets
 					var start = form[operation + "-start"];
-					var panes = utils.getPanePath(operation, (start || ""));
+					var panes = utils.getOrderedPages(operation, (start || ""));
 					for(var i = 0 ; i < panes.length; i ++){
 						var p = panes[i];
 						items.push({label: p.name, 
@@ -801,6 +910,7 @@
 				ui.showPane(item.pane);
 			},
 			saveForm: function(event){
+				var form = designer.protocol.form;
 				var dataPane = ui.relativeData($(event.target));
 				var textControl = dataPane.find("div.i18ntext");
 				var values = textControl.data("value");
@@ -821,14 +931,31 @@
 						"delete":{title: deleted}
 				};
 				
+				// Check Properties
+				var formUpdates = {id: form.id};
+				
+				var selects = dataPane.find("select");
+				selects.each(function(i,s){
+					if(s.name != null){
+						var val = form[s.name];
+						var opts = $(s).children("option:selected");
+						if(opts.length > 0 && val != opts[0].value){
+							formUpdates[s.name] = opts[0].value;
+							body.update.form = formUpdates;
+						}
+					}
+				});
+				
 				var params = {"protocol-version": designer.protocol.id, 
 						"protocol": designer.protocol.protocol.id, "form": designer.protocol.form.id};
 				var url = Utils.Url.render("/api/form", params);
 				var success = function(data, status, xhr){
-					var form = $.parseJSON(data);
-					textControl.data("value", form.titles);
+					var formData = $.parseJSON(data);
+					textControl.data("value", formData.titles);
 					textControl.data("updated", []);
 					textControl.data("deleted", []);
+					form["collect-start"] = formData["collect-start"];
+					form["review-start"] = formData["review-start"];
 					Dialog.Progress.end();
 				}
 				RPMS.Action.doAjax("POST", url, JSON.stringify(body), null, null, {success: success});
@@ -849,10 +976,11 @@
 					params.widget = parentData.id;
 				}
 				var method = "POST";
+				var action = "UPDATE";
 				var body = null;
-				
 				var crudData = {name: nameField.val(), type: data.type};
 				if(data.id == null){
+					action = "CREATE";
 					method = "PUT";
 					crudData.properties = [{key: "operation", value: operation}];
 					$.each(fields, function(i,f){
@@ -879,7 +1007,7 @@
 				
 				var success = function(data, status, xhr){
 					var dataObj = $.parseJSON(data);
- 					designer.syncWidget(dataPane, parentData, dataObj, false);
+ 					designer.syncWidget(dataPane, parentData, dataObj, action);
 					Dialog.Progress.end();
 				}
 				var url = Utils.Url.render("/api/widget", params);
@@ -900,15 +1028,15 @@
 					
 					var success = function(data, status, xhr){
 						var form = $.parseJSON(data);
-	 					designer.syncWidget(dataPane, parentData, data, true);
+	 					designer.syncWidget(dataPane, parentData, data, "DELETE");
 						Dialog.Progress.end();
 					}
 					var url = Utils.Url.render("/api/widget", params);
 					RPMS.Action.doAjax("DELETE", url, null, null, null, {success: success});
 				}
 			},
-			syncWidget: function(pane, parentData, data, remove){
-				if(remove){
+			syncWidget: function(pane, parentData, data, action){
+				if(action == "DELETE"){
 					for(var i = parentData.contains.length - 1; i >=0 ; i--){
 						var o = parentData.contains[i];
 						if(o.id = data.id){
@@ -935,11 +1063,28 @@
 					container.id = data.id;
 					container.name = data.name;
 					container.type = container.type;
+					if(container.properties == null){
+						container.properties = [];
+					}
+					$.each(data.properties, function(i,p){
+						var prop = utils.findWidgetPropertyById(container, p.id);
+						if(prop == null){
+							container.properties.push(p);
+						}
+						else{
+							prop.key = p.key;
+							prop.value = p.value;
+							prop.language = p.language;
+						}
+					});
 					
 					var fields = pane.data("fields");
 					$.each(fields, function(i,o){
-						o.editor.refresh(o.control, data);
+						o.editor.refresh(o.control, container);
 					});
+					if(action == "CREATE"){
+						parentData.contains.push(container);
+					}
 				}
 			}
 		};

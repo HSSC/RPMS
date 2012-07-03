@@ -226,12 +226,7 @@ Consent.Editors.register("texti18n", {
 
 Consent.Editors.register("pagelist", {
 	generate: function(container, property, data, operation, editable){
-		var options = [{value: null, label: "{none}"}];
-		var panes = Consent.Utils.getPanePath((property.operation || operation), "");
-		if(panes != null){
-			$.each(panes, function(i,p){options.push({value: p.name, label:p.name, data: p})});
-		}
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		return Consent.UI.createPageSelectControl(container, property, data, operation, editable);},
 	created: Consent.Editors.common.selectCreated,
 	updated: Consent.Editors.common.selectUpdated,
 	deleted: Consent.Editors.common.selectDeleted
