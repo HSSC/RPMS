@@ -45,9 +45,11 @@
                        (if protocol-version-id
                          (actions/assign-action 
                            {:url (str "/api/" type-path "/assign") 
-                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}})
+                            :params {:organization org-id type-kw :selected#id :protocol-version protocol-version-id}
+                            :verify (actions/gen-verify-a-selected "Language")})
                          (actions/details-action 
-                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}}))
+                           {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
+                            :verify (actions/gen-verify-a-selected "Language")}))
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))

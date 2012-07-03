@@ -41,7 +41,8 @@
   [ctx]
   (if-let [protocol-id (get-in ctx [:query-params :protocol])]
     (let [versions (services/get-protocol-versions protocol-id)
-          protocol (if (first versions) (:protocol (first versions)) (services/get-protocol protocol-id))]
+          protocol (if (first versions) (:protocol (first versions)) (services/get-protocol protocol-id))
+          label (render-label protocol " Version")]
        (if (meta versions)
         (rutil/not-found (:message (meta versions)))
         (layout/render ctx (render-label protocol " Versions")
@@ -52,12 +53,13 @@
                               :data version})))
                        (actions/actions 
                          (actions/details-action 
-                           {:url "/view/protocol/version" :params {:protocol-version :selected#id}})
+                           {:url "/view/protocol/version" :params {:protocol-version :selected#id}
+                            :verify (actions/gen-verify-a-selected label)})
                          (actions/ajax-action 
                            {:method :put :url "/api/protocol/version" :params {:protocol protocol-id}
                             :label "New" :action-on-success "refresh"})
                          (actions/back-action)))))
-    (layout/render-error ctx {:message "A protocol is required."})))
+    (layout/render-error ctx {:message "A protocol parameter is required."})))
 
 (defn view-protocol-version
   "Generates a detail/edit view for a single protocol version"

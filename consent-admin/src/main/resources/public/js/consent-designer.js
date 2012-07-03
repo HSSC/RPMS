@@ -242,8 +242,9 @@
 				return pane;
 			},
 			createHeader: function(container, label){
-				var dashboard = $("<div class='consent-designer-header'>" + label + "</div>");
-				dashboard.appendTo(container);
+				var header = $("<div class='consent-designer-header'>" + label + "</div>");
+				header.appendTo(container);
+				return header;
 			},
 			createWidgetDashboard: function(container, options, addAction, sortAction){
 				var dashboard = $("<div class='consent-designer-widget-dashboard' />");
@@ -256,6 +257,7 @@
 				var add = $("<img src='" + Utils.Url.render("/image/add.png") + "' />")
 				add.appendTo(dashboard);
 				add.bind("click", function(){addAction(options);});
+				return dashboard;
 			},
 			createTextControl: function(container, label, property, texts){
 				var control = $("<div class='form-control-wrapper i18ntext consent-designer-input' />");
@@ -717,6 +719,7 @@
 				var parentType = options.parentType;
 				var operation = options.operation;
 				var list = options.list;
+				var count = list.children("li").length + 1;
 				
 				if(parentData == null || parentData.id == null){
 					var message = "You must save the parent before you can create a new " + widgetType.label;
@@ -742,7 +745,7 @@
 				
 				var temp = function(widget){
 					var name = widgets.generateName(widget);
-					menuitem.data = {name: name, type: widget.type};
+					menuitem.data = {name: name, type: widget.type, order: count};
 					menuitem.label = name;
 					var li = ui.addMenuItem(list, menuitem);
 					menuitem.options.namelink = [li];
@@ -786,6 +789,9 @@
 						var message = "A '" + type + "' widget of type '" + data.type + "' is not registered.";
 						Dialog.inform({message: message});
 						return;
+					}
+					if(item.options == null){
+						item.options = {namelink: [li]};
 					}
 					var content = ui.relativeContent(li);
 					item.pane = ui.createWidgetData(content, widget, 

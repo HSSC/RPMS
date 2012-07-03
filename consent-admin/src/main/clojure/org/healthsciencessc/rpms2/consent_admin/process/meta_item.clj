@@ -53,10 +53,12 @@
                        (if protocol-version-id
                          (actions/assign-action 
                            {:url (str "/api/" type-path "/assign") 
-                            :params (merge params {type-kw :selected#id})}))
+                            :params (merge params {type-kw :selected#id})
+                            :verify (actions/gen-verify-a-selected "Meta Item")}))
                        (actions/details-action 
                          {:url (str "/view/" type-path) 
-                          :params (merge params {type-kw :selected#id})})
+                          :params (merge params {type-kw :selected#id})
+                          :verify (actions/gen-verify-a-selected "Meta Item")})
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))

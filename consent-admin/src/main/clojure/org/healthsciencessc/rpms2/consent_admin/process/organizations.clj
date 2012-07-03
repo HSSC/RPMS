@@ -31,7 +31,8 @@
                     (sort-by :name))]
             {:label (:name x) :data x})))
         (actions/actions 
-             (actions/details-action {:url "/view/organization/edit" :params {:organization :selected#id}})
+             (actions/details-action {:url "/view/organization/edit" :params {:organization :selected#id}
+                            :verify (actions/gen-verify-a-selected "Organization")})
              (actions/new-action {:label "New" :url "/view/organization/add"})
              (actions/back-action))))))
 

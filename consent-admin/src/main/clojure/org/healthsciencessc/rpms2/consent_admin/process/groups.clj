@@ -30,7 +30,8 @@
             (for [x (sort-by :name groups)]
               {:label (:name x) :data x})))
         (actions/actions 
-             (actions/details-action {:url "/view/group/edit" :params {:group :selected#id}})
+             (actions/details-action {:url "/view/group/edit" :params {:group :selected#id}
+                                      :verify (actions/gen-verify-a-selected "Group")})
              (actions/new-action {:url "/view/group/add"})
              (actions/back-action))))))
 

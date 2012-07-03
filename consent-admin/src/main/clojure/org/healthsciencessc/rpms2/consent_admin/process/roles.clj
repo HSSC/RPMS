@@ -32,7 +32,8 @@
             (for [x (sort-by :name roles)]
               {:label (:name x) :data x})))
         (actions/actions 
-             (actions/details-action {:url "/view/role/edit" :params {:role :selected#id}})
+             (actions/details-action {:url "/view/role/edit" :params {:role :selected#id}
+                            :verify (actions/gen-verify-a-selected "Role")})
              (actions/new-action {:url "/view/role/add"})
              (actions/back-action))))))
 

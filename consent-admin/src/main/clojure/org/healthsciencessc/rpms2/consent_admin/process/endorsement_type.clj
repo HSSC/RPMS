@@ -52,7 +52,8 @@
                             :verify {:action "selected" :message "Please select an Endorsement Type."}})
                          (list
                            (actions/details-action 
-                             {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                             {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
+                              :verify (actions/gen-verify-a-selected "Endorsement Type")})
                            (actions/new-action 
                              {:url (str "/view/" type-path "/new") :params {:organization org-id}})))
                        (actions/back-action))))))

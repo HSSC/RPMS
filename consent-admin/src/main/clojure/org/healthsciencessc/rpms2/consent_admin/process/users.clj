@@ -34,7 +34,8 @@
             (for [x users]
               {:label (format-name x) :data (select-keys x [:id])})))
         (actions/actions 
-             (actions/details-action {:url "/view/user/edit" :params {:user :selected#id}})
+             (actions/details-action {:url "/view/user/edit" :params {:user :selected#id}
+                            :verify (actions/gen-verify-a-selected "User")})
              (actions/new-action {:url "/view/user/add"})
              (actions/back-action))))))
 

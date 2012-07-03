@@ -36,7 +36,8 @@
             (for [x locations]
               {:label (:name x) :data x})))
         (actions/actions
-             (actions/details-action {:url "/view/location/edit" :params {:location :selected#id}})
+             (actions/details-action {:url "/view/location/edit" :params {:location :selected#id}
+                                      :verify (actions/gen-verify-a-selected (render-label))})
              (actions/new-action {:url "/view/location/add"})
              (actions/back-action))))))
 

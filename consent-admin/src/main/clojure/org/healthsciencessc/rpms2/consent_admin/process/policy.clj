@@ -59,10 +59,12 @@
                        (if protocol-version-id
                          (actions/assign-action 
                            {:url (str "/api/" type-path "/assign") 
-                            :params (merge params {type-kw :selected#id})}))
+                            :params (merge params {type-kw :selected#id})
+                            :verify (actions/gen-verify-a-selected "Policy")}))
                        (actions/details-action 
                          {:url (str "/view/" type-path)  
-                          :params (merge params {type-kw :selected#id})})
+                          :params (merge params {type-kw :selected#id})
+                          :verify (actions/gen-verify-a-selected "Policy")})
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params params})
                        (actions/back-action))))))

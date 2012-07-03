@@ -51,7 +51,8 @@
           (actions/actions 
             (actions/push-action 
                            {:url "/view/protocol" :params {:location location-id :protocol :selected#id}
-                            :label "Details/Edit" :classes :.detail-action :verify (actions/gen-verify-a-selected "Protocol")})
+                            :label "Details/Edit" :classes :.detail-action 
+                            :verify (actions/gen-verify-a-selected (render-label location))})
             (actions/push-action 
                            {:url "/view/protocol/new" :params {:location location-id}
                             :label "New"})

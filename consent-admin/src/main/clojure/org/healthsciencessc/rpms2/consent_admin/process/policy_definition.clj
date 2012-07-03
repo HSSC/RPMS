@@ -42,7 +42,8 @@
                                                 {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 
                        (actions/details-action 
-                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}})
+                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
+                          :verify (actions/gen-verify-a-selected "Policy Definition")})
                        (actions/new-action 
                          {:url (str "/view/" type-path "/new") :params {:organization org-id}})
                        (actions/back-action))))))
