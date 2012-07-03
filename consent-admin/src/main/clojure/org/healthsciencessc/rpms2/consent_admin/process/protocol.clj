@@ -102,7 +102,6 @@
   [ctx]
   (if-let [location-id (get-in ctx [:query-params :location])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
-          body (common/find-and-replace-truths body [:required :select-by-default] "true")
           user (security/current-user)
           location-role (first (roles/protocol-designer-mappings user :location {:id location-id}))
           location (:location location-role)
@@ -120,7 +119,6 @@
   [ctx]
   (if-let [protocol-id (get-in ctx [:query-params :protocol])]
     (let [body (select-keys (:body-params ctx) (map :name fields))
-          body (common/find-and-replace-truths body [:required :select-by-default] "true")
           resp (services/update-protocol protocol-id body)]
       ;; Handle Error or Success
       (if (services/service-error? resp)

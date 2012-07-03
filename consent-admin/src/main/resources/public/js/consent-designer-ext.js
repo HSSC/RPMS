@@ -93,7 +93,7 @@ Consent.Widgets.registerControl({
 		type: "review-endorsement",
 		properties: [{label: "Title", name: "title", editor: "texti18n", required: false},
 			         {label: "Endorsement", name: "endorsement", editor: "endorsement", required: true},
-			         {label: "Label", name: "label", editor: "texti18n", required: true},
+			         {label: "Return Button Label", name: "label", editor: "texti18n", required: true},
 			         {label: "Return Page", name: "returnpage", editor: "pagelist",
 			        	 required: true, operation: Consent.Keys.collect}],
 		operation: Consent.Keys.review});
@@ -111,7 +111,7 @@ Consent.Widgets.registerControl({
 		type: "review-policy",
 		properties: [{label: "Title", name: "title", editor: "texti18n", required: false},
 			         {label: "Policy", name: "policy", editor: "policy", required: true},
-			         {label: "Label", name: "label", editor: "texti18n", required: true},
+			         {label: "Return Button Label", name: "label", editor: "texti18n", required: true},
 			         {label: "Return Page", name: "returnpage", editor: "pagelist", 
 			        	 required: true, operation: Consent.Keys.collect}],
 		operation: Consent.Keys.review});
@@ -226,7 +226,7 @@ Consent.Editors.register("texti18n", {
 
 Consent.Editors.register("pagelist", {
 	generate: function(container, property, data, operation, editable){
-		return Consent.UI.createPageSelectControl(container, property, data, operation, editable);},
+		return Consent.UI.createPageSelectControl(container, property, data, (property.operation || operation), editable);},
 	created: Consent.Editors.common.selectCreated,
 	updated: Consent.Editors.common.selectUpdated,
 	deleted: Consent.Editors.common.selectDeleted
@@ -258,7 +258,7 @@ Consent.Editors.register("boolean", {
 			var key = attrs.property.name;
 			var value = (control.find("input:checked").length > 0);
 			if(keyValue != value){
-				items.push({id: keyValue.id, key: key, value: (checkbox.length > 0)});
+				items.push({id: keyValue.id, key: key, value: value});
 			}
 		}
 		return items;

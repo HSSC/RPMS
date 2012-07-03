@@ -163,13 +163,15 @@ select.consent-designer-input{
 }
 
 label.consent-designer-checkbox{
-	float: left;
-	margin-left: .25em;
+	margin-left: 1.5em;
 }
 
 input.consent-designer-checkbox{
+	position: relative;
+	left: .3em;
+	width: 1.1em;
 	float: left;
-	margin-top: .6em;
+	margin-top: .7em;
 }
 
 table.consent-designer-media{

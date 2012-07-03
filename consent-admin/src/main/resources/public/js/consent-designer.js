@@ -7,14 +7,13 @@
 	
 	var keys = consent.Keys;
 	if(keys == null){
-		consent.Keys = keys = {
-			collect: "collect",
-			review: "review",
-			form: "form",
-			page: "page",
-			section: "section",
-			control: "control"
-		};
+		consent.Keys = keys = {};
+		keys.collect = "collect";
+		keys.review = "review";
+		keys.form = "form";
+		keys.page = "page";
+		keys.section = "section";
+		keys.control = "control";
 	}
 	
 	var utils = consent.Utils;
@@ -1026,8 +1025,7 @@
 							"protocol": designer.protocol.protocol.id,
 							"widget": data.id};
 					
-					var success = function(data, status, xhr){
-						var form = $.parseJSON(data);
+					var success = function(responseText, status, xhr){
 	 					designer.syncWidget(dataPane, parentData, data, "DELETE");
 						Dialog.Progress.end();
 					}
@@ -1039,7 +1037,7 @@
 				if(action == "DELETE"){
 					for(var i = parentData.contains.length - 1; i >=0 ; i--){
 						var o = parentData.contains[i];
-						if(o.id = data.id){
+						if(o.id == data.id){
 							parentData.contains.splice(i, 1);
 						}
 					}

@@ -50,7 +50,7 @@
         params (merge {:organization org-id} prot-props)]
     (if (meta nodes)
       (rutil/not-found (:message (meta nodes)))
-      (layout/render ctx (str type-label "s")
+      (layout/render ctx "Policies"
                      (container/scrollbox 
                        (selectlist/selectlist {:action :.detail-action}
                                               (for [n nodes]
