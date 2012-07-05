@@ -116,19 +116,6 @@ Consent.Widgets.registerControl({
 			        	 required: true, operation: Consent.Keys.collect}],
 		operation: Consent.Keys.review});
 
-// Editors
-var ShowBogus = function(container, text, property, data, operation, editable){
-	var widgetProperty = Consent.Utils.findProperty(property.name, data.properties);
-	var nl = "<br /><br />"
-	var message = "<div>You need to complete the " + text + " control." + nl;
-	message = message + "Property: " + JSON.stringify(property) + nl;
-	message = message + "WidgetProperty: " + JSON.stringify(widgetProperty) + nl;
-	message = message + "</div>";
-	var ctl = $(message);
-	ctl.appendTo(container);
-	return ctl;
-}
-
 Consent.Editors.common.selectCreated = function(control){
 	var keyValue = control.data("state");
 	var attrs = Consent.Editors.lift(control);
@@ -204,7 +191,13 @@ Consent.Editors.register("texti18n", {
 	generate: function(container, property, data, operation, editable){
 		var keyValues = Consent.Utils.findProperties(property.name, data.properties);
 		return Consent.UI.createTextControl(container, property.label, property.name, keyValues);},
-	refresh: function(control, data){},
+	refresh: function(control, data){
+		var attrs = Consent.Editors.lift(control);
+		var keyValues = Consent.Utils.findProperties(attrs.property.name, data.properties);
+		Utils.DataSet.set(control, "value", keyValues);
+		Utils.DataSet.set(control, "updated", []);
+		Utils.DataSet.set(control, "deleted", []);
+	},
 	created: function(control){
 		var attrs = Consent.Editors.lift(control);
 		var key = attrs.property.name;
@@ -234,11 +227,7 @@ Consent.Editors.register("pagelist", {
 
 Consent.Editors.register("boolean", {
 	generate: function(container, property, data, operation, editable){
-		var keyValue = Consent.Utils.findProperty(property.name, data.properties, true);
-		var ctl =  Consent.UI.createCheckboxControl(container, editable, keyValue.key, property.label, keyValue.value, 
-				true, false, property.defaultValue);
-		ctl.data("state", keyValue);
-		return ctl;},
+		return Consent.UI.createCheckboxControl(container, property, data, operation, editable, true, false);},
 	created: function(control){
 		var keyValue = control.data("state");
 		var items = [];
@@ -267,7 +256,7 @@ Consent.Editors.register("boolean", {
 
 Consent.Editors.register("boolean-picker", {
 	generate: function(container, property, data, operation, editable){
-		var options = [{value: null, label: "{none}"}, {value: true, label: "true"}, {value: false, label: "false"}];
+		var options = [{value: true, label: "true"}, {value: false, label: "false"}];
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
@@ -281,11 +270,8 @@ Consent.Editors.register("urls", {
 
 Consent.Editors.register("endorsement", {
 	generate: function(container, property, data, operation, editable){
-		var options = [{value: null, label: "{none}"}];
-		var nodes = Consent.Designer.protocol.endorsements;
-		if(nodes != null){
-			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
-		}
+		var value = Consent.Utils.getWidgetValue(data, property);
+		var options = Consent.Utils.createOptions(Consent.Designer.protocol.endorsements, value);
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
@@ -294,11 +280,8 @@ Consent.Editors.register("endorsement", {
 
 Consent.Editors.register("policy", {
 	generate: function(container, property, data, operation, editable){
-		var options = [{value: null, label: "{none}"}];
-		var nodes = Consent.Designer.protocol.policies;
-		if(nodes != null){
-			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
-		}
+		var value = Consent.Utils.getWidgetValue(data, property);
+		var options = Consent.Utils.createOptions(Consent.Designer.protocol.policies, value);
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
@@ -307,11 +290,8 @@ Consent.Editors.register("policy", {
 
 Consent.Editors.register("policies", {
 	generate: function(container, property, data, operation, editable){
-		var options = [];
-		var nodes = Consent.Designer.protocol.policies;
-		if(nodes != null){
-			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
-		}
+		var value = Consent.Utils.getWidgetValue(data, property);
+		var options = Consent.Utils.createOptions(Consent.Designer.protocol.policies, value);
 		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.multiSelectCreated,
 		updated: Consent.Editors.common.multiSelectUpdated
@@ -319,11 +299,8 @@ Consent.Editors.register("policies", {
 
 Consent.Editors.register("metaitem", {
 	generate: function(container, property, data, operation, editable){
-		var options = [];
-		var nodes = Consent.Designer.protocol["meta-items"];
-		if(nodes != null){
-			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
-		}
+		var value = Consent.Utils.getWidgetValue(data, property);
+		var options = Consent.Utils.createOptions(Consent.Designer.protocol["meta-items"], value);
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
@@ -332,12 +309,9 @@ Consent.Editors.register("metaitem", {
 
 Consent.Editors.register("metaitems", {
 	generate: function(container, property, data, operation, editable){
-		var options = [{value: null, label: "{none}"}];
-		var nodes = Consent.Designer.protocol["meta-items"];
-		if(nodes != null){
-			$.each(nodes, function(i,n){options.push({value: n.id, label:n.name, data:n})});
-		}
-		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
+		var value = Consent.Utils.getWidgetValue(data, property);
+		var options = Consent.Utils.createOptions(Consent.Designer.protocol["meta-items"], value);
+		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.multiSelectCreated,
 		updated: Consent.Editors.common.multiSelectUpdated
 });

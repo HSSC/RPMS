@@ -111,14 +111,16 @@
     value :value
     classes :classes
     languages :languages
+    default-language :default-language
     editable :editable
     url :url
     params :params}]
   (let [editable (not (false? editable))
         edit-props (if editable {:data-editable true} {})
+        def-props (if default-language {:data-defaultLanguage (to-attr-value default-language)} {})
         props {:data-languages (to-attr-value languages)}
         input-props (if url {:data-url url :data-params (to-attr-value params) :data-persist false} {:data-persist true :data-name name} )]
-    [(tag-class :div.form-control-wrapper.i18ntext.custom-input classes) (merge props edit-props input-props)
+    [(tag-class :div.form-control-wrapper.i18ntext.custom-input classes) (merge props edit-props input-props def-props)
      [:div.form-label label]
      [:table.i18ntext
       [:tr.i18ntext

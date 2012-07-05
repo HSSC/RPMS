@@ -84,10 +84,11 @@
                              {:fields {:endorsement-type {:readonly true
                                                           :items (gen-endorsement-type-items org-id)}
                                        :labels {:languages langs 
-                                                                  :url "/api/text/i18n"
-                                                                  :params {:parent-id node-id
-                                                                           :parent-type type-name
-                                                                           :property :labels}}}} fields n)))
+                                                :default-language (get-in n [:organization :language])
+                                                :url "/api/text/i18n"
+                                                :params {:parent-id node-id
+                                                         :parent-type type-name
+                                                         :property :labels}}}} fields n)))
                        (actions/actions
                          (actions/details-action 
                            {:url (str "/view/" type-path "/types") 
@@ -105,13 +106,15 @@
   "Generates a view that allows you to create a new protocol."
   [ctx]
   (let [org-id (common/lookup-organization ctx)
+        org (services/get-organization org-id)
         langs (services/get-languages)]
     (layout/render ctx (str "Create " type-label)
                    (container/scrollbox 
                      (form/dataform 
                        (form/render-fields 
                          {:fields {:endorsement-type {:items (gen-endorsement-type-items org-id)}
-                                   :labels {:languages langs}}} fields {})))
+                                   :labels {:languages langs 
+                                            :default-language (:language org)}}} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})

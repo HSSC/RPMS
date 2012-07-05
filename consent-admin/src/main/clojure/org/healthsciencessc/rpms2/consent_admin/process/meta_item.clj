@@ -76,6 +76,7 @@
                          (form/dataform 
                            (form/render-fields {:editable editable
                                                 :fields {:labels {:languages langs 
+                                                                  :default-language (get-in n [:organization :language])
                                                                   :url "/api/text/i18n"
                                                                   :params {:parent-id node-id
                                                                            :parent-type type-name
@@ -95,11 +96,14 @@
   "Generates a view that allows you to create a new protocol."
   [ctx]
   (let [org-id (common/lookup-organization ctx)
+        org (services/get-organization org-id)
         langs (services/get-languages)]
     (layout/render ctx (str "Create " type-label)
                    (container/scrollbox 
                      (form/dataform 
-                       (form/render-fields {:fields {:labels {:languages langs}}} fields {})))
+                       (form/render-fields {:fields 
+                                            {:labels {:languages langs
+                                                      :default-language (:language org)}}} fields {})))
                    (actions/actions 
                      (actions/create-action 
                        {:url (str "/api/" type-path) :params {:organization org-id}})

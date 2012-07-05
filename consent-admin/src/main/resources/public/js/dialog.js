@@ -134,8 +134,9 @@ var Dialog = {
 			originalText = currentText;
 			originalTextArray = Dialog.Utils.textToArray(currentText);
 		}
-		
+
 		var currentLang = current != null ? current.language : null;
+		var defaultLang = (options.defaultLanguage || {});
 		var languages = options.languages;
 		this.textLanguage.empty();
 		this.textText.val("");
@@ -147,11 +148,12 @@ var Dialog = {
 			this.textLanguage.append(option);
 		}
 		else{
+			var first = languages.length > 0 ? languages[0] : null;
 			for(var i = 0; i < languages.length; i++){
 				var lang = languages[i];
 				var option = null;
-				if(currentLang == null){
-					currentLang = lang;
+				if(lang.id == defaultLang.id){
+					first = null;
 					option = new Option(lang.name, lang.code, true, true);
 				} 
 				else{
@@ -160,6 +162,7 @@ var Dialog = {
 				$(option).data("language", lang);
 				this.textLanguage.append(option);
 			}
+			if(first) first.selected == true;
 		}
 		
 		var title = Utils.Map.mapped(options, "title", "Provide Text");

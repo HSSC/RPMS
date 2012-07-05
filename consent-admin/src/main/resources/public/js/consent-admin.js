@@ -134,6 +134,7 @@ $(function(){
 		var editable = Utils.DataSet.getBoolean(target, "editable");
 		if(editable){
 			var langs = Utils.DataSet.getObject(target, "languages");
+			var defaultLang = Utils.DataSet.getObject(target, "defaultlanguage");
 			langs = [].concat(langs);
 			var rows = target.find("tr");
 			for(var r = 0; r < rows.length; r++){
@@ -183,7 +184,7 @@ $(function(){
 					insertRow(item);
 				}
 			}
-			Dialog.text({languages: langs, onchange: onchange});
+			Dialog.text({languages: langs, defaultLanguage: defaultLang, onchange: onchange});
 		}
 	});
 	
@@ -214,7 +215,7 @@ $(function(){
 							var cache = Utils.DataSet.getObject(target, "deleted", []);
 							cache.push(node);
 							Utils.DataSet.set(target, "deleted", cache);
-							Utils.Misc.ifWithinRemove(node, Utils.DataSet.getObject(target, "updated",[]));
+							Utils.Array.ifWithinRemove(node, Utils.DataSet.getObject(target, "updated",[]));
 						}
 						break;
 					}
@@ -249,7 +250,7 @@ $(function(){
 						node.value = text;
 						if(node.id != null){
 							var cache = Utils.DataSet.getObject(target, "updated", []);
-							if(!Utils.Misc.isWithin(node, cache)){
+							if(!Utils.Array.isWithin(node, cache)){
 								cache.push(node);
 								Utils.DataSet.set(target, "updated", cache);
 							}

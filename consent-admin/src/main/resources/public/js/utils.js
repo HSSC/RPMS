@@ -30,6 +30,7 @@ Utils.Url = {
 		return path;
 	}
 };
+
 Utils.Array = {
 	clear: function(a){
 		a.splice(0, a.length);
@@ -58,8 +59,25 @@ Utils.Array = {
 		}
 		if((c1.length + c2.length) > 0) return false;
 		return true;
+	},
+	isWithin: function(item, coll){
+		if(coll != null && coll.length > 0){
+			for(var i = 0; i < coll.length; i++){
+				if(coll[i] == item) return true;
+			}
+		}
+		return false;
+	},
+	ifWithinRemove: function(item, coll){
+		if(coll != null && coll.length > 0){
+			for(var i = 0; i < coll.length; i++){
+				if(coll[i] == item) return coll.splice(i, 1)[0];
+			}
+		}
+		return null;
 	}
 }
+
 Utils.Map = {
 	// Ensures that a valid map is available
 	map: function(map){
@@ -95,25 +113,7 @@ Utils.Map = {
 		return value;
 	}
 };
-Utils.Misc = {
-	nothing: function(){},
-	isWithin: function(item, coll){
-		if(coll != null && coll.length > 0){
-			for(var i = 0; i < coll.length; i++){
-				if(coll[i] == item) return true;
-			}
-		}
-		return false;
-	},
-	ifWithinRemove: function(item, coll){
-		if(coll != null && coll.length > 0){
-			for(var i = 0; i < coll.length; i++){
-				if(coll[i] == item) return coll.splice(i, 1)[0];
-			}
-		}
-		return null;
-	}
-};
+
 Utils.Size = {
 	fill: function(target){
 		this.fillDown(target);
