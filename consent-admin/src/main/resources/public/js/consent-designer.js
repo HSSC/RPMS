@@ -1139,7 +1139,12 @@
 						o.editor.refresh(o.control, container);
 					});
 					if(action == "CREATE"){
-						parentData.contains.push(container);
+						if(parentData.contains){
+							parentData.contains.push(container);
+						}
+						else{
+							parentData.contains = [container];
+						}
 					}
 				}
 			}
