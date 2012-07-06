@@ -180,7 +180,7 @@ Consent.Editors.common.multiSelectUpdated = function(control){
 		var options = control.find("select option:selected");
 		var value = [];
 		$.each(options, function(i,o){value.push(o.value)});
-		if(!Utils.Array.compare(value, keyValue.value)){
+		if(!value.alike(keyValue.value)){
 			items.push({id: keyValue.id, value: value});
 		}
 	}

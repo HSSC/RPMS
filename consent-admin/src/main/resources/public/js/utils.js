@@ -42,45 +42,42 @@ Array.prototype.clear = function(){
 	return this.splice(0, this.length);
 };
 
-Array.prototype.addAll = function(a){
-	if(a instanceof Array){
-		for(var i = 0; i < a.length; i++){
-			this.push(a[i]);
+Array.prototype.addAll = function(coll){
+	if(coll instanceof Array){
+		for(var i = 0; i < coll.length; i++){
+			this.push(coll[i]);
 		}
 	}
 	else{
-		this.push(a);
+		this.push(coll);
 	}
 	return this;
 };
-Array.prototype.contains = function(o){
-	if(this.indexOf(a) >= 0) return true;
+Array.prototype.contains = function(val){
+	if(this.indexOf(val) >= 0) return true;
 	return false;
 };
-Array.prototype.remove = function(o){
-	var i = this.indexOf(a);
+Array.prototype.remove = function(val){
+	var i = this.indexOf(val);
 	if(i >= 0) return this.splice(i,1)[0];
 	return null;
 };
-
-Utils.Array = {
-	compare: function(a1, a2){
-		if(a1 == null && a2 == null) return true;
-		if(a1 == null || a2 == null) return false;
-		var c1 = a1.concat([]);
-		var c2 = a2.concat([]);
-		for(var fi = (c1.length - 1); fi >= 0; fi--){
-			for(var si = (c2.length - 1); si >= 0; si--){
-				if(c1[fi] == c2[si]){
-					c1.splice(fi, 1);
-					c2.splice(si, 1);
-				}
+Array.prototype.alike = function(coll){
+	if(coll == null || !(coll instanceof Array) || coll.length != this.length) return false;
+	if(this == coll) return true;
+	var c1 = coll.concat([]);
+	var c2 = this.concat([]);
+	for(var fi = (c1.length - 1); fi >= 0; fi--){
+		for(var si = (c2.length - 1); si >= 0; si--){
+			if(c1[fi] == c2[si]){
+				c1.splice(fi, 1);
+				c2.splice(si, 1);
 			}
 		}
-		if((c1.length + c2.length) > 0) return false;
-		return true;
 	}
-}
+	if((c1.length + c2.length) > 0) return false;
+	return true;
+};
 
 Utils.Map = {
 	// Ensures that a valid map is available

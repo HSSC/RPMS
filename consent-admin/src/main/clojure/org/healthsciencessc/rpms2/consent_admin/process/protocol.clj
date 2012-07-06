@@ -15,7 +15,6 @@
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [hiccup.core :as hcup]
-            [clojure.data.json :as json]
             [ring.util.response :as rutil])
   (:use [clojure.tools.logging :only (info error)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))

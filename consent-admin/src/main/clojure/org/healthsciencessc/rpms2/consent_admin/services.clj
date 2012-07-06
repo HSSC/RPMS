@@ -9,8 +9,7 @@
             [clojure.java.io :as io]
             [hiccup.util :as hutil])
   (:use [org.healthsciencessc.rpms2.consent-admin.config]
-        [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]
-        [clojure.data.json :only (json-str read-json)]))
+        [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]))
 
 ;; Request And Response Support
 

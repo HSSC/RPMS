@@ -112,8 +112,8 @@
                          (if (types/submitted? protocol-version)
                            (list
                              (actions/push-action 
-                               {:url "/view/protocol/version/review" :params {:protocol-version protocol-version-id} 
-                                :label "Review"})
+                               {:url "/view/protocol/version/designer" :params {:protocol-version protocol-version-id} 
+                                :label "Review Layout"})
                              (actions/ajax-action 
                                {:method :post :url "/api/protocol/version/draft" :params {:protocol-version protocol-version-id}
                                 :label "Revert To Draft" :action-on-success "refresh"})

@@ -294,16 +294,17 @@
 		ui.createWidgetDashboard = function(container, options, addAction, sortAction){
 			var dashboard = $("<div class='consent-designer-widget-dashboard' />");
 			dashboard.appendTo(container);
-			
-			if(sortAction != null){
-				var sort = $("<img src='" + Utils.Url.render("/image/sort.png") + "' />")
-				sort.appendTo(dashboard);
-				sort.bind("click", function(){sortAction(options);});
+			if(designer.editable){
+				if(sortAction != null){
+					var sort = $("<img src='" + Utils.Url.render("/image/sort.png") + "' />")
+					sort.appendTo(dashboard);
+					sort.bind("click", function(){sortAction(options);});
+				}
+				
+				var add = $("<img src='" + Utils.Url.render("/image/add.png") + "' />")
+				add.appendTo(dashboard);
+				add.bind("click", function(){addAction(options);});
 			}
-			
-			var add = $("<img src='" + Utils.Url.render("/image/add.png") + "' />")
-			add.appendTo(dashboard);
-			add.bind("click", function(){addAction(options);});
 			return dashboard;
 		};
 		
@@ -728,7 +729,7 @@
 			}
 			designer.protocol = protocol;
 			var editable = Utils.DataSet.getBoolean(container, "data-editable");
-			designer.editable = editable = (editable != null || editable);
+			designer.editable = editable;
 
 			designer.formUrl = "/api/protocol/version/designer/form";
 			designer.formParams = {"protocol-version": protocol.id};
@@ -894,7 +895,7 @@
 				// Verify Order
 				data.contains.sort(utils.widgetSorter);
 				var last = data.contains.last();
-				if(last && last.order == null){
+				if(last && last.order == null && designer.editable){
 					var body = {update: {widget: []}};
 					$.each(data.contains, function(i,c){body.update.widget.push({id: c.id, order: i});});
 					var params = {"protocol-version": designer.protocol.id, 
@@ -1072,6 +1073,9 @@
 		};
 		
 		designer.saveForm = function(event){
+			if(!designer.editable){
+				return;
+			}
 			var form = designer.protocol.form;
 			var dataPane = ui.relativeData($(event.target));
 			var textControl = dataPane.find("div.i18ntext");
@@ -1124,6 +1128,9 @@
 		};
 		
 		designer.saveWidget = function(event){
+			if(!designer.editable){
+				return;
+			}
 			var dataPane = ui.relativeData($(event.target));
 			var nameField = dataPane.children().first().children().first().children("input");
 			
@@ -1178,6 +1185,9 @@
 		};
 	
 		designer.deleteWidget = function(event){
+			if(!designer.editable){
+				return;
+			}
 			var dataPane = ui.relativeData($(event.target));
 			var data = dataPane.data("data");
 			var parentData = dataPane.data("parentData");
