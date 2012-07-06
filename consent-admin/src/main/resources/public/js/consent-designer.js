@@ -102,15 +102,15 @@
 						utils.getOrderedPages(operation, nextProp.value, pageList, found);
 					}
 					else{
-						Utils.Array.addAll(found, pageList, true);
+						found.addAll(pageList.clear());
 					}
 				}
 				else{
-					Utils.Array.addAll(found, pageList, true);
+					found.addAll(pageList.clear());
 				}
 			}
 			else{
-				Utils.Array.addAll(found, pageList, true);
+				found.addAll(pageList.clear());
 			}
 			return found;
 		};
@@ -142,7 +142,7 @@
 			var options = [];
 			$.each(coll, function(i, c){
 				var option = {value: c.id, label: c.name, data: c};
-				if(Utils.Array.isWithin(c.id, value)){
+				if(value.contains(c.id)){
 					option.selected = true;
 				}
 				options.push(option);
@@ -171,6 +171,28 @@
 			}
 			return 0
 		};
+		
+		utils.widgetSorter = function(o1, o2){
+			if(o1 && o2){
+				if(o1.order != null && o2.order != null){
+					if(o1.order < o2.order){
+						return -1;
+					}
+					else if(o1.order > o2.order){
+						return 1;
+					}
+				}
+				else if(o1.order != null) return -1;
+				else if(o2.order != null) return 1;
+			}
+			else if(o1){
+				return -1;
+			}
+			else if(o2){
+				return 1;
+			}
+			return 0;
+		}
 	}
 	
 	var widgets = consent.Widgets;
@@ -273,9 +295,11 @@
 			var dashboard = $("<div class='consent-designer-widget-dashboard' />");
 			dashboard.appendTo(container);
 			
-			var sort = $("<img src='" + Utils.Url.render("/image/sort.png") + "' />")
-			sort.appendTo(dashboard);
-			sort.bind("click", function(){sortAction(options);});
+			if(sortAction != null){
+				var sort = $("<img src='" + Utils.Url.render("/image/sort.png") + "' />")
+				sort.appendTo(dashboard);
+				sort.bind("click", function(){sortAction(options);});
+			}
 			
 			var add = $("<img src='" + Utils.Url.render("/image/add.png") + "' />")
 			add.appendTo(dashboard);
@@ -664,487 +688,570 @@
 	
 	var designer = consent.Designer;
 	if(designer == null){
-		consent.Designer = designer = {
-			reset: function(){
-				if(designer.container){
-					designer.container.empty();
-				}
-				designer.container = null;
-				designer.main = null;
-				designer.collect = null;
-				designer.review = null;
-				designer.preview = null;
-				designer.protocol = null;
-			},
-			close: function(){
-				Dialog.Progress.start();
-				designer.reset();
-				PaneManager.pop();
-			},
-			init: function(){
-				designer.reset();
-				var container = $("#consent-designer");
-				if(container == null || container.length == 0){
-					var message = "The Consent Designer requires a div#consent-designer element that contains all of the data.";
-					Dialog.error({message: message});
-					throw message;
-				}
-				designer.container = container;
-				container.empty();
-				container.addClass("consent-designer-pane");
-				
-				var protocol = Utils.DataSet.getObject(container, "data-protocol");
-				if(protocol == null){
-					var message = "The Consent Designer requires a data-protocol value on the div#consent-desigern element.";
-					Dialog.error({message: message});
-					throw message;
-				}
-				designer.protocol = protocol;
-				var editable = Utils.DataSet.getBoolean(container, "data-editable");
-				designer.editable = editable = (editable != null || editable);
+		consent.Designer = designer = {};
+		
+		designer.reset = function(){
+			if(designer.container){
+				designer.container.empty();
+			}
+			designer.container = null;
+			designer.main = null;
+			designer.collect = null;
+			designer.review = null;
+			designer.preview = null;
+			designer.protocol = null;
+		};
+		
+		designer.close = function(){
+			Dialog.Progress.start();
+			designer.reset();
+			PaneManager.pop();
+		};
+		
+		designer.init = function(){
+			designer.reset();
+			var container = $("#consent-designer");
+			if(container == null || container.length == 0){
+				var message = "The Consent Designer requires a div#consent-designer element that contains all of the data.";
+				Dialog.error({message: message});
+				throw message;
+			}
+			designer.container = container;
+			container.empty();
+			container.addClass("consent-designer-pane");
+			
+			var protocol = Utils.DataSet.getObject(container, "data-protocol");
+			if(protocol == null){
+				var message = "The Consent Designer requires a data-protocol value on the div#consent-desigern element.";
+				Dialog.error({message: message});
+				throw message;
+			}
+			designer.protocol = protocol;
+			var editable = Utils.DataSet.getBoolean(container, "data-editable");
+			designer.editable = editable = (editable != null || editable);
 
-				designer.formUrl = "/api/protocol/version/designer/form";
-				designer.formParams = {"protocol-version": protocol.id};
+			designer.formUrl = "/api/protocol/version/designer/form";
+			designer.formParams = {"protocol-version": protocol.id};
 
-				designer.widgetUrl = "/api/protocol/version/designer/widget";
-				designer.widgetParams = {"protocol-version": protocol.id};
-				designer.createUI();
-			},
-			createUI: function(){
-				var main = {panes: []};
-				designer.main = main;
+			designer.widgetUrl = "/api/protocol/version/designer/widget";
+			designer.widgetParams = {"protocol-version": protocol.id};
+			designer.createUI();
+		};
+		
+		designer.createUI = function(){
+			var main = {panes: []};
+			designer.main = main;
+			
+			// Create Sections
+			main.select = ui.createSelector(designer.container);
+			main.content = ui.createContent(designer.container)
+			
+			// Create Expand Button
+			main.resizer = $("<img class='consent-designer-resize' src='" + Utils.Url.render("/image/expand.png") + "'/>");
+			main.resizer.appendTo(main.select);
+			main.resizer.bind("click", designer.resize);
+			
+			main.closer = $("<img class='consent-designer-close' src='" + Utils.Url.render("/image/close.png") + "'/>");
+			main.closer.appendTo(main.select);
+			main.closer.bind("click", designer.close);
+			
+			// Create Main Selector
+			var items = [{label: "Form", action: designer.showFormProperties},
+			             {label: "Collect", action: designer.showCollectPane},
+			             {label: "Review", action: designer.showReviewPane},
+			             {label: "Preview", action: designer.showPreviewPane}];
+			
+			main.selector = ui.createMenu(main.select, items);
+		};
+		
+		designer.resize = function(){
+			Dialog.inform({message: "Resizing of the layout manager is currently hibernating.  Try again later."})
+		};
+			
+		designer.showFormProperties = function(){
+			if(designer.main.formPane == null){
+				var form = designer.protocol.form;
+				var pane = ui.createPane(designer.main.content);
+				var data = ui.createFormData(pane, true);
+				data.data("data", form);
+				var fields = data.children().first();
+				ui.createTextControl(fields, "Title", "titles", form.titles);
 				
-				// Create Sections
-				main.select = ui.createSelector(designer.container);
-				main.content = ui.createContent(designer.container)
-				
-				// Create Expand Button
-				main.resizer = $("<img class='consent-designer-resize' src='" + Utils.Url.render("/image/expand.png") + "'/>");
-				main.resizer.appendTo(main.select);
-				main.resizer.bind("click", designer.resize);
-				
-				main.closer = $("<img class='consent-designer-close' src='" + Utils.Url.render("/image/close.png") + "'/>");
-				main.closer.appendTo(main.select);
-				main.closer.bind("click", designer.close);
-				
-				// Create Main Selector
-				var items = [{label: "Form", action: designer.showFormProperties},
-				             {label: "Collect", action: designer.showCollectPane},
-				             {label: "Review", action: designer.showReviewPane},
-				             {label: "Preview", action: designer.showPreviewPane}];
-				
-				main.selector = ui.createMenu(main.select, items);
-			},
-			resize: function(){
-				Dialog.inform({message: "Resizing of the layout manager is currently hibernating.  Try again later."})
-			},
-			showFormProperties: function(){
-				if(designer.main.formPane == null){
-					var form = designer.protocol.form;
-					var pane = ui.createPane(designer.main.content);
-					var data = ui.createFormData(pane, true);
-					data.data("data", form);
-					var fields = data.children().first();
-					ui.createTextControl(fields, "Title", "titles", form.titles);
-					
-					var makePageControl = function(property, label, operation){
-						var value = form[property]
-						var control = ui.createControl(fields, designer.editable);
-						ui.createLabel(control, property, label);
-						ui.createPageSelect(control, designer.editable, property, value, operation);
-					}
-					
-					makePageControl("collect-start", "Collect Start Page", keys.collect);
-					makePageControl("review-start", "Review Start Page", keys.review);
-					
-					designer.main.formPane = pane;
-					designer.main.panes.push(pane);
+				var makePageControl = function(property, label, operation){
+					var value = form[property]
+					var control = ui.createControl(fields, designer.editable);
+					ui.createLabel(control, property, label);
+					ui.createPageSelect(control, designer.editable, property, value, operation);
 				}
-				ui.showPane(designer.main.formPane);
-			},
-			showPagesPane: function(operation){
-				if(designer[operation] == null){
-					var pages = designer[operation] = {};
-					pages.pane = ui.createPane(designer.main.content);
-					pages.selector = ui.createSelector(pages.pane);
-					pages.content = ui.createContent(pages.pane);
-					
-					ui.createHeader(pages.selector, "Pages");
-					var form = designer.protocol.form;
-					var dashOptions = {
-							parentType: "form", 
-							parentData: form,
-							operation: operation, 
-							type: keys.page};
-					ui.createWidgetDashboard(pages.selector, dashOptions, designer.addWidget, designer.sortWidgets);
-					
-					var items = [];
-					// Get All Of The Page Widgets
-					var start = form[operation + "-start"];
-					var panes = utils.getOrderedPages(operation, (start || ""));
-					for(var i = 0 ; i < panes.length; i ++){
-						var p = panes[i];
-						items.push({label: p.name, 
-								action: designer.showWidgetPane,
-								parentData: form, 
-								parentType: "form", 
-								data: p, 
-								type: keys.page, 
-								operation: operation});
-					}
-					dashOptions.list = ui.createMenu(pages.selector, items);
-				}
-				ui.showPane(designer[operation].pane);
-				return designer[operation];
-			},
-			showCollectPane: function(){
-				return designer.showPagesPane(keys.collect);
-			},
-			showReviewPane: function(){
-				return designer.showPagesPane(keys.review);
-			},
-			showPreviewPane: function(){
-				if(designer.preview == null){
-					var preview = designer.preview = {};
-					preview.pane = ui.createPane(designer.main.content);
-					preview.pane.text("Coming to an application near you in 2012.");
-				}
-				ui.showPane(designer.preview.pane);
-			},
-			createWidgetView: function(container, item, li, options){
-				var parentData = item.parentData;
-				var parentType = item.parentType;
-				var data = item.data;
-				var type = item.type;
-				var widgetType = widgets[type];
-				var widgetSubtype = widgetType.subtype;
-				var subtype = widgetSubtype != null ? widgetSubtype.id : null;
 				
-				var label = li.text();
+				makePageControl("collect-start", "Collect Start Page", keys.collect);
+				makePageControl("review-start", "Review Start Page", keys.review);
 				
-				var operation = item.operation;
+				designer.main.formPane = pane;
+				designer.main.panes.push(pane);
+			}
+			ui.showPane(designer.main.formPane);
+		};
+		
+		designer.showPagesPane = function(operation){
+			if(designer[operation] == null){
+				var pages = designer[operation] = {};
+				pages.pane = ui.createPane(designer.main.content);
+				pages.selector = ui.createSelector(pages.pane);
+				pages.content = ui.createContent(pages.pane);
 				
-				var pane = ui.createPane(container);
-				var selector = ui.createSelector(pane);
-				var content = ui.createContent(pane);
-				pane.data("menuitem", li);
-				
-				// Create header
-				var header = ui.createHeader(selector, label);
-				
-				// Create Section Dashboard
+				ui.createHeader(pages.selector, "Pages");
+				var form = designer.protocol.form;
 				var dashOptions = {
-						parentType: "widget", 
-						parentData: data,
+						parentType: "form", 
+						parentData: form,
 						operation: operation, 
-						type: subtype};
-				ui.createWidgetDashboard(selector, dashOptions, designer.addWidget, designer.sortWidgets);
+						type: keys.page};
+				ui.createWidgetDashboard(pages.selector, dashOptions, designer.addWidget, null);
 				
-				// Create 
 				var items = [];
-				items.push({label: "Details", action: designer.showWidgetProperties, 
-					parentData: parentData, parentType: parentType,
-					data: data, type: type, operation: operation, options: {namelink: [li, header]}});
-				if(data != null && data.contains != null){
-					var action = designer.showWidgetProperties;
-					if(widgetSubtype != null){
-						items.push({});
-						items.push({label: widgetSubtype.label + "s"});
-						if(widgetSubtype.subtype != null){
-							action = designer.showWidgetPane;
-						}
-					}
-					for(var i = 0; i < data.contains.length; i++){
-						var widget = data.contains[i];
-						items.push({label: widget.name, 
-							action: action,
-							parentData: data, 
-							parentType: "widget",
-							data: widget, 
-							type: subtype,
+				// Get All Of The Page Widgets
+				var start = form[operation + "-start"];
+				var panes = utils.getOrderedPages(operation, (start || ""));
+				for(var i = 0 ; i < panes.length; i ++){
+					var p = panes[i];
+					items.push({label: p.name, 
+							action: designer.showWidgetPane,
+							parentData: form, 
+							parentType: "form", 
+							data: p, 
+							type: keys.page, 
 							operation: operation});
+				}
+				dashOptions.list = ui.createMenu(pages.selector, items);
+			}
+			ui.showPane(designer[operation].pane);
+			return designer[operation];
+		};
+		
+		designer.showCollectPane = function(){
+			return designer.showPagesPane(keys.collect);
+		};
+		
+		designer.showReviewPane = function(){
+			return designer.showPagesPane(keys.review);
+		};
+		
+		designer.showPreviewPane = function(){
+			if(designer.preview == null){
+				var preview = designer.preview = {};
+				preview.pane = ui.createPane(designer.main.content);
+				preview.pane.text("Coming to an application near you in 2012.");
+			}
+			ui.showPane(designer.preview.pane);
+		};
+		
+		designer.createWidgetView = function(container, item, li, options){
+			var parentData = item.parentData;
+			var parentType = item.parentType;
+			var data = item.data;
+			var type = item.type;
+			var widgetType = widgets[type];
+			var widgetSubtype = widgetType.subtype;
+			var subtype = widgetSubtype != null ? widgetSubtype.id : null;
+			
+			var label = li.text();
+			
+			var operation = item.operation;
+			
+			var pane = ui.createPane(container);
+			var selector = ui.createSelector(pane);
+			var content = ui.createContent(pane);
+			pane.data("menuitem", li);
+			
+			// Create header
+			var header = ui.createHeader(selector, label);
+			
+			// Create Section Dashboard
+			var dashOptions = {
+					parentType: "widget", 
+					parentData: data,
+					operation: operation, 
+					type: subtype};
+			ui.createWidgetDashboard(selector, dashOptions, designer.addWidget, designer.sortWidgets);
+			
+			// Create Details & SubType Header Link
+			var items = [];
+			items.push({label: "Details", action: designer.showWidgetProperties, 
+				parentData: parentData, parentType: parentType,
+				data: data, type: type, operation: operation, options: {namelink: [li, header]}});
+			if(widgetSubtype != null){
+				items.push({});
+				items.push({label: widgetSubtype.label + "s"});
+			}
+			
+			if(data != null && data.contains != null){
+				var action = designer.showWidgetProperties;
+				if(widgetSubtype && widgetSubtype.subtype){
+					action = designer.showWidgetPane;
+				}
+				
+				// Verify Order
+				data.contains.sort(utils.widgetSorter);
+				var last = data.contains.last();
+				if(last && last.order == null){
+					var body = {update: {widget: []}};
+					$.each(data.contains, function(i,c){body.update.widget.push({id: c.id, order: i});});
+					var params = {"protocol-version": designer.protocol.id, 
+							"protocol": designer.protocol.protocol.id,
+							"form": designer.protocol.form.id,
+							"widget": data.id};
+					var url = Utils.Url.render("/api/widget", params);
+					Dialog.confirm({message: "Widgets without order have been found.  Confirm to apply default ordering.", onconfirm: function(){
+						RPMS.Action.doAjax("POST", url, JSON.stringify(body), null, null, {});}});
+				}
+				
+				// Create The Items
+				for(var i = 0; i < data.contains.length; i++){
+					var widget = data.contains[i];
+					items.push({label: widget.name, 
+						action: action,
+						parentData: data, 
+						parentType: "widget",
+						data: widget, 
+						type: subtype,
+						operation: operation,
+						orderable: true});
+				}
+			}
+			
+			dashOptions.list = ui.createMenu(selector, items);
+			return pane;
+		};
+		
+		designer.showWidgetPane = function(event){
+			var li = $(event.target);
+			var item = li.data("item");
+			
+			if(item.pane == null){
+				var content = ui.relativeContent(li);
+				item.pane = designer.createWidgetView(content, item, li);
+			}
+			ui.showPane(item.pane);
+		};
+		
+		designer.addWidget = function(options){
+			var type = options.type;
+			var widgetType = widgets[type];
+			var parentData = options.parentData;
+			var parentType = options.parentType;
+			var operation = options.operation;
+			var list = options.list;
+			var count = parentData.contains ? parentData.contains.length : 0;
+			
+			if(parentData == null || parentData.id == null){
+				var message = "You must save the parent before you can create a new " + widgetType.label;
+				Dialog.inform({message: message});
+				return;
+			}
+			
+			if(widgetType.widgets == null || widgetType.widgets.length == 0){
+				Dialog.inform({message: "There are currently no " + widgetType.label + " widgets registered."});
+				return;
+			}
+			
+			var action = widgetType.subtype == null ? designer.showWidgetProperties : designer.showWidgetPane;
+			var menuitem = {
+				label: "New " + widgetType.label, 
+				action: action,
+				parentType: parentType, 
+				parentData: parentData, 
+				type: type,
+				operation: operation, 
+				options: {}
+			};
+			
+			var reveal = function(widget){
+				var name = widgets.generateName(widget);
+				menuitem.data = {name: name, type: widget.type, order: count};
+				menuitem.label = name;
+				var li = ui.createMenuItem(list, menuitem);
+				menuitem.options.namelink = [li];
+				li.click();
+			};
+			
+			if(widgetType.widgets.length == 1){
+				reveal(widgetType.widgets[0]);
+			}
+			else{
+				var items = [];
+				$.each(widgetType.widgets, function(i,o){
+					if(o.operation == null || o.operation == operation){
+						items.push({value: o.type, label: o.label, data: o});
 					}
-				}
-				dashOptions.list = ui.createMenu(selector, items);
-				return pane;
-			},
-			showWidgetPane: function(event){
-				var li = $(event.target);
+				});
+				var chooseOptions = {};
+				chooseOptions.title = "Choose " + widgetType.label;
+				chooseOptions.items = items;
+				chooseOptions.onchoose = function(w){(w && reveal(w))};
+				Dialog.choose(chooseOptions);
+			}
+		};
+		
+		designer.sortWidgets = function(options){
+			var list = options.list;
+			var orderables = [];
+			list.children().each(function(i, li){
+				li = $(li);
 				var item = li.data("item");
-				
-				if(item.pane == null){
-					var content = ui.relativeContent(li);
-					item.pane = designer.createWidgetView(content, item, li);
+				if(item && item.orderable){
+					orderables.push({label: li.text(), li: li});
 				}
-				ui.showPane(item.pane);
-			},
-			addWidget: function(options){
-				var type = options.type;
-				var widgetType = widgets[type];
-				var parentData = options.parentData;
-				var parentType = options.parentType;
-				var operation = options.operation;
-				var list = options.list;
-				var count = list.children("li").length + 1;
-				
-				if(parentData == null || parentData.id == null){
-					var message = "You must save the parent before you can create a new " + widgetType.label;
+			});
+			var order = function(ordered){
+				var changed = [];
+				$.each(ordered, function(i, item){
+					if(item.originalIndex != item.newIndex){
+						changed.push(item);
+					}
+				});
+				if(changed.length > 0){
+					var first = null;
+					var widgets = [];
+					$.each(ordered, function(i, item){
+						var widget = item.li.data("item").data;
+						widget.order = item.newIndex;
+						if(widget.id){
+							widgets.push(widget);
+						}
+						if(item.originalIndex == 0){
+							first = item;
+						}
+					});
+					
+					var success = function(data, status, xhr){
+						if(first != ordered[0]){
+							ordered[0].li.insertBefore(first.li);
+							first = ordered.shift();
+						}
+						while(ordered.length > 0){
+							ordered[0].li.insertAfter(first.li);
+							first = ordered.shift();
+						}
+						Dialog.Progress.end();
+					}
+					var body = {update: {widget: widgets}};
+					var params = {"protocol-version": designer.protocol.id, 
+							"protocol": designer.protocol.protocol.id,
+							"form": designer.protocol.form.id,
+							"widget": options.parentData.id};
+					var url = Utils.Url.render("/api/widget", params);
+					RPMS.Action.doAjax("POST", url, JSON.stringify(body), null, null, {success: success});
+				}
+			};
+			Dialog.order({items: orderables, onok: order});
+		};
+			
+		designer.showWidgetProperties = function(event){
+			var li = $(event.target);
+			var item = li.data("item");
+			
+			if(item.pane == null){
+				var type = item.type;
+				var data = item.data;
+				var widget = widgets.findWidget(type, data.type);
+				if(widget == null){
+					var message = "A '" + type + "' widget of type '" + data.type + "' is not registered.";
 					Dialog.inform({message: message});
 					return;
 				}
-				
-				if(widgetType.widgets == null || widgetType.widgets.length == 0){
-					Dialog.inform({message: "There are currently no " + widgetType.label + " widgets registered."});
-					return;
+				if(item.options == null){
+					item.options = {namelink: [li]};
 				}
-				
-				var action = widgetType.subtype == null ? designer.showWidgetProperties : designer.showWidgetPane;
-				var menuitem = {
-					label: "New " + widgetType.label, 
-					action: action,
-					parentType: parentType, 
-					parentData: parentData, 
-					type: type,
-					operation: operation, 
-					options: {}
-				};
-				
-				var temp = function(widget){
-					var name = widgets.generateName(widget);
-					menuitem.data = {name: name, type: widget.type, order: count};
-					menuitem.label = name;
-					var li = ui.createMenuItem(list, menuitem);
-					menuitem.options.namelink = [li];
-					li.click();
-				};
-				
-				if(widgetType.widgets.length == 1){
-					temp(widgetType.widgets[0]);
+				var content = ui.relativeContent(li);
+				item.pane = ui.createWidgetData(content, widget, 
+						item.parentData, item.parentType, data, type, item.operation, item.options);
+				item.pane.data("menuitem", li);
+			}
+			ui.showPane(item.pane);
+		};
+		
+		designer.saveForm = function(event){
+			var form = designer.protocol.form;
+			var dataPane = ui.relativeData($(event.target));
+			var textControl = dataPane.find("div.i18ntext");
+			var values = textControl.data("value");
+			var updated = textControl.data("updated");
+			var deleted = textControl.data("deleted");
+			
+			var created = [];
+			$.each(values, function(i,o){
+				if(o.id == null){
+					o.form = {id: designer.protocol.form.id};
+					created.push(o);
 				}
-				else{
-					var items = [];
-					$.each(widgetType.widgets, function(i,o){
-						if(o.operation == null || o.operation == operation){
-							items.push({value: o.type, label: o.label, data: o});
-						}
-					});
-					Dialog.choose({
-						title: "Choose " + widgetType.label,
-						multiple: false,
-						items: items,
-						onchoose: function(widget){
-							if(widget != null){
-								temp(widget);
-							}
-						}
-						});
-				}
-			},
-			sortWidgets: function(options){
-				
-			},
-			showWidgetProperties: function(event){
-				var li = $(event.target);
-				var item = li.data("item");
-				
-				if(item.pane == null){
-					var type = item.type;
-					var data = item.data;
-					var widget = widgets.findWidget(type, data.type);
-					if(widget == null){
-						var message = "A '" + type + "' widget of type '" + data.type + "' is not registered.";
-						Dialog.inform({message: message});
-						return;
+			});
+			
+			var body = {
+					create:{title: created},
+					update:{title: updated},
+					"delete":{title: deleted}
+			};
+			
+			// Check Properties
+			var formUpdates = {id: form.id};
+			
+			var selects = dataPane.find("select");
+			selects.each(function(i,s){
+				if(s.name != null){
+					var val = form[s.name];
+					var opts = $(s).children("option:selected");
+					if(opts.length > 0 && val != opts[0].value){
+						formUpdates[s.name] = opts[0].value;
+						body.update.form = formUpdates;
 					}
-					if(item.options == null){
-						item.options = {namelink: [li]};
-					}
-					var content = ui.relativeContent(li);
-					item.pane = ui.createWidgetData(content, widget, 
-							item.parentData, item.parentType, data, type, item.operation, item.options);
-					item.pane.data("menuitem", li);
 				}
-				ui.showPane(item.pane);
-			},
-			saveForm: function(event){
-				var form = designer.protocol.form;
-				var dataPane = ui.relativeData($(event.target));
-				var textControl = dataPane.find("div.i18ntext");
-				var values = textControl.data("value");
-				var updated = textControl.data("updated");
-				var deleted = textControl.data("deleted");
-				
-				var created = [];
-				$.each(values, function(i,o){
-					if(o.id == null){
-						o.form = {id: designer.protocol.form.id};
-						created.push(o);
-					}
+			});
+			
+			var params = {"protocol-version": designer.protocol.id, 
+					"protocol": designer.protocol.protocol.id, "form": designer.protocol.form.id};
+			var url = Utils.Url.render("/api/form", params);
+			var success = function(data, status, xhr){
+				var formData = $.parseJSON(data);
+				textControl.data("value", formData.titles);
+				textControl.data("updated", []);
+				textControl.data("deleted", []);
+				form["collect-start"] = formData["collect-start"];
+				form["review-start"] = formData["review-start"];
+				Dialog.Progress.end();
+			}
+			RPMS.Action.doAjax("POST", url, JSON.stringify(body), null, null, {success: success});
+		};
+		
+		designer.saveWidget = function(event){
+			var dataPane = ui.relativeData($(event.target));
+			var nameField = dataPane.children().first().children().first().children("input");
+			
+			var fields = dataPane.data("fields");
+			var data = dataPane.data("data");
+			var operation = dataPane.data("operation");
+			var parentData = dataPane.data("parentData");
+			var parentType = dataPane.data("parentType");
+			var params = {"protocol-version": designer.protocol.id, 
+					"protocol": designer.protocol.protocol.id,
+					"form": designer.protocol.form.id};
+			if(parentType == "widget"){
+				params.widget = parentData.id;
+			}
+			var method = "POST";
+			var action = "UPDATE";
+			var body = null;
+			var crudData = {name: nameField.val(), type: data.type};
+			if(data.id == null){
+				action = "CREATE";
+				method = "PUT";
+				crudData.properties = [{key: "operation", value: operation}];
+				$.each(fields, function(i,f){
+					crudData.properties.addAll(f.editor.created(f.control));
 				});
-				
-				var body = {
-						create:{title: created},
-						update:{title: updated},
-						"delete":{title: deleted}
+				body = crudData;
+			}
+			else{
+				params.widget = data.id;
+				body = {
+						create:{property:[]},
+						update:{property:[]},
+						delete:{property:[]}
 				};
-				
-				// Check Properties
-				var formUpdates = {id: form.id};
-				
-				var selects = dataPane.find("select");
-				selects.each(function(i,s){
-					if(s.name != null){
-						var val = form[s.name];
-						var opts = $(s).children("option:selected");
-						if(opts.length > 0 && val != opts[0].value){
-							formUpdates[s.name] = opts[0].value;
-							body.update.form = formUpdates;
-						}
-					}
-				});
-				
-				var params = {"protocol-version": designer.protocol.id, 
-						"protocol": designer.protocol.protocol.id, "form": designer.protocol.form.id};
-				var url = Utils.Url.render("/api/form", params);
-				var success = function(data, status, xhr){
-					var formData = $.parseJSON(data);
-					textControl.data("value", formData.titles);
-					textControl.data("updated", []);
-					textControl.data("deleted", []);
-					form["collect-start"] = formData["collect-start"];
-					form["review-start"] = formData["review-start"];
-					Dialog.Progress.end();
+				if(crudData.name != data.name){
+					body.update.widget = crudData;
 				}
-				RPMS.Action.doAjax("POST", url, JSON.stringify(body), null, null, {success: success});
-			},
-			saveWidget: function(event){
-				var dataPane = ui.relativeData($(event.target));
-				var nameField = dataPane.children().first().children().first().children("input");
-				
-				var fields = dataPane.data("fields");
-				var data = dataPane.data("data");
-				var operation = dataPane.data("operation");
-				var parentData = dataPane.data("parentData");
-				var parentType = dataPane.data("parentType");
+				$.each(fields, function(i,f){
+					body.create.property.addAll(f.editor.created(f.control));
+					body.update.property.addAll(f.editor.updated(f.control));
+					body.delete.property.addAll(f.editor.deleted(f.control));
+				});
+			}
+			
+			var success = function(data, status, xhr){
+				var dataObj = $.parseJSON(data);
+				designer.syncWidget(dataPane, parentData, dataObj, action);
+				Dialog.Progress.end();
+			}
+			var url = Utils.Url.render("/api/widget", params);
+			RPMS.Action.doAjax(method, url, JSON.stringify(body), null, null, {success: success});
+		};
+	
+		designer.deleteWidget = function(event){
+			var dataPane = ui.relativeData($(event.target));
+			var data = dataPane.data("data");
+			var parentData = dataPane.data("parentData");
+
+			if(data.id == null){
+				designer.syncWidget(dataPane, parentData, data, true);
+			}
+			else{
 				var params = {"protocol-version": designer.protocol.id, 
 						"protocol": designer.protocol.protocol.id,
-						"form": designer.protocol.form.id};
-				if(parentType == "widget"){
-					params.widget = parentData.id;
-				}
-				var method = "POST";
-				var action = "UPDATE";
-				var body = null;
-				var crudData = {name: nameField.val(), type: data.type};
-				if(data.id == null){
-					action = "CREATE";
-					method = "PUT";
-					crudData.properties = [{key: "operation", value: operation}];
-					$.each(fields, function(i,f){
-						Utils.Array.addAll(crudData.properties, f.editor.created(f.control));
-					});
-					body = crudData;
-				}
-				else{
-					params.widget = data.id;
-					body = {
-							create:{property:[]},
-							update:{property:[]},
-							delete:{property:[]}
-					};
-					if(crudData.name != data.name){
-						body.update.widget = crudData;
-					}
-					$.each(fields, function(i,f){
-						Utils.Array.addAll(body.create.property, f.editor.created(f.control));
-						Utils.Array.addAll(body.update.property, f.editor.updated(f.control));
-						Utils.Array.addAll(body.delete.property, f.editor.deleted(f.control));
-					});
-				}
+						"widget": data.id};
 				
-				var success = function(data, status, xhr){
-					var dataObj = $.parseJSON(data);
- 					designer.syncWidget(dataPane, parentData, dataObj, action);
+				var success = function(responseText, status, xhr){
+ 					designer.syncWidget(dataPane, parentData, data, "DELETE");
 					Dialog.Progress.end();
 				}
 				var url = Utils.Url.render("/api/widget", params);
-				RPMS.Action.doAjax(method, url, JSON.stringify(body), null, null, {success: success});
-			},
-			deleteWidget: function(event){
-				var dataPane = ui.relativeData($(event.target));
-				var data = dataPane.data("data");
-				var parentData = dataPane.data("parentData");
-
-				if(data.id == null){
-					designer.syncWidget(dataPane, parentData, data, true);
+				RPMS.Action.doAjax("DELETE", url, null, null, null, {success: success});
+			}
+		};
+		
+		designer.syncWidget = function(pane, parentData, data, action){
+			if(action == "DELETE"){
+				for(var i = parentData.contains.length - 1; i >=0 ; i--){
+					var o = parentData.contains[i];
+					if(o.id == data.id){
+						parentData.contains.splice(i, 1);
+					}
 				}
-				else{
-					var params = {"protocol-version": designer.protocol.id, 
-							"protocol": designer.protocol.protocol.id,
-							"widget": data.id};
-					
-					var success = function(responseText, status, xhr){
-	 					designer.syncWidget(dataPane, parentData, data, "DELETE");
-						Dialog.Progress.end();
-					}
-					var url = Utils.Url.render("/api/widget", params);
-					RPMS.Action.doAjax("DELETE", url, null, null, null, {success: success});
+				if(data.type == "section" | data.type == "page"){
+					pane = pane.closest(".consent-designer-pane");
 				}
-			},
-			syncWidget: function(pane, parentData, data, action){
-				if(action == "DELETE"){
-					for(var i = parentData.contains.length - 1; i >=0 ; i--){
-						var o = parentData.contains[i];
-						if(o.id == data.id){
-							parentData.contains.splice(i, 1);
-						}
-					}
-					if(data.type == "section" | data.type == "page"){
-						pane = pane.closest(".consent-designer-pane");
-					}
-					var li = pane.data("menuitem");
-					if(li != null){
-						li.remove();
-					}
-					pane.remove();
+				var li = pane.data("menuitem");
+				if(li != null){
+					li.remove();
 				}
-				else{
-					var container = pane.data("data");
-					if(container.name != data.name){
-						var options = pane.data("options");
-						if(options && options.namelink){
-							$.each(options.namelink, function(i,e){$(e).text(data.name)});
-						}
+				pane.remove();
+			}
+			else{
+				var container = pane.data("data");
+				if(container.name != data.name){
+					var options = pane.data("options");
+					if(options && options.namelink){
+						$.each(options.namelink, function(i,e){$(e).text(data.name)});
 					}
-					container.id = data.id;
-					container.name = data.name;
-					container.type = container.type;
-					if(container.properties == null){
-						container.properties = [];
+				}
+				container.id = data.id;
+				container.name = data.name;
+				container.type = container.type;
+				if(container.properties == null){
+					container.properties = [];
+				}
+				$.each(data.properties, function(i,p){
+					var prop = utils.findWidgetPropertyById(container, p.id);
+					if(prop == null){
+						container.properties.push(p);
 					}
-					$.each(data.properties, function(i,p){
-						var prop = utils.findWidgetPropertyById(container, p.id);
-						if(prop == null){
-							container.properties.push(p);
-						}
-						else{
-							prop.key = p.key;
-							prop.value = p.value;
-							prop.language = p.language;
-						}
-					});
-					
-					var fields = pane.data("fields");
-					$.each(fields, function(i,o){
-						o.editor.refresh(o.control, container);
-					});
-					if(action == "CREATE"){
-						if(parentData.contains){
-							parentData.contains.push(container);
-						}
-						else{
-							parentData.contains = [container];
-						}
+					else{
+						prop.key = p.key;
+						prop.value = p.value;
+						prop.language = p.language;
+					}
+				});
+				
+				var fields = pane.data("fields");
+				$.each(fields, function(i,o){
+					o.editor.refresh(o.control, container);
+				});
+				if(action == "CREATE"){
+					if(parentData.contains){
+						parentData.contains.push(container);
+					}
+					else{
+						parentData.contains = [container];
 					}
 				}
 			}

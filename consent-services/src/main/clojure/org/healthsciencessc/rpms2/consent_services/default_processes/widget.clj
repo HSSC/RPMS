@@ -53,7 +53,12 @@
         widget (data/find-record types/widget widget-id)
         record (get-in body[:update :widget])]
     (neo/with-tx
-      (data/update types/widget widget-id record)
+      (cond
+        (sequential? record)
+          (doseq [node record]
+            (data/update types/widget (:id node) node))
+        record
+          (data/update types/widget widget-id record))
       (doseq [prop (get-in body[:create :property])] 
         (let [prop1 (assoc prop :organization (:organization widget))
               prop2 (assoc prop1 :widget widget)]

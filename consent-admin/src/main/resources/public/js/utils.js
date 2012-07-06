@@ -31,19 +31,39 @@ Utils.Url = {
 	}
 };
 
-Utils.Array = {
-	clear: function(a){
-		a.splice(0, a.length);
-	},
-	addAll: function(target, extra, remove){
-		$.each(extra, function(i, a){
-			target.push(a);
-		});
-		if(remove){
-			Utils.Array.clear(extra);
+// Array Prototype Changes
+Array.prototype.last = function(){
+	if(this.length > 0){
+		return this[this.length - 1];
+	}
+	return null;
+};
+Array.prototype.clear = function(){
+	return this.splice(0, this.length);
+};
+
+Array.prototype.addAll = function(a){
+	if(a instanceof Array){
+		for(var i = 0; i < a.length; i++){
+			this.push(a[i]);
 		}
-		return target;
-	},
+	}
+	else{
+		this.push(a);
+	}
+	return this;
+};
+Array.prototype.contains = function(o){
+	if(this.indexOf(a) >= 0) return true;
+	return false;
+};
+Array.prototype.remove = function(o){
+	var i = this.indexOf(a);
+	if(i >= 0) return this.splice(i,1)[0];
+	return null;
+};
+
+Utils.Array = {
 	compare: function(a1, a2){
 		if(a1 == null && a2 == null) return true;
 		if(a1 == null || a2 == null) return false;
@@ -59,22 +79,6 @@ Utils.Array = {
 		}
 		if((c1.length + c2.length) > 0) return false;
 		return true;
-	},
-	isWithin: function(item, coll){
-		if(coll != null && coll.length > 0){
-			for(var i = 0; i < coll.length; i++){
-				if(coll[i] == item) return true;
-			}
-		}
-		return false;
-	},
-	ifWithinRemove: function(item, coll){
-		if(coll != null && coll.length > 0){
-			for(var i = 0; i < coll.length; i++){
-				if(coll[i] == item) return coll.splice(i, 1)[0];
-			}
-		}
-		return null;
 	}
 }
 

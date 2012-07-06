@@ -33,3 +33,22 @@ select.dialog-choose{
 	width: 80%;
 	left: 10%;
 }
+
+table.dialog-order{
+	width: 100%;
+	font-size: .8em;
+}
+
+table.dialog-order tr:hover{
+	background-color: #DFEFFC;
+}
+
+td.dialog-order-action{
+	height: 1.7em;
+	width: 1.7em;
+}
+
+td.dialog-order-action img{
+	height: 1.7em;
+	width: 1.7em;
+}

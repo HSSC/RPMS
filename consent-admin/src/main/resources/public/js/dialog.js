@@ -112,6 +112,67 @@ var Dialog = {
 			buttons: buts
 		});
 	},
+	
+	order: function(options){
+		if(this.orderDialog == null){
+			this.orderDialog = $("<div class='dialog' />");
+			this.orderDialog.appendTo($("body"));
+			this.orderTable = $("<table class='dialog-order' />")
+			this.orderTable.appendTo(this.orderDialog);
+			this.orderTable.click(function(event){
+				var img = $(event.target);
+				var row = img.closest("tr");
+				if(event.target.name == "up"){
+					 row.insertBefore(row.prev());
+				}
+				else{
+					row.insertAfter(row.next());
+				}
+			});
+		}
+		
+		this.orderTable.empty();
+		var table = this.orderTable;
+		var items = Utils.Map.mapped$rq(options, "items");
+		$.each(items, function(i, item){
+			item.originalIndex = i;
+			var row = $(table[0].insertRow(i));
+			row.data("item", item);
+			$("<td class='dialog-order-label'>" + item.label + "</td>").appendTo(row);
+			$("<td class='dialog-order-action'><img name='up' src='" + 
+					Utils.Url.render("/image/up.png") + "'/></td>").appendTo(row);
+			$("<td class='dialog-order-action'><img name='down' src='" + 
+					Utils.Url.render("/image/down.png") + "'/></td>").appendTo(row);
+		});
+		
+		var title = Utils.Map.mapped(options, "title", "Order Items");
+		var height = Utils.Map.mapped(options, "height", "auto");
+		
+		var okLabel = Utils.Map.mapped(options, "ok", "OK");
+		var cancelLabel = Utils.Map.mapped(options, "cancel", "Cancel");
+		
+		var orderedItems = function(){
+			var items = [];
+			var rows = table[0].rows;
+			$.each(rows, function(i,r){
+				var item = $(r).data("item");
+				item.newIndex = i;
+				items.push(item);
+			});
+			return items;
+		};
+		
+		var buts = {};
+		buts[okLabel] = function (){$(this).dialog( "close" ); if(options.onok) options.onok(orderedItems());};
+		buts[cancelLabel] = function (){$(this).dialog( "close" ); if(options.oncancel) options.oncancel();};
+		this.orderDialog.dialog({
+			title: title,
+			resizable: false,
+			height: height,
+			modal: true,
+			buttons: buts
+		});
+	},
 	text: function(options){
 		if(this.textDialog == null){
 			this.textDialog = $("<div class='dialog'><select class='language'></select><textarea class='i18ntext' /></div>");
@@ -217,7 +278,9 @@ Dialog.Progress = {
 		this.progress.position({of: Dialog.LightBox.lightBox});
 	},
 	end: function(){
-		this.progress.hide();
+		if(this.progress){
+			this.progress.hide();
+		}
 		Dialog.LightBox.end();
 	}
 };

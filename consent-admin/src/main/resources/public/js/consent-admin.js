@@ -215,7 +215,7 @@ $(function(){
 							var cache = Utils.DataSet.getObject(target, "deleted", []);
 							cache.push(node);
 							Utils.DataSet.set(target, "deleted", cache);
-							Utils.Array.ifWithinRemove(node, Utils.DataSet.getObject(target, "updated",[]));
+							Utils.DataSet.getObject(target, "updated",[]).remove(node);
 						}
 						break;
 					}
@@ -250,7 +250,7 @@ $(function(){
 						node.value = text;
 						if(node.id != null){
 							var cache = Utils.DataSet.getObject(target, "updated", []);
-							if(!Utils.Array.isWithin(node, cache)){
+							if(!cache.contains(node)){
 								cache.push(node);
 								Utils.DataSet.set(target, "updated", cache);
 							}
@@ -395,8 +395,10 @@ var RPMS = {
 					return body.message;
 				}
 			}
-			catch(e){}
-			return xhr.responseText;
+			catch(e){
+				console.log(xhr.responseText);
+				return "An unexpected failure occured on the server.  See the console log for more details.";
+			}
 		}
 		return ifnull;
 	}
