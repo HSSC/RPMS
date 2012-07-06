@@ -1148,7 +1148,7 @@
 			var method = "POST";
 			var action = "UPDATE";
 			var body = null;
-			var crudData = {name: nameField.val(), type: data.type};
+			var crudData = {name: nameField.val(), type: data.type, order: data.order};
 			if(data.id == null){
 				action = "CREATE";
 				method = "PUT";

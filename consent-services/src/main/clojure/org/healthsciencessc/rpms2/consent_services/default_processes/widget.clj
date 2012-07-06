@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.widget
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
+  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)]
+        [org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version :only [auth-designer-for-protocol-draft]])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-domain.roles :as role]
@@ -74,12 +75,6 @@
   (let [body (:body-params ctx)
         widget-id (get-in ctx [:query-params :widget])]
     (data/delete types/widget widget-id)))
-
-(defn trueprint
-  [ctx]
-  (printit "QUERY PARAMS" (:query-params ctx))
-  (printit "BODY PARAMS" (:body-params ctx))
-  true)
 
 (def widget-processes
   [{:name "get-library-widgets"
@@ -166,23 +161,23 @@
    
    ;; Services specifically to adhere to the quirks of the designer with the widget/widget-property relations
    {:name "post-designer-form"
-    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :runnable-fn auth-designer-for-protocol-draft
     :run-fn post-designer-form
     :run-if-false forbidden-fn}
 
    {:name "put-designer-form-widget"
-    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :runnable-fn auth-designer-for-protocol-draft
     :run-fn put-designer-form-widget
     :run-if-false forbidden-fn}
 
    ;; TODO - Add a owns data method to search throught multiple levels of widgets.
    {:name "post-designer-form-widget"
-    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :runnable-fn auth-designer-for-protocol-draft
     :run-fn post-designer-form-widget
     :run-if-false forbidden-fn}
 
    {:name "delete-designer-form-widget"
-    :runnable-fn trueprint ;;(runnable/can-design-protocol-version utils/current-user utils/get-protocol-version-record)
+    :runnable-fn auth-designer-for-protocol-draft
     :run-fn delete-designer-form-widget
     :run-if-false forbidden-fn}
    ])
