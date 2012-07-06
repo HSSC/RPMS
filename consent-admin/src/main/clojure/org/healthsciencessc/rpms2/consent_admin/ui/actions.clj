@@ -75,6 +75,16 @@ prior to calling the server, and the execution of a client-side action when the 
     [(tag-class :div classes jquery-classes :.push-action.action) (merge props common-props)
       [:span.ui-button-text (or label "Push")]]))
 
+(defn open-action
+  "Generates an action that will push a new request to the PaneManager."
+  [{url :url params :params label :label classes :classes target :target
+    :as options}]
+  (let [props {:data-url url :data-map (to-attr-value params)}
+        target-props (if target {:data-target target} {})
+        common-props (get-common-props options)]
+    [(tag-class :div classes jquery-classes :.open-action.action) (merge props target-props common-props)
+      [:span.ui-button-text (or label "Download")]]))
+
 (defn back-action
   "Generates an action that will trigger a 'back' call to the PaneManager."
   ([] (back-action {}))

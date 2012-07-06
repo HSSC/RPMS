@@ -11,6 +11,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
             [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.download :as download]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [org.healthsciencessc.rpms2.consent-admin.ui.common :as uicommon]
@@ -114,6 +115,9 @@
                              (actions/push-action 
                                {:url "/view/protocol/version/designer" :params {:protocol-version protocol-version-id} 
                                 :label "Review Layout"})
+                             (actions/open-action 
+                               {:url "/export/protocol/version" :params {:protocol-version protocol-version-id}
+                                :label "Export" })
                              (actions/ajax-action 
                                {:method :post :url "/api/protocol/version/draft" :params {:protocol-version protocol-version-id}
                                 :label "Revert To Draft" :action-on-success "refresh"})
@@ -123,10 +127,17 @@
                                 :confirm {:title "Confirm Publishing" :message "Publishing the current version will retire any currently published versions."}})))
                          
                          (if (types/published? protocol-version)
-                           (actions/ajax-action 
-                             {:method :post :url "/api/protocol/version/retire" :params {:protocol-version protocol-version-id}
-                              :label "Retire" :action-on-success "refresh"
-                              :confirm {:title "Confirm Retirement" :message "Retiring the current version will remove the protocol from the collection application."}}))
+                           (list
+                             (actions/push-action 
+                               {:url "/view/protocol/version/designer" :params {:protocol-version protocol-version-id} 
+                                :label "View Layout"})
+                             (actions/open-action 
+                               {:url "/export/protocol/version" :params {:protocol-version protocol-version-id}
+                                :label "Export" })
+                             (actions/ajax-action 
+                               {:method :post :url "/api/protocol/version/retire" :params {:protocol-version protocol-version-id}
+                                :label "Retire" :action-on-success "refresh"
+                                :confirm {:title "Confirm Retirement" :message "Retiring the current version will remove the protocol from the collection application."}})))
                          (actions/back-action)))))
     (layout/render-error ctx {:message "A protocol version is required."})))
 
@@ -264,6 +275,18 @@
         (ajax/save-failed (meta resp))
         (ajax/success resp))))
 
+(defn get-export-protocol-version
+  "Puts a draft protocol version into a submitted status."
+  [ctx]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
+    (let [resp (services/export-protocol-version protocol-version-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (download/service-error (meta resp))
+        (download/success-string resp "application/xml" "protocol.xml")))
+    ;; Handle Bad Request
+    (ajax/error {:message "A protocol version is required."})))
+
 (def process-defns
   [
    ;; Generates the view for a specific protocol version.
@@ -282,6 +305,12 @@
    {:name "get-view-protocol-version"
     :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version])))
     :run-fn view-protocol-version
+    :run-if-false ajax/forbidden}
+   
+   ;; Exports the Protocol Version xml file.
+   {:name "get-export-protocol-version"
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version])))
+    :run-fn get-export-protocol-version
     :run-if-false ajax/forbidden}
    
    ;; Service For Deleting Protocol Version

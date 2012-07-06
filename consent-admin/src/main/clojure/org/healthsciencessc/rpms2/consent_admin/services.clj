@@ -481,6 +481,13 @@
         nil
         nil))
 
+(defn export-protocol-version
+  "Gets the protocol version XML rendition."
+  [protocol-version-id]
+  (DO client/get
+      (full-url "/protocol/version/export" {:protocol-version protocol-version-id})
+      (merge (credentials) {:content-type "application/xml" :throw-exceptions false})
+      []))
 
 (defn assign-language-to-protocol-version
   [language-id protocol-version-id]

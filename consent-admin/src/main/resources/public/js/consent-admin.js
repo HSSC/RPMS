@@ -79,6 +79,15 @@ $(function(){
 					confirm, {onsuccess: actionOnSuccess});
 		});
 	});
+
+	// Register Event - Click Generic Open Action - For Files
+	PaneManager.on("click", ".open-action", function(event){
+		var target = RPMS.findTarget(event, "div.open-action");
+		var url = Utils.DataSet.get(target, "url");
+		var params = RPMS.getParamMap(target, "map");
+		var fullUrl = Utils.Url.render(url, params);
+		window.location = fullUrl;
+	});
 	
 	// Register Event - Click Back Button
 	PaneManager.on("click", ".back-action", function(event){
