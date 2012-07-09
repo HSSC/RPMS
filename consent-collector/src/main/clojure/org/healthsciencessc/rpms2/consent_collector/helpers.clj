@@ -668,36 +668,42 @@
   (let [pvlist (session-get :selected-protocol-version-ids) ]
         (if-let [sf (get-saved-finished-form n)] sf {})))
 
+(defn- set-the-form
+  "Saves the current form in the session."
+  [flow next-pv]
+
+  (session-put! :published-version next-pv)
+  (let [p (get-named-page (flow (:form next-pv)))]
+        (session-put! :page p) 
+        (session-put! :page-name (:name p))
+        p))
+
 (defn finish-form
-  "Save data of current form and prepare for next one."
+  "Save data of current form and prepare for next one.
+  Returns nil if there are no more forms.
+  Returns the current published version otherwise."
   []
   (debug "FINISH FORM")
   (let [mdata (session-get :model-data)
         n     (session-get :current-form-number)
         fkey (get-finished-form-key n)
         orig-finished-forms (if-let [ff (session-get :finished-forms)] ff {}) ] 
-    (do
       ;; save current forms data into :finished-forms
-      (if fkey 
-        (session-put! :finished-forms (assoc orig-finished-forms fkey mdata)))  
+    (if fkey 
+       (session-put! :finished-forms (assoc orig-finished-forms fkey mdata)))  
 
       ;; if we are in review then load up saved data for the form 
-      (if (in-review?) 
-          (session-put! :model-data (get-data-for-nth-finished-form (inc n)))
-          (session-put! :model-data {} ))
+    (if (in-review?) 
+        (session-put! :model-data (get-data-for-nth-finished-form (inc n)))
+        (session-put! :model-data {} ))
 
-      (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
+    (debug "FINISHED FORM: " (inc n) " " (session-get :model-data))
+    (session-put! :current-form-number (inc n))
+    (session-delete-key! :published-version) 
 
-      (session-put! :current-form-number (inc n))
-      (if-let [next-published-version (dsa/get-nth-form (inc n))]
-        (do
-          (session-put! :published-version next-published-version))
-          (let [formval (current-form)
-                start-page-nm ((session-get :which-flow) (current-form))
-                p (get-named-page start-page-nm)]
-            (session-put! :page p) 
-            (session-put! :page-name (:name p)) 
-         )))))
+    (if-let [next-pv (dsa/get-nth-form (inc n))]
+       (set-the-form (session-get :which-flow) next-pv)))
+  (session-get :published-version))
 
 (defn- init-flow 
   "Initializes consent collection data structures.

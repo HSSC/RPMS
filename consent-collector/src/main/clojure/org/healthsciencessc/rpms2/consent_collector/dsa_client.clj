@@ -188,13 +188,6 @@
                                                               :protocol-version pv-id})]
     (-> resp :body first)))     ;; this dsa call returns a list, but we only call it with one param, so return first
 
-(defn- fix-metadata
-  "Ensure that meta data is a map with the key being the id."
-  [col]
-  (let [r (apply merge {} (for [a col] (hash-map (keyword (:id a)) a))) ]
-    (println "fix-metadata " r)
-    r))
-
 (defn get-published-protocols-meta-items
   "Returns meta-items for published protocols."
   [protocol-ids lang]

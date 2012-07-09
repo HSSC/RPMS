@@ -120,7 +120,10 @@
 
 (defn find-policy
   [w]
-  (get (helper/current-policies) (:policy w)))
+
+  (let [p (unlist (:policy w))
+        policies (helper/current-policies)]
+        (get policies p)))
 
 (defn review-policy 
   "A ReviewPolicy widget provides a controller that allows the collector to 
@@ -229,17 +232,15 @@
   [:div.control.policy-text
    (list 
      (let [policy (find-policy widget)
-           title (:title policy)
+           title (unlist (:title policy))
            txt (:text policy)]
 
      ;; Display title if :render-title is missing or true 
      ;; and policy has a title
-       ;;
+     ;;
      (if (= nil policy)
           (println "WARNING policy-text widget --> policy is " 
                 (:policy widget) " definition is "  (pprint-str policy)))
-     ;(println "title is " (pprint-str title ))
-     ;(println "txt is " (pprint-str txt ))
 
      (list 
        (if (= nil policy) [:div "WARNING: Policy text - policy not defined: " 
@@ -328,7 +329,7 @@
    (helper/submit-btn {:data-theme (if value "b" "d" )
                        :data-inline "false"
                        :name (str helper/ACTION_BTN_PREFIX (widget-identifier widget))
-                       :value (widget-label widget) }) ])
+                       :value (unlist (widget-label widget)) }) ])
 
 
 (defn text
@@ -347,12 +348,14 @@
   Checkboxes are included in form submission parameters if they are not checked."
   [{:keys [widget value] :as m}]
 
-  [:div.control 
-    [:input {:type "hidden" 
-             :name (str helper/CHECKBOX_BTN_PREFIX (widget-identifier widget)) } ]
-    (helper/checkbox-group {:name (widget-identifier widget)
-                            :label (widget-label widget) 
-                            :value (unlist value)  }) ])
+  (let [nm (widget-identifier widget)
+        checked  (if (= value "on") {:checked "checked" } {})]
+   [:div.control 
+    [:input {:type "hidden" :name (str helper/CHECKBOX_BTN_PREFIX nm)} ]
+    [:div {:data-role "fieldcontain"}
+      [:input (merge {:type "checkbox" :id nm :name nm} checked ) ]
+      [:label {:for nm} (widget-label widget)]]
+    ]))
 
 (defn- section
   "Creates section div containing all widgets in this section."
@@ -397,7 +400,7 @@
 
 (defn- form-title
   [f]
-  (get-in f [:header :title]))
+  (unlist (get-in f [:header :title])))
 
 
 (defn- view-update-information
@@ -554,9 +557,10 @@
       (view)
 
       (contains? parms :previous)
-      (do (if-let [pg-name (:previous (session-get :page)) ]
-             (helper/set-page (helper/get-named-page pg-name)))
-             (helper/myredirect "/collect/consents"))
+      (do 
+         (if-let [pg-name (:previous (session-get :page)) ]
+            (helper/set-page (helper/get-named-page pg-name)))
+         (helper/myredirect "/collect/consents"))
 
       ;; if next page available
       nxt 
@@ -564,7 +568,11 @@
           (view))
 
       (helper/finish-form)
-      (view-finished ctx)
+      (if-let [pg (session-get :page)]
+        (do
+          (helper/set-page pg)
+          (view {}))
+        (view-finished ctx))
 
      :else
      (view-finished ctx))))
