@@ -422,47 +422,63 @@
 		};
 		
 		ui.createMediaControl = function(container, property, data, operation, editable){
+			// Get Properties
 			var urlValue = utils.findProperty(property.name, data.properties, true);
 			var posterValue = utils.findProperty(property.posterProp, data.properties, true);
 			
+			// Create Control And State
 			var control = ui.createControl(container, editable);
 			control.data("state", {url: urlValue, poster: posterValue});
-			ui.createLabel(control, property.name, property.label);
-			
 			control.data("editable", designer.editable);
 			
+			ui.createLabel(control, property.name, property.label);
+			
+			// Create Table
 			var table = $("<table class='consent-designer-media' />");
 			table.appendTo(control);
 			var header = $("<tr class='consent-designer-media'>" + 
 				"<th class='consent-designer-media'>Media URL</th>" + 
 				"<th class='consent-designer-media'>Poster URL</th></tr>")
 			header.appendTo(table);
-			var action = "";
+			
+			// Reusable fn to add rows.
+			var addRow = function(url, poster){
+				var row = $("<tr class='consent-designer-media consent-designer-media-data'>");
+				row.appendTo(table);
+				$.each([url, poster], function(i, u){
+					var cell = $("<td class='consent-designer-media'/>");
+					cell.appendTo(row);
+					var input = $("<input class='consent-designer-media' />");
+					input.appendTo(cell);
+					input.val(u);
+					input.change(function(){control.data("changed", true);});
+					if(!editable){
+						input.attr("disabled", "disabled");
+					}
+				});
+				if(editable){
+					var cell = $("<td class='consent-designer-media-action'>");
+					cell.appendTo(row);
+					var img = $("<img class='consent-designer-media-action' src='" + 
+							Utils.Url.render("/image/delete.png") + "'/>");
+					img.appendTo(cell);
+					img.click(function(){control.data("changed", true); row.remove();});
+				}
+			};
+			
 			if(editable){
 				var addth = $("<th class='consent-designer-media-action' />");
 				addth.appendTo(header);
-				var addimg = $("<img class='consent-designer-media-action' src='" +
+				var img = $("<img class='consent-designer-media-action' src='" +
 						Utils.Url.render("/image/add.png") + "'/>");
-				addimg.appendTo(addth);
-				
-				addimg.bind("click", function(){Dialog.inform({message: "NO!"});});
+				img.appendTo(addth);
+				img.click(function(){control.data("changed", true); addRow();});
 			}
 				
 			if(urlValue.value){
+				posterValue.value = [].addAll(posterValue.value).fillTo(urlValue.length);
 				for(var i = 0; i < urlValue.value.length; i++){
-					var row = $("<tr class='consent-designer-media'>");
-					row.appendTo(table);
-					var url = urlValue.value[i];
-					var poster = posterValue.value.length > i ? posterValue.value[i] : "" ;
-					$("<td class='consent-designer-media'>" + url + "</td>").appendTo(row); 
-					$("<td class='consent-designer-media'>" + poster + "</td>").appendTo(row);
-					if(editable){
-						var cell = $("<td class='consent-designer-media-action'>");
-						cell.appendTo(row);
-						var img = $("<img class='consent-designer-media' src='" + 
-								Utils.Url.render("/image/delete.png") + "'/>");
-						img.appendTo(cell);
-					}
+					addRow(urlValue.value[i], posterValue.value[i]);
 				}
 			}
 			return control;

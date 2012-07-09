@@ -266,6 +266,51 @@ Consent.Editors.register("boolean-picker", {
 Consent.Editors.register("urls", {
 	generate: function(container, property, data, operation, editable){
 		return Consent.UI.createMediaControl(container, property, data, operation, editable);},
+		refresh: function(control, data){
+			var attrs = Consent.Editors.lift(control);
+			var urlValue = Consent.Utils.findProperty(attrs.property.name, data.properties, true);
+			var posterValue = Consent.Utils.findProperty(attrs.property.posterProp, data.properties, true);
+			control.data("state", {url: urlValue, poster: posterValue});
+			control.data("changed", false);
+		},
+		created: function(control, data){
+			var found = [];
+			var state = control.data("state");
+			if(state.url.id == null){
+				var urls = [];
+				var posters = [];
+				var rows = control.find("tr.consent-designer-media-data");
+				rows.each(function(i,r){
+					var inputs = $(r).find("input");
+					urls.push(inputs[0].value);
+					posters.push(inputs[1].value);
+				});
+				state.url.value = urls;
+				state.poster.value = posters;
+				found.push(state.url);
+				found.push(state.poster);
+			}
+			return found;
+		},
+		updated: function(control, data){
+			var found = [];
+			var state = control.data("state");
+			if(state.url.id != null && control.data("changed")){
+				var urls = [];
+				var posters = [];
+				var rows = control.find("tr.consent-designer-media-data");
+				rows.each(function(i,r){
+					var inputs = $(r).find("input");
+					urls.push(inputs[0].value);
+					posters.push(inputs[1].value);
+				});
+				state.url.value = urls;
+				state.poster.value = posters;
+				found.push(state.url);
+				found.push(state.poster);
+			}
+			return found;
+		}
 });
 
 Consent.Editors.register("endorsement", {

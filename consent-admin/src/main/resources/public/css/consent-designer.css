@@ -187,6 +187,9 @@ th.consent-designer-media{
 td.consent-designer-media{
 	border-bottom: dashed 1px gray;
 }
+input.consent-designer-media{
+	width: 100%;
+}
 th.consent-designer-media-action{
 	border-bottom: dashed 1px gray;
 	width: 4em;

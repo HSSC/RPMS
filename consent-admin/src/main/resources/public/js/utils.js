@@ -43,6 +43,7 @@ Array.prototype.clear = function(){
 };
 
 Array.prototype.addAll = function(coll){
+	if(coll == null) return this;
 	if(coll instanceof Array){
 		for(var i = 0; i < coll.length; i++){
 			this.push(coll[i]);
@@ -77,6 +78,12 @@ Array.prototype.alike = function(coll){
 	}
 	if((c1.length + c2.length) > 0) return false;
 	return true;
+};
+Array.prototype.fillTo = function(val){
+	while(this.length < val){
+		this.push(null);
+	}
+	return this;
 };
 
 Utils.Map = {
