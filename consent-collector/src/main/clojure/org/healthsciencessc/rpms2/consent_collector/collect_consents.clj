@@ -53,22 +53,23 @@
 
   [{:keys [widget value] :as m}]
 
-  ;(debug "AA CONTROL: " (pprint-str widget))
-
   (let [ns "org.healthsciencessc.rpms2.consent-collector.collect-consents/"
         func  (if-let [f (resolve (symbol (str ns (:type widget))))] f unimplemented-widget)
         wid   (if (config "mock-data") 
                   widget
                  (merge widget (formutil/widget-props-localized widget))) 
-        ;(debug "BB CONTROL: " (pprint-str wid))
         wdata (helper/data-for wid) 
-        ;;_ (debug "DD CONTROL: " (pprint-str wdata))
         ]
       [:div (func (merge m {:value wdata :widget wid } )) 
             (dbg [:div [:span.standout (:name widget) " " 
                         (:id widget) " " (:type widget) ] 
                   [:span.data " VALUE [" wdata "]" ] widget ]) ]))
        
+(defn- unlist
+  "Handles case where a list is provided when a value is expected. "
+  [v]
+  (if seq? (first v) v))
+
 (defn review-endorsement
   "A ReviewEndorsement widget is used to review endorsements 
   collected during consent process."
@@ -84,8 +85,9 @@
           (if-let [t (:title widget)] t "Endorsement-label"))  
             (helper/signaturePadDiv :name (widget-identifier widget) :value value :read-only? "true" ) ]
         [:div.ui-block-c.metadata 
-         (helper/submit-btn {:value (:label widget) 
+         (helper/submit-btn {:value (unlist (:label widget)) 
                              :name (str REVIEW_EDIT_BTN_PREFIX  (:returnpage widget)) }) ]]]))
+
 
 (defn review-metaitem
   "Display meta item. The widget's meta-item id is the key into
@@ -94,22 +96,16 @@
   [{:keys [widget] :as m}]
   [:div.control.review 
      (let [meta-item-kw (keyword (:meta-item widget))
-
            entry (get (session-get :all-meta-data) meta-item-kw)
            mi-label (:name entry) ; (:label mitem)
            mi-value (:value entry)
-
-           data-name (str helper/META_DATA_BTN_PREFIX (:meta-item widget))
-           model-data (session-get :model-data)
-           data-value ( (keyword data-name) model-data ) 
-           _ (debug "review-meta " mi-label " value " mi-value " dv " data-value " dname " data-name)
-           ]
+           changed (= (:changed entry) "CHANGED") ]
     [:div.ui-grid-b
       [:div.ui-block-a.metadata mi-label]
       [:div.ui-block-b.metadata 
-       [:span {:class (if (= data-value "CHANGED") "changed" "") } mi-value]]
+       [:span {:class (if changed "changed" "") } mi-value]]
       [:div.ui-block-c.metadata 
-         (helper/submit-btn {:value (:label widget) 
+         (helper/submit-btn {:value (unlist (:label widget)) 
                              :name (str REVIEW_META_EDIT_BTN_PREFIX (:meta-item widget)) }) ]] )])
 
 (defn find-policy
@@ -167,7 +163,7 @@
                     ) 
                  ]
                 [:div.ui-block-c.metadata 
-                 (helper/submit-btn {:value (:label widget) 
+                 (helper/submit-btn {:value (unlist (:label widget)) 
                                      :name (str REVIEW_EDIT_BTN_PREFIX (:returnpage widget)) })]])) ])
 
 (defn media
@@ -228,7 +224,16 @@
 
      ;; Display title if :render-title is missing or true 
      ;; and policy has a title
+       ;;
+     (if (= nil policy)
+          (println "WARNING policy-text widget --> policy is " 
+                (:policy widget) " definition is "  (pprint-str policy)))
+     ;(println "title is " (pprint-str title ))
+     ;(println "txt is " (pprint-str txt ))
+
      (list 
+       (if (= nil policy) [:div "WARNING: Policy text - policy not defined: " 
+                           (:policy widget) ])
        (if (and (true-or-not-specified? (:render-title widget))
                 (:title policy))
            [:div [:h1.title (apply str (:title policy))]])
@@ -246,34 +251,42 @@
   policies. The widget's state is passed in to set current selection."
   [{:keys [widget value] :as m}]
 
-  [:div.control.policy-choice-buttons 
-    (helper/radio-btn-group {:btnlist (list (:true-label widget) (:false-label widget)) 
-                             :group-name (widget-identifier widget)
-                             :selected-btn value
-                            })])
+  (let [group-name (widget-identifier widget)
+        true-map (if (= value "true-label") {:checked "" } {})
+        false-map (if (= value "false-label") {:checked "" } {}) ]
+    [:div.control.policy-choice-buttons 
+      [:fieldset {:data-role "controlgroup" }
+   ;; true label
+         [:input (merge {:type "radio" 
+                          :name group-name
+                          :id "true-label"
+                          :value "true-label"
+                         } true-map)]
+         [:label {:for "true-label" } (unlist (:true-label widget)) ] 
+
+   ;; false label
+         [:input (merge {:type "radio" 
+                          :name group-name
+                          :id "false-label"
+                          :value "false-label"
+                         } false-map)]
+         [:label {:for "false-label" } (unlist (:false-label widget))]]]))
 
 (defn data-change
   "Displays meta-data item and a flag if it has been selected for change.
-  Look up the flag in all-meta-data"
+  Look up the flag in all-meta-data."
   [{:keys [widget value] :as m}]
   [:div.control.data-change
    (list 
      (dbg [:div "DATA CHANGE value " (pprint-str value) 
-           " widget  " (pprint-str widget) 
-           [:div "Meta items " (pprint-str (:meta-items widget)) ]
-           [:div ":all-meta-data " (pprint-str (session-get :all-meta-data)) ]
-           ])
+           " widget  " (pprint-str widget) ])
      (for [nm (:meta-items widget)] 
            (list
              (let [kw (keyword nm)
-                   ; the meta data entry
                    entry (get (session-get :all-meta-data) (keyword nm))
-                   _ (debug "data-change ENTRY " (pprint-str entry))
                    changed (= (:changed entry) "CHANGED")
                    mi-label (:name entry)
-                   mi-value (:value entry)
-                   _ (debug  "data-change  " (pprint-str entry) " mi-val " mi-value,  " kw " kw)
-                   ]
+                   mi-value (:value entry) ]
 
                   [:div.ui-grid-b
                     [:div.ui-block-a.metadata mi-label ] 
@@ -329,7 +342,7 @@
              :name (str helper/CHECKBOX_BTN_PREFIX (widget-identifier widget)) } ]
     (helper/checkbox-group {:name (widget-identifier widget)
                             :label (widget-label widget) 
-                            :value value  }) ])
+                            :value (unlist value)  }) ])
 
 (defn- section
   "Creates section div containing all widgets in this section."
@@ -395,11 +408,11 @@
             [:div.ui-grid-b
                [:div.ui-block-a mi-label]
                [:div.ui-block-b   
-                     [:input {:name nm 
+                     [:input {:name (str helper/META_DATA_UPDATE_BTN_PREFIX nm)
                               :value mi-value
                               }]]]
-          [:div.submit-area (helper/submit-btn {:value "Update" 
-                                                :name (str "meta-data-update-btn-" nm) }) ]]] 
+          [:div.submit-area 
+           (helper/submit-btn {:value "Update" }) ]]] 
        :title "Update Information" )))
 
 

@@ -218,10 +218,18 @@
     (let [pv-id (nth (session-get :selected-protocol-version-ids) n)]
       (get-published-protocols-form pv-id))))
 
+
+
+(defn- make-fname
+  [s suffix]
+  (str s (subs (str (.getTime (java.util.Date.))) 9) suffix ))
+
 (defn get-nth-form
   [n]
   (if (< n (count (session-get :selected-protocol-version-ids)))
     (let [b (get-nth-form-raw n) ]
+      (if (config "spit-data") 
+         (spit (make-fname (str "pubform_" n) ".txt") b))
       (if (config "mock-data") 
           (if (= n 1) mock/lewis-blackman-form mock/sample-form)
           b))))

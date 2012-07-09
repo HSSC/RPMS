@@ -8,6 +8,7 @@
   (:use [clojure.string :only (split)])
   (:use [clojure.pprint :only (pprint)])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
+  (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
 (defn- checkbox-map
@@ -51,29 +52,29 @@
   User will select one language which will be applicable to all protocols." 
 
   [_]
-  (helper/rpms2-page 
-    (helper/post-form "/view/select/protocols"
-      [:div 
-       (list 
-         (let [plist (dsa/get-protocol-versions-published)
-               languages (distinct (apply concat (map :languages plist)))
-               meta-data (distinct (apply concat (map :meta-items plist)))
-               ]
-           (do
-             ;;(spit "pubprot.txt" (pprint-str plist))
-             (session-put! :protocol-versions plist)
-              (list  
-                 [:fieldset {:data-role "controlgroup" }
+  (let [plist (dsa/get-protocol-versions-published)
+        languages (distinct (apply concat (map :languages plist))) ]
+    (session-put! :protocol-versions plist)
+    (if (config "spit-data") (helper/snapshot "pubprot" (pprint-str plist)))
+    (helper/rpms2-page 
+       (helper/post-form "/view/select/protocols"
+         (if (> (count plist) 0)
+            [:div [:fieldset {:data-role "controlgroup" }
                    [:div.sectionlegend "Select " (helper/org-protocol-label) "(s):" ]
                    (map protocol-item plist)]
-                   (select-language languages )))))]
-      [:div.centered {:data-role "fieldcontain" }
-       (helper/submit-btn { :value "Back" :name :go-back })
-       (helper/submit-btn { :value "Continue" :name "select-protocols-form"  })
+                   (select-language languages ) ]
+             [:div (format "No %ss available at this %s"
+                     (helper/org-protocol-label)
+                     (helper/org-location-label)) ])
+               
+          [:div.centered {:data-role "fieldcontain" }
+            (helper/submit-btn { :value "Back" :name :go-back })
+            (if (> (count plist) 0)
+               (helper/submit-btn { :value "Continue" :name "select-protocols-form"  }))
       ])
     :title (str "Select " (helper/org-protocol-label)) 
     :cancel-btn (helper/cancel-form "/view/select/consenter")
-    ))
+    )))
 
 (defn- needed-pv-ids
   "Returns selected protocol version ids along
@@ -101,12 +102,10 @@
 
   [ctx]
   (let [needed (set (needed-pv-ids (dissoc (:body-params ctx)
-                                       :sp-language
-                                       :select-protocols-form)))
+                                            :sp-language
+                                            :select-protocols-form)))
         protocols (session-get :protocol-versions)
-        needed-protocols (filter #(contains? needed (:id %))
-                                 protocols )
-        ]
+        needed-protocols (filter #(contains? needed (:id %)) protocols )]
     (do
       (session-put! :selected-protocol-version-ids (vec needed))
       (session-put! :selected-language (-> ctx :body-params :sp-language))
@@ -114,10 +113,6 @@
       (debug "# Needed pvs " (count needed-protocols))
       
       (session-put! :protocol-versions  needed-protocols)
-      (debug "AFTER FILTERING NUM PROTOCOL VERSIONS "
-               (count (session-get :protocol-versions)))
-      
-      (debug "perform need-protocols " (pprint-str needed-protocols) )
       (debug "perform selected protocols " (pprint-str needed) )
       (debug "perform selected language " (:sp-language ctx))
       (helper/myredirect "/view/meta-data")))) 

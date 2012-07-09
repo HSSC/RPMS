@@ -171,7 +171,6 @@
              :data-theme "a" } 
       [:div body ] 
       [:div.submit-area submit-buttons ] ]]] 
-      ;;(debug "collect-consent-form " (pprint retval)) 
      retval)) 
 
 
@@ -248,7 +247,6 @@
 
 (defn save-return-page
   []
-  (println "SAVING PAGE " (session-get :page-name))
   (session-put! HAS_RETURN_PAGE (session-get :page-name)))
 
 (defn- header
@@ -359,21 +357,6 @@
                  :id btn-id 
                  :value btn-name } m )]
         [:label {:for btn-name } btn-name ] )))
-
-(defn radio-btn-group
-  "Handles jquerymobile radio button group.
-  {:btnlist collection :group-name g :selected-btn b}"
-  [m]
-
-  [:fieldset {:data-role "controlgroup" }
-   (list (map 
-           (fn [btn-name] 
-             (radio-btn 
-                (:group-name m) 
-                btn-name 
-                btn-name
-                (if (= (:selected-btn m) btn-name) {:checked "checked" } {} ))) 
-             (:btnlist m) )) ])
 
 (defn checkbox-group
   "Returns checkbox group, with jquerymobile attributes."
@@ -500,6 +483,15 @@
   [parms str1 ]
   (first (find-real-names parms str1)))
 
+(defn meta-data-item-view
+  [mi]
+  (select-keys mi [:id :name :value :changed]))
+
+(defn meta-data-view
+  []
+  (let [mitems (session-get :all-meta-data)]
+     (list (for [[k mi] mitems] (meta-data-item-view mi)))))
+
 (defn- update-meta-item
   "Add the key value to the specified meta item.
   Used for updating the value and the changed marker.
@@ -511,35 +503,23 @@
         entry (orig-map mi)  ; the entry for this meta-data item
         new-entry (merge entry m)  ; merge in the new values 
         new-map (assoc orig-map mi new-entry) ]
-
-        (debug "Updating meta data item: mi is " mi " new " m )
-        #_(println "Updating meta data item: mi is " (select-keys new-entry [:id :value :name])  " added " m )
         (session-put! :all-meta-data new-map)))
 
+
 (defn- handle-meta-data
-  "Remove special meta data keys.  If there is a meta data with value CHANGED, 
-  remove the meta data prefix and set it in the :all-meta-data.
-  There should only be one at a time."
+  "For any meta data items with value CHANGED, 
+  remove the meta data prefix and mark as changed in :all-meta-data."
   [m] 
 
-  (let [meta-btns (filter #(and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
-                                (= (get m %) "CHANGED")) (keys m))
-        ;; remove any meta data buttons that are not changed
-        keep-keys (filter #(or (and (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
-                                       (= (get m %) "CHANGED")) 
-                               (not (.startsWith (str (name %)) META_DATA_BTN_PREFIX)))
-                               (keys m)) ]
-       (if (> (count meta-btns) 0) ; save data for changed meta item using the name without the prefix
-         (do
-           (println "META BUTTONS " (pprint-str meta-btns))
-           (println "all parms BUTTONS " (pprint-str (dissoc m :consenter)))
-           (update-meta-item (keyword-from-button meta-btns META_DATA_BTN_PREFIX) 
-                                  {:value (get m (first meta-btns))
-                                   :changed "CHANGED" } )
-           (assoc (select-keys m keep-keys)
-              (keyword-from-button meta-btns META_DATA_BTN_PREFIX ) "CHANGED")
-           )
-           (select-keys m keep-keys))))
+  (let [meta-btns (filter #(and 
+                             (.startsWith (str (name %)) META_DATA_BTN_PREFIX) 
+                             (= (get m %) "CHANGED")) (keys m))]
+       (if (> (count meta-btns) 0) 
+           (doseq [b meta-btns] 
+                   (update-meta-item 
+                 (keyword (subs (name b) (count META_DATA_BTN_PREFIX)))
+                 {:changed "CHANGED"} )))
+    m))
 
 (defn- handle-action-btns
   "Handles action buttons, which is once set must always stay set. 
@@ -553,27 +533,20 @@
            (assoc m (keyword-from-button btns ACTION_BTN_PREFIX) "selected")
             m) ] 
         (debug "handle action button: " retval)
-        ;(println "handle action button: " retval)
      retval))
 
 (defn- handle-meta-data-update-btns
   "Handles update meta-data buttons."
   [parms]
 
-  (let [btns (filter #(.startsWith (str (name %)) META_DATA_UPDATE_BTN_PREFIX) (keys parms))
-        mdata (session-get :model-data)]
+  (let [btns (filter #(.startsWith (str (name %)) META_DATA_UPDATE_BTN_PREFIX) (keys parms)) ]
      (if (> (count btns) 0)
-       (let [mi (keyword-from-button btns META_DATA_UPDATE_BTN_PREFIX) 
-             val (mi parms) 
-             marker (keyword (str META_DATA_BTN_PREFIX (name mi))) 
-             marker2 (keyword (name mi)) ]
-
-             (update-meta-item mi {:value val :changed "NO" })
-
-             ; maybe this needs to be changed finished-forms
-             (session-put! :model-data (dissoc mdata marker marker2))
-             (dissoc parms marker marker2))
-          parms)))
+           (doseq [b btns] 
+              (update-meta-item 
+                (keyword (subs (name b) (count META_DATA_UPDATE_BTN_PREFIX)))
+                 {:changed "NO"
+                  :value (get parms b) } )))
+      parms))
 
 (defn remove-checkboxes-from-model
   "Find checkboxes that are on the page but weren't submitted
@@ -609,7 +582,6 @@
 
   [parms]
 
-  (debug "ENTER save captured data: " (pprint-str (session-get :model-data) ))
   (remove-checkboxes-from-model parms) ;; may modify :model-data
   (if (in-review?)
       (handle-meta-data-update-btns parms)) ;; may modify :model-data
@@ -618,20 +590,18 @@
                      (merge (-> parms
                                 (dissoc :next :previous) 
                                 handle-action-btns
-                                handle-meta-data-update-btns
                                 handle-meta-data))
                      (dissoc (get-matching-btns parms CHECKBOX_BTN_PREFIX)) )
 
         keep-keys (filter #(not 
                              (or
                               (.startsWith (name %) CHECKBOX_BTN_PREFIX)
+                              (.startsWith (name %) META_DATA_BTN_PREFIX)
                               ;(.startsWith (name %) ACTION_BTN_PREFIX)
                               (.startsWith (name %) META_DATA_UPDATE_BTN_PREFIX)
                               )) (keys new-map))
         fmap (select-keys new-map keep-keys) ]
         (session-put! :model-data fmap)
-        (debug "EXIT save captured data: " (pprint-str fmap))
-        ;(println "EXIT save captured data: " (pprint-str fmap))
         fmap))
                  
 
@@ -721,7 +691,6 @@
       (session-put! :current-form-number (inc n))
       (if-let [next-published-version (dsa/get-nth-form (inc n))]
         (do
-          (println "GOT ANOTHER FORM")
           (session-put! :published-version next-published-version))
           (let [formval (current-form)
                 start-page-nm ((session-get :which-flow) (current-form))
@@ -757,6 +726,7 @@
            (debug "init-flow MISSING PAGE form " (current-form) )
            (flash-put! :header (str "MISSING PAGE [" pg-nm "]" ))
            (error "init-flow MISSING PAGE: " pg-nm )))))
+
 
 (defn init-review
   "Initializes consent collection data structures
@@ -807,5 +777,10 @@
   [c]
   (session-put! :consenter c))
 
-;(debug! handle-meta-data-update-btns)
-;(debug! handle-meta-data)
+(defn make-fn
+  [s suffix]
+  (str s (subs (str (.getTime (java.util.Date.))) 9) suffix ))
+
+(defn snapshot
+  [s data]
+  (if (config "spit-data") (spit (make-fn s ".txt") data)))
