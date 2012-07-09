@@ -8,6 +8,7 @@
   (:use [clojure.tools.logging :only (debug info warn error)])
   (:use [clojure.pprint :only (pprint)])
   (:use [org.healthsciencessc.rpms2.consent-collector.debug :only [debug! pprint-str]])
+  (:use [org.healthsciencessc.rpms2.consent-collector.persist :only [assemble-consents]])
   (:use [org.healthsciencessc.rpms2.consent-collector.config :only [config]])
   (:use [org.healthsciencessc.rpms2.consent-collector.i18n :only [i18n]]))
 
@@ -70,23 +71,32 @@
   [v]
   (if seq? (first v) v))
 
+(defn- get-sig-png
+  [end-id]
+  (:value (first (filter #(= end-id (:endorsement %)) (assemble-consents)))))
+
+(defn- get-endorsement-label [end-id]
+  (-> (session-get :published-version)
+    :endorsements
+    (get end-id)
+    :label))
+
 (defn review-endorsement
   "A ReviewEndorsement widget is used to review endorsements 
   collected during consent process."
-
-  [{:keys [widget value] :as m}]
-  (if (config "skip-signatures")
-    [:h1 "SKIPPING ENDORSEMENT" ]
-    [:div.control.review-endorsement 
-    [:div.ui-grid-b
-       [:div.ui-block-a.metadata 
-        (if-let [s (:endorsement-label widget)] 
-          s 
-          (if-let [t (:title widget)] t "Endorsement-label"))  
-            (helper/signaturePadDiv :name (widget-identifier widget) :value value :read-only? "true" ) ]
-        [:div.ui-block-c.metadata 
-         (helper/submit-btn {:value (unlist (:label widget)) 
-                             :name (str REVIEW_EDIT_BTN_PREFIX  (:returnpage widget)) }) ]]]))
+  [{:keys [widget] :as m}]
+  (let [props (formutil/widget-props-localized widget)
+        png (get-sig-png (:endorsement props))]
+    [:div.control.review-endorsement
+     [:div.ui-grid-b
+      [:div.ui-block-a.metadata
+       (or (:title props)
+           (get-endorsement-label (:endorsement props))
+           "Review Endorsement")
+       (helper/signaturePadDiv :name (widget-identifier widget) :value png :read-only? "true")]
+      [:div.ui-block-c.metadata
+       (helper/submit-btn {:value (or (:label props) "Edit Endorsement")
+                           :name (str REVIEW_EDIT_BTN_PREFIX  (:returnpage props))})]]]))
 
 
 (defn review-metaitem
