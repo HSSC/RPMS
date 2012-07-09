@@ -72,8 +72,14 @@
   (if seq? (first v) v))
 
 (defn- get-sig-png
+  "This finds the original signature capture widget through the endorsement that it provided"
   [end-id]
-  (:value (first (filter #(= end-id (:endorsement %)) (assemble-consents)))))
+  (let [form (:form (session-get :published-version)) ;; bind currently loaded form
+        original-widgets (into {} (for [w (formutil/list-widgets-in-form form)] ;; a map of endorsement->widget-id
+                                    [(:endorsement (formutil/widget-properties w))
+                                     (:id w)]))]
+    (get (session-get :model-data)
+         (keyword (get original-widgets end-id)))))
 
 (defn- get-endorsement-label [end-id]
   (-> (session-get :published-version)
