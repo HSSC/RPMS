@@ -378,7 +378,12 @@
 			label.appendTo(container);
 			return label;
 		},
-		
+		ui.createTextI18NControl = function(container, property, data, operation, editable){
+			var keyValues = utils.findProperties(property.name, data.properties);
+			var control =  ui.createTextControl(container, property.label, property.name, keyValues);
+			control.data("paragraphs", property.paragraphs);
+			return control;
+		},
 		ui.createTextControl = function(container, label, property, texts){
 			var control = $("<div class='form-control-wrapper i18ntext consent-designer-input' />");
 			control.appendTo(container);
@@ -585,6 +590,9 @@
 					}
 				}
 				// Remove Old, Add New
+				$.each(optsData, function(i, o){
+					o.opt.remove();
+				});
 				$.each(options, function(i, o){
 					ui.createSelectOption(select, o);
 				});

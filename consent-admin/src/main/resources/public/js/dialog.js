@@ -183,6 +183,7 @@ var Dialog = {
 		var textArea = this.textText;
 		var langSelect = this.textLanguage;
 		
+		var paragraphs = options.paragraphs == true ? true : false;
 		var current = options.current;
 		var currentText = current != null ? current.value : null;
 		var originalText = null;
@@ -236,7 +237,9 @@ var Dialog = {
 				var text = textArea.val();
 				var option = langSelect.children("option:selected");
 				if((current == null && text != null) || text != originalText){
-					if(options.onchange) options.onchange(current, Dialog.Utils.textToArray(text), option.data("language"));
+					if(options.onchange){
+						options.onchange(current, paragraphs ? Dialog.Utils.textToArray(text) : text, option.data("language"));
+					}
 				}
 			};
 		buts[cancelLabel] = function (){$(this).dialog( "close" );};

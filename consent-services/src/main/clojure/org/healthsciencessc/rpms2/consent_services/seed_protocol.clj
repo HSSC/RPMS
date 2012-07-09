@@ -27,7 +27,7 @@
   (let [defs (tenancy/only-base-org (data/find-all types/policy-definition))]
     (map (fn [d]
            (let [titles (for [lang langs] {:value (str (:name d) " in " (:name lang)) :language lang})
-                 texts (for [lang langs] {:value (str (:description d) " in " (:name lang)) :language lang})
+                 texts (for [lang langs] {:value [(str (:description d) " in " (:name lang))] :language lang})
                  policy {:name (:name d) :policy-definition d :organization org :titles titles :texts texts}]
            (data/create types/policy policy))) defs)))
 

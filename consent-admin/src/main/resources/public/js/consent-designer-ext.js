@@ -42,7 +42,7 @@ Consent.Widgets.registerControl({
 		label: "Policy Button",
 		type: "policy-button",
 		properties: [{label: "Label", name: "label", editor: "texti18n", required: true},
-			         {label: "Policy", name: "policy", editor: "policies", required: true},
+			         {label: "Policies", name: "policy", editor: "policies", required: true},
         			 {label: "Action Value", name: "action-value", editor: "boolean-picker", required: true}],
 		operation: Consent.Keys.collect});
 
@@ -50,7 +50,7 @@ Consent.Widgets.registerControl({
 		label: "Policy Checkbox",
 		type: "policy-checkbox",
 		properties: [{label: "Label", name: "label", editor: "texti18n", required: true},
-			         {label: "Policy", name: "policy", editor: "policies", required: true},
+			         {label: "Policies", name: "policy", editor: "policies", required: true},
 			         {label: "Checked Value", name: "checked-value", editor: "boolean-picker", 
 			        	 required: true, defaultValue: true},
 			         {label: "Unchecked Value", name: "unchecked-value", editor: "boolean-picker", 
@@ -60,7 +60,7 @@ Consent.Widgets.registerControl({
 Consent.Widgets.registerControl({
 		label: "Policy Choice Buttons",
 		type: "policy-choice-buttons",
-		properties: [{label: "Policy", name: "policy", editor: "policies", required: true},
+		properties: [{label: "Policies", name: "policy", editor: "policies", required: true},
 		             {label: "True Label", name: "true-label", editor: "texti18n", required: true},
 		             {label: "False Label", name: "false-label", editor: "texti18n", required: true}],
 		operation: Consent.Keys.collect});
@@ -68,7 +68,7 @@ Consent.Widgets.registerControl({
 Consent.Widgets.registerControl({
 		label: "Policy Text",
 		type: "policy-text",
-		properties: [{label: "Policy", name: "policy", editor: "policies", required: true},
+		properties: [{label: "Policy", name: "policy", editor: "policy", required: true},
 		             {label: "Render Title", name: "render-title", editor: "boolean", required: true, defaultValue: true},
 		             {label: "Render Text", name: "render-text", editor: "boolean", required: true, defaultValue: true},
 		             {label: "Render Media", name: "render-media", editor: "boolean", required: true, defaultValue: false}],
@@ -85,7 +85,7 @@ Consent.Widgets.registerControl({
 		label: "Text",
 		type: "text",
 		properties: [{label: "Title", name: "title", editor: "texti18n", required: true},
-			         {label: "Text", name: "text", editor: "texti18n", required: true}],
+			         {label: "Text", name: "text", editor: "texti18n", required: true, paragraphs: true}],
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
@@ -189,8 +189,7 @@ Consent.Editors.common.multiSelectUpdated = function(control){
 
 Consent.Editors.register("texti18n", {
 	generate: function(container, property, data, operation, editable){
-		var keyValues = Consent.Utils.findProperties(property.name, data.properties);
-		return Consent.UI.createTextControl(container, property.label, property.name, keyValues);},
+		return Consent.UI.createTextI18NControl(container, property, data, operation, editable);},
 	refresh: function(control, data){
 		var attrs = Consent.Editors.lift(control);
 		var keyValues = Consent.Utils.findProperties(attrs.property.name, data.properties);

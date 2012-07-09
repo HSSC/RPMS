@@ -24,7 +24,7 @@
              {:name :code :label "Code"}
              {:name :policy-definition :label "Policy Definition" :type :singleselect :required true :blank true :parser :id}
              {:name :titles :label "Titles" :type :i18ntext}
-             {:name :texts :label "Texts" :type :i18ntext}])
+             {:name :texts :label "Texts" :type :i18ntext :paragraphs true}])
 
 (def type-name types/policy)
 (def type-label "Policy")

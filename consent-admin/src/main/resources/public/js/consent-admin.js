@@ -143,6 +143,7 @@ $(function(){
 		var editable = Utils.DataSet.getBoolean(target, "editable");
 		if(editable){
 			var langs = Utils.DataSet.getObject(target, "languages");
+			var paragraphs = Utils.DataSet.getBoolean(target, "paragraphs");
 			var defaultLang = Utils.DataSet.getObject(target, "defaultlanguage");
 			langs = [].concat(langs);
 			var rows = target.find("tr");
@@ -167,7 +168,11 @@ $(function(){
 				var item = {value: text, language: lang};
 				
 				var insertRow = function(x){
-					var val = x.value != null ? x.value.join("</br>") : "" ;
+					var val = x.value != null ? x.value : "" ;
+					if(!(val instanceof Array)){
+						val = Dialog.Utils.textToArray(val);
+					}
+					val = val.join("</br>");
 					var row = $("<tr class='i18ntext'><td class='i18ntext-lang'>" + x.language.name + "</td>" +
 							"<td class='i18ntext-text'>" + val + 
 							"</td><td class='i18ntext-action'><img class='i18ntext-edit' src='" +
@@ -193,7 +198,7 @@ $(function(){
 					insertRow(item);
 				}
 			}
-			Dialog.text({languages: langs, defaultLanguage: defaultLang, onchange: onchange});
+			Dialog.text({languages: langs, defaultLanguage: defaultLang, paragraphs: paragraphs, onchange: onchange});
 		}
 	});
 	
@@ -241,6 +246,7 @@ $(function(){
 		var target = RPMS.findTarget(event, "div.i18ntext");
 		var editable = Utils.DataSet.getBoolean(target, "editable");
 		if(editable){
+			var paragraphs = Utils.DataSet.getBoolean(target, "paragraphs");
 			var langs = Utils.DataSet.getObject(target, "languages");
 			var row = RPMS.findTarget(event, "tr");
 			var data = Utils.DataSet.getObject(row, "text");
@@ -249,7 +255,12 @@ $(function(){
 			
 			var updateText = function(text){
 				data.value = text;
-				var val = text != null ? text.join("</br>") : "" ;
+				var val = text != null ? text : "" ;
+				if(!(val instanceof Array)){
+					val = Dialog.Utils.textToArray(val);
+				}
+				val = val.join("</br>");
+				
 				var cell = row.children("td.i18ntext-text");
 				cell.html(val);
 				var texts = Utils.DataSet.getObject(target, "value", []);
@@ -282,7 +293,7 @@ $(function(){
 					updateText(text);
 				}
 			}
-			Dialog.text({current: {value: data.value, language: data.language}, onchange: onchange});
+			Dialog.text({current: {value: data.value, language: data.language}, paragraphs: paragraphs, onchange: onchange});
 		}
 	});
 });
