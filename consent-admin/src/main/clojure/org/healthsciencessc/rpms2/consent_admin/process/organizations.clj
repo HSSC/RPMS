@@ -19,6 +19,24 @@
         [org.healthsciencessc.rpms2.consent-domain.types :only (code-base-org)])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
 
+
+(def fields [{:name :name :label "Name" :required true}
+             {:name :code :label "Code"}
+             {:name :protocol-label :label "Protocol Label"}
+             {:name :location-label :label "Location Label"}
+             {:name :consenter-label :label "Consenter Label"}
+             {:name :language :label "Default Language" :type :singleselect :required true :blank true :parser :id}])
+
+(defn- gen-language-items
+  []
+  (let [langs (service/get-languages)
+        items (map 
+                (fn [t] {:label (:name t) 
+                   :data (:id t) 
+                   :item (select-keys t [:id])}) 
+                langs)]
+    items))
+
 (defn layout-organizations
   [ctx]
   (let [orgs (service/get-organizations ctx)]
@@ -36,18 +54,13 @@
              (actions/new-action {:label "New" :url "/view/organization/add"})
              (actions/back-action))))))
 
-(defn create-fields [{:keys [name code protocol-label location-label consenter-label]}]
-  (list
-      (formui/input-text {:name :name :label "Name" :value name})
-      (formui/input-text {:name :code :label "Code" :value code})
-      (formui/input-text {:name :protocol-label :label "Protocol Label" :value protocol-label})
-      (formui/input-text {:name :location-label :label "Location Label" :value location-label})
-      (formui/input-text {:name :consenter-label :label "Consenter Label" :value consenter-label})))
-
 (defn get-view-organization-add
   [ctx]
   (layout/render ctx "Create Organization"
-                 (container/scrollbox (formui/dataform (create-fields {})))
+                   (container/scrollbox 
+                     (formui/dataform 
+                       (formui/render-fields 
+                         {:fields {:language {:items (gen-language-items)}}} fields {})))
                  (actions/actions 
                    (actions/save-action {:method :post :url "/api/organization/add"})
                    (actions/back-action))))
@@ -67,7 +80,10 @@
       (if (service/service-error? org)
         (ajax/error (meta org))
         (layout/render ctx "Edit Organization"
-                   (container/scrollbox (formui/dataform (create-fields org)))
+                   (container/scrollbox 
+                     (formui/dataform 
+                       (formui/render-fields 
+                         {:fields {:language {:items (gen-language-items)}}} fields org)))
                    (actions/actions 
                      (actions/details-action {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
                      (actions/delete-action {:label "Delete" :url "/api/organization" :params {:organization org-id} :confirm "Are you sure you want to delete this organization?"})

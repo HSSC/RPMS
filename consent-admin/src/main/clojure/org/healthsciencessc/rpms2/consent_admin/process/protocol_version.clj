@@ -135,6 +135,10 @@
                                {:url "/export/protocol/version" :params {:protocol-version protocol-version-id}
                                 :label "Export" })
                              (actions/ajax-action 
+                               {:method :post :url "/api/protocol/version/clone" :params {:protocol-version protocol-version-id}
+                                :label "Clone"
+                                :action-on-success ".back-action"})
+                             (actions/ajax-action 
                                {:method :post :url "/api/protocol/version/retire" :params {:protocol-version protocol-version-id}
                                 :label "Retire" :action-on-success "refresh"
                                 :confirm {:title "Confirm Retirement" :message "Retiring the current version will remove the protocol from the collection application."}})))
@@ -158,7 +162,8 @@
                        :location (:location protocol)
                        :organization (:organization protocol)
                        :languages [lang] ;; TODO - Change When create-records is fixed.
-                       :form {:name (str (:name protocol) " Layout")  ;; TODO - Change When create-records is fixed.
+                       :form {:name (str (:name protocol) " Layout")
+                              :organization (:organization protocol);; TODO - Change When create-records is fixed.
                               :titles [{:value [(:name protocol)] :language lang}]}}
               resp (services/add-protocol-version version)]
           ;; Handle Error or Success
@@ -207,6 +212,19 @@
     ;; Handle Bad Request
     (ajax/error {:message "A protocol version is required."})))
 
+
+(defn post-api-protocol-version-clone
+  "Clones a published protocol version into a new draft."
+  [ctx]
+  (if-let [protocol-version-id (get-in ctx [:query-params :protocol-version])]
+    (let [resp (services/clone-protocol-version protocol-version-id)]
+      ;; Handle Error or Success
+      (if (services/service-error? resp)
+        (ajax/save-failed (meta resp))
+        (ajax/success resp)))
+    ;; Handle Bad Request
+    (ajax/error {:message "A protocol version is required."})))
+
 (defn post-api-protocol-version-publish
   "Publishes a specific protocol version"
   [ctx]
@@ -226,7 +244,7 @@
     (let [resp (services/retire-protocol-version protocol-version-id)]
       ;; Handle Error or Success
       (if (services/service-error? resp)
-        (ajax/save-failed (meta resp))
+        (ajax/service-failed resp)
         (ajax/success resp)))
     ;; Handle Bad Request
     (ajax/error {:message "A protocol version is required."})))
@@ -317,6 +335,12 @@
    {:name "delete-api-protocol-version"
     :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/draft?))
     :run-fn delete-api-protocol-version
+    :run-if-false ajax/forbidden}
+   
+   ;; Service For Cloning A Protocol Version To Draft
+   {:name "post-api-protocol-version-clone"
+    :runnable-fn (fn [ctx] (pauth/auth-protocol-version-id (get-in ctx [:query-params :protocol-version]) types/published?))
+    :run-fn post-api-protocol-version-clone
     :run-if-false ajax/forbidden}
    
    ;; Service For Submitting Protocol Version

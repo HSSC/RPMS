@@ -457,6 +457,11 @@
         nil
         (with-out-str (prn data))))
 
+(defn clone-protocol-version
+  "Clones a published protocol version into a new draft."
+  [protocol-version-id]
+  (POST "/protocol/version/clone" {:protocol-version protocol-version-id} nil nil))
+
 (defn publish-protocol-version
   "Updates a protocol version with data changes."
   [protocol-version-id]

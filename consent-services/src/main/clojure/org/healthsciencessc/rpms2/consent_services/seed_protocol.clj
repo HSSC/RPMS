@@ -122,8 +122,8 @@
     (doseq [location locations]
       (let [code (str (:code location) "-sample-protocol")
             protocol (data/create types/protocol {:name (str "Protocol For " (:name location)) :code code :location location :organization org})
-            titles (for [lang langs] {:value (str "Protocol For " (:name location) " in " (:name lang)) :language lang})
-            form {:name (:name protocol) :collect-start "collect0" :review-start "review0" :titles titles}
+            titles (for [lang langs] {:value (str "Protocol For " (:name location) " in " (:name lang)) :language lang :organization org})
+            form {:name (:name protocol) :collect-start "collect0" :review-start "review0" :titles titles :organization org}
             version (data/create types/protocol-version {:version "1" :status types/status-draft :protocol protocol 
                                                          :organization org :form form})
             form (:form version)]

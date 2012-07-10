@@ -1,6 +1,9 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
+  (:require [clojure.walk :as walk]
+            [ring.util.response :as rutil]
+            [borneo.core :as neo]
+            [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.roles :as role]
@@ -138,6 +141,80 @@
                    [type (reformat-type type (type protocol-version) lang-map)]))
       :id version-id)))
 
+
+(defn next-version
+  [protocol-version]
+  (let [protocol (:protocol protocol-version)
+        siblings (data/find-children types/protocol (:id protocol) types/protocol-version)]
+    (str (inc (count siblings)))))
+
+(defn nonpublished?
+  [protocol-version]
+  (or (types/draft? protocol-version) (types/submitted? protocol-version)))
+
+(defn has-nonpublished-siblings?
+  [protocol-version]
+  (let [protocol (:protocol protocol-version)
+        siblings (data/find-children types/protocol (:id protocol) types/protocol-version)]
+    (not (nil? (some nonpublished? siblings)))))
+
+(defn- clean-form
+  [protocol-version]
+  (let [ids (set (conj 
+              (for [lang (:languages protocol-version)] (:id lang)) 
+              (get-in protocol-version [:organization :id])))]
+    (walk/postwalk 
+      (fn [o] (if 
+                (map? o) 
+                (if (contains? ids (:id o))
+                  {:id (:id o)}
+                  (dissoc o :id))
+                o))
+      (:form protocol-version))))
+
+(defn- clean-version
+  [protocol-version form]
+  (let [version {:version (next-version protocol-version) 
+                 :status types/status-draft 
+                 :protocol (:protocol protocol-version) 
+                 :organization (:organization protocol-version) 
+                 :form form}
+        record (data/create types/protocol-version version)]
+    (doseq [lang (:languages protocol-version)] 
+      (data/relate-records types/protocol-version (:id record) types/language (:id lang)))
+    (doseq [meta-item (:meta-items protocol-version)] 
+      (data/relate-records types/protocol-version (:id record) types/meta-item (:id meta-item)))
+    (doseq [endorsment (:endorsements protocol-version)] 
+      (data/relate-records types/protocol-version (:id record) types/endorsement (:id endorsment)))
+    (doseq [policy (:policies protocol-version)] 
+      (data/relate-records types/protocol-version (:id record) types/policy (:id policy)))
+    record))
+
+(defn clone-version
+  [ctx]
+  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
+        protocol-version (data/find-record types/protocol-version protocol-version-id)]
+    (cond
+      (nonpublished? protocol-version)
+        (rutil/status 
+          (rutil/response 
+            {:message "Protocol Version must be published to clone."}) 403)
+      (has-nonpublished-siblings? protocol-version)
+        (rutil/status 
+          (rutil/response 
+            {:message "Protocol must not have any versions in draft or submitted status to perform clone."}) 403)
+      :else
+        (let [form (clean-form protocol-version)
+              widgets (:contains form)
+              naked-form (dissoc form :contains)]
+          (neo/with-tx
+            (let [version (clean-version protocol-version naked-form)
+                  new-form (:form version)]
+              (doseq [widget widgets]
+                (let [w (data/create-records types/widget (dissoc widget :form))]
+                  (data/relate-records types/widget (:id w) types/form (:id new-form))))
+              version))))))
+
 (def protocol-version-processes
   [{:name "get-protocol-versions"
     :runnable-fn (fn [params]
@@ -197,6 +274,11 @@
     :run-fn (fn [params]
               (let [protocol-version-id (get-in params [:query-params :protocol-version])]
                 (data/delete types/protocol-version protocol-version-id)))
+    :run-if-false forbidden-fn}
+   
+   {:name "post-protocol-version-clone"
+    :runnable-fn auth-designer-for-protocol-published
+    :run-fn clone-version
     :run-if-false forbidden-fn}
 
    {:name "post-protocol-publish"
