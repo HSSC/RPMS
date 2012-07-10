@@ -6,7 +6,7 @@ var sigOptions = { lineMargin: 20,
 		   drawOnly: true, 
 		   clear: null,
 		   bgColour: '#eeeeee',
-	           validate: false
+	           validateFields: false
 	           //errorMessageDraw: $('.sigError').text()
 };
 

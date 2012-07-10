@@ -23,9 +23,18 @@
 (defn display-witness-form []
     (helper/rpms2-page 
       (helper/post-form "/witness/consents"
-                        (list [:h1 "Witness Signature"]
-                              (helper/signaturePadDiv :name "witness"))
-                        (helper/submit-btn {:name "witness-submit" :value "Submit"}))
+         (list [:h1 "Witness Signature"]
+               [:div.ui-grid-b
+                [:div.ui-block-a "" ]
+                [:div.ui-block-b "" ]
+                [:div.ui-block-c.right 
+                 [:a {:href "#"
+                      :data-role "button" 
+                      :data-theme "a" 
+                      :onclick "$('.sigPad').signaturePad().clearCanvas()"} 
+                  (i18n :sigclear-witness)]]]
+               (helper/signaturePadDiv :name "witness"))
+         (helper/submit-btn {:name "witness-submit" :value "Submit"}))
       :title "Witness Signature"))
 
 (defn finished-page []
