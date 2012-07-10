@@ -368,7 +368,7 @@
   [s]
   [:div.section (map #(control {:widget % 
                                 :form (helper/current-form) 
-                                }) (:contains s)) ])
+                                }) (sort-by :order (:contains s))) ])
 
 
 (defn- page-dbg
@@ -402,7 +402,7 @@
              [:span.standout pn ]) ])
     [:div (page-dbg p)
       (if (helper/in-review?) [:h1 "Summary" ] )
-      [:div (map section (:contains p)) ]])))
+      [:div (map section (sort-by :order (:contains p))) ]])))
 
 (defn- form-title
   [f]
