@@ -67,9 +67,12 @@
                   [:span.data " VALUE [" wdata "]" ] widget ]) ]))
        
 (defn- unlist
-  "Handles case where a list is provided when a value is expected. "
+  "Handles case where a list is provided when a value is expected. 
+  Treat a string as a value."
   [v]
-  (if seq? (first v) v))
+  (if (coll? v)
+      (apply str v)
+      v))
 
 (defn- get-sig-png
   "This finds the original signature capture widget through the endorsement that it provided"
@@ -131,6 +134,16 @@
         policies (helper/current-policies)]
         (get policies p)))
 
+(defn- save-policy-kw
+  [pos]
+  (let [policy (unlist (:policy pos))]
+     (keyword (str "policy-" policy ))))
+
+(defn- lookup-policy-widget
+  [widget]
+  (let [md (session-get :model-data)]
+   (get md (save-policy-kw widget)))) 
+
 (defn review-policy 
   "A ReviewPolicy widget provides a controller that allows the collector to 
   review consents collected for policies during the review process.
@@ -147,27 +160,21 @@
           " returnpage " (helper/get-named-page (:returnpage widget)) ] ])
 
        (let [policy (find-policy widget)
-             _ (debug "review-policy POLICY " policy " return page " (:returnpage widget) )
-
-             other-widgets (formutil/find-policy-in-page 
-                               (helper/get-named-page (:returnpage widget))
-                               (:policy widget)) 
-
-             other (first other-widgets)
-
-             _ (debug "review-policy WIDGET " (pprint-str widget)) 
-             _ (debug "review-policy POLICY " (:policy widget))
-             _ (debug "review-policy OTHER " other) ]
+             other (lookup-policy-widget widget) ]
            [:div.ui-grid-b
                 [:div.ui-block-a.metadata (:title policy) ]  
                 [:div.ui-block-b.metadata 
-                (if (empty? other) [:div "form validation issue "
-                                    (:returnpage widget) ])
+                (if (empty? other) [:div 
+                                    "form validation issue RETURN PAGE "
+                                    (:returnpage widget) 
+                                    ])
                 (let [v (helper/data-for other)]
                    (if other
                     (cond 
                       (= (:type other) "policy-choice-buttons")
-                      v 
+                      [:div 
+                       (if (= v "true-label") (unlist (:true-label other)))
+                       (if (= v "false-label") (unlist (:false-label other))) ]
 
                       (= (:type other) "policy-checkbox")
                       (if (= "on" v)
@@ -176,8 +183,14 @@
                       (= (:type other) "policy-button")
                       (:label other) 
 
+                      (= (:type other) "policy-text")
+                      (do
+                        (:label other) 
+                        [:div "POLICY TEXT: " other ]
+                       )
+
                       :else
-                      [:p "OTHER TYPE " ])
+                      [:p "OTHER TYPE " other])
                      )
                     ) 
                  ]
@@ -232,6 +245,18 @@
   [v]
   (not (= v false))) 
 
+(defn- save-policy-widget
+  [widget]
+
+  (let [policy (unlist (:policy widget))
+        wsav (dissoc widget :properties :contained-in :organization :contains)
+        policy-kw (save-policy-kw widget)
+        md (session-get :model-data)]
+
+        (if (= nil policy)
+           (println "WARNING POLICY IS NIL! - NOT SAVING " (pprint-str policy))
+           (session-put! :model-data (assoc md policy-kw wsav)))))
+
 (defn policy-text
   "A PolicyText widget generates title and paragraph from a specific Policy."  
   [{:keys [widget] :as m}]
@@ -243,7 +268,7 @@
 
      ;; Display title if :render-title is missing or true 
      ;; and policy has a title
-     ;;
+       
      (if (= nil policy)
           (println "WARNING policy-text widget --> policy is " 
                 (:policy widget) " definition is "  (pprint-str policy)))
@@ -258,7 +283,7 @@
      ;; Display text if :render-text is missing or true and policy has text
        (if (and (not (= (:render-text widget) false))
                 txt)
-           [:div.text (apply str txt) ])
+           (for [t txt] [:div.text t]))
 
      (if (not (= (:render-media widget) false)) 
        [:div.render-media "Render media controls here" ]) ))) ])
@@ -268,6 +293,7 @@
   policies. The widget's state is passed in to set current selection."
   [{:keys [widget value] :as m}]
 
+  (save-policy-widget widget)
   (let [group-name (widget-identifier widget)
         true-map (if (= value "true-label") {:checked "" } {})
         false-map (if (= value "false-label") {:checked "" } {}) ]
@@ -314,7 +340,7 @@
                      [:input {:type "hidden" 
                               :id (str "hidden-" nm) 
                               :name (str helper/META_DATA_BTN_PREFIX nm)
-                              :value "NO"
+                              ;:value "NO"
                               }]
                     [:div.ui-block-c 
                      [:p [:a 
@@ -331,6 +357,7 @@
   the data in the model is set and the style is changed." 
 
   [{:keys [widget value] :as m}]
+  (save-policy-widget widget)
   [:div.control.policy-button 
    (helper/submit-btn {:data-theme (if value "b" "d" )
                        :data-inline "false"
@@ -354,6 +381,7 @@
   Checkboxes are included in form submission parameters if they are not checked."
   [{:keys [widget value] :as m}]
 
+  (save-policy-widget widget)
   (let [nm (widget-identifier widget)
         checked  (if (= value "on") {:checked "checked" } {})]
    [:div.control 
@@ -406,8 +434,7 @@
 
 (defn- form-title
   [f]
-  (unlist (get-in f [:header :title])))
-
+  (unlist (:title f))) 
 
 (defn- view-update-information
   [ctx nm]
