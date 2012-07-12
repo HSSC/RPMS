@@ -25,7 +25,7 @@
 (def ACTION_BTN_PREFIX "abtn_")
 (def CHECKBOX_BTN_PREFIX "cb_btn_")
 (def META_DATA_BTN_PREFIX "md_btn_")
-(def META_DATA_UPDATE_BTN_PREFIX "md_btn_")
+(def META_DATA_UPDATE_BTN_PREFIX "mdup_btn_")
 
 ;; web application context, bound in core
 (def ^:dynamic *context* "")
