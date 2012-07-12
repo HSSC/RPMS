@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.init
-  (:require [org.healthsciencessc.rpms2.consent-admin.process.designer]
+  (:require [org.healthsciencessc.rpms2.consent-admin.process.consent-history]
+            [org.healthsciencessc.rpms2.consent-admin.process.designer]
             [org.healthsciencessc.rpms2.consent-admin.process.endorsement]
             [org.healthsciencessc.rpms2.consent-admin.process.endorsement-type]
             [org.healthsciencessc.rpms2.consent-admin.process.groups]

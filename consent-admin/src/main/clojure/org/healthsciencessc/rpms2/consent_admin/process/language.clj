@@ -9,7 +9,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
@@ -38,7 +38,7 @@
       (rutil/not-found (:message (meta nodes)))
       (layout/render ctx (str type-label "s")
                      (container/scrollbox 
-                       (selectlist/selectlist {:action :.detail-action}
+                       (list/selectlist {:action :.detail-action}
                                               (for [n nodes]
                                                 {:label (:name n) :data (select-keys n [:id])})))
                      (actions/actions 

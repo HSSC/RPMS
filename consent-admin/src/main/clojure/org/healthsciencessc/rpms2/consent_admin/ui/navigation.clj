@@ -116,7 +116,7 @@
               {:url "/view/meta-items" :label "Meta Items"}
               {:url "/view/widgets" :label "Widgets"}]}
     {:group "Management" :use? manager?
-      :items [{:url "/view/consenter/history" :label " History" :generator consenter-item-generator}]}
+      :items [{:url "/view/consent/history" :label " History" :generator consenter-item-generator}]}
   ])
 
 (defn- generate-group

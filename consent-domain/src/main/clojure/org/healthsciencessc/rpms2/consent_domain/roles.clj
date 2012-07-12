@@ -58,7 +58,6 @@
   [user & constraints]
   (apply has-role? user {:code code-role-externalsystem} constraints))
 
-
 (defn consent-collector-mappings
   [user & constraints]
   (apply get-role-mappings user :role {:code code-role-collector} constraints))
@@ -66,3 +65,7 @@
 (defn protocol-designer-mappings
   [user & constraints]
   (apply get-role-mappings user :role {:code code-role-designer} constraints ))
+
+(defn consent-manager-mappings
+  [user & constraints]
+  (apply get-role-mappings user :role {:code code-role-consentmanager} constraints ))

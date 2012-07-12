@@ -2,8 +2,9 @@
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils
          :only (forbidden-fn)]
         [org.healthsciencessc.rpms2.consent-domain.roles]
-        [ring.util.response :only (not-found)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
+        [ring.util.response :only (not-found response status)])
+  (:require [clojure.walk :as walk]
+            [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
@@ -46,11 +47,8 @@
   (let [user (get-in params [:session :current-user])
         user-org-id (get-in user [:organization :id])]
     (or
-     (superadmin? user)
-     (or
-       (admin? user :organization {:id user-org-id})
-       (consent-collector? user :organization {:id user-org-id})
-       (consent-manager? user :organization {:id user-org-id})))))
+      (consent-collector? user :organization {:id user-org-id})
+      (consent-manager? user :organization {:id user-org-id}))))
 
 (defn get-encounter-ids
   [consent-encounter-data]
@@ -62,6 +60,48 @@
   (let [encounter-ids (get-encounter-ids data)]
     (and (every? #(not (nil? %)) encounter-ids)
          (= 1 (count (distinct encounter-ids))))))
+
+(defn can-see-location-consents?
+  [location-id user]
+  (or
+    (consent-collector? user :location {:id location-id})
+    (consent-manager? user :location {:id location-id})))
+
+(defn- get-consent-locations
+  [ctx]
+  (let [user (get-in ctx [:session :current-user])
+        location-ids (get-in ctx [:query-params :location])]
+    (cond
+      (coll? location-ids)
+        (filter #(can-see-location-consents? % user) location-ids)
+      location-ids
+        [(can-see-location-consents? location-ids user)]
+      :else
+        (for [mapping (consent-manager-mappings user)]
+          (get-in mapping [:location :id])))))
+  
+(defn set-protocols
+  [encounters]
+  (let [version-refs (apply concat (for [e encounters] (concat (:consents e) 
+                                                               (:consent-endorsements e) 
+                                                               (:consent-meta-items e))))
+        version-ids (distinct (map #(get-in % [:protocol-version :id]) version-refs))
+        protocol-map (into {} (for [id version-ids]
+                                [id (first (data/find-related-records types/protocol-version id [types/protocol]))]))]
+    (walk/postwalk 
+      (fn [o] (if (protocol-map (:id o))
+                (assoc o :protocol (protocol-map (:id o)))
+                o)) encounters)))
+
+(defn get-consenter-consents
+  [ctx]
+  (if-let [consenter-id (get-in ctx [:query-params :consenter])]
+    (if-let [location-ids (get-consent-locations ctx)]
+      (let [consenter (data/find-record types/consenter consenter-id)
+            encounters (data/find-children types/consenter consenter-id types/encounter)]
+        (assoc consenter :encounters (set-protocols encounters)))
+      (status (response {:message "Consenter can not view consents for any location."}) 400))
+    (status (response {:message "Must provide a consenter ID."}) 400)))
 
 (def consent-processes
   ;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/consent/consenters?organization=<ID>
@@ -117,6 +157,11 @@
               (let [encounter-consent-data (:body-params params)
                     encounter-id (first (get-encounter-ids encounter-consent-data))]
                 (data/create-records "encounter" (assoc encounter-consent-data :id encounter-id))))
+    :run-if-false forbidden-fn}
+   
+   {:name "get-consents"
+    :runnable-fn can-see-consenters?
+    :run-fn get-consenter-consents
     :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) consent-processes))

@@ -7,7 +7,7 @@
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
             [sandbar.stateful-session :as sess]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
@@ -26,7 +26,7 @@
       (ajax/error (meta groups))
       (layout/render ctx "Groups"
         (container/scrollbox
-          (selectlist/selectlist {:action :.detail-action}
+          (list/selectlist {:action :.detail-action}
             (for [x (sort-by :name groups)]
               {:label (:name x) :data x})))
         (actions/actions 
@@ -37,7 +37,7 @@
 
 (defn userlist [users]
   (container/scrollbox
-    (selectlist/selectlist {:action :.detail-action}
+    (list/selectlist {:action :.detail-action}
       (for [u users]
         {:label (format-name u)
          :data u}))))

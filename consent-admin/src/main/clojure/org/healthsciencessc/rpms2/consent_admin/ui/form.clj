@@ -40,6 +40,15 @@
      [(tag-class :label.text classes) {:for name} label]
      [(tag-class :input.text classes) props]]))
 
+(defn date-picker
+  "Generates a text input with a calendar attached."
+  [{:keys [value label classes] 
+    :as field}]
+  (let [props (merge {:type :text :value value} (get-common-props field))]
+    [(tag-class :div.form-control-wrapper.form-text classes)
+     [(tag-class :label.text classes) {:for name} label]
+     [(tag-class :input.text.datepicker classes) props]]))
+
 (defn input-checkbox
   "Generates a checkbox input."
   [{:keys [label classes] 
@@ -145,6 +154,10 @@
 (defmethod edit-field :text
   [field]
   (input-text field))
+
+(defmethod edit-field :date
+  [field]
+  (date-picker field))
 
 (defmethod edit-field :password
   [field]

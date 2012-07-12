@@ -9,7 +9,7 @@
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
             [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
@@ -44,7 +44,7 @@
         (rutil/not-found (:message (meta protocols)))
         (layout/render ctx (render-label location " List")
           (container/scrollbox 
-            (selectlist/selectlist {:action :.detail-action}
+            (list/selectlist {:action :.detail-action}
               (for [protocol protocols]
                 {:label (:name protocol) :data protocol})))
           (actions/actions 

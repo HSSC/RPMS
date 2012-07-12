@@ -17,6 +17,11 @@ $(function(){
 		}
 	});
 	
+	// Register a loader to make Date Pickers.
+	PaneManager.loader(function(content){
+		content.find(".datepicker").datepicker();
+	});
+	
 	// Register a loader that grows/shrinks elements accordingly.
 	PaneManager.loader(Utils.Size.refill);
 	
@@ -55,6 +60,19 @@ $(function(){
 		var target = RPMS.findTarget(event, "div.push-action");
 		var url = Utils.DataSet.get(target, "url");
 		var params = RPMS.getParamMap(target, "map");
+		var confirm = Utils.DataSet.getObject(target, "confirm");
+		RPMS.verify(target, function(){
+			RPMS.Action.doPush(url, params, confirm);
+		});
+	});
+
+	// Register Event - Click Generic Push Action
+	PaneManager.on("click", ".pushform-action", function(event){
+		var target = RPMS.findTarget(event, "div.pushform-action");
+		var url = Utils.DataSet.get(target, "url");
+		var params = RPMS.getParamMap(target, "map");
+		var data = RPMS.getDataMap();
+		params = $.extend({}, params, data);
 		var confirm = Utils.DataSet.getObject(target, "confirm");
 		RPMS.verify(target, function(){
 			RPMS.Action.doPush(url, params, confirm);

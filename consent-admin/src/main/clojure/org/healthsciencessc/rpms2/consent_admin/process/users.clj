@@ -7,7 +7,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
             [sandbar.stateful-session :as sess]
@@ -30,7 +30,7 @@
       (ajax/error (meta users))
       (layout/render ctx "Users"
         (container/scrollbox
-          (selectlist/selectlist {:action :.detail-action}
+          (list/selectlist {:action :.detail-action}
             (for [x users]
               {:label (format-name x) :data (select-keys x [:id])})))
         (actions/actions 

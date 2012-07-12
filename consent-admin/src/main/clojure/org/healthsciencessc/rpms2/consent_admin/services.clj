@@ -728,3 +728,12 @@
   [protocol-version-id widget-id]
   (DELETE "/designer/form/widget"
           {:protocol-version protocol-version-id :widget widget-id} nil nil))
+
+;; Consent History Services
+(defn find-consenters
+  [params]
+  (GET "/consent/consenters" params))
+
+(defn get-consenter-consents
+  [consenter-id]
+  (GET "/consents" {:consenter consenter-id}))

@@ -7,7 +7,7 @@
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             [sandbar.stateful-session :as sess]
@@ -28,7 +28,7 @@
       (ajax/error (meta roles))
       (layout/render ctx "Roles"
         (container/scrollbox
-          (selectlist/selectlist {:action :.detail-action}
+          (list/selectlist {:action :.detail-action}
             (for [x (sort-by :name roles)]
               {:label (:name x) :data x})))
         (actions/actions 
@@ -211,7 +211,7 @@
                            (list
                              (layout-group-effective-permissions (:group rolemappings))
                              [:h3 "User Roles"]))
-                         (selectlist/selectlist {}
+                         (list/selectlist {}
                                                 (for [x (->> (assignee-type rolemappings)
                                                           (map #(assoc % :friendly-name 
                                                                        (->friendly-name %)))

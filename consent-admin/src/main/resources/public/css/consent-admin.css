@@ -243,6 +243,69 @@ div.selected {
 }
 
 /*
+ * TABLE BASED SELECT LIST
+ */
+table.selectlist{
+	position: relative;
+	top: 0;
+	left: 0;
+	width:100%;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	border: darkgray 1px solid;
+}
+table.selectlist thead tr{
+	
+}
+
+table.selectlist thead tr th{
+	border-bottom: darkgray 1px dashed;
+	
+}
+
+table.selectlist tbody tr{
+	
+}
+
+
+table.selectlist tbody tr td{
+	text-align: center;
+	border-bottom: darkgray 1px dashed;
+}
+
+/*
+ * LABELLED LIST
+ */
+div.labelledlist{
+	position: relative;
+	width: 100%;
+	border: darkgray 1px solid;
+	margin-bottom: 1em;
+}
+
+div.labelledlist span{
+	position: relative;
+	top: -.65em;
+	left: 1em;
+	padding: 0 .5em 0 .5em;
+	background-color: #F5F8F9;
+}
+
+table.labelledlist{
+	position: relative;
+	width: 100%;
+}
+
+td.labelledlist-label{
+	font-weight: bold;
+	width: 8em;
+	padding-right: 1em;
+	text-align: right;
+}
+
+td.labelledlist-data{}
+
+/*
  * 
  */
 div.tabbox{

@@ -8,7 +8,7 @@
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
             [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.download :as download]
@@ -48,7 +48,7 @@
         (rutil/not-found (:message (meta versions)))
         (layout/render ctx (render-label protocol " Versions")
                        (container/scrollbox 
-                         (selectlist/selectlist {:action :.detail-action}
+                         (list/selectlist {:action :.detail-action}
                            (for [version versions]
                              {:label (str "Version " (version-name version))
                               :data version})))
@@ -95,7 +95,7 @@
                            (uicommon/fill) 
                            (map (fn [{label :label options :options items :items}] 
                                   {:label label 
-                                   :content (selectlist/actionlist (uicommon/fill-down options) items)} ) tubs)))
+                                   :content (list/actionlist (uicommon/fill-down options) items)} ) tubs)))
                        
                        (actions/actions         
                          (if (types/draft? protocol-version)

@@ -7,7 +7,7 @@
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.selectlist :as selectlist]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
             [sandbar.stateful-session :as sess]
             [org.healthsciencessc.rpms2.consent-admin.services :as service]
@@ -43,7 +43,7 @@
     (if (service/service-error? orgs)
       (ajax/error (meta orgs))
       (layout/render ctx "Organizations"
-        (container/scrollbox (selectlist/selectlist {:action :.detail-action}
+        (container/scrollbox (list/selectlist {:action :.detail-action}
           (for [x (->> orgs
                     (remove #(= code-base-org (:code %)))
                     (sort-by :name))]
