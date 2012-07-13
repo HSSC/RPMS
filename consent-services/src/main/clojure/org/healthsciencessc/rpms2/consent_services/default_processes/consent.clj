@@ -85,7 +85,7 @@
   (let [version-refs (apply concat (for [e encounters] (concat (:consents e) 
                                                                (:consent-endorsements e) 
                                                                (:consent-meta-items e))))
-        version-ids (distinct (map #(get-in % [:protocol-version :id]) version-refs))
+        version-ids (filter identity (distinct (map #(get-in % [:protocol-version :id]) version-refs)))
         protocol-map (into {} (for [id version-ids]
                                 [id (first (data/find-related-records types/protocol-version id [types/protocol]))]))]
     (walk/postwalk 

@@ -70,6 +70,13 @@
                :verify (actions/gen-verify-a-selected "Consenter")})
             (actions/back-action))))))
 
+(defn- consented
+  [consent]
+  (let [true-vals #{"true" "true-label" "selected" "on"}]
+    (if (true-vals (:consented consent))
+      "Yes" 
+      "No")))
+
 (defn view-consent-history-consents
   [ctx]
   (let [consenter-id (get-in ctx [:query-params :consenter])
@@ -100,7 +107,7 @@
                                                        (str (get-in consent [:protocol-version :protocol :name])
                                                          " - Version " (get-in consent [:protocol-version :version]))
                                                        (get-in consent [:policy :name])
-                                                       (:consented consent)]})))))
+                                                       (consented consent)]})))))
                      (actions/actions 
                        (actions/back-action))))))
 
