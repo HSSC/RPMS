@@ -3,8 +3,7 @@
             [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-domain.match :as match]
-            [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-services.seed-protocol :as seed-protocol]))
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]))
 
 (defn setup-default-schema!
   []
@@ -231,9 +230,6 @@
         clerk-role (get-role-by-code types/code-role-collector)
         manager-role (get-role-by-code types/code-role-consentmanager)
         designer-role (get-role-by-code types/code-role-designer)]
-    
-    ;; Create Bogus Protocols
-    (seed-protocol/add-protocols org)
     
     ;; Create Admin Role Mappings
     (create-role-mapping :user {:organization org :user admin :role admin-role})
