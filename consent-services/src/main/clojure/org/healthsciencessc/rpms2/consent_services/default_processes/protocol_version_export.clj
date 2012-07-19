@@ -10,6 +10,16 @@
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]
            [clojure.data.xml Element]))
 
+(defn text
+  [val]
+  (cond 
+    (coll? val)
+      (into [] (for [v val] (Element. :p  {} [(. v toString)])))
+    (nil? val)
+      [""]
+    :else
+      [val]))
+
 (defn emit-endorsements [xs filterfn]
   (Element. :endorsements
                 {}
@@ -19,7 +29,7 @@
                                 (for [l (filter filterfn (:labels e))]
                                   (Element. :label
                                                 {}
-                                                [(:value l)]))))))
+                                                (text (:value l))))))))
 
 (defn emit-metaitems [xs filterfn]
   (Element. :meta-items
@@ -30,7 +40,7 @@
                                 (for [l (filter filterfn (:labels m))]
                                   (Element. :label
                                                 {}
-                                                [(:value l)]))))))
+                                                (text (:value l))))))))
 
 (defn emit-policies [policies filterfn]
   (Element. :policies
@@ -39,10 +49,9 @@
                   (Element. :policy
                                 (select-keys p [:name]) 
                                 (concat (for [t (filter filterfn (:titles p))]
-                                          (Element. :title {} [(apply str (:value t))]))
+                                          (Element. :title {} (text (:value t))))
                                         (for [t (filter filterfn (:texts p))]
-                                          (Element. :text {} (for [para (:value t)]
-                                                               (Element. :p {} [para]))))))))) 
+                                          (Element. :text {} (text (:value t))))))))) 
 
 (defn traverse-pv
   [pv filterfn]
