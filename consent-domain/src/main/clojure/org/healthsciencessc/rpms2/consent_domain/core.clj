@@ -21,7 +21,7 @@
                          :location-label {:persisted true}
                          :protocol-label {:persisted true}
                          :consenter-label {:persisted true}})
-                 :relations [{:type :belongs-to :related-to language :relationship :has-language :omit-rels true}]}
+                 :relations [{:type :belongs-to :related-to language :relationship :has-language :name :language :omit-rels true}]}
 
 
    user {:attributes (merge base

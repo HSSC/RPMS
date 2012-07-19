@@ -9,6 +9,7 @@
             [org.healthsciencessc.rpms2.consent-services.seed :as seed]
             [org.healthsciencessc.rpms2.consent-services.default-processes.init]
             [org.healthsciencessc.rpms2.process-engine.core :as process]
+            [org.healthsciencessc.rpms2.process-engine.util :as util-ws]
             [org.healthsciencessc.rpms2.process-engine.web-service :as process-ws]))
 
 (defn ws-init
@@ -49,9 +50,9 @@
     (try+
      (handler req)
      (catch [:type :org.healthsciencessc.rpms2.consent-services.data/invalid-record] {:keys [errors data]}
-       (process-ws/format-response-body {:status 422 :headers {} :body {:data data :errors errors}} req))
+       (util-ws/format-response-body {:status 422 :headers {} :body {:data data :errors errors}} req))
      (catch [:type :org.healthsciencessc.rpms2.consent-services.data/record-not-found] {:keys [record-type id]}
-         (process-ws/format-response-body {:status 404 :headers {} :body {:errors {:type record-type :id id}}} req)))))
+         (util-ws/format-response-body {:status 404 :headers {} :body {:errors {:type record-type :id id}}} req)))))
 
 (defroutes app
   (wrap-data-errors

@@ -83,7 +83,7 @@
     [(tag-class :div.form-control-wrapper.form-select classes)
      [(tag-class :label.single-select classes) {:for name} label]
      [(tag-class :select.single-select classes) props
-      ;;(if (and blank (not value)) [:option selected])
+      (if (and blank (not value)) [:option selected "{none}"])
       (for [{:keys [label data item]} items]
         (let [props {:value data}
               props (if (= data value) (merge selected props) props)

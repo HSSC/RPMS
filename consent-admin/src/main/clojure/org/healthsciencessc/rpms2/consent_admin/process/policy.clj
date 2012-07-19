@@ -1,4 +1,4 @@
-;; Provides the configuration of the protocol managemant UIs.
+;; Provides the configuration of policy management.
 (ns org.healthsciencessc.rpms2.consent-admin.process.policy
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
@@ -15,10 +15,9 @@
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [ring.util.response :as rutil])
-  (:use [clojure.tools.logging :only (info error)])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :code :label "Code"}
@@ -41,147 +40,175 @@
                 types)]
     items))
 
-(defn view-policys
-  [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-policys)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)
-        prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
-        params (merge {:organization org-id} prot-props)]
-    (if (meta nodes)
-      (rutil/not-found (:message (meta nodes)))
-      (layout/render ctx "Policies"
-                     (container/scrollbox 
-                       (list/selectlist {:action :.detail-action}
-                                              (for [n nodes]
-                                                {:label (:name n) :data (select-keys n [:id])})))
-                     (actions/actions 
-                       (if protocol-version-id
-                         (actions/assign-action 
-                           {:url (str "/api/" type-path "/assign") 
-                            :params (merge params {type-kw :selected#id})
-                            :verify (actions/gen-verify-a-selected "Policy")}))
-                       (actions/details-action 
-                         {:url (str "/view/" type-path)  
-                          :params (merge params {type-kw :selected#id})
-                          :verify (actions/gen-verify-a-selected "Policy")})
-                       (actions/new-action 
-                         {:url (str "/view/" type-path "/new") :params params})
-                       (actions/back-action))))))
 
-(defn view-policy
- [ctx]
-  (if-let [node-id (lookup/get-policy-in-query ctx)]
-    (let [n (services/get-policy node-id)
-          org-id (get-in n [:organization :id])
-          policy-definition (get-in n [:policy-definition :id])
-          langs (services/get-languages)]
-      (if (meta n)
-        (rutil/not-found (:message (meta n)))
-        (layout/render ctx (str type-label ": " (:name n))
+;; Register View Languages Process
+(defprocess view-policies
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [nodes (services/get-policys)
+            protocol-version-id (lookup/get-protocol-version-in-query ctx)
+            prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
+            params (merge {:organization org-id} prot-props)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx "Policies"
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n nodes]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                           (if protocol-version-id
+                             (actions/assign-action 
+                               {:url (str "/api/" type-path "/assign") 
+                                :params (merge params {type-kw :selected#id})
+                                :verify (actions/gen-verify-a-selected "Policy")}))
+                           (actions/details-action 
+                             {:url (str "/view/" type-path)  
+                              :params (merge params {type-kw :selected#id})
+                              :verify (actions/gen-verify-a-selected "Policy")})
+                           (actions/new-action 
+                             {:url (str "/view/" type-path "/new") :params params})
+                           (actions/back-action)))))
+      (ajax/forbidden))))
+    
+(as-method view-policies endpoint/endpoints "get-view-policys")
+(as-method view-policies endpoint/endpoints "get-view-protocol-version-policy-add")
+    
+;; Register View Policy Process
+(defprocess view-policy
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (if-let [node-id (lookup/get-policy-in-query ctx)]
+        (let [n (services/get-policy node-id)
+              org-id (get-in n [:organization :id])
+              policy-definition (get-in n [:policy-definition :id])
+              langs (services/get-languages org-id)]
+          (if (meta n)
+            (rutil/not-found (:message (meta n)))
+            (layout/render ctx (str type-label ": " (:name n))
+                           (container/scrollbox 
+                             (form/dataform 
+                               (form/render-fields 
+                                 {:fields {:policy-definition {:readonly true
+                                                               :items (gen-policy-definition-items org-id)}
+                                           :titles {:languages langs 
+                                                    :default-language (get-in n [:organization :language])
+                                                    :url "/api/text/i18n"
+                                                    :params {:parent-id node-id
+                                                             :parent-type type-name
+                                                             :property :titles}}
+                                           :texts {:languages langs 
+                                                   :default-language (get-in n [:organization :language])
+                                                   :url "/api/text/i18n"
+                                                   :params {:parent-id node-id
+                                                            :parent-type type-name
+                                                            :property :texts}}}} fields n)))
+                           (actions/actions
+                             ;;(actions/details-action 
+                             ;;  {:url (str "/view/" type-path "/definitions") 
+                             ;;   :params {:organization org-id :policy node-id :policy-definition policy-definition}
+                             ;;   :label "Change Type"})
+                             (actions/save-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})
+                             (actions/delete-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})
+                             (actions/back-action)))))
+        ;; Handle Error
+        (layout/render-error ctx {:message "An policy type is required."}))
+      (ajax/forbidden))))
+
+(as-method view-policy endpoint/endpoints "get-view-policy")
+
+
+;; Register View New Policy Process
+(defprocess view-policy-new
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [org-id (common/lookup-organization ctx)
+            org (services/get-organization org-id)
+            langs (services/get-languages org-id)]
+        (layout/render ctx (str "Create " type-label)
                        (container/scrollbox 
                          (form/dataform 
                            (form/render-fields 
-                             {:fields {:policy-definition {:readonly true
-                                                          :items (gen-policy-definition-items org-id)}
-                                       :titles {:languages langs 
-                                                :default-language (get-in n [:organization :language])
-                                                :url "/api/text/i18n"
-                                                :params {:parent-id node-id
-                                                         :parent-type type-name
-                                                         :property :titles}}
-                                       :texts {:languages langs 
-                                                :default-language (get-in n [:organization :language])
-                                                :url "/api/text/i18n"
-                                                :params {:parent-id node-id
-                                                         :parent-type type-name
-                                                         :property :texts}}}} fields n)))
-                       (actions/actions
-                         ;;(actions/details-action 
-                         ;;  {:url (str "/view/" type-path "/definitions") 
-                         ;;   :params {:organization org-id :policy node-id :policy-definition policy-definition}
-                         ;;   :label "Change Type"})
-                         (actions/save-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
-                         (actions/delete-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
-                         (actions/back-action)))))
-    ;; Handle Error
-    (layout/render-error ctx {:message "An policy type is required."})))
+                             {:fields {:policy-definition {:items (gen-policy-definition-items org-id)}
+                                       :titles {:languages langs
+                                                :default-language (:language org)}
+                                       :texts {:languages langs
+                                               :default-language (:language org)}}} fields {})))
+                       (actions/actions 
+                         (actions/create-action 
+                           {:url (str "/api/" type-path) :params {:organization org-id}})
+                         (actions/back-action))))
+      (ajax/forbidden))))
 
-(defn view-policy-new
-  "Generates a view that allows you to create a new protocol."
+(as-method view-policy-new endpoint/endpoints "get-view-policy-new")
+
+;; Register Assign Policy Process
+(defprocess assign
   [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        org (services/get-organization org-id)
-        langs (services/get-languages)]
-    (layout/render ctx (str "Create " type-label)
-                   (container/scrollbox 
-                     (form/dataform 
-                       (form/render-fields 
-                         {:fields {:policy-definition {:items (gen-policy-definition-items org-id)}
-                                   :titles {:languages langs
-                                            :default-language (:language org)}
-                                   :texts {:languages langs
-                                            :default-language (:language org)}}} fields {})))
-                   (actions/actions 
-                     (actions/create-action 
-                       {:url (str "/api/" type-path) :params {:organization org-id}})
-                     (actions/back-action)))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [policy-id (lookup/get-policy-in-query ctx)
+            protocol-version-id (lookup/get-protocol-version-in-query ctx)
+            resp (services/assign-policy-to-protocol-version policy-id protocol-version-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn- api-assign-policy
+(as-method assign endpoint/endpoints "post-api-policy-assign")
+
+;; Register Create Policy Process
+(defprocess create
   [ctx]
-  (let [policy-id (lookup/get-policy-in-query ctx)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)
-        resp (services/assign-policy-to-protocol-version policy-id protocol-version-id)]
-      (if (services/service-error? resp)
-        (ajax/save-failed (meta resp))
-        (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (assoc (:body-params ctx) :organization {:id org-id})
+            resp (services/add-policy body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(def process-defns
-  [{:name (str "get-view-" type-name "s")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policys
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-protocol-version-" type-name "-add")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policys
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name "-new")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-new
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "put-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/get-api-type-add 
-              services/add-policy)
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-update 
-              services/edit-policy 
-              lookup/get-policy-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "delete-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-delete 
-              services/delete-policy 
-              lookup/get-policy-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name "-assign")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn api-assign-policy
-    :run-if-false ajax/forbidden}])
+(as-method create endpoint/endpoints "put-api-policy")
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
+;; Register Update Policy Process
+(defprocess update
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (:body-params ctx)
+            policy-id (lookup/get-policy-in-query ctx)
+            resp (services/update-policy policy-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method update endpoint/endpoints "post-api-policy")
+
+;; Register Update Policy Process
+(defprocess delete
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [policy-id (lookup/get-policy-in-query ctx)
+            resp (services/delete-policy policy-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method delete endpoint/endpoints "delete-api-policy")
+

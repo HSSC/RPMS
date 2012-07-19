@@ -1,24 +1,24 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.organizations
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
-            [org.healthsciencessc.rpms2.consent-admin.config :as config]
-            [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+  (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
+            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            
+            [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
+        
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
+            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
+            [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
+            [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
-            [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
-            [sandbar.stateful-session :as sess]
-            [org.healthsciencessc.rpms2.consent-admin.services :as service]
-            [hiccup.core :as html]
-            [hiccup.element :as elem]
-            [hiccup.form :as form]
-            [ring.util.response :as rutil])
-  (:use [clojure.pprint]
-        [org.healthsciencessc.rpms2.consent-domain.types :only (code-base-org)])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
-
+            
+            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :code :label "Code"}
@@ -27,9 +27,14 @@
              {:name :consenter-label :label "Consenter Label"}
              {:name :language :label "Default Language" :type :singleselect :required true :blank true :parser :id}])
 
+(def type-name types/organization)
+(def type-label "Organization")
+(def type-path "organization")
+(def type-kw (keyword type-name))
+
 (defn- gen-language-items
-  []
-  (let [langs (service/get-languages)
+  [org-id]
+  (let [langs (services/get-languages org-id)
         items (map 
                 (fn [t] {:label (:name t) 
                    :data (:id t) 
@@ -37,103 +42,122 @@
                 langs)]
     items))
 
-(defn layout-organizations
+;; Register View Organizations Process
+(defprocess view-organizations
   [ctx]
-  (let [orgs (service/get-organizations ctx)]
-    (if (service/service-error? orgs)
-      (ajax/error (meta orgs))
-      (layout/render ctx "Organizations"
-        (container/scrollbox (list/selectlist {:action :.detail-action}
-          (for [x (->> orgs
-                    (remove #(= code-base-org (:code %)))
-                    (sort-by :name))]
-            {:label (:name x) :data x})))
-        (actions/actions 
-             (actions/details-action {:url "/view/organization/edit" :params {:organization :selected#id}
-                            :verify (actions/gen-verify-a-selected "Organization")})
-             (actions/new-action {:label "New" :url "/view/organization/add"})
-             (actions/back-action))))))
+  (let [user (security/current-user ctx)]
+    (if (roles/superadmin? user)
+      (let [org-id (lookup/get-organization-in-query ctx)
+            orgs (services/get-organizations org-id)
+            nodes (remove #(= types/code-base-org (:code %)) orgs)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx (str type-label "s")
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n (sort-by :name nodes)]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                           (actions/details-action 
+                             {:url (str "/view/" type-path) :params {type-kw :selected#id}
+                              :verify (actions/gen-verify-a-selected type-label)})
+                           (if (roles/superadmin? user)
+                             (actions/new-action 
+                               {:url (str "/view/" type-path "/new") :params {}}))
+                           (actions/back-action)))))
+      (ajax/forbidden))))
+    
+(as-method view-organizations endpoint/endpoints "get-view-organizations")
 
-(defn get-view-organization-add
+;; Register View Organization Process
+(defprocess view-organization
   [ctx]
-  (layout/render ctx "Create Organization"
-                   (container/scrollbox 
-                     (formui/dataform 
-                       (formui/render-fields 
-                         {:fields {:language {:items (gen-language-items)}}} fields {})))
-                 (actions/actions 
-                   (actions/save-action {:method :post :url "/api/organization/add"})
-                   (actions/back-action))))
+  (let [user (security/current-user ctx)
+        org-id (or (lookup/get-organization-in-query ctx) (security/current-org-id))]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [org (services/get-organization org-id)]
+        (if (meta org)
+          (rutil/not-found (:message (meta org)))
+          (layout/render ctx (str type-label ": " (:name org))
+                         (container/scrollbox 
+                           (form/dataform 
+                             (form/render-fields 
+                               {:fields {:language {:readonly true 
+                                                    :items (gen-language-items org-id)}}} fields org)))
+                         (actions/actions
+                           (actions/save-action 
+                             {:url (str "/api/" type-path) :params {type-kw org-id}})
+                           (if (roles/superadmin? user)
+                             (list 
+                               (actions/details-action {:url "/view/user/new/admin" 
+                                                        :params {:organization org-id} :label "Add Administrator"})
+                               (actions/details-action {:url "/view/languages" 
+                                                        :params {:organization org-id} :label "Change Language"})
+                               (actions/delete-action 
+                                 {:url (str "/api/" type-path) :params {type-kw org-id}})))
+                           (actions/back-action)))))
+      (ajax/forbidden))))
 
-(defn delete-api-organization
+(as-method view-organization endpoint/endpoints "get-view-organization")
+
+;; Register View New Organization Process
+(defprocess view-organization-new
   [ctx]
-  (let [org-id (:organization (:query-params ctx))
-        resp (service/delete-organization org-id)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)]
+    (if (roles/superadmin? user)
+      (layout/render ctx (str "Create " type-label)
+                     (container/scrollbox 
+                       (form/dataform 
+                         (form/render-fields 
+                           {:fields {:language {:items (gen-language-items (security/current-org-id))}}} fields {})))
+                     (actions/actions 
+                       (actions/create-action 
+                         {:url (str "/api/" type-path) :params {}})
+                       (actions/back-action)))
+      (ajax/forbidden))))
 
-(defn get-view-organization-edit
+(as-method view-organization-new endpoint/endpoints "get-view-organization-new")
+
+;; Register Create Organization Process
+(defprocess create
   [ctx]
-  (if-let [org-id (-> ctx :query-params :organization)]
-    (let [org (service/get-organization org-id)]
-      (if (service/service-error? org)
-        (ajax/error (meta org))
-        (layout/render ctx "Edit Organization"
-                   (container/scrollbox 
-                     (formui/dataform 
-                       (formui/render-fields 
-                         {:fields {:language {:items (gen-language-items)}}} fields org)))
-                   (actions/actions 
-                     (actions/details-action {:url "/view/user/add" :params {:organization org-id} :label "Add Administrator"})
-                     (actions/delete-action {:label "Delete" :url "/api/organization" :params {:organization org-id} :confirm "Are you sure you want to delete this organization?"})
-                     (actions/save-action {:method :post :url "/api/organization/edit" :params {:organization org-id}})
-                     (actions/back-action)))))))
+  (let [user (security/current-user ctx)]
+    (if (roles/superadmin? user)
+      (let [body (:body-params ctx)
+            resp (services/add-organization body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn post-api-organization-add
+(as-method create endpoint/endpoints "put-api-organization")
+
+;; Register Update Organization Process
+(defprocess update
   [ctx]
-  (let [org (select-keys (:body-params ctx)
-                         [:name :code :protocol-label :location-label :consenter-label])
-        resp (service/add-organization org)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (lookup/get-organization-in-query ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [body (:body-params ctx)
+            resp (services/update-organization org-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn post-api-organization-edit
+(as-method update endpoint/endpoints "post-api-organization")
+
+;; Register Update Organization Process
+(defprocess delete
   [ctx]
-  (let [keys (select-keys (:body-params ctx)
-                              [:name :code :protocol-label :location-label :consenter-label])
-        resp (service/edit-organization (-> ctx :query-params :organization) keys)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)]
+    (if (roles/superadmin? user)
+      (let [org-id (lookup/get-organization-in-query ctx)
+            resp (services/delete-organization org-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(def process-defns
-  [{:name "get-view-organizations"
-    :runnable-fn (constantly true)
-    :run-fn  layout-organizations}
-   {:name "get-view-organization"
-    :runnable-fn (constantly true)
-    :run-fn #(process/dispatch "get-view-organization-edit"  ;; I'm so ashamed
-                               (assoc-in %
-                                         [:query-params :organization]
-                                         (get-in (sess/session-get :user)
-                                                 [:organization :id])))}
-   {:name "get-view-organization-add"
-    :runnable-fn (constantly true)
-    :run-fn get-view-organization-add}
-   {:name "get-view-organization-edit"
-    :runnable-fn (constantly true)
-    :run-fn get-view-organization-edit}
-   {:name "delete-api-organization"
-    :runnable-fn (constantly true)
-    :run-fn delete-api-organization}
-   {:name "post-api-organization-edit"
-    :runnable-fn (constantly true)
-    :run-fn post-api-organization-edit}
-   {:name "post-api-organization-add"
-    :runnable-fn (constantly true)
-    :run-fn post-api-organization-add}
-   ])
+(as-method delete endpoint/endpoints "delete-api-organization")
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))

@@ -106,7 +106,7 @@
               {:url "/view/roles" :label "Roles"}]}
     ;; Following is for the Protocol group.
     {:group "s" :use? designer? :generator protocols-group-generator
-      :items [{:url "/view/protocol/location" :label "Locations" :generator protocol-location-item-generator}]}
+      :items [{:url "/view/protocols" :label "Locations" :generator protocol-location-item-generator}]}
     {:group "Library" :use? designer?
       :items [{:url "/view/endorsement/types" :label "Endorsement Types"}
               {:url "/view/endorsements" :label "Endorsements"}

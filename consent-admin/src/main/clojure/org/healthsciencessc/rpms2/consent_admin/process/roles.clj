@@ -1,259 +1,150 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.roles
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
-            [org.healthsciencessc.rpms2.consent-admin.config :as config]
-            [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+  (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
-            [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
-            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
-            [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
+            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
-            [sandbar.stateful-session :as sess]
-            [org.healthsciencessc.rpms2.consent-admin.services :as service]
-            [hiccup.core :as html]
-            [hiccup.element :as elem]
-            [hiccup.form :as form]
-            [ring.util.response :as rutil])
-  (:use [clojure.pprint]
-        [org.healthsciencessc.rpms2.consent-domain.tenancy :only (label-for-location)]
-        [clojure.java.io :as io])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            
+            [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
+            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
+            [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
+            [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
+            [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
+            
+            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+        
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
-(defn layout-roles
-  [ctx]
-  (let [roles (service/get-roles)]
-    (if (service/service-error? roles)
-      (ajax/error (meta roles))
-      (layout/render ctx "Roles"
-        (container/scrollbox
-          (list/selectlist {:action :.detail-action}
-            (for [x (sort-by :name roles)]
-              {:label (:name x) :data x})))
-        (actions/actions 
-             (actions/details-action {:url "/view/role/edit" :params {:role :selected#id}
-                            :verify (actions/gen-verify-a-selected "Role")})
-             (actions/new-action {:url "/view/role/add"})
-             (actions/back-action))))))
-
-;; Prepare For Requires Location
 (def fields [{:name :name :label "Name"}
              {:name :code :label "Code"}
-             {:name :requires-location :label "Requires Location" :type :checkbox}
-             ])
+             {:name :requires-location :label "Requires Location" :type :checkbox}])
 
-(defn get-view-role-add
+(def type-name types/role)
+(def type-label "Role")
+(def type-path "role")
+(def type-kw (keyword type-name))
+ 
+;; Register View Roles Process
+(defprocess view-roles
   [ctx]
-  (layout/render ctx "Create Role"
-                 (container/scrollbox 
-                   (formui/dataform 
-                     (formui/render-fields {} fields {})))
-                 (actions/actions 
-                   (actions/save-action {:method :post :url "/api/role/add"})
-                   (actions/back-action))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [nodes (services/get-roles)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx (str type-label "s")
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n (sort-by :name nodes)]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                          (actions/details-action 
+                               {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
+                                :verify (actions/gen-verify-a-selected type-label)})
+                           (actions/new-action 
+                             {:url (str "/view/" type-path "/new") :params {:organization org-id}})
+                           (actions/back-action)))))
+      (ajax/forbidden))))
+    
+(as-method view-roles endpoint/endpoints "get-view-roles")
 
-(defn get-view-role-edit
+;; Register View Role Process
+(defprocess view-role
   [ctx]
-  (if-let [role-id (-> ctx :query-params :role)]
-    (let [role (service/get-role role-id)
-          editable (= (get-in role [:organization :id]) (security/current-org-id))]
-      (if (service/service-error? role)
-        (ajax/error (meta role))
-        (layout/render ctx "Edit Role"
-                   (container/scrollbox 
-                     (formui/dataform 
-                       (formui/render-fields {:editable editable} fields role)))
-                   (actions/actions 
-                     (if editable
-                       (list 
-                         (actions/save-action {:method :post :url "/api/role/edit" :params {:role role-id}})
-                         (actions/delete-action {:url "/api/role" :params {:role role-id}})))
-                     (actions/back-action)))))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (if-let [node-id (lookup/get-role-in-query ctx)]
+        (let [n (services/get-role node-id)
+              editable (common/owned-by-user-org n)]
+          (if (meta n)
+            (rutil/not-found (:message (meta n)))
+            (layout/render ctx (str type-label ": " (:name n))
+                           (container/scrollbox 
+                             (form/dataform 
+                               (form/render-fields {:editable editable} fields n)))
+                           (actions/actions
+                             (if editable
+                               (list
+                                 (actions/save-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})
+                                 (actions/delete-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})))
+                             (actions/back-action)))))
+        ;; Handle Error
+        (layout/render-error ctx {:message "An role is required."}))
+      (ajax/forbidden))))
 
-(defn delete-api-role
+(as-method view-role endpoint/endpoints "get-view-role")
+
+;; Register View New Role Process
+(defprocess view-role-new
   [ctx]
-  (let [role (:role (:query-params ctx))
-        resp (service/delete-role role)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
-
-(defn post-api-role-add
-  [ctx]
-  (let [role (select-keys (:body-params ctx)
-                          (map :name fields))
-        role (common/find-and-replace-truths role [:requires-location] "true")
-        resp (service/add-role role)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
-
-(defn post-api-role-edit
-  [ctx]
-  (let [keys (select-keys (:body-params ctx)
-                          (map :name fields))
-        keys (common/find-and-replace-truths keys [:requires-location] "true")
-        resp (service/edit-role (-> ctx :query-params :role)
-                                keys)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
-
-(defn add-roles-helper [roles locations assignee-type assignee-id]
-  (let [mappings (if (or (nil? locations)      ;; Zero locations selected, add to all locations
-                         (= 0 (count locations)))
-                   (for [r roles]
-                     {:role-id r :assignee-type (keyword assignee-type) :assignee-id assignee-id})
-                   (for [r roles l locations]
-                     {:role-id r :loc-id l :assignee-type (keyword assignee-type) :assignee-id assignee-id}))
-        response-seq (doall (map service/add-rolemapping mappings))]  ;; force evaluation with doall
-    (let [first-failure (some service/service-error? response-seq)]
-      first-failure
-      :success)))
-
-(defn location-helper []
-  (label-for-location nil (-> (sess/session-get :user) :organization)))
-
-(defn post-api-role-assign
-  [ctx]
-  (let [{locations :location 
-         roles :role } (:body-params ctx)
-        {assignee-type :assignee-type
-         assignee-id :assignee-id}  (:query-params ctx)]
-    (cond
-      (= 0 (count locations))
-      (ajax/error {:message (format "Please select at least one %s." (location-helper))})
-      (= (count roles) 0)
-      (ajax/error {:message "Please select at least one role."})
-      (and (< 1 (count locations))
-           (some #{":all"} locations))
-      (ajax/error {:message "Conflicting location option. Can't select all with other selections."})
-      :else
-      (let [locations (if (= [":all"] locations) nil locations)
-            resp (add-roles-helper roles locations assignee-type assignee-id)]
-          (if (not= :success resp)
-            (ajax/error {:message "One or more roles not successfully assigned."})
-            (ajax/success ""))))))
-
-(defn rolechooser
-  [{:keys [roles locations]}]
-  (let [roles (for [x (sort-by :name roles)]
-                {:value (:id x)
-                 :label (:name x)})
-        locations (cons
-                    {:value ":all" :label (format "All %ss" (location-helper))}
-                    (for [x (sort-by :name locations)]
-                      {:value (:id x)
-                       :label (:name x)}))]
-                    (list
-                      (formui/multiselect {:label "Roles" :name "role" :items roles})
-                      (formui/multiselect {:label (str (location-helper) "s") :name "location" :items locations}))))
-
-(defn get-view-roles-assign
-  [ctx]
-  (if-let [{qry-params :query-params} ctx] 
-    (let [post-params (merge 
-                        {:params (select-keys qry-params
-                                              [:assignee-id :assignee-type])}
-                        {:url "/api/role/assign"
-                         :method :post})]
-      (layout/render ctx "Assign Role"
-                     (container/scrollbox (formui/dataform 
-                                            (rolechooser {:roles (service/get-roles) :locations (service/get-locations)})))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (layout/render ctx (str "Create " type-label)
+                     (container/scrollbox 
+                       (form/dataform 
+                         (form/render-fields {} fields)))
                      (actions/actions 
-                       (actions/save-action post-params)
-                       (actions/back-action))))))
+                       (actions/create-action 
+                         {:url (str "/api/" type-path) :params {:organization org-id}})
+                       (actions/back-action)))
+      (ajax/forbidden))))
 
-(defn ->friendly-name
-  [rm]
-  (if (:location rm)
-    (format "%s in %s"
-            (:name (:role rm))
-            (:name (:location rm)))
-    (:name (:role rm))))
+(as-method view-role-new endpoint/endpoints "get-view-role-new")
 
-(defn delete-api-rolemapping
+;; Register Create Role Process
+(defprocess create
   [ctx]
-  (let [role-mapping-id (get-in ctx [:query-params :role-mapping])
-        resp (service/remove-rolemapping role-mapping-id)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [body (assoc (:body-params ctx) :organization {:id org-id})
+            body (common/find-and-replace-truths body [:requires-location] true "true")
+            resp (services/add-role body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn layout-group-effective-permissions 
-  [grouproles]
-  [:div.group-roles
-   [:h3 "Group Inherited Roles"]
-   (for [{:keys [group role location]} grouproles]
-     [:div 
-      (if location
-        (format "%s in %s (%s)" (:name role) (:name location) (:name group))
-        (format "%s (%s)" (:name role) (:name group)))])])
+(as-method create endpoint/endpoints "put-api-role")
 
-(defn get-view-roles-show
+;; Register Update Role Process
+(defprocess update
   [ctx]
-  (if-let [{{:keys [assignee-id assignee-type]} :query-params} ctx]
-    (let [assignee-type (keyword assignee-type)
-          rolemappings (service/get-assigned-roles assignee-id assignee-type)
-          delete-params {:params {:role-mapping :selected#id}
-                         :method :delete
-                         :action-on-success "refresh"
-                         :url "/api/rolemapping"}
-          add-params {:url "/view/roles/assign"
-                      :params {:assignee-type assignee-type
-                               :assignee-id assignee-id}}]
-      (if (service/service-error? rolemappings)
-        (ajax/error (meta rolemappings))
-        (layout/render ctx "Assigned Roles"
-                       (container/scrollbox
-                         (if (= :user assignee-type)
-                           (list
-                             (layout-group-effective-permissions (:group rolemappings))
-                             [:h3 "User Roles"]))
-                         (list/selectlist {}
-                                                (for [x (->> (assignee-type rolemappings)
-                                                          (map #(assoc % :friendly-name 
-                                                                       (->friendly-name %)))
-                                                          (sort-by :friendly-name))]
-                                                  {:label (:friendly-name x)
-                                                   :data (select-keys x [:id])})))
-                       (actions/actions 
-                         (actions/new-action add-params)
-                         (actions/delete-action delete-params)
-                         (actions/back-action)))))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [body (:body-params ctx)
+            body (common/find-and-replace-truths body [:requires-location] true "true")
+            role-id (lookup/get-role-in-query ctx)
+            resp (services/update-role role-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(def process-defns
-  [{:name "get-view-roles"
-    :runnable-fn (constantly true)
-    :run-fn  layout-roles}
-   {:name "get-view-role-add"
-    :runnable-fn (constantly true)
-    :run-fn get-view-role-add}
-   {:name "get-view-roles-show"
-    :runnable-fn (constantly true)
-    :run-fn get-view-roles-show}
-   {:name "get-view-roles-assign"
-    :runnable-fn (constantly true)
-    :run-fn get-view-roles-assign}
-   {:name "delete-api-role"
-    :runnable-fn (constantly true)
-    :run-fn delete-api-role}
-   {:name "delete-api-rolemapping"
-    :runnable-fn (constantly true)
-    :run-fn delete-api-rolemapping}
-   {:name "get-view-role-edit"
-    :runnable-fn (constantly true)
-    :run-fn get-view-role-edit}
-   {:name "post-api-role-edit"
-    :runnable-fn (constantly true)
-    :run-fn post-api-role-edit}
-   {:name "post-api-role-assign"
-    :runnable-fn (constantly true)
-    :run-fn post-api-role-assign}
-   {:name "post-api-role-add"
-    :runnable-fn (constantly true)
-    :run-fn post-api-role-add}
-   ])
+(as-method update endpoint/endpoints "post-api-role")
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
+;; Register Update Role Process
+(defprocess delete
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [role-id (lookup/get-role-in-query ctx)
+            resp (services/delete-role role-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method delete endpoint/endpoints "delete-api-role")

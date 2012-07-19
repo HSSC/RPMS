@@ -15,10 +15,9 @@
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [ring.util.response :as rutil])
-  (:use [clojure.tools.logging :only (info error)])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :code :label "Code"}
@@ -40,139 +39,162 @@
                 types)]
     items))
 
-(defn view-endorsements
+;; Register View Endorsements Process
+(defprocess view-endorsements
   [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-endorsements org-id)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)
-        prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
-        params (merge {:organization org-id} prot-props)]
-    (if (meta nodes)
-      (rutil/not-found (:message (meta nodes)))
-      (layout/render ctx (str type-label "s")
-                     (container/scrollbox 
-                       (list/selectlist {:action :.detail-action}
-                                              (for [n nodes]
-                                                {:label (:name n) :data (select-keys n [:id])})))
-                     (actions/actions 
-                       (if protocol-version-id
-                         (actions/assign-action 
-                           {:url (str "/api/" type-path "/assign") 
-                            :params (merge params {type-kw :selected#id})
-                            :verify (actions/gen-verify-a-selected "Endorsement")}))
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) 
-                          :params (merge params {type-kw :selected#id})
-                          :verify (actions/gen-verify-a-selected "Endorsement")})
-                       (actions/new-action 
-                         {:url (str "/view/" type-path "/new") :params params})
-                       (actions/back-action))))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [nodes (services/get-endorsements org-id)
+            protocol-version-id (lookup/get-protocol-version-in-query ctx)
+            prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
+            params (merge {:organization org-id} prot-props)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx (str type-label "s")
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n nodes]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                           (if protocol-version-id
+                             (actions/assign-action 
+                               {:url (str "/api/" type-path "/assign") 
+                                :params (merge params {type-kw :selected#id})
+                                :verify (actions/gen-verify-a-selected "Endorsement")}))
+                           (actions/details-action 
+                             {:url (str "/view/" type-path) 
+                              :params (merge params {type-kw :selected#id})
+                              :verify (actions/gen-verify-a-selected "Endorsement")})
+                           (actions/new-action 
+                             {:url (str "/view/" type-path "/new") :params params})
+                           (actions/back-action)))))
+      (ajax/forbidden))))
 
-(defn view-endorsement
- [ctx]
-  (if-let [node-id (lookup/get-endorsement-in-query ctx)]
-    (let [n (services/get-endorsement node-id)
-          org-id (get-in n [:organization :id])
-          endorsement-type (get-in n [:endorsement-type :id])
-          langs (services/get-languages)]
-      (if (meta n)
-        (rutil/not-found (:message (meta n)))
-        (layout/render ctx (str type-label ": " (:name n))
+(as-method view-endorsements endpoint/endpoints "get-view-endorsements")
+(as-method view-endorsements endpoint/endpoints "get-view-protocol-version-endorsement-add")
+
+;; Register View Endorsement Process
+(defprocess view-endorsement
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (if-let [node-id (lookup/get-endorsement-in-query ctx)]
+        (let [n (services/get-endorsement node-id)
+              endorsement-type (get-in n [:endorsement-type :id])
+              langs (services/get-languages org-id)]
+          (if (meta n)
+            (rutil/not-found (:message (meta n)))
+            (layout/render ctx (str type-label ": " (:name n))
+                           (container/scrollbox 
+                             (form/dataform 
+                               (form/render-fields 
+                                 {:fields {:endorsement-type {:readonly true
+                                                              :items (gen-endorsement-type-items org-id)}
+                                           :labels {:languages langs 
+                                                    :default-language (get-in n [:organization :language])
+                                                    :url "/api/text/i18n"
+                                                    :params {:parent-id node-id
+                                                             :parent-type type-name
+                                                             :property :labels}}}} fields n)))
+                           (actions/actions
+                             (actions/details-action 
+                               {:url (str "/view/" type-path "/types") 
+                                :params {:organization org-id :endorsement node-id :endorsement-type endorsement-type}
+                                :label "Change Type"})
+                             (actions/save-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})
+                             (actions/delete-action 
+                               {:url (str "/api/" type-path) :params {type-kw node-id}})
+                             (actions/back-action)))))
+        ;; Handle Error
+        (layout/render-error ctx {:message "An endorsement type is required."}))
+      (ajax/forbidden))))
+
+(as-method view-endorsement endpoint/endpoints "get-view-endorsement")
+
+;; Register View New Endorsement Process
+(defprocess view-endorsement-new
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [org (services/get-organization org-id)
+            langs (services/get-languages org-id)]
+        (layout/render ctx (str "Create " type-label)
                        (container/scrollbox 
                          (form/dataform 
                            (form/render-fields 
-                             {:fields {:endorsement-type {:readonly true
-                                                          :items (gen-endorsement-type-items org-id)}
+                             {:fields {:endorsement-type {:items (gen-endorsement-type-items org-id)}
                                        :labels {:languages langs 
-                                                :default-language (get-in n [:organization :language])
-                                                :url "/api/text/i18n"
-                                                :params {:parent-id node-id
-                                                         :parent-type type-name
-                                                         :property :labels}}}} fields n)))
-                       (actions/actions
-                         (actions/details-action 
-                           {:url (str "/view/" type-path "/types") 
-                            :params {:organization org-id :endorsement node-id :endorsement-type endorsement-type}
-                            :label "Change Type"})
-                         (actions/save-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
-                         (actions/delete-action 
-                           {:url (str "/api/" type-path) :params {type-kw node-id}})
-                         (actions/back-action)))))
-    ;; Handle Error
-    (layout/render-error ctx {:message "An endorsement type is required."})))
+                                                :default-language (:language org)}}} fields {})))
+                       (actions/actions 
+                         (actions/create-action 
+                           {:url (str "/api/" type-path) :params {:organization org-id}})
+                         (actions/back-action))))
+      (ajax/forbidden))))
 
-(defn view-endorsement-new
-  "Generates a view that allows you to create a new protocol."
+(as-method view-endorsement-new endpoint/endpoints "get-view-endorsement-new")
+
+;; Register Assign Endorsement Process
+(defprocess assign
   [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        org (services/get-organization org-id)
-        langs (services/get-languages)]
-    (layout/render ctx (str "Create " type-label)
-                   (container/scrollbox 
-                     (form/dataform 
-                       (form/render-fields 
-                         {:fields {:endorsement-type {:items (gen-endorsement-type-items org-id)}
-                                   :labels {:languages langs 
-                                            :default-language (:language org)}}} fields {})))
-                   (actions/actions 
-                     (actions/create-action 
-                       {:url (str "/api/" type-path) :params {:organization org-id}})
-                     (actions/back-action)))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [endorsement-id (lookup/get-endorsement-in-query ctx)
+            protocol-version-id (lookup/get-protocol-version-in-query ctx)
+            resp (services/assign-endorsement-to-protocol-version endorsement-id protocol-version-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn- api-assign-endorsement
+(as-method assign endpoint/endpoints "post-api-endorsement-assign")
+
+;; Register Create Endorsement Process
+(defprocess create
   [ctx]
-  (let [endorsement-id (lookup/get-endorsement-in-query ctx)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)
-        resp (services/assign-endorsement-to-protocol-version endorsement-id protocol-version-id)]
-      (if (services/service-error? resp)
-        (ajax/save-failed (meta resp))
-        (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (assoc (:body-params ctx) :organization {:id org-id})
+            resp (services/add-endorsement body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(def process-defns
-  [{:name (str "get-view-" type-name "s")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsements
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-protocol-version-" type-name "-add")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsements
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsement
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name "-new")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-endorsement-new
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "put-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/get-api-type-add 
-              services/add-endorsement)
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-update 
-              services/edit-endorsement 
-              lookup/get-endorsement-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "delete-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-delete 
-              services/delete-endorsement 
-              lookup/get-endorsement-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name "-assign")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn api-assign-endorsement
-    :run-if-false ajax/forbidden}])
+(as-method create endpoint/endpoints "put-api-endorsement")
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
+;; Register Update Endorsement Process
+(defprocess update
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (:body-params ctx)
+            endorsement-id (lookup/get-endorsement-in-query ctx)
+            resp (services/update-endorsement endorsement-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method update endpoint/endpoints "post-api-endorsement")
+
+;; Register Update Endorsement Process
+(defprocess delete
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [endorsement-id (lookup/get-endorsement-in-query ctx)
+            resp (services/delete-endorsement endorsement-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method delete endpoint/endpoints "delete-api-endorsement")

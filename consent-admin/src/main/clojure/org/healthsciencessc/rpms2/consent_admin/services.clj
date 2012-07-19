@@ -138,7 +138,7 @@
         nil
         (with-out-str (prn (merge-with-curr-org l)))))
 
-(defn edit-location
+(defn update-location
   [id l]
   (POST "/security/location"
         {:location id}
@@ -151,7 +151,7 @@
 
 ;; USERS
 (defn get-users
-  []
+  [org-id]
   (GET "/security/users" {}))
 
 (defn get-user
@@ -169,7 +169,7 @@
   [id]
   (DELETE "/security/user" {:user id} nil nil))
 
-(defn edit-user
+(defn update-user
   [id u]
   (let [password (:password u)
         user (if (or (nil? password) (str/blank? password))
@@ -195,7 +195,7 @@
        nil
        (with-out-str (prn o))))
 
-(defn edit-organization
+(defn update-organization
   [id o]
   (POST "/security/organization"
         {:organization id}
@@ -205,6 +205,11 @@
 (defn get-organization
   [id]
   (GET "/security/organization" {:organization id}))
+
+(defn assign-language-to-organization
+  [language-id organization-id]
+  (PUT "/security/organization/language" 
+       {:language language-id :organization organization-id} nil nil))
 
 ;; ROLES
 (defn get-roles
@@ -222,7 +227,7 @@
         nil
         (with-out-str (prn (merge-with-curr-org r)))))
 
-(defn edit-role
+(defn update-role
   [id r]
   (POST "/security/role"
         {:role id}
@@ -245,7 +250,7 @@
 (defn get-group-members
   [gid]
   (let [group-members (GET "/security/users" {:group gid})
-        all-users (get-users)]
+        all-users (get-users nil)]
    {:in group-members :out (apply set/difference 
                                   (map set [all-users group-members]))}))
 
@@ -260,7 +265,7 @@
         nil
         (with-out-str (prn (merge-with-curr-org g)))))
 
-(defn edit-group
+(defn update-group
   [id g]
   (POST "/security/group"
         {:group id}
@@ -320,7 +325,7 @@
     (if-not (redundant-role? assignee)
       (add-rolemapping-helper assignee-id assignee-type role-id loc-id))))
 
-(defn remove-rolemapping
+(defn delete-role-mapping
   [role-mapping-id]
   (DELETE "/security/role-mapping" 
           {:role-mapping role-mapping-id}
@@ -361,8 +366,8 @@
 
 ;; LANGUAGES
 (defn get-languages
-  []
-  (GET "/library/languages" {}))
+  [org-id]
+  (GET "/library/languages" {:organization org-id}))
 
 (defn get-language
   [language-id]
@@ -375,7 +380,7 @@
         nil
         (with-out-str (prn (merge-with-curr-org r)))))
 
-(defn edit-language
+(defn update-language
   [language-id data]
   (POST "/library/language"
         {:language language-id}
@@ -550,7 +555,7 @@
        nil
        (with-out-str (prn o))))
 
-(defn edit-endorsement-type
+(defn update-endorsement-type
   [id o]
   (POST "/library/endorsement/type"
         {:endorsement-type id}
@@ -577,7 +582,7 @@
        nil
        (with-out-str (prn o))))
 
-(defn edit-endorsement
+(defn update-endorsement
   [id o]
   (POST "/library/endorsement"
         {:endorsement id}
@@ -608,7 +613,7 @@
        nil
        (with-out-str (prn data))))
 
-(defn edit-meta-item
+(defn update-meta-item
   [meta-item-id data]
   (POST "/library/meta-item"
         {:meta-item meta-item-id}
@@ -636,7 +641,7 @@
        nil
        (with-out-str (prn o))))
 
-(defn edit-policy-definition
+(defn update-policy-definition
   [id o]
   (POST "/library/policy-definition"
         {:policy-definition id}
@@ -663,7 +668,7 @@
        nil
        (with-out-str (prn data))))
 
-(defn edit-policy
+(defn update-policy
   [policy-id data]
   (POST "/library/policy"
         {:policy policy-id}

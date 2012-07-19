@@ -515,11 +515,20 @@
      (= :in dir) (create-relationship node2 rel node1))
     (find-record type1 id1)))
 
+(defn filter-rels
+  [rels rel-name]
+  (filter #(= (name rel-name) (.. % getType name)) rels))
+
 (defn unrelate-records
-  [type1 id1 type2 id2]
+  [type1 id1 type2 id2 & {rel-name :rel-name}]
   (let [node1 (get-node-by-index type1 id1)
         node2 (get-node-by-index type2 id2)
-        rels (rels-between node1 node2)]
+        rels (rels-between node1 node2)
+        rels-count (count rels)
+        rels (if rel-name 
+               (let [{:keys [dir rel]} (domain/get-directed-relationship type1 type2 schema :rel-name rel-name)]
+                 (filter-rels rels rel))
+               rels)]
     (neo/with-tx
       (doseq [rel rels]
         (neo/delete! rel)))

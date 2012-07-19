@@ -32,6 +32,24 @@
   [user protocol-version]
   (can-design-protocol user (:protocol protocol-version)))
 
+;; Helper functions to check if an organization is accessible for an admin.
+(defn can-admin-org-id
+  [user org-id]
+  (or (roles/superadmin? user) (roles/admin? user :organization {:id org-id})))
+
+;; Helper functions to check if a protocol/version/location is accessible for a user.
+(defn can-manage-org-id
+  [user org-id]
+  (roles/consent-manager? user :organization {:id org-id}))
+
+(defn can-manage-location-id
+  [user location-id]
+  (roles/consent-manager? user :location {:id location-id}))
+
+(defn can-manage-location
+  [user location]
+  (can-manage-location-id user (:id location)))
+
 ;; Functions that generate functions used in runnable statements.
 (defn gen-designer-check
   "Creates a runnable? function that checks if a user is a protocol designer for a specific location."

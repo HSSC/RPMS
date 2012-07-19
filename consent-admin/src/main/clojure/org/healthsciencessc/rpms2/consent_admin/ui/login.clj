@@ -1,6 +1,5 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.login
-  (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [hiccup.form :as form]
+  (:require [hiccup.form :as form]
             [hiccup.element :as element]))
 
 (defn ui-login-form

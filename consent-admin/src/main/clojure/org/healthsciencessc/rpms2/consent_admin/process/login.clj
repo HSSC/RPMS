@@ -1,89 +1,76 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.login
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
+  (:refer-clojure :exclude [root])
+  (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
-            [org.healthsciencessc.rpms2.consent-admin.config :as config]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [hiccup.element :as elem]
-            [hiccup.page :as page]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-admin.ui.login :as ui]
             [sandbar.stateful-session :as sess]
-            [ring.util.response :as rutil])
-  (:use [org.healthsciencessc.rpms2.consent-admin.ui.login]
-        [clojure.pprint]
-        [sandbar.stateful-session])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
-(defn handle-root-request
-  "Redirects the request to the get-login process."
-  [ctx]
-  (rutil/redirect (path/root-link ctx "/login")))
-
-(defn redirect-to-security-login
-  "Redirects the request to the get-security-login process."
-  [ctx]
-  (rutil/redirect (path/root-link ctx "/security/login")))
-
-(defn authenticate
+;; Provide An Overridable Authentication Process
+(defprocess authenticate
   "Authenticates a username password combination with the consent services applicaiton."
   [ctx username password]
   (if-let [user (services/authenticate username password)]
     (if-not (= :invalid user)
       (sess/session-put! :user user))))
 
-(defn generate-login-page
-  ""
+;; Register The Root Redirection
+(defprocess redirect-root
+  "Redirects the request to the get-login process."
+  [ctx]
+  (rutil/redirect (path/root-link ctx "/login")))
+
+(as-method redirect-root endpoint/endpoints "get")
+
+;; Register The Root Login Redirection
+(defprocess redirect-login
+  "Redirects the request to the get-security-login process."
+  [ctx]
+  (rutil/redirect (path/root-link ctx "/security/login")))
+
+(as-method redirect-login endpoint/endpoints "get-login")
+
+;; Register The Login View
+(defprocess view-login
+  "Redirects the request to the get-security-login process."
   [ctx]
   (if (security/is-authenticated?)
     (rutil/redirect (path/root-link ctx "/view/home"))
-    (layout/render ctx "Login" (ui-login-form ctx))))
+    (layout/render ctx "Login" (ui/ui-login-form ctx))))
 
-(defn do-login
-  ""
+(as-method view-login endpoint/endpoints "get-security-login")
+
+;; Register The Login Process
+(defprocess do-login
+  "Performs the login "
   [ctx]
   (sess/session-delete-key! :user)
   (authenticate ctx (get-in ctx [:body-params :username])
                     (get-in ctx [:body-params :password]))
   (if (security/is-authenticated?)
     (rutil/redirect (path/root-link ctx "/view/home"))
-    (generate-login-page (assoc ctx :error {:message "The username or password provided wasn't correct."}))))
+    (view-login (assoc ctx :error {:message "The username or password provided wasn't correct."}))))
 
-(defn logout
-  [params]
+(as-method do-login endpoint/endpoints "post-security-login")
+
+;; Register The Home View
+(defprocess view-home
+  "Generates a view of the home/landing page."
+  [ctx]
+  (layout/render ctx "Home"))
+
+(as-method view-home endpoint/endpoints "get-view-home")
+
+;; Register The Logout Process
+(defprocess do-logout
+  "Redirects the request to the get-security-login process."
+  [ctx]
   (sess/session-delete-key! :user)
-  redirect-to-security-login)
+  (redirect-login ctx))
 
-(def process-defns
-  [
-   ;; Handles a root request. Redirects to /login
-   {:name "get"
-    :runnable-fn (constantly true)
-    :run-fn handle-root-request}
-
-   ;; Redirects to /security/login
-   {:name "get-login"
-    :runnable-fn (constantly true)
-    :run-fn redirect-to-security-login}
-
-   {:name "get-logout"
-    :runnable-fn (constantly true)
-    :run-fn logout}
-
-   ;; Generates the login page
-   {:name "get-security-login"
-    :runnable-fn (constantly true)
-    :run-fn generate-login-page}
-
-   ;; Provides the landing page for an authenticated user.
-   {:name "get-view-home"
-    :runnable-fn (constantly true)
-    :run-fn (fn [ctx] (layout/render ctx "Home"))}
-
-   ;; Performs the authentication.
-   {:name "post-security-login"
-    :runnable-fn (constantly true)
-    :run-fn do-login}
-   ])
-
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
-
+(as-method do-logout endpoint/endpoints "get-logout")

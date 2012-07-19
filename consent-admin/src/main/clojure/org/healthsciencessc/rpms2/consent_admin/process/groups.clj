@@ -1,188 +1,240 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.groups
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
-            [org.healthsciencessc.rpms2.consent-admin.config :as config]
-            [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+  (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
+            
+            [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
+            [org.healthsciencessc.rpms2.consent-admin.process.users :as user]
+            
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]
+            [org.healthsciencessc.rpms2.consent-admin.ui.container :as container]
+            [org.healthsciencessc.rpms2.consent-admin.ui.form :as form]
+            [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
-            [org.healthsciencessc.rpms2.consent-admin.ui.form :as formui]
-            [sandbar.stateful-session :as sess]
-            [org.healthsciencessc.rpms2.consent-admin.services :as service]
-            [hiccup.core :as html]
-            [hiccup.element :as elem]
-            [hiccup.form :as form]
-            [ring.util.response :as rutil])
-  (:use [clojure.pprint]
-        [org.healthsciencessc.rpms2.consent-admin.process.users :only (format-name)])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            
+            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
-(defn layout-groups
-  [ctx]
-  (let [groups (service/get-groups ctx)]
-    (if (service/service-error? groups)
-      (ajax/error (meta groups))
-      (layout/render ctx "Groups"
-        (container/scrollbox
-          (list/selectlist {:action :.detail-action}
-            (for [x (sort-by :name groups)]
-              {:label (:name x) :data x})))
-        (actions/actions 
-             (actions/details-action {:url "/view/group/edit" :params {:group :selected#id}
-                                      :verify (actions/gen-verify-a-selected "Group")})
-             (actions/new-action {:url "/view/group/add"})
-             (actions/back-action))))))
+(def fields [{:name :name :label "Name"}
+             {:name :code :label "Code"}])
+
+(def type-name types/group)
+(def type-label "Group")
+(def type-path "group")
+(def type-kw (keyword type-name))
 
 (defn userlist [users]
   (container/scrollbox
     (list/selectlist {:action :.detail-action}
       (for [u users]
-        {:label (format-name u)
+        {:label (user/format-name u)
          :data u}))))
 
-(def group-fields
-  (let [text-fields [:name "Group name"
-                     :code "Code"]]
-    (map #(zipmap [:name :label] %)
-         (partition 2 text-fields))))
-
-(defn render-group-fields
-  "Create some field boxes from a map of [kw text-label]"
-  ([] (render-group-fields {}))
-  ([group]
-    (map formui/record->editable-field 
-         (repeat group)
-         group-fields))) 
-
-(defn get-view-group-add
+;; Register View Groups Process
+(defprocess view-groups
   [ctx]
-  (layout/render ctx "Create Group"
-                 (container/scrollbox (formui/dataform (render-group-fields)))
-                 (actions/actions 
-                   (actions/save-action {:method :post :url "/api/group/add"})
-                   (actions/back-action))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [nodes (services/get-groups org-id)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx (str type-label "s")
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n (sort-by :name nodes)]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                          (actions/details-action 
+                               {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
+                                :verify (actions/gen-verify-a-selected type-label)})
+                           (actions/new-action 
+                             {:url (str "/view/" type-path "/new") :params {:organization org-id}})
+                           (actions/back-action)))))
+      (ajax/forbidden))))
+    
+(as-method view-groups endpoint/endpoints "get-view-groups")
 
-(defn get-view-group-edit
+;; Register View Group Process
+(defprocess view-group
   [ctx]
-  (if-let [group-id (-> ctx :query-params :group)]
-    (let [group (service/get-group group-id)]
-      (if (service/service-error? group)
-        (ajax/error (meta group))
-        (layout/render ctx "Edit Group"
-                   (container/scrollbox (formui/dataform (render-group-fields group)))
-                   (actions/actions 
-                     (actions/save-action {:method :post :url "/api/group/edit" :params {:group group-id}})
-                     (actions/details-action {:url "/view/group/members" :params {:group group-id} :label "Members"})
-                     (actions/details-action {:url "/view/roles/show" :params {:assignee-type :group :assignee-id group-id} :label "Roles"})
-                     (actions/delete-action {:url "/api/group" :params {:group group-id}})
-                     (actions/back-action)))))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (if-let [node-id (lookup/get-group-in-query ctx)]
+        (let [n (services/get-group node-id)
+              editable (common/owned-by-user-org n)]
+          (if (meta n)
+            (rutil/not-found (:message (meta n)))
+            (layout/render ctx (str type-label ": " (:name n))
+                           (container/scrollbox 
+                             (form/dataform 
+                               (form/render-fields {:editable editable} fields n)))
+                           (actions/actions
+                             (if editable
+                               (list
+                                 (actions/save-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})
+                                 (actions/delete-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})))
+                             (actions/details-action {:url "/view/group/members" 
+                                                      :params {:group node-id} 
+                                                      :label "Members"})
+                             (actions/details-action {:url "/view/roles/show" 
+                                                      :params {:assignee-type :group :assignee-id node-id} 
+                                                      :label "Roles"})
+                             (actions/back-action)))))
+        ;; Handle Error
+        (layout/render-error ctx {:message "An group is required."}))
+      (ajax/forbidden))))
 
-(defn get-view-group-members [ctx]
-  (let [group-id (-> ctx :query-params :group)
-        {in :in :as all} (service/get-group-members group-id)]
-    (layout/render ctx "Members"
-                   (userlist (sort-by #(vec (map % [:last-name :first-name])) in))
-                   (actions/actions
-                     (actions/details-action {:label "Add Member..."
-                                              :url "/view/group/adduser"
-                                              :params {:group group-id}})
-                     (actions/delete-action {:label "Remove Member"
-                                             :url "/api/group/member"
-                                             :params {:user :selected#id
-                                                      :group group-id}
-                                             :action-on-success "refresh"})
-                     (actions/back-action)))))
+(as-method view-group endpoint/endpoints "get-view-group")
 
-(defn get-view-group-adduser [ctx]
-  (let [group-id (-> ctx :query-params :group)
-           {out :out :as all} (service/get-group-members group-id)]
-    (layout/render ctx "Add Member"
-                   (userlist (sort-by #(vec (map % [:last-name :first-name])) out))
-                   (actions/actions
-                     (actions/save-action {:label "Add Member"
-                                           :method :put
-                                           :url "/api/group/member"
-                                           :params {:group group-id
-                                                    :user :selected#id}})
-                     (actions/back-action)))))
-
-(defn delete-api-group
+;; Register View New Group Process
+(defprocess view-group-new
   [ctx]
-  (let [group (:group (:query-params ctx))
-        resp (service/delete-group group)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (layout/render ctx (str "Create " type-label)
+                     (container/scrollbox 
+                       (form/dataform 
+                         (form/render-fields {} fields)))
+                     (actions/actions 
+                       (actions/create-action 
+                         {:url (str "/api/" type-path) :params {:organization org-id}})
+                       (actions/back-action)))
+      (ajax/forbidden))))
 
-(defn post-api-group-add
+(as-method view-group-new endpoint/endpoints "get-view-group-new")
+
+;; Register Create Group Process
+(defprocess create
   [ctx]
-  (let [group (select-keys (:body-params ctx)
-                          (map :name group-fields))
-        resp (service/add-group group)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [body (assoc (:body-params ctx) :organization {:id org-id})
+            resp (services/add-group body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn put-api-group-member
+(as-method create endpoint/endpoints "put-api-group")
+
+;; Register Update Group Process
+(defprocess update
   [ctx]
-  (let [{:keys [user group]} (:query-params ctx)
-        resp (service/add-group-member group user)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [body (:body-params ctx)
+            group-id (lookup/get-group-in-query ctx)
+            resp (services/update-group group-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(defn delete-api-group-member
+(as-method update endpoint/endpoints "post-api-group")
+
+;; Register Delete Group Process
+(defprocess delete
   [ctx]
-  (let [{:keys [user group]} (:query-params ctx)
-        resp (service/remove-group-member group user)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [group-id (lookup/get-group-in-query ctx)
+            resp (services/delete-group group-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
+(as-method delete endpoint/endpoints "delete-api-group")
 
-(defn post-api-group-edit
+;; Register View Group Members Process
+(defprocess view-group-members
   [ctx]
-  (let [keys (select-keys (:body-params ctx)
-                          (map :name group-fields))
-        resp (service/edit-group (-> ctx :query-params :group)
-                                keys)]
-    (if (service/service-error? resp)
-      (ajax/error (meta resp))
-      (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (if-let [group-id (lookup/get-group-in-query ctx)]
+        (let [{in :in :as all} (services/get-group-members group-id)]
+          (layout/render ctx "Members"
+                         (userlist (sort-by #(vec (map % [:last-name :first-name])) in))
+                         (actions/actions
+                           (actions/details-action {:label "Add Member..."
+                                                    :url "/view/group/adduser"
+                                                    :params {:group group-id}})
+                           (actions/delete-action {:label "Remove Member"
+                                                   :url "/api/group/member"
+                                                   :params {:user :selected#id
+                                                            :group group-id}
+                                                   :action-on-success "refresh"})
+                           (actions/back-action))))
+        (layout/render-error ctx {:message "An group is required."}))
+      (ajax/forbidden))))
 
-(def process-defns
-  [{:name "get-view-groups"
-    :runnable-fn (constantly true)
-    :run-fn  layout-groups}
-   {:name "get-view-group-add"
-    :runnable-fn (constantly true)
-    :run-fn get-view-group-add}
-   {:name "delete-api-group"
-    :runnable-fn (constantly true)
-    :run-fn delete-api-group}
-   {:name "get-view-group-edit"
-    :runnable-fn (constantly true)
-    :run-fn get-view-group-edit}
-   {:name "get-view-group-adduser"
-    :runnable-fn (constantly true)
-    :run-fn get-view-group-adduser}
-   {:name "get-view-group-members"
-    :runnable-fn (constantly true)
-    :run-fn get-view-group-members}
-   {:name "post-api-group-edit"
-    :runnable-fn (constantly true)
-    :run-fn post-api-group-edit}
-   {:name "delete-api-group-member"
-    :runnable-fn (constantly true)
-    :run-fn delete-api-group-member}
-   {:name "put-api-group-member"
-    :runnable-fn (constantly true)
-    :run-fn put-api-group-member}
-   {:name "post-api-group-add"
-    :runnable-fn (constantly true)
-    :run-fn post-api-group-add}
-   ])
+(as-method view-group-members endpoint/endpoints "get-view-group-members")
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
+;; Register View Add Group Members Process
+(defprocess view-group-add-member
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (if-let [group-id (lookup/get-group-in-query ctx)]
+        (let [{out :out :as all} (services/get-group-members group-id)]
+          (layout/render ctx "Add Member"
+                         (userlist (sort-by #(vec (map % [:last-name :first-name])) out))
+                         (actions/actions
+                           (actions/save-action {:label "Add Member"
+                                                 :method :put
+                                                 :url "/api/group/member"
+                                                 :params {:group group-id
+                                                          :user :selected#id}})
+                           (actions/back-action))))
+        (layout/render-error ctx {:message "An group is required."}))
+      (ajax/forbidden))))
+
+(as-method view-group-add-member endpoint/endpoints "get-view-group-adduser")
+
+;; Register Add Group Member Process
+(defprocess add-member
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [group-id (lookup/get-group-in-query ctx)
+            user-id (lookup/get-user-in-query ctx)
+            resp (services/add-group-member group-id user-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method add-member endpoint/endpoints "put-api-group-member")
+
+
+;; Register Remove Group Member Process
+(defprocess remove-member
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-admin-org-id user org-id)
+      (let [group-id (lookup/get-group-in-query ctx)
+            user-id (lookup/get-user-in-query ctx)
+            resp (services/remove-group-member group-id user-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method remove-member endpoint/endpoints "delete-api-group-member")

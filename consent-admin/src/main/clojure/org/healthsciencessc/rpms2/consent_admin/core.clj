@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.core
   (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
-                                                       [web-service :as ws]]
+                                                       [endpoint :as ws]]
             [ring.util [codec :as codec]
                        [response :as response]]
             [sandbar.stateful-session :as sandbar]

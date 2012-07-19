@@ -14,5 +14,6 @@
             [org.healthsciencessc.rpms2.consent-admin.process.protocol]
             [org.healthsciencessc.rpms2.consent-admin.process.protocol-version]
             [org.healthsciencessc.rpms2.consent-admin.process.roles]
+            [org.healthsciencessc.rpms2.consent-admin.process.role-mapping]
             [org.healthsciencessc.rpms2.consent-admin.process.text-i18n]
             [org.healthsciencessc.rpms2.consent-admin.process.users]))

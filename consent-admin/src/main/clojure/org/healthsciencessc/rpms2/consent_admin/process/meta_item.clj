@@ -15,10 +15,9 @@
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [ring.util.response :as rutil])
-  (:use [clojure.tools.logging :only (info error)])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :description :label "Description"}
@@ -35,134 +34,159 @@
 (def type-path "meta-item")
 (def type-kw (keyword type-name))
 
-(defn view-meta-items
+;; Register View Meta Items Process
+(defprocess view-meta-items
   [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-meta-items)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)
-        prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
-        params (merge {:organization org-id} prot-props)]
-    (if (meta nodes)
-      (rutil/not-found (:message (meta nodes)))
-      (layout/render ctx (str type-label "s")
-                     (container/scrollbox 
-                       (list/selectlist {:action :.detail-action}
-                                              (for [n nodes]
-                                                {:label (:name n) :data (select-keys n [:id])})))
-                     (actions/actions 
-                       (if protocol-version-id
-                         (actions/assign-action 
-                           {:url (str "/api/" type-path "/assign") 
-                            :params (merge params {type-kw :selected#id})
-                            :verify (actions/gen-verify-a-selected "Meta Item")}))
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) 
-                          :params (merge params {type-kw :selected#id})
-                          :verify (actions/gen-verify-a-selected "Meta Item")})
-                       (actions/new-action 
-                         {:url (str "/view/" type-path "/new") :params {:organization org-id}})
-                       (actions/back-action))))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [nodes (services/get-meta-items)
+            protocol-version-id (lookup/get-protocol-version-in-query ctx)
+            prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
+            params (merge {:organization org-id} prot-props)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx (str type-label "s")
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n nodes]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                           (if protocol-version-id
+                             (actions/assign-action 
+                               {:url (str "/api/" type-path "/assign") 
+                                :params (merge params {type-kw :selected#id})
+                                :verify (actions/gen-verify-a-selected "Meta Item")}))
+                           (actions/details-action 
+                             {:url (str "/view/" type-path) 
+                              :params (merge params {type-kw :selected#id})
+                              :verify (actions/gen-verify-a-selected "Meta Item")})
+                           (actions/new-action 
+                             {:url (str "/view/" type-path "/new") :params {:organization org-id}})
+                           (actions/back-action)))))
+      (ajax/forbidden))))
+    
+(as-method view-meta-items endpoint/endpoints "get-view-meta-items")
+(as-method view-meta-items endpoint/endpoints "get-view-protocol-version-meta-item-add")
 
-(defn view-meta-item
- [ctx]
-  (if-let [node-id (lookup/get-meta-item-in-query ctx)]
-    (let [n (services/get-meta-item node-id)
-          editable (common/owned-by-user-org n)
-          langs (services/get-languages)]
-      (if (meta n)
-        (rutil/not-found (:message (meta n)))
-        (layout/render ctx (str type-label ": " (:name n))
+;; Register View Meta Item Process
+(defprocess view-meta-item
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (if-let [node-id (lookup/get-meta-item-in-query ctx)]
+        (let [n (services/get-meta-item node-id)
+              editable (common/owned-by-user-org n)
+              langs (services/get-languages org-id)]
+          (if (meta n)
+            (rutil/not-found (:message (meta n)))
+            (layout/render ctx (str type-label ": " (:name n))
+                           (container/scrollbox 
+                             (form/dataform 
+                               (form/render-fields 
+                                 {:editable editable
+                                  :fields {:labels {:languages langs 
+                                                    :default-language (get-in n [:organization :language])
+                                                    :url "/api/text/i18n"
+                                                    :params {:parent-id node-id
+                                                             :parent-type type-name
+                                                             :property :labels}}}} fields n)))
+                           (actions/actions
+                             (if editable
+                               (list
+                                 (actions/save-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})
+                                 (actions/delete-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})))
+                             (actions/back-action)))))
+        ;; Handle Error
+        (layout/render-error ctx {:message "An meta-item type is required."}))
+      (ajax/forbidden))))
+
+(as-method view-meta-item endpoint/endpoints "get-view-meta-item")
+
+;; Register View New Meta Item Process
+(defprocess view-meta-item-new
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [org (services/get-organization org-id)
+            langs (services/get-languages org-id)]
+        (layout/render ctx (str "Create " type-label)
                        (container/scrollbox 
                          (form/dataform 
-                           (form/render-fields {:editable editable
-                                                :fields {:labels {:languages langs 
-                                                                  :default-language (get-in n [:organization :language])
-                                                                  :url "/api/text/i18n"
-                                                                  :params {:parent-id node-id
-                                                                           :parent-type type-name
-                                                                           :property :labels}}}} fields n)))
-                       (actions/actions
-                         (if editable
-                           (list
-                             (actions/save-action 
-                               {:url (str "/api/" type-path) :params {type-kw node-id}})
-                             (actions/delete-action 
-                               {:url (str "/api/" type-path) :params {type-kw node-id}})))
-                         (actions/back-action)))))
-    ;; Handle Error
-    (layout/render-error ctx {:message "An meta-item type is required."})))
+                           (form/render-fields {:fields 
+                                                {:labels {:languages langs
+                                                          :default-language (:language org)}}} fields {})))
+                       (actions/actions 
+                         (actions/create-action 
+                           {:url (str "/api/" type-path) :params {:organization org-id}})
+                         (actions/back-action))))
+      (ajax/forbidden))))
 
-(defn view-meta-item-new
-  "Generates a view that allows you to create a new protocol."
+(as-method view-meta-item-new endpoint/endpoints "get-view-meta-item-new")
+
+;; Register Assign Meta Item Process
+(defprocess assign
   [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        org (services/get-organization org-id)
-        langs (services/get-languages)]
-    (layout/render ctx (str "Create " type-label)
-                   (container/scrollbox 
-                     (form/dataform 
-                       (form/render-fields {:fields 
-                                            {:labels {:languages langs
-                                                      :default-language (:language org)}}} fields {})))
-                   (actions/actions 
-                     (actions/create-action 
-                       {:url (str "/api/" type-path) :params {:organization org-id}})
-                     (actions/back-action)))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [meta-item-id (lookup/get-meta-item-in-query ctx)
+            protocol-version-id (lookup/get-protocol-version-in-query ctx)
+            resp (services/assign-meta-item-to-protocol-version meta-item-id protocol-version-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
+(as-method assign endpoint/endpoints "post-api-meta-item-assign")
 
-(defn- api-assign-meta-item
+;; Register Create Meta Item Process
+(defprocess create
   [ctx]
-  (let [meta-item-id (lookup/get-meta-item-in-query ctx)
-        protocol-version-id (lookup/get-protocol-version-in-query ctx)
-        resp (services/assign-meta-item-to-protocol-version meta-item-id protocol-version-id)]
-      (if (services/service-error? resp)
-        (ajax/save-failed (meta resp))
-        (ajax/success resp))))
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (assoc (:body-params ctx) :organization {:id org-id})
+            resp (services/add-meta-item body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(def process-defns
-  [{:name (str "get-view-" type-name "s")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-meta-items
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-protocol-version-" type-name "-add")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-meta-items
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-meta-item
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name "-new")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-meta-item-new
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "put-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/get-api-type-add 
-              services/add-meta-item)
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-update 
-              services/edit-meta-item 
-              lookup/get-meta-item-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "delete-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-delete 
-              services/delete-meta-item 
-              lookup/get-meta-item-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name "-assign")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn api-assign-meta-item
-    :run-if-false ajax/forbidden}])
+(as-method create endpoint/endpoints "put-api-meta-item")
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
+;; Register Update Meta Item Process
+(defprocess update
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (:body-params ctx)
+            meta-item-id (lookup/get-meta-item-in-query ctx)
+            resp (services/update-meta-item meta-item-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method update endpoint/endpoints "post-api-meta-item")
+
+;; Register Update Meta Item Process
+(defprocess delete
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [meta-item-id (lookup/get-meta-item-in-query ctx)
+            resp (services/delete-meta-item meta-item-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method delete endpoint/endpoints "delete-api-meta-item")
+

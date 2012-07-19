@@ -17,13 +17,11 @@
 
 (def language-processes
   [{:name "get-library-languages"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])]
-                     (or (roles/consent-collector? user) (roles/protocol-designer? user))))
+    :runnable-fn (constantly true) ;; Allow any role to read the list of languages.
     :run-fn (fn [params]
               (let [user (get-in params [:session :current-user])
-                    user-org-id (get-in user [:organization :id])]
-                (data/find-children "organization" user-org-id "language")))
+                    org-id (or (lookup/get-organization-in-query params) (get-in user [:organization :id]))]
+                (data/find-children "organization" org-id "language")))
     :run-if-false forbidden-fn}
 
    {:name "get-library-language"

@@ -15,10 +15,9 @@
             [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [ring.util.response :as rutil])
-  (:use [clojure.tools.logging :only (info error)])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [ring.util.response :as rutil]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+  (:use     [pliant.process :only [defprocess as-method]]))
 
 (def fields [{:name :name :label "Name" :required true}
              {:name :description :label "Description"}
@@ -29,95 +28,124 @@
 (def type-path "policy-definition")
 (def type-kw (keyword type-name))
 
-(defn view-policy-definitions
+
+;; Register View Policy Definitions Process
+(defprocess view-policy-definitions
   [ctx]
-  (let [org-id (common/lookup-organization ctx)
-        nodes (services/get-policy-definitions org-id)]
-    (if (meta nodes)
-      (rutil/not-found (:message (meta nodes)))
-      (layout/render ctx (str type-label "s")
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [nodes (services/get-policy-definitions org-id)]
+        (if (meta nodes)
+          (rutil/not-found (:message (meta nodes)))
+          (layout/render ctx (str type-label "s")
+                         (container/scrollbox 
+                           (list/selectlist {:action :.detail-action}
+                                            (for [n nodes]
+                                              {:label (:name n) :data (select-keys n [:id])})))
+                         (actions/actions 
+                           (actions/details-action 
+                             {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
+                              :verify (actions/gen-verify-a-selected "Policy Definition")})
+                           (actions/new-action 
+                             {:url (str "/view/" type-path "/new") :params {:organization org-id}})
+                           (actions/back-action)))))
+    (ajax/forbidden))))
+
+(as-method view-policy-definitions endpoint/endpoints "get-view-policy-definitions")
+
+
+;; Register View Policy Definition Process
+(defprocess view-policy-definition
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (if-let [node-id (lookup/get-policy-definition-in-query ctx)]
+        (let [n (services/get-policy-definition node-id)
+              org-id (get-in n [:organization :id])
+              editable (= (get-in n [:organization :id]) (security/current-org-id))]
+          (if (meta n)
+            (rutil/not-found (:message (meta n)))
+            (layout/render ctx (str type-label ": " (:name n))
+                           (container/scrollbox 
+                             (form/dataform 
+                               (form/render-fields {:editable editable} fields n)))
+                           (actions/actions
+                             (if editable
+                               (list 
+                                 (actions/save-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})
+                                 (actions/delete-action 
+                                   {:url (str "/api/" type-path) :params {type-kw node-id}})))
+                             (actions/back-action)))))
+        ;; Handle Error
+        (layout/render-error ctx {:message "An policy-definition type is required."}))
+      (ajax/forbidden))))
+
+(as-method view-policy-definition endpoint/endpoints "get-view-policy-definition")
+
+;; Register View New Policy Definition Process
+(defprocess view-policy-definition-new
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (layout/render ctx (str "Create " type-label)
                      (container/scrollbox 
-                       (list/selectlist {:action :.detail-action}
-                                              (for [n nodes]
-                                                {:label (:name n) :data (select-keys n [:id])})))
+                       (form/dataform 
+                         (form/render-fields {} fields )))
                      (actions/actions 
-                       (actions/details-action 
-                         {:url (str "/view/" type-path) :params {:organization org-id type-kw :selected#id}
-                          :verify (actions/gen-verify-a-selected "Policy Definition")})
-                       (actions/new-action 
-                         {:url (str "/view/" type-path "/new") :params {:organization org-id}})
-                       (actions/back-action))))))
+                       (actions/create-action 
+                         {:url (str "/api/" type-path) :params {:organization org-id}})
+                       (actions/back-action)))
+      (ajax/forbidden))))
 
-(defn view-policy-definition
- [ctx]
-  (if-let [node-id (lookup/get-policy-definition-in-query ctx)]
-    (let [n (services/get-policy-definition node-id)
-          org-id (get-in n [:organization :id])
-          editable (= (get-in n [:organization :id]) (security/current-org-id))]
-      (if (meta n)
-        (rutil/not-found (:message (meta n)))
-        (layout/render ctx (str type-label ": " (:name n))
-                       (container/scrollbox 
-                         (form/dataform 
-                           (form/render-fields {:editable editable} fields n)))
-                       (actions/actions
-                         (if editable
-                           (list 
-                             (actions/save-action 
-                               {:url (str "/api/" type-path) :params {type-kw node-id}})
-                             (actions/delete-action 
-                               {:url (str "/api/" type-path) :params {type-kw node-id}})))
-                         (actions/back-action)))))
-    ;; Handle Error
-    (layout/render-error ctx {:message "An policy-definition type is required."})))
+(as-method view-policy-definition-new endpoint/endpoints "get-view-policy-definition-new")
 
-(defn view-policy-definition-new
-  "Generates a view that allows you to create a new protocol."
+;; Register Create Policy Definition Process
+(defprocess create
   [ctx]
-  (let [org-id (common/lookup-organization ctx)]
-    (layout/render ctx (str "Create " type-label)
-                   (container/scrollbox 
-                     (form/dataform 
-                       (form/render-fields {} fields {})))
-                   (actions/actions 
-                     (actions/create-action 
-                       {:url (str "/api/" type-path) :params {:organization org-id}})
-                     (actions/back-action)))))
-    
-(def process-defns
-  [{:name (str "get-view-" type-name "s")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-definitions
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-definition
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "get-view-" type-name "-new")
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization)
-    :run-fn view-policy-definition-new
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "put-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/get-api-type-add 
-              services/add-policy-definition)
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "post-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-update 
-              services/edit-policy-definition 
-              lookup/get-policy-definition-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}
-   
-   {:name (str "delete-api-" type-name)
-    :runnable-fn (runnable/gen-designer-org-check security/current-user common/lookup-organization) ;; Service Will Catch Auth
-    :run-fn (common/gen-api-type-delete 
-              services/delete-policy-definition 
-              lookup/get-policy-definition-in-query (str "A valid " type-label " is required."))
-    :run-if-false ajax/forbidden}])
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (assoc (:body-params ctx) :organization {:id org-id})
+            resp (services/add-policy-definition body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
 
-(process/register-processes (map #(DefaultProcess/create %) process-defns))
+(as-method create endpoint/endpoints "put-api-policy-definition")
+
+;; Register Update Policy Definition Process
+(defprocess update
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [body (:body-params ctx)
+            policy-definition-id (lookup/get-policy-definition-in-query ctx)
+            resp (services/update-policy-definition policy-definition-id body)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method update endpoint/endpoints "post-api-policy-definition")
+
+;; Register Update Policy Definition Process
+(defprocess delete
+  [ctx]
+  (let [user (security/current-user ctx)
+        org-id (common/lookup-organization ctx)]
+    (if (runnable/can-design-org-id user org-id)
+      (let [policy-definition-id (lookup/get-policy-definition-in-query ctx)
+            resp (services/delete-policy-definition policy-definition-id)]
+        (if (services/service-error? resp)
+          (ajax/save-failed (meta resp))
+          (ajax/success resp)))
+      (ajax/forbidden))))
+
+(as-method delete endpoint/endpoints "delete-api-policy-definition")
+

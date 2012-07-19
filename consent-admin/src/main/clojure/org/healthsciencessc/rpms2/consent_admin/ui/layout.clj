@@ -1,11 +1,34 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
-  (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
+  (:require [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             [sandbar.stateful-session :as sess]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [pliant.process :as process]))
 
+
+(process/defprocess scripts
+  "Generates a list of URLs that are injected into the head section of the layout as script files(javascript)."
+  [ctx]
+  ["/js/jquery-1.7.2.min.js"
+   "/js/jquery-ui-1.8.19.custom.min.js"
+   "/js/utils.js"
+   "/js/dialog.js"
+   "/js/pane.js"
+   "/js/consent-admin.js"
+   "/js/consent-designer.js"
+   "/js/consent-designer-ext.js"])
+
+
+(process/defprocess stylesheets
+  "Generates a list of URLs that are injected into the head section of the layout as stylesheets."
+  [ctx]
+  ["/css/clean.css"
+   "/css/redmond/jquery-ui-1.8.19.custom.css"
+   "/css/dialog.css"
+   "/css/consent-admin.css"
+   "/css/consent-designer.css"])
+  
 (defn- header
   "Creates the default header that is used for the application"
   []  
@@ -59,19 +82,8 @@
   [:head [:meta {:charset "utf-8"}]
          [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
          [:title "RPMS Administration"]
-    (page/include-css "/css/clean.css"
-                      "/css/redmond/jquery-ui-1.8.19.custom.css"
-                      "/css/dialog.css"
-                      "/css/consent-admin.css"
-                      "/css/consent-designer.css")
-    (page/include-js "/js/jquery-1.7.2.min.js"
-                     "/js/jquery-ui-1.8.19.custom.min.js"
-                     "/js/utils.js"
-                     "/js/dialog.js"
-                     "/js/pane.js"
-                     "/js/consent-admin.js"
-                     "/js/consent-designer.js"
-                     "/js/consent-designer-ext.js")
+    (apply page/include-css (stylesheets ctx))
+    (apply page/include-js (scripts ctx))
     [:script (str "Utils.Url.initBasePath(\"" (:context ctx) "\");")]])
 
 (defn- layout 
@@ -95,18 +107,28 @@
     [:div.content-title.ui-helper-reset.ui-state-default.ui-corner-all (or title "No Title")]
     [:div.content-data elements]))
 
-(defn render
+(process/defprocess render
   "Decides how markup should be wrapped in a container.  This provides 
    the ability to add additional containers later based on how the 
    request was made.  IE - make into a portlet."
   [ctx title & elements]
-  (cond
-    (not (sess/session-get :user))
-      (layout-no-session ctx elements)
-    (= (get-in ctx [:query-params :view-mode]) "pane")
-      (pane ctx title elements)
-    :else
-      (layout ctx elements)))
+  (layout ctx elements))
+
+(process/deflayer render render-no-session
+  "Renders into a layout specific for responses that are outside of an authenticated session."
+  [ctx title & elements]
+  (if (not (sess/session-get :user))
+    (layout-no-session ctx elements)
+    (process/next-layer)))
+
+(process/deflayer render render-pane
+  "Renders into a layout specific for a pane that is dynamically injected into the DOM on the client side."
+  [ctx title & elements]
+  (if (= (get-in ctx [:query-params :view-mode]) "pane")
+    (pane ctx title elements)
+    (process/next-layer)))
+
+(process/before render render-no-session render-pane)
 
 (defn- error-html
   [error]

@@ -33,5 +33,5 @@
 
 (defn forbidden
   "Function called to return a forbiddent error."
-  [_]
-  (response/status (response/response {}) 403))
+  [& ignore]
+  (response/status (response/response {:message "Access to the requested resources has been denied."}) 403))

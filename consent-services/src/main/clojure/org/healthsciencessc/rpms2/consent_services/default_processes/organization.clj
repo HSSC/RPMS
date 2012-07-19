@@ -1,8 +1,22 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.organization
   (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
   (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data])
+            [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [borneo.core :as neo])
   (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+
+(defn- assign-language
+  [ctx]
+  (let [language-id (get-in ctx [:query-params :language])
+        organization-id (get-in ctx [:query-params :organization])
+        organization (data/find-record types/organization organization-id)
+        language (:language organization)]
+    (neo/with-tx
+      (if language
+        (data/unrelate-records types/organization organization-id types/language (:id language) :rel-name :language))
+      (data/relate-records types/organization organization-id types/language language-id :rel-name :language))
+    (data/find-record types/organization organization-id)))
 
 (def org-processes
   [;; curl -i -X GET -H "Content-type: application/json" http://localhost:3000/organizations
@@ -57,6 +71,12 @@
     :run-fn (fn [params]
               (let [org-id (get-in params [:query-params :organization])]
                 (data/delete "organization" org-id)))
+    :run-if-false forbidden-fn}
+   
+
+   {:name "put-security-organization-language"
+    :runnable-fn (fn [{{user :current-user} :session}] (super-admin? user))
+    :run-fn assign-language
     :run-if-false forbidden-fn}])
 
 (process/register-processes (map #(DefaultProcess/create %) org-processes))
