@@ -68,25 +68,27 @@
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
     (if (runnable/can-manage-org-id user org-id)      
-      (let [consenters (services/find-consenters (:query-params ctx))]
+      (let [params (into {} (filter (fn [[k v]] (not (empty? v))) (select-keys (:query-params ctx) (map :name fields))))
+            consenters (services/find-consenters params)]
         (cond
           (no-results? consenters)
-          (error/view-not-found {:message "No records found that match the entered criteria."})
+            (error/view-not-found {:message "No records found that match the entered criteria."})
           (meta consenters)
-          (error/view-failure {:message "Unable to execute the search."} 500)
+            (error/view-failure {:message "Unable to execute the search."} 500)
           :else
-          (layout/render 
-            ctx "Consent History - Search Results"
-            (container/scrollbox 
-              (list/selectlist {:action :.detail-action}
-                               (for [n consenters]
-                                 {:label (consenter-name n) :data (select-keys n [:id])})))
-            (actions/actions 
-              (actions/details-action 
-                {:url "/view/consent/history/consents" 
-                 :params {:consenter :selected#id}
-                 :verify (actions/gen-verify-a-selected "Consenter")})
-              (actions/back-action)))))
+            (let [sorting (sort-by #(str (:last-name %) " " (:first-name %) " " (:middle-name %)) consenters)]
+              (layout/render 
+                ctx "Consent History - Search Results"
+                (container/scrollbox 
+                  (list/selectlist {:action :.detail-action}
+                                   (for [n sorting]
+                                     {:label (consenter-name n) :data (select-keys n [:id])})))
+                (actions/actions 
+                  (actions/details-action 
+                    {:url "/view/consent/history/consents" 
+                     :params {:consenter :selected#id}
+                     :verify (actions/gen-verify-a-selected "Consenter")})
+                  (actions/back-action))))))
       (ajax/forbidden))))
     
 (as-method view-consent-history-consenters endpoint/endpoints "get-view-consent-history-consenters")
