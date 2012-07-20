@@ -3,11 +3,11 @@
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             [sandbar.stateful-session :as sess]
-            [clojure.data.json :as json]
-            [pliant.process :as process]))
+            [clojure.data.json :as json])
+  (:use     [pliant.process :only [defprocess deflayer continue before]]))
 
 
-(process/defprocess scripts
+(defprocess scripts
   "Generates a list of URLs that are injected into the head section of the layout as script files(javascript)."
   [ctx]
   ["/js/jquery-1.7.2.min.js"
@@ -20,7 +20,7 @@
    "/js/consent-designer-ext.js"])
 
 
-(process/defprocess stylesheets
+(defprocess stylesheets
   "Generates a list of URLs that are injected into the head section of the layout as stylesheets."
   [ctx]
   ["/css/clean.css"
@@ -107,28 +107,28 @@
     [:div.content-title.ui-helper-reset.ui-state-default.ui-corner-all (or title "No Title")]
     [:div.content-data elements]))
 
-(process/defprocess render
+(defprocess render
   "Decides how markup should be wrapped in a container.  This provides 
    the ability to add additional containers later based on how the 
    request was made.  IE - make into a portlet."
   [ctx title & elements]
   (layout ctx elements))
 
-(process/deflayer render render-no-session
+(deflayer render render-no-session
   "Renders into a layout specific for responses that are outside of an authenticated session."
   [ctx title & elements]
   (if (not (sess/session-get :user))
     (layout-no-session ctx elements)
-    (process/next-layer)))
+    (continue)))
 
-(process/deflayer render render-pane
+(deflayer render render-pane
   "Renders into a layout specific for a pane that is dynamically injected into the DOM on the client side."
   [ctx title & elements]
   (if (= (get-in ctx [:query-params :view-mode]) "pane")
     (pane ctx title elements)
-    (process/next-layer)))
+    (continue)))
 
-(process/before render render-no-session render-pane)
+(before render render-no-session render-pane)
 
 (defn- error-html
   [error]
