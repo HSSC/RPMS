@@ -1,62 +1,68 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.endorsement-type
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn admin? super-admin?)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(defn assign-endorsement-type
+
+(defn designs-endorsement-type
   [ctx]
-  (let [endorsement-id (lookup/get-endorsement-in-query ctx)
-        new-type-id (get-in ctx [:query-params :assign-type])
-        endorsement-type-id (lookup/get-endorsement-type-in-query ctx)]
-    (data/re-relate-records types/endorsement endorsement-id types/endorsement-type endorsement-type-id new-type-id)))
+  (vouch/designs-type ctx types/endorsement-type (get-in ctx [:query-params :endorsement-type])))
 
-(defn- authorize-read-node
+(defn views-endorsement-type
   [ctx]
-  (let [user (utils/current-user ctx)]
-    (and (roles/protocol-designer? user)
-         (utils/record-belongs-to-user-org ctx types/endorsement-type))))
+  (vouch/views-type-as-designer ctx types/endorsement-type (get-in ctx [:query-params :endorsement-type])))
 
-(defn- authorize-change-node
+(defprocess get-endorsement-types
   [ctx]
-  (let [user (utils/current-user ctx)]
-    (and (roles/protocol-designer? user)
-         (utils/record-owned-by-user-org ctx types/endorsement-type))))
+  (let [user (session/current-user ctx)]
+    (if (roles/protocol-designer? user)
+      (data/find-children types/organization (session/current-org-id ctx) types/endorsement-type)
+      (respond/forbidden))))
 
-(def endorsement-type-processes
-  [{:name "get-library-endorsement-types"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user utils/lookup-organization)
-    :run-fn (utils/gen-type-records-by-org types/endorsement-type)
-    :run-if-false forbidden-fn}
+(as-method get-endorsement-types endpoint/endpoints "get-library-endorsement-types")
 
-   {:name "get-library-endorsement-type"
-    :runnable-fn authorize-read-node
-    :run-fn utils/get-endorsement-type-record
-    :run-if-false forbidden-fn}
 
-   {:name "put-library-endorsement-type"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user lookup/get-organization-in-body)
-    :run-fn (utils/gen-type-create types/endorsement-type)
-    :run-if-false forbidden-fn}
+(defprocess get-endorsement-type
+  [ctx]
+  (let [endorsement-type (views-endorsement-type ctx)]
+    (if endorsement-type
+      endorsement-type
+      (respond/forbidden))))
 
-   {:name "post-library-endorsement-type"
-    :runnable-fn authorize-change-node
-    :run-fn (utils/gen-type-update types/endorsement-type lookup/get-endorsement-type-in-query)
-    :run-if-false forbidden-fn}
+(as-method get-endorsement-type endpoint/endpoints "get-library-endorsement-type")
 
-   {:name "delete-library-endorsement-type"
-    :runnable-fn authorize-change-node
-    :run-fn (utils/gen-type-delete types/endorsement-type lookup/get-endorsement-type-in-query)
-    :run-if-false forbidden-fn}
-   
-   {:name "post-library-endorsement-type-assign"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-endorsement-record)
-    :run-fn assign-endorsement-type
-    :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) endorsement-type-processes))
+(defprocess add-endorsement-type
+  [ctx]
+  (if (vouch/designs-org? ctx)
+    (let [org-id (get-in ctx [:query-params :organization])
+          data (assoc (:body-params ctx) :organization {:id org-id})]
+      (data/create types/endorsement-type data))
+    (respond/forbidden)))
+
+(as-method add-endorsement-type endpoint/endpoints "put-library-endorsement-type")
+
+
+(defprocess update-endorsement-type
+  [ctx]
+  (let [endorsement-type (designs-endorsement-type ctx)]
+    (if endorsement-type
+      (data/update types/endorsement-type (:id endorsement-type) (:body-params ctx))
+      (respond/forbidden))))
+
+(as-method update-endorsement-type endpoint/endpoints "post-library-endorsement-type")
+
+
+(defprocess delete-endorsement-type
+  [ctx]
+  (let [endorsement-type (designs-endorsement-type ctx)]
+    (if endorsement-type
+      (data/delete types/endorsement-type (:id endorsement-type))
+      (respond/forbidden))))
+
+(as-method delete-endorsement-type endpoint/endpoints "delete-library-endorsement-type")

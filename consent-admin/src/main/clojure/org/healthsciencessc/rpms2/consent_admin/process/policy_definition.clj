@@ -1,6 +1,7 @@
 ;; Provides the configuration of the protocol managemant UIs.
 (ns org.healthsciencessc.rpms2.consent-admin.process.policy-definition
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.error :as error]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
@@ -12,7 +13,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
             [ring.util.response :as rutil]
@@ -34,10 +35,10 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [nodes (services/get-policy-definitions org-id)]
         (if (meta nodes)
-          (rutil/not-found (:message (meta nodes)))
+          (error/view-service-error nodes)
           (layout/render ctx (str type-label "s")
                          (container/scrollbox 
                            (list/selectlist {:action :.detail-action}
@@ -60,13 +61,13 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (if-let [node-id (lookup/get-policy-definition-in-query ctx)]
         (let [n (services/get-policy-definition node-id)
               org-id (get-in n [:organization :id])
               editable (= (get-in n [:organization :id]) (security/current-org-id))]
           (if (meta n)
-            (rutil/not-found (:message (meta n)))
+            (error/view-service-error n)
             (layout/render ctx (str type-label ": " (:name n))
                            (container/scrollbox 
                              (form/dataform 
@@ -90,7 +91,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (layout/render ctx (str "Create " type-label)
                      (container/scrollbox 
                        (form/dataform 
@@ -108,9 +109,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-policy-definition body)]
+            resp (services/add-policy-definition org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -123,7 +124,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (:body-params ctx)
             policy-definition-id (lookup/get-policy-definition-in-query ctx)
             resp (services/update-policy-definition policy-definition-id body)]
@@ -139,7 +140,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [policy-definition-id (lookup/get-policy-definition-in-query ctx)
             resp (services/delete-policy-definition policy-definition-id)]
         (if (services/service-error? resp)

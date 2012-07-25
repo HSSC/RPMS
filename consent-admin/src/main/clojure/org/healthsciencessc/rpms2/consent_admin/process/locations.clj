@@ -13,7 +13,7 @@
             
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
             [ring.util.response :as rutil]
@@ -41,7 +41,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [nodes (services/get-locations)]
         (if (meta nodes)
           (rutil/not-found (:message (meta nodes)))
@@ -66,7 +66,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [node-id (lookup/get-location-in-query ctx)]
         (let [n (services/get-location node-id)
               editable (common/owned-by-user-org n)]
@@ -95,7 +95,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (layout/render ctx (str "Create " (render-label))
                      (container/scrollbox 
                        (form/dataform 
@@ -114,9 +114,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-location body)]
+            resp (services/add-location org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -129,7 +129,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (:body-params ctx)
             location-id (lookup/get-location-in-query ctx)
             resp (services/update-location location-id body)]
@@ -145,7 +145,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [location-id (lookup/get-location-in-query ctx)
             resp (services/delete-location location-id)]
         (if (services/service-error? resp)

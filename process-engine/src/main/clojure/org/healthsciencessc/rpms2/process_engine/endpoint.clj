@@ -37,6 +37,11 @@
         :else 
           :default))))
 
+
+(defmethod respond :response
+  [request body]
+  body)
+
 (defmethod respond :json
   [request body]
   (util/respond-with-json body request))

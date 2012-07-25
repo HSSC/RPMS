@@ -23,6 +23,15 @@
   [body]
   (view-error body 401))
 
-(defn bad-request
+(defn view-bad-request
   [body]
   (view-error body 400))
+
+(defn view-service-error
+  [resp]
+  (let [status (:status resp)
+        body (select-keys (meta resp) [:message])]
+    (cond
+      (= status 403) (view-forbidden body)
+      (= status 404) (view-not-found body)
+      :else (view-failure body))))

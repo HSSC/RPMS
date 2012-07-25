@@ -7,7 +7,8 @@
             [clojure.string :as str]
             [clojure.stacktrace :as st]
             [clojure.java.io :as io]
-            [hiccup.util :as hutil])
+            [hiccup.util :as hutil]
+            [clojure.tools.logging :as logging])
   (:use [org.healthsciencessc.rpms2.consent-admin.config]
         [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]))
 
@@ -44,6 +45,7 @@
   (fn [resp]
     (if (not= (:status resp) 200)
       (let [m (assoc resp :message message)]
+        (logging/error "Consent Service Call:" resp)
         (with-meta coll m)))))
 
 (def ^:private failure-handler
@@ -128,26 +130,26 @@
   (GET "/security/locations" {}))
 
 (defn get-location
-  [id]
-  (GET "/security/location" {:location id}))
+  [location-id]
+  (GET "/security/location" {:location location-id}))
 
 (defn add-location
-  [l]
+  [org-id data]
   (PUT "/security/location"
+        {:organization org-id}
         nil
-        nil
-        (with-out-str (prn (merge-with-curr-org l)))))
+        (with-out-str (prn data))))
 
 (defn update-location
-  [id l]
+  [location-id data]
   (POST "/security/location"
-        {:location id}
+        {:location location-id}
         nil
-        (with-out-str (prn l))))
+        (with-out-str (prn data))))
 
 (defn delete-location
-  [id]
-  (DELETE "/security/location" {:location id} nil nil))
+  [location-id]
+  (DELETE "/security/location" {:location location-id} nil nil))
 
 ;; USERS
 (defn get-users
@@ -155,56 +157,56 @@
   (GET "/security/users" {}))
 
 (defn get-user
-  [id]
-  (GET "/security/user" {:user id}))
+  [user-id]
+  (GET "/security/user" {:user user-id}))
 
 (defn add-user
-  [u]
+  [org-id data]
   (PUT "/security/user"
+        {:organization org-id}
         nil
-        nil
-        (with-out-str (prn u))))
+        (with-out-str (prn data))))
 
 (defn delete-user
-  [id]
-  (DELETE "/security/user" {:user id} nil nil))
+  [user-id]
+  (DELETE "/security/user" {:user user-id} nil nil))
 
 (defn update-user
-  [id u]
-  (let [password (:password u)
+  [user-id data]
+  (let [password (:password data)
         user (if (or (nil? password) (str/blank? password))
-               (dissoc u :password))]
+               (dissoc data :password))]
     (POST "/security/user"
-          {:user id}
+          {:user user-id}
           nil
           (with-out-str (prn user)))))
 
 ;; ORGANIZATIONS
 (defn delete-organization
-  [id]
-  (DELETE "/security/organization" {:organization id} nil nil))
+  [organization-id]
+  (DELETE "/security/organization" {:organization organization-id} nil nil))
 
 (defn get-organizations
   [_]
   (GET "/security/organizations" {}))
 
 (defn add-organization
-  [o]
+  [data]
   (PUT "/security/organization"
        nil
        nil
-       (with-out-str (prn o))))
+       (with-out-str (prn data))))
 
 (defn update-organization
-  [id o]
+  [organization-id data]
   (POST "/security/organization"
-        {:organization id}
+        {:organization organization-id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn data))))
 
 (defn get-organization
-  [id]
-  (GET "/security/organization" {:organization id}))
+  [organization-id]
+  (GET "/security/organization" {:organization organization-id}))
 
 (defn assign-language-to-organization
   [language-id organization-id]
@@ -217,26 +219,26 @@
   (GET "/security/roles" {}))
 
 (defn get-role
-  [id]
-  (GET "/security/role" {:role id}))
+  [role-id]
+  (GET "/security/role" {:role role-id}))
 
 (defn add-role
-  [r]
+  [org-id data]
   (PUT "/security/role"
+        {:organization org-id}
         nil
-        nil
-        (with-out-str (prn (merge-with-curr-org r)))))
+        (with-out-str (prn data))))
 
 (defn update-role
-  [id r]
+  [role-id data]
   (POST "/security/role"
-        {:role id}
+        {:role role-id}
         nil
-        (with-out-str (prn r))))
+        (with-out-str (prn data))))
 
 (defn delete-role
-  [id]
-  (DELETE "/security/role" {:role id} nil nil))
+  [role-id]
+  (DELETE "/security/role" {:role role-id} nil nil))
 
 ;; GROUPS
 (defn get-groups
@@ -244,33 +246,26 @@
   (GET "/security/groups" {}))
 
 (defn get-group
-  [id]
-  (GET "/security/group" {:group id}))
-
-(defn get-group-members
-  [gid]
-  (let [group-members (GET "/security/users" {:group gid})
-        all-users (get-users nil)]
-   {:in group-members :out (apply set/difference 
-                                  (map set [all-users group-members]))}))
+  [group-id]
+  (GET "/security/group" {:group group-id}))
 
 (defn delete-group
-  [id]
-  (DELETE "/security/group" {:group id} nil nil))
+  [group-id]
+  (DELETE "/security/group" {:group group-id} nil nil))
 
 (defn add-group
-  [g]
+  [org-id data]
   (PUT "/security/group"
+        {:organization  org-id}
         nil
-        nil
-        (with-out-str (prn (merge-with-curr-org g)))))
+        (with-out-str (prn data))))
 
 (defn update-group
-  [id g]
+  [group-id data]
   (POST "/security/group"
-        {:group id}
+        {:group group-id}
         nil
-        (with-out-str (prn g))))
+        (with-out-str (prn data))))
 
 (defn filter-direct-roles
   [m filter-key]
@@ -331,30 +326,38 @@
           {:role-mapping role-mapping-id}
           nil nil))
 
+(defn get-group-members
+  [group-id]
+  (GET "/security/group/members" {:group group-id}))
+
+(defn get-group-nonmembers
+  [group-id]
+  (GET "/security/group/nonmembers" {:group group-id}))
+
 (defn add-group-member
-  [g u]
-  (PUT "/security/usergroup"
-    {:group g
-     :user u}
+  [group-id user-id]
+  (PUT "/security/group/member"
+    {:group group-id
+     :user user-id}
     nil
     nil))
 
 (defn remove-group-member
-  [g u]
-  (DELETE "/security/usergroup"
-    {:group g
-     :user u}
+  [group-id user-id]
+  (DELETE "/security/group/member"
+    {:group group-id
+     :user user-id}
     nil
     nil))
 
 (defn add-admin
-  [u]
+  [data]
   (let [admin-id (-> (filter #(= (:code %)
                              domain/code-role-admin)
                              (get-roles))
                    first
                    :id)
-        usr-resp (add-user u)]
+        usr-resp (add-user data)]
     (if (:id usr-resp)
       (let [role-params {:user (:id usr-resp)
                          :role admin-id}]
@@ -374,11 +377,11 @@
   (GET "/library/language" {:language language-id}))
 
 (defn add-language
-  [r]
+  [org-id data]
   (PUT "/library/language"
+        {:organization org-id}
         nil
-        nil
-        (with-out-str (prn (merge-with-curr-org r)))))
+        (with-out-str (prn (merge-with-curr-org data)))))
 
 (defn update-language
   [language-id data]
@@ -404,9 +407,9 @@
 
 (defn add-protocol
   "Adds a new protocol to a location."
-  [data]
+  [location-id data]
   (PUT "/protocol"
-        nil
+        {:location location-id}
         nil
         (with-out-str (prn data))))
 
@@ -470,7 +473,7 @@
 (defn publish-protocol-version
   "Updates a protocol version with data changes."
   [protocol-version-id]
-  (POST "/protocol/publish"
+  (POST "/protocol/version/publish"
         {:protocol-version protocol-version-id}
         nil
         nil))
@@ -478,7 +481,7 @@
 (defn retire-protocol-version
   "Updates a protocol version with data changes."
   [protocol-version-id]
-  (POST "/protocol/retire"
+  (POST "/protocol/version/retire"
         {:protocol-version protocol-version-id}
         nil
         nil))
@@ -486,7 +489,15 @@
 (defn draft-protocol-version
   "Updates a protocol version with data changes."
   [protocol-version-id]
-  (POST "/protocol/draft"
+  (POST "/protocol/version/draft"
+        {:protocol-version protocol-version-id}
+        nil
+        nil))
+
+(defn submit-protocol-version
+  "Updates a protocol version with data changes."
+  [protocol-version-id]
+  (POST "/protocol/version/submit"
         {:protocol-version protocol-version-id}
         nil
         nil))
@@ -541,75 +552,75 @@
 
 ;; Endorsement Types
 (defn get-endorsement-types
-  [_]
-  (GET "/library/endorsement/types" {}))
+  [org-id]
+  (GET "/library/endorsement/types" {:organization org-id}))
 
 (defn get-endorsement-type
-  [id]
-  (GET "/library/endorsement/type" {:endorsement-type id}))
+  [endorsement-type-id]
+  (GET "/library/endorsement/type" {:endorsement-type endorsement-type-id}))
 
 (defn add-endorsement-type
-  [o]
+  [org-id data]
   (PUT "/library/endorsement/type"
+        {:organization org-id}
        nil
-       nil
-       (with-out-str (prn o))))
+       (with-out-str (prn data))))
 
 (defn update-endorsement-type
-  [id o]
+  [endorsement-type-id data]
   (POST "/library/endorsement/type"
-        {:endorsement-type id}
+        {:endorsement-type endorsement-type-id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn data))))
 
 (defn delete-endorsement-type
-  [id]
-  (DELETE "/library/endorsement/type" {:endorsement-type id} nil nil))
+  [endorsement-type-id]
+  (DELETE "/library/endorsement/type" {:endorsement-type endorsement-type-id} nil nil))
 
 ;; Endorsements
 (defn get-endorsements
-  [_]
-  (GET "/library/endorsements" {}))
+  [org-id]
+  (GET "/library/endorsements" {:organization org-id}))
 
 (defn get-endorsement
-  [id]
-  (GET "/library/endorsement" {:endorsement id}))
+  [endorsement-id]
+  (GET "/library/endorsement" {:endorsement endorsement-id}))
 
 (defn add-endorsement
-  [o]
+  [org-id data]
   (PUT "/library/endorsement"
+       {:organization org-id}
        nil
-       nil
-       (with-out-str (prn o))))
+       (with-out-str (prn data))))
 
 (defn update-endorsement
-  [id o]
+  [endorsement-id data]
   (POST "/library/endorsement"
-        {:endorsement id}
+        {:endorsement endorsement-id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn data))))
 
 (defn delete-endorsement
-  [id]
-  (DELETE "/library/endorsement" {:endorsement id} nil nil))
+  [endorsement-id]
+  (DELETE "/library/endorsement" {:endorsement endorsement-id} nil nil))
 
 (defn assign-endorsement-type
   [id, old-id, new-id]
-  (POST "/library/endorsement/type/assign" {:endorsement id :endorsement-type old-id :assign-type new-id} nil nil))
+  (POST "/library/endorsement/endorsement/type" {:endorsement id :endorsement-type old-id :assign-type new-id} nil nil))
 
 ;; Meta Items
 (defn get-meta-items
-  []
-  (GET "/library/meta-items" {}))
+  [org-id]
+  (GET "/library/meta-items" {:organization org-id}))
 
 (defn get-meta-item
   [meta-item-id]
   (GET "/library/meta-item" {:meta-item meta-item-id}))
 
 (defn add-meta-item
-  [data]
+  [org-id data]
   (PUT "/library/meta-item"
-       nil
+       {:organization org-id}
        nil
        (with-out-str (prn data))))
 
@@ -627,44 +638,44 @@
 
 ;; Policy Definitions
 (defn get-policy-definitions
-  [_]
-  (GET "/library/policy-definitions" {}))
+  [org-id]
+  (GET "/library/policy-definitions" {:organization org-id}))
 
 (defn get-policy-definition
-  [id]
-  (GET "/library/policy-definition" {:policy-definition id}))
+  [policy-definition-id]
+  (GET "/library/policy-definition" {:policy-definition policy-definition-id}))
 
 (defn add-policy-definition
-  [o]
+  [org-id data]
   (PUT "/library/policy-definition"
+       {:organization org-id}
        nil
-       nil
-       (with-out-str (prn o))))
+       (with-out-str (prn data))))
 
 (defn update-policy-definition
-  [id o]
+  [policy-definition-id data]
   (POST "/library/policy-definition"
-        {:policy-definition id}
+        {:policy-definition policy-definition-id}
         nil
-        (with-out-str (prn o))))
+        (with-out-str (prn data))))
 
 (defn delete-policy-definition
-  [id]
-  (DELETE "/library/policy-definition" {:policy-definition id} nil nil))
+  [policy-definition-id]
+  (DELETE "/library/policy-definition" {:policy-definition policy-definition-id} nil nil))
 
 ;; Policy
-(defn get-policys
-  []
-  (GET "/library/policies" {}))
+(defn get-policies
+  [org-id]
+  (GET "/library/policies" {:organization org-id}))
 
 (defn get-policy
   [policy-id]
   (GET "/library/policy" {:policy policy-id}))
 
 (defn add-policy
-  [data]
+  [org-id data]
   (PUT "/library/policy"
-       nil
+       {:organization org-id}
        nil
        (with-out-str (prn data))))
 

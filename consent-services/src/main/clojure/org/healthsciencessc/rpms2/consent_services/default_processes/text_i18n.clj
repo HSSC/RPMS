@@ -1,89 +1,72 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.text-i18n
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
-            [borneo.core :as neo])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]
+            [borneo.core :as neo]))
 
-(defn printit
-  [title obj]
-  (println)
-  (println "BEGIN: " title)
-  (println)
-  (prn obj)
-  (println)
-  (println "END: " title)
-  (println))
 
-(defn- auth-on-parent-type
+(defn designs-parent
   [ctx]
   (let [parent-type (get-in ctx [:query-params :parent-type])
-        parent-id (get-in ctx [:query-params :parent-id])
-        parent (data/find-record parent-type parent-id)]
-    (if (runnable/can-design-org-id (utils/current-user ctx) (get-in parent [:organization :id]))
-      parent)))
+        parent-id (get-in ctx [:query-params :parent-id])]
+    (vouch/designs-type ctx parent-type parent-id)))
 
-(defn- auth-on-parent-type-text
+(defn parent-text
+  [ctx parent]
+  (if parent
+    (let [text-i18n-id (get-in ctx [:query-params :text-i18n])
+          property (keyword (get-in ctx [:query-params :property]))
+          texts (property parent)]
+      (cond
+        (map? texts) (if (= (:id texts) text-i18n-id) texts)
+        (coll? texts) (first (filter #(= (:id %) text-i18n-id) texts))))))
+
+(defn designs-parent-text
   [ctx]
-  (let [parent (auth-on-parent-type ctx)]
+  (let [parent (designs-parent ctx)]
     (if parent
-      (let [text-i18n-id (get-in ctx [:query-params :text-i18n])
-            property (keyword (get-in ctx [:query-params :property]))
-            texts (property parent)]
-        (cond
-          (map? texts) (= (:id texts) text-i18n-id)
-          (coll? texts) (some #(= (:id %) text-i18n-id) texts))))))
+      (parent-text ctx parent))))
 
-(defn add-text-i18n
+
+(defprocess add-text-i18n
   [ctx]
-  (neo/with-tx
-    (let [text (data/create types/text-i18n (:body-params ctx))
-          text-i18n-id (:id text)
-          parent-type (get-in ctx [:query-params :parent-type])
-          parent-id (get-in ctx [:query-params :parent-id])
-          property (keyword (get-in ctx [:query-params :property]))]  
-    ;;  (data/relate-records types/text-i18n text-i18n-id parent-type parent-id)
-      (printit "Text" text)
-      (printit "Property" property)
-      (data/relate-records types/text-i18n text-i18n-id parent-type parent-id :rel-name property)
-      text)))
+  (let [parent (designs-parent ctx)]
+    (if parent
+      (neo/with-tx
+        (let [data (assoc (:body-params ctx) :organization (:organization parent))
+              text (data/create types/text-i18n data)
+              parent-type (get-in ctx [:query-params :parent-type])
+              property (keyword (get-in ctx [:query-params :property]))]
+          (data/relate-records types/text-i18n (:id text) parent-type (:id parent) :rel-name property)
+          text))
+      (respond/forbidden))))
 
-(defn update-text-i18n
+(as-method add-text-i18n endpoint/endpoints "put-library-text-i18n")
+
+
+(defprocess update-text-i18n
   [ctx]
-  (let [body (:body-params ctx)
-        body (select-keys body [:value])
-        text-i18n-id (get-in ctx [:query-params :text-i18n])] 
-      (data/update types/text-i18n text-i18n-id body)))
+  (let [text-i18n (designs-parent-text ctx)]
+    (if text-i18n
+      (data/update types/text-i18n (:id text-i18n) (select-keys (:body-params ctx) [:value]))
+      (respond/forbidden))))
 
-(defn delete-text-i18n
+(as-method update-text-i18n endpoint/endpoints "post-library-text-i18n")
+
+
+(defprocess delete-text-i18n
   [ctx]
   (let [parent-type (get-in ctx [:query-params :parent-type])
-        parent-id (get-in ctx [:query-params :parent-id])
-        text-i18n-id (get-in ctx [:query-params :text-i18n])]
-    (neo/with-tx
-      (data/unrelate-records types/text-i18n text-i18n-id parent-type parent-id)
-      (data/delete types/text-i18n text-i18n-id))))
+        parent (designs-parent ctx) 
+        text-i18n (parent-text ctx parent)]
+    (if text-i18n
+      (neo/with-tx
+        (data/unrelate-records types/text-i18n (:id text-i18n) parent-type (:id parent))
+        (data/delete types/text-i18n (:id text-i18n)))
+      (respond/forbidden))))
 
-(def language-processes
-  [
-   {:name "put-library-text-i18n"
-    :runnable-fn  auth-on-parent-type
-    :run-fn add-text-i18n
-    :run-if-false forbidden-fn}
-
-   {:name "post-library-text-i18n"
-    :runnable-fn  auth-on-parent-type-text
-    :run-fn update-text-i18n
-    :run-if-false forbidden-fn}
-
-   {:name "delete-library-text-i18n"
-    :runnable-fn  auth-on-parent-type-text
-    :run-fn delete-text-i18n
-    :run-if-false forbidden-fn}])
-
-(process/register-processes (map #(DefaultProcess/create %) language-processes))
+(as-method delete-text-i18n endpoint/endpoints "delete-library-text-i18n")

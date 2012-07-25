@@ -104,5 +104,5 @@
                 (assoc :consent-meta-items (collect-meta-items))
                 (add-witnesses))]
     (session-put! :persist-data pdata)
-    (dsa-call :put-consent-collect pdata)))
+    (dsa-call :put-consent-collect pdata :encounter (:id (session-get :encounter)))))
 

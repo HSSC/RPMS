@@ -10,7 +10,7 @@
             [org.healthsciencessc.rpms2.consent-services.default-processes.init]
             [org.healthsciencessc.rpms2.process-engine.core :as process]
             [org.healthsciencessc.rpms2.process-engine.util :as util-ws]
-            [org.healthsciencessc.rpms2.process-engine.web-service :as process-ws]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
 (defn ws-init
   []
@@ -26,8 +26,8 @@
   (GET "/reset-processes"
        []
        (do
-         (reset! process/default-processes [])
-         (reset! process/custom-processes [])
+         ;;(reset! process/default-processes [])
+         ;;(reset! process/custom-processes [])
          (process/bootstrap-addons))
        "Done")
   (GET "/reseed-db"
@@ -56,16 +56,16 @@
 
 (defroutes app
   (wrap-data-errors
-   (process-ws/ws-constructor (fn [handler]
-                                (auth/wrap-authentication handler auth/authenticate)))))
+   (endpoint/ws-constructor (fn [handler]
+                              (auth/wrap-authentication handler auth/authenticate)))))
 
 (defroutes dev-routes
   static-dev-routes
   (wrap-data-errors
-   (process-ws/ws-constructor (fn [handler]
-                                (-> handler
-                                    (auth/wrap-authentication auth/authenticate)
-                                    add-path-info)))))
+   (endpoint/ws-constructor (fn [handler]
+                              (-> handler
+                                (auth/wrap-authentication auth/authenticate)
+                                add-path-info)))))
 
 (def dev-app
   (-> dev-routes

@@ -12,7 +12,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
         
             [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
@@ -55,7 +55,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [{qry-params :query-params} ctx] 
         (let [post-params (merge 
                             {:params (select-keys qry-params
@@ -98,7 +98,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [{{:keys [assignee-id assignee-type]} :query-params} ctx]
         (let [assignee-type (keyword assignee-type)
               rolemappings (services/get-assigned-roles assignee-id assignee-type)
@@ -138,7 +138,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [{locations :location 
              roles :role } (:body-params ctx)
             {assignee-type :assignee-type
@@ -166,7 +166,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [role-mapping-id (lookup/get-role-mapping-in-query ctx)
             resp (services/delete-role-mapping role-mapping-id)]
         (if (services/service-error? resp)

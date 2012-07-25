@@ -69,3 +69,77 @@
 (defn consent-manager-mappings
   [user & constraints]
   (apply get-role-mappings user :role {:code code-role-consentmanager} constraints ))
+
+
+;; Helper functions to determine if a user as a specific role for an organization or location.
+(defn can-collect-org-id?
+  [user org-id]
+  (consent-collector? user :organization {:id org-id}))
+
+(defn can-collect-org?
+  [user org]
+  (can-collect-org-id? user (:id org)))
+
+(defn can-collect-location-id?
+  [user location-id]
+  (consent-collector? user :location {:id location-id}))
+
+(defn can-collect-location?
+  [user location]
+  (can-collect-location-id? user (:id location)))
+
+(defn can-collect-protocol?
+  [user protocol]
+  (can-collect-location? user (:location protocol)))
+
+(defn can-collect-protocol-version?
+  [user protocol-version]
+  (and (published? protocol-version) (can-collect-protocol? user (:protocol protocol-version))))
+
+(defn can-design-org-id?
+  [user org-id]
+  (protocol-designer? user :organization {:id org-id}))
+
+(defn can-design-org?
+  [user org]
+  (can-design-org-id? user (:id org)))
+
+(defn can-design-location-id?
+  [user location-id]
+  (protocol-designer? user :location {:id location-id}))
+
+(defn can-design-location?
+  [user location]
+  (can-design-location-id? user (:id location)))
+
+(defn can-design-protocol?
+  [user protocol]
+  (can-design-location? user (:location protocol)))
+
+(defn can-design-protocol-version?
+  [user protocol-version]
+  (can-design-protocol? user (:protocol protocol-version)))
+
+(defn can-admin-org-id?
+  [user org-id]
+  (or (superadmin? user) (admin? user :organization {:id org-id})))
+
+(defn can-admin-org?
+  [user org]
+  (can-admin-org-id? user (:id org)))
+
+(defn can-manage-org-id?
+  [user org-id]
+  (consent-manager? user :organization {:id org-id}))
+
+(defn can-manage-org?
+  [user org]
+  (can-manage-org-id? user (:id org)))
+
+(defn can-manage-location-id?
+  [user location-id]
+  (consent-manager? user :location {:id location-id}))
+
+(defn can-manage-location?
+  [user location]
+  (can-manage-location-id? user (:id location)))

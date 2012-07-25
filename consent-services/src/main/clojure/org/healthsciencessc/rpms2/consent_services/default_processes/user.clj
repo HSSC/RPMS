@@ -1,105 +1,105 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.user
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.auth :as auth]
             [org.healthsciencessc.rpms2.consent-services.data :as data]
-            [org.healthsciencessc.rpms2.consent-services.auth :as auth])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(def user-processes
-  [{:name "authenticate"
-    :runnable-fn (fn [params] true)
-    :run-fn (fn [{:keys [username password]}]
-              (if-let [user-node (first (filter #(= username (:username %))
-                                                (data/get-raw-nodes "user")))]
-                (if (and password user-node (auth/good-password? password (:password user-node)))
-                  (first (data/find-records-by-attrs "user" {:username username})))))}
+(defn admins-user?
+  [ctx]
+  (let [user (session/current-user ctx)
+        user-org-id (get-in user [:organization :id])
+        user-id (get-in ctx [:query-params :user])]
+    (or (roles/superadmin? user)
+        (and (roles/admin? user) 
+             (data/belongs-to? types/user user-id types/organization user-org-id false)))))
 
-   {:name "get-security-authenticate"
-    :runnable-fn (fn [params] true)
-    :run-fn (fn [params]
-              (:current-user (:session params)))
-    :run-if-false forbidden-fn}
+;; curl -i -X GET http://user:password@localhost:8080/security/authenticate
+(defprocess authenticate
+  [ctx]
+  (session/current-user ctx))
 
-   {:name "get-security-users"
-    :runnable-fn (fn [params]
-                   (let [current-user (get-in params [:session :current-user])
-                         current-user-org-id (get-in current-user [:organization :id])
-                         org-id (get-in params [:query-params :organization])
-                         group-id (get-in params [:query-params :group])]
-                     (or (super-admin? current-user)
-                         (and (admin? current-user)
-                              (if org-id (data/belongs-to? "user" (:id current-user) "organization" org-id) true)
-                              (if group-id (data/belongs-to? "group" group-id "organization" current-user-org-id) true)))))
-    :run-fn (fn [params]
-              (let [user (get-in params [:session :current-user])
-                    user-org-id (get-in user [:organization :id])
-                    org-id (get-in params [:query-params :organization])
-                    group-id (get-in params [:query-params :group])]
-                (cond
-                 org-id (data/find-children "organization" org-id "user")
-                 group-id (data/find-children "group" group-id "user")
-                 :else (cond
-                        (super-admin? user) (data/find-all "user")
-                        (admin? user) (data/find-children "organization" user-org-id "user")))))
-    :run-if-false forbidden-fn}
+(as-method authenticate endpoint/endpoints "get-security-authenticate")
 
-   {:name "get-security-user"
-    :runnable-fn (fn [params]
-                   (let [current-user (get-in params [:session :current-user])
-                         current-user-org-id (get-in current-user [:organization :id])
-                         user-id (get-in params [:query-params :user])]
-                     (or
-                      (super-admin? current-user)
-                      (and (admin? current-user) (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
-    :run-fn (fn [params]
-              (let [user-id (get-in params [:query-params :user])]
-                (data/find-record "user" user-id)))
-    :run-if-false forbidden-fn}
+;; curl -i -X GET http://user:password@localhost:8080/security/users
+(defprocess get-users
+  [ctx]
+  (let [user (session/current-user ctx)
+        org-id (get-in ctx [:query-params :organization])]
+    (cond
+      (roles/superadmin? user)
+        (data/find-children types/organization (or org-id (session/current-org-id ctx)) types/user)
+      (roles/admin? user)
+        (data/find-children types/organization (session/current-org-id ctx) types/user)
+      :else
+        (respond/forbidden))))
 
-   {:name "put-security-user"
-    :runnable-fn (fn [params]
-                   (let [current-user (get-in params [:session :current-user])
-                         current-user-org-id (get-in current-user [:organization :id])
-                         user (:body-params params)
-                         user-org-id (get-in user [:organization :id])]
-                     (or (super-admin? current-user)
-                         (and (admin? current-user)
-                              (= current-user-org-id user-org-id)))))
-    :run-fn (fn [params]
-              (let [user-data (:body-params params)
-                    unhashed-pwd (:password user-data)
-                    user (assoc user-data :password (auth/hash-password unhashed-pwd))]
-                (data/create "user" user)))
-    :run-if-false forbidden-fn}
+(as-method get-users endpoint/endpoints "get-security-users")
 
-   {:name "post-security-user"
-    :runnable-fn (fn [params]
-                   (let [current-user (get-in params [:session :current-user])
-                         current-user-org-id (get-in current-user [:organization :id])
-                         user-id (get-in params [:query-params :user])]
-                     (or (super-admin? current-user)
-                         (and (admin? current-user)
-                              (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
-    :run-fn (fn [params]
-              (let [user-id (get-in params [:query-params :user])
-                    user-data (:body-params params)
-                    password (:password user-data)
-                    record-data (if password
-                                  (assoc user-data :password (auth/hash-password password))
-                                  user-data)]
-                (data/update "user" user-id record-data)))
-    :run-if-false forbidden-fn}
+;; curl -i -X GET http://user:password@localhost:8080/security/user?user=<ID>
+(defprocess get-user
+  [ctx]
+  (if (admins-user? ctx)
+    (let [user-id (get-in ctx [:query-params :user])]
+      (data/find-record types/user user-id))
+    (respond/forbidden)))
 
-   {:name "delete-security-user"
-    :runnable-fn (fn [params]
-                   (let [current-user (get-in params [:session :current-user])
-                         current-user-org-id (get-in current-user [:organization :id])
-                         user-id (get-in params [:query-params :user])]
-                     (or (super-admin? current-user)
-                         (and (admin? current-user) (data/belongs-to? "user" user-id "organization" current-user-org-id)))))
-    :run-fn (fn [params]
-              (let [user-id (get-in params [:query-params :user])]
-                (data/delete "user" user-id)))
-    :run-if-false forbidden-fn}])
+(as-method get-user endpoint/endpoints "get-security-user")
 
-(process/register-processes (map #(DefaultProcess/create %) user-processes))
+;; curl -i -X PUT -d "{:first-name  \"MUSC FOOBAR\"}" http://user:password@localhost:8080/security/user?user=<ID>
+(defprocess add-user
+  [ctx]
+  (if (vouch/admins-org? ctx)
+    (let [user-data (:body-params ctx)
+          unhashed-pwd (:password user-data)
+          user (assoc user-data :password (auth/hash-password unhashed-pwd))
+          org-id (get-in ctx [:query-params :organization])]
+      (data/create types/user (assoc user :organization {:id org-id})))
+    (respond/forbidden)))
+
+(as-method add-user endpoint/endpoints "put-security-user")
+
+
+;; curl -i -X PUT -d "{:first-name  \"MUSC FOOBAR\"}" http://user:password@localhost:8080/security/user/admin?user=<ID>
+(defprocess add-user-admin
+  [ctx]
+  (if (vouch/admins-org? ctx)
+    (let [user-data (:body-params ctx)
+          unhashed-pwd (:password user-data)
+          user (assoc user-data :password (auth/hash-password unhashed-pwd))
+          org-id (get-in ctx [:query-params :organization])]
+      (data/create types/user (assoc user :organization {:id org-id})))
+    (respond/forbidden)))
+
+(as-method add-user-admin endpoint/endpoints "put-security-user-admin")
+
+
+(defprocess update-user
+  [ctx]
+  (if (admins-user? ctx)
+    (let [user-id (get-in ctx [:query-params :user])
+          user-data (:body-params ctx)
+          password (:password user-data)
+          user-data (if password
+                      (assoc user-data :password (auth/hash-password password))
+                      user-data)]
+      (data/update types/user user-id user-data))
+    (respond/forbidden)))
+
+(as-method update-user endpoint/endpoints "post-security-user")
+
+
+(defprocess delete-user
+  [ctx]
+  (if (admins-user? ctx)
+    (let [user-id (get-in ctx [:query-params :user])]
+      (data/delete types/user user-id))
+    (respond/forbidden)))
+
+(as-method delete-user endpoint/endpoints "delete-security-user")
+
+

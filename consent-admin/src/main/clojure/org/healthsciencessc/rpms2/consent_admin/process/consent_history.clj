@@ -12,7 +12,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             
             [ring.util.response :as rutil]
@@ -48,7 +48,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-manage-org-id user org-id)
+    (if (roles/can-manage-org-id? user org-id)
       (layout/render 
         ctx "Consent History - Search"
         (container/scrollbox 
@@ -67,7 +67,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-manage-org-id user org-id)      
+    (if (roles/can-manage-org-id? user org-id)      
       (let [params (into {} (filter (fn [[k v]] (not (empty? v))) (select-keys (:query-params ctx) (map :name fields))))
             consenters (services/find-consenters params)]
         (cond
@@ -98,7 +98,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-manage-org-id user org-id)
+    (if (roles/can-manage-org-id? user org-id)
       (let [consenter-id (get-in ctx [:query-params :consenter])
             consents (services/get-consenter-consents consenter-id)]
         (if (meta consents)

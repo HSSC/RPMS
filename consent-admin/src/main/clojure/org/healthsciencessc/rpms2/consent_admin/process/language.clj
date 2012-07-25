@@ -1,6 +1,7 @@
 ;; Provides the configuration of the protocol managemant UIs.
 (ns org.healthsciencessc.rpms2.consent-admin.process.language
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.error :as error]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
@@ -12,10 +13,9 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [ring.util.response :as rutil]
             [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
@@ -32,12 +32,12 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (or (runnable/can-design-org-id user org-id) (runnable/can-admin-org-id user org-id))
+    (if (or (roles/can-design-org-id? user org-id) (roles/can-admin-org-id? user org-id))
       (let [nodes (services/get-languages org-id)
             protocol-version-id (lookup/get-protocol-version-in-query ctx)
             assign-to-org-id (lookup/get-organization-in-query ctx)]
         (if (meta nodes)
-          (rutil/not-found (:message (meta nodes)))
+          (error/view-service-error nodes)
           (layout/render ctx (str type-label "s")
                          (container/scrollbox 
                            (list/selectlist {:action :.detail-action}
@@ -71,12 +71,12 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (if-let [node-id (lookup/get-language-in-query ctx)]
         (let [n (services/get-language node-id)
               editable (common/owned-by-user-org n)]
           (if (meta n)
-            (rutil/not-found (:message (meta n)))
+            (error/view-service-error n)
             (layout/render ctx (str type-label ": " (:name n))
                            (container/scrollbox 
                              (form/dataform 
@@ -100,7 +100,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (layout/render ctx (str "Create " type-label)
                      (container/scrollbox 
                        (form/dataform 
@@ -118,7 +118,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [language-id (lookup/get-language-in-query ctx)
             protocol-version-id (lookup/get-protocol-version-in-query ctx)
             resp (services/assign-language-to-protocol-version language-id protocol-version-id)]
@@ -134,7 +134,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (lookup/get-organization-in-query ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [language-id (lookup/get-language-in-query ctx)
             resp (services/assign-language-to-organization language-id org-id)]
         (if (services/service-error? resp)
@@ -149,9 +149,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-language body)]
+            resp (services/add-language org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -164,7 +164,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (:body-params ctx)
             language-id (lookup/get-language-in-query ctx)
             resp (services/update-language language-id body)]
@@ -180,7 +180,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [language-id (lookup/get-language-in-query ctx)
             resp (services/delete-language language-id)]
         (if (services/service-error? resp)

@@ -1,6 +1,7 @@
 ;; Provides the configuration of the protocol managemant UIs.
 (ns org.healthsciencessc.rpms2.consent-admin.process.protocol
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.error :as error]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             
@@ -46,7 +47,7 @@
         (let [protocols (services/get-protocols location-id)
               location (:location location-role)]
           (if (meta protocols)
-            (rutil/not-found (:message (meta protocols)))
+            (error/view-service-error protocols)
             (layout/render ctx (render-label location " List")
                            (container/scrollbox 
                              (list/selectlist {:action :.detail-action}
@@ -71,25 +72,23 @@
   "Generates a view that shows the details of a specific protocol and allows you to edit those details."
   [ctx]
   (if-let [protocol-id (lookup/get-protocol-in-query ctx)]
-    (let [protocol (services/get-protocol protocol-id)
-          location (:location protocol)
-          location-id (:id location)
-          user (security/current-user ctx)
-          location-role (first (roles/protocol-designer-mappings user :location location))]
-      (if location-role
-        (layout/render ctx (render-label location ": " (:name protocol))
-                       (container/scrollbox (form/dataform (form/render-fields {} fields protocol)))
-                       (actions/actions
-                         (actions/push-action 
-                           {:url "/view/protocol/versions" :params {:protocol protocol-id} :label "Versions"})
-                         (actions/ajax-action 
-                           {:method :post :url "/api/protocol" :params {:protocol protocol-id :location location-id}
-                            :label "Save" :include-data :true})
-                         (actions/ajax-action 
-                           {:method :delete :url "/api/protocol" :params {:protocol protocol-id :location location-id}
-                            :label "Delete" :action-on-success ".back-action"})
-                         (actions/back-action)))
-        (ajax/forbidden)))
+    (let [protocol (services/get-protocol protocol-id)]
+      (if (services/service-error? protocol)
+        (error/view-service-error protocol)
+        (let[location (:location protocol)
+             location-id (:id location)]
+          (layout/render ctx (render-label location ": " (:name protocol))
+                         (container/scrollbox (form/dataform (form/render-fields {} fields protocol)))
+                         (actions/actions
+                           (actions/push-action 
+                             {:url "/view/protocol/versions" :params {:protocol protocol-id} :label "Versions"})
+                           (actions/ajax-action 
+                             {:method :post :url "/api/protocol" :params {:protocol protocol-id :location location-id}
+                              :label "Save" :include-data :true})
+                           (actions/ajax-action 
+                             {:method :delete :url "/api/protocol" :params {:protocol protocol-id :location location-id}
+                              :label "Delete" :action-on-success ".back-action"})
+                           (actions/back-action))))))
     (layout/render-error ctx {:message "A protocol is required."})))
 
 (as-method view-protocol endpoint/endpoints "get-view-protocol")
@@ -125,7 +124,7 @@
                 location (:location location-role)
                 organization (:organization location-role)
                 protocol (assoc body :organization organization :location location)
-                resp (services/add-protocol protocol)]
+                resp (services/add-protocol location-id protocol)]
             (if (services/service-error? resp)
               (ajax/save-failed (meta resp))
               (ajax/success resp)))

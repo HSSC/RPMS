@@ -13,7 +13,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
             [ring.util.response :as rutil]
@@ -40,7 +40,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [nodes (services/get-groups org-id)]
         (if (meta nodes)
           (rutil/not-found (:message (meta nodes)))
@@ -65,7 +65,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [node-id (lookup/get-group-in-query ctx)]
         (let [n (services/get-group node-id)
               editable (common/owned-by-user-org n)]
@@ -100,7 +100,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (layout/render ctx (str "Create " type-label)
                      (container/scrollbox 
                        (form/dataform 
@@ -118,9 +118,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-group body)]
+            resp (services/add-group org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -133,7 +133,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (:body-params ctx)
             group-id (lookup/get-group-in-query ctx)
             resp (services/update-group group-id body)]
@@ -149,7 +149,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [group-id (lookup/get-group-in-query ctx)
             resp (services/delete-group group-id)]
         (if (services/service-error? resp)
@@ -164,11 +164,11 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [group-id (lookup/get-group-in-query ctx)]
-        (let [{in :in :as all} (services/get-group-members group-id)]
+        (let [users (services/get-group-members group-id)]
           (layout/render ctx "Members"
-                         (userlist (sort-by #(vec (map % [:last-name :first-name])) in))
+                         (userlist (sort-by #(vec (map % [:last-name :first-name])) users))
                          (actions/actions
                            (actions/details-action {:label "Add Member..."
                                                     :url "/view/group/adduser"
@@ -189,11 +189,11 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [group-id (lookup/get-group-in-query ctx)]
-        (let [{out :out :as all} (services/get-group-members group-id)]
+        (let [users (services/get-group-nonmembers group-id)]
           (layout/render ctx "Add Member"
-                         (userlist (sort-by #(vec (map % [:last-name :first-name])) out))
+                         (userlist (sort-by :last-name users))
                          (actions/actions
                            (actions/save-action {:label "Add Member"
                                                  :method :put
@@ -211,7 +211,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [group-id (lookup/get-group-in-query ctx)
             user-id (lookup/get-user-in-query ctx)
             resp (services/add-group-member group-id user-id)]
@@ -228,7 +228,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [group-id (lookup/get-group-in-query ctx)
             user-id (lookup/get-user-in-query ctx)
             resp (services/remove-group-member group-id user-id)]

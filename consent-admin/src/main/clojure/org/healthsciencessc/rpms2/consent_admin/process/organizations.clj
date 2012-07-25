@@ -13,7 +13,6 @@
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
             [ring.util.response :as rutil]
@@ -74,7 +73,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (or (lookup/get-organization-in-query ctx) (security/current-org-id))]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [org (services/get-organization org-id)]
         (if (meta org)
           (rutil/not-found (:message (meta org)))
@@ -87,12 +86,12 @@
                          (actions/actions
                            (actions/save-action 
                              {:url (str "/api/" type-path) :params {type-kw org-id}})
+                           (actions/details-action {:url "/view/languages" 
+                                                        :params {:organization org-id} :label "Change Language"})
                            (if (roles/superadmin? user)
                              (list 
                                (actions/details-action {:url "/view/user/new/admin" 
                                                         :params {:organization org-id} :label "Add Administrator"})
-                               (actions/details-action {:url "/view/languages" 
-                                                        :params {:organization org-id} :label "Change Language"})
                                (actions/delete-action 
                                  {:url (str "/api/" type-path) :params {type-kw org-id}})))
                            (actions/back-action)))))
@@ -137,7 +136,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (lookup/get-organization-in-query ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (:body-params ctx)
             resp (services/update-organization org-id body)]
         (if (services/service-error? resp)

@@ -113,8 +113,7 @@
               {:url "/view/languages" :label "Languages"}
               {:url "/view/policy/definitions" :label "Policy Definitions"}
               {:url "/view/policys" :label "Policies"}
-              {:url "/view/meta-items" :label "Meta Items"}
-              {:url "/view/widgets" :label "Widgets"}]}
+              {:url "/view/meta-items" :label "Meta Items"}]}
     {:group "Management" :use? manager?
       :items [{:url "/view/consent/history" :label " History" :generator consenter-item-generator}]}
   ])

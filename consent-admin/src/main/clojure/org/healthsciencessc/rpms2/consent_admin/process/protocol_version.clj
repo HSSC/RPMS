@@ -16,7 +16,6 @@
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             
@@ -30,7 +29,7 @@
   (let [protocol-version (services/get-protocol-version protocol-version-id)
         protocol (:protocol protocol-version)
         user (security/current-user)]
-    (and (runnable/can-design-protocol user protocol)
+    (and (roles/can-design-protocol? user protocol)
          (every? #(% protocol-version) contraints))))
 
 (def fields [{:name :version :label "Version"}
@@ -116,7 +115,7 @@
           (layout/render ctx (render-label protocol " Version - " (version-name protocol-version))
                          (container/cutbox
                            (form/dataform
-                             (form/render-fields {} fields protocol-version))
+                             (form/render-fields {:editable editable} fields protocol-version))
                            (container/tabcontrol 
                              (uicommon/fill) 
                              (map (fn [{label :label options :options items :items}] 
@@ -253,7 +252,7 @@
   [ctx]
   (let [protocol-version-id (lookup/get-protocol-version-in-query ctx)]
     (if (auth-protocol-version-id protocol-version-id types/draft?)
-      (let [resp (services/update-protocol-version protocol-version-id {:status types/status-submitted})]
+      (let [resp (services/submit-protocol-version protocol-version-id)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))

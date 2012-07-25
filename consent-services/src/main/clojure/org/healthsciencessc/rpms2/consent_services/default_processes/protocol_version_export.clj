@@ -1,14 +1,13 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version-export
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)]
-        [org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version :only (auth-designer-for-protocol)]
-        [ring.util.response :only (response content-type)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]
             [clojure.data.xml :as xml]
             [clojure.string :as str])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]
-           [clojure.data.xml Element]))
+  (:import [clojure.data.xml Element]))
 
 (defn text
   [val]
@@ -70,13 +69,12 @@
                           (traverse-pv protocol-version
                                        (fn [n] (= (:id lang) (:id (:language n))))))))))
 
-(def protocol-version-export-process
-  {:name "get-protocol-version-export"
-   :runnable-fn auth-designer-for-protocol
-   :run-fn (fn [params]
-             (let [protocol-version-id (get-in params [:query-params :protocol-version])
-                   protocol-version (data/find-record types/protocol-version protocol-version-id)]
-               (content-type (response (generate-xml protocol-version)) "text/xml")))
-   :run-if-false forbidden-fn})
+(defprocess export-xml
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx (get-in ctx [:query-params :protocol-version]))]
+    (if protocol-version
+      (respond/with-xml (generate-xml protocol-version))
+      (respond/forbidden))))
 
-(process/register-process (DefaultProcess/create protocol-version-export-process))
+(as-method export-xml endpoint/endpoints "get-protocol-version-export")
+

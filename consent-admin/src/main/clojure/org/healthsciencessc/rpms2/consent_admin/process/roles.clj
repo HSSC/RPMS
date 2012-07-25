@@ -12,7 +12,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
         
@@ -34,7 +34,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [nodes (services/get-roles)]
         (if (meta nodes)
           (rutil/not-found (:message (meta nodes)))
@@ -59,7 +59,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [node-id (lookup/get-role-in-query ctx)]
         (let [n (services/get-role node-id)
               editable (common/owned-by-user-org n)]
@@ -88,7 +88,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (layout/render ctx (str "Create " type-label)
                      (container/scrollbox 
                        (form/dataform 
@@ -106,10 +106,10 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
             body (common/find-and-replace-truths body [:requires-location] true "true")
-            resp (services/add-role body)]
+            resp (services/add-role org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -122,7 +122,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (:body-params ctx)
             body (common/find-and-replace-truths body [:requires-location] true "true")
             role-id (lookup/get-role-in-query ctx)
@@ -139,7 +139,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [role-id (lookup/get-role-in-query ctx)
             resp (services/delete-role role-id)]
         (if (services/service-error? resp)

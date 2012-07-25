@@ -157,6 +157,17 @@ Consent.Editors.common.selectDeleted = function(control){
 	return items;
 };
 
+Consent.Editors.common.selectValidate = function(control){
+	var attrs = Consent.Editors.lift(control);
+	if(attrs.property.required){
+		var options = control.find("select option:selected");
+		if(options.length == 0 || options[0].value == null || options[0].value == ""){
+			return "A value is required for the " + attrs.property.label + " property.";
+		}
+	}
+	return null;
+};
+
 Consent.Editors.common.multiSelectCreated = function(control){
 	var keyValue = control.data("state");
 	var attrs = Consent.Editors.lift(control);
@@ -185,6 +196,18 @@ Consent.Editors.common.multiSelectUpdated = function(control){
 		}
 	}
 	return items;
+};
+
+
+Consent.Editors.common.multiSelectValidate = function(control){
+	var attrs = Consent.Editors.lift(control);
+	if(attrs.property.required){
+		var options = control.find("select option:selected");
+		if(options.length == 0){
+			return "A value is required for the " + attrs.property.label + " property.";
+		}
+	}
+	return null;
 };
 
 Consent.Editors.register("texti18n", {
@@ -221,7 +244,8 @@ Consent.Editors.register("pagelist", {
 		return Consent.UI.createPageSelectControl(container, property, data, (property.operation || operation), editable);},
 	created: Consent.Editors.common.selectCreated,
 	updated: Consent.Editors.common.selectUpdated,
-	deleted: Consent.Editors.common.selectDeleted
+	deleted: Consent.Editors.common.selectDeleted,
+	validate: Consent.Editors.common.selectValidate
 });
 
 Consent.Editors.register("boolean", {
@@ -259,7 +283,8 @@ Consent.Editors.register("boolean-picker", {
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
-		deleted: Consent.Editors.common.selectDeleted
+		deleted: Consent.Editors.common.selectDeleted,
+		validate: Consent.Editors.common.selectValidate
 });
 
 Consent.Editors.register("urls", {
@@ -319,7 +344,8 @@ Consent.Editors.register("endorsement", {
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
-		deleted: Consent.Editors.common.selectDeleted
+		deleted: Consent.Editors.common.selectDeleted,
+		validate: Consent.Editors.common.selectValidate
 });
 
 Consent.Editors.register("policy", {
@@ -329,7 +355,8 @@ Consent.Editors.register("policy", {
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
-		deleted: Consent.Editors.common.selectDeleted
+		deleted: Consent.Editors.common.selectDeleted,
+		validate: Consent.Editors.common.selectValidate
 });
 
 Consent.Editors.register("policies", {
@@ -338,7 +365,8 @@ Consent.Editors.register("policies", {
 		var options = Consent.Utils.createOptions(Consent.Designer.protocol.policies, value);
 		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.multiSelectCreated,
-		updated: Consent.Editors.common.multiSelectUpdated
+		updated: Consent.Editors.common.multiSelectUpdated,
+		validate: Consent.Editors.common.multiSelectValidate
 });
 
 Consent.Editors.register("metaitem", {
@@ -348,7 +376,8 @@ Consent.Editors.register("metaitem", {
 		return Consent.UI.createSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.selectCreated,
 		updated: Consent.Editors.common.selectUpdated,
-		deleted: Consent.Editors.common.selectDeleted
+		deleted: Consent.Editors.common.selectDeleted,
+		validate: Consent.Editors.common.selectValidate
 });
 
 Consent.Editors.register("metaitems", {
@@ -357,7 +386,8 @@ Consent.Editors.register("metaitems", {
 		var options = Consent.Utils.createOptions(Consent.Designer.protocol["meta-items"], value);
 		return Consent.UI.createMultiSelectControl(container, property, data, operation, editable, options);},
 		created: Consent.Editors.common.multiSelectCreated,
-		updated: Consent.Editors.common.multiSelectUpdated
+		updated: Consent.Editors.common.multiSelectUpdated,
+		validate: Consent.Editors.common.multiSelectValidate
 });
 
 Consent.Editors.register("input", {

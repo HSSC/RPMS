@@ -1,44 +1,69 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.policy-definition
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
 
-(defn- authorize-read-node
+(defn designs-policy-definition
   [ctx]
-  (let [user (utils/current-user ctx)]
-    (and (roles/protocol-designer? user)
-         (utils/record-belongs-to-user-org ctx types/policy-definition))))
+  (vouch/designs-type ctx types/policy-definition (get-in ctx [:query-params :policy-definition])))
 
-(def policy-definition-processes
-  [{:name "get-library-policy-definitions"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user utils/lookup-organization)
-    :run-fn (utils/gen-type-records-by-org types/policy-definition)
-    :run-if-false forbidden-fn}
+(defn views-policy-definition
+  [ctx]
+  (vouch/views-type-as-designer ctx types/policy-definition (get-in ctx [:query-params :policy-definition])))
 
-   {:name "get-library-policy-definition"
-    :runnable-fn authorize-read-node
-    :run-fn utils/get-policy-definition-record
-    :run-if-false forbidden-fn}
 
-   {:name "put-library-policy-definition"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user lookup/get-organization-in-body)
-    :run-fn (utils/gen-type-create types/policy-definition)
-    :run-if-false forbidden-fn}
+(defprocess get-policy-definitions
+  [ctx]
+  (let [user (session/current-user ctx)]
+    (if (roles/protocol-designer? user)
+      (data/find-children types/organization (session/current-org-id ctx) types/policy-definition)
+      (respond/forbidden))))
 
-   {:name "post-library-policy-definition"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-policy-definition-record)
-    :run-fn (utils/gen-type-update types/policy-definition lookup/get-policy-definition-in-query)
-    :run-if-false forbidden-fn}
+(as-method get-policy-definitions endpoint/endpoints "get-library-policy-definitions")
 
-   {:name "delete-library-policy-definition"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-policy-definition-record)
-    :run-fn (utils/gen-type-delete types/policy-definition lookup/get-policy-definition-in-query)
-    :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) policy-definition-processes))
+(defprocess get-policy-definition
+  [ctx]
+  (let [policy-definition (views-policy-definition ctx)]
+    (if policy-definition
+      policy-definition
+      (respond/forbidden))))
+
+(as-method get-policy-definition endpoint/endpoints "get-library-policy-definition")
+
+
+(defprocess add-policy-definition
+  [ctx]
+  (if (vouch/designs-org? ctx)
+    (let [org-id (get-in ctx [:query-params :organization])
+          data (assoc (:body-params ctx) :organization {:id org-id})]
+      (data/create types/policy-definition data))
+    (respond/forbidden)))
+
+(as-method add-policy-definition endpoint/endpoints "put-library-policy-definition")
+
+
+(defprocess update-policy-definition
+  [ctx]
+  (let [policy-definition (designs-policy-definition ctx)]
+    (if policy-definition
+      (data/update types/policy-definition (:id policy-definition) (:body-params ctx))
+      (respond/forbidden))))
+
+(as-method update-policy-definition endpoint/endpoints "post-library-policy-definition")
+
+
+(defprocess delete-policy-definition
+  [ctx]
+  (let [policy-definition (designs-policy-definition ctx)]
+    (if policy-definition
+      (data/delete types/policy-definition (:id policy-definition))
+      (respond/forbidden))))
+
+(as-method delete-policy-definition endpoint/endpoints "delete-library-policy-definition")

@@ -3,7 +3,7 @@
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
             [ring.util.response :as rutil]
@@ -35,7 +35,7 @@
         parent-id (get-in ctx [:query-params :parent-id])
         property (get-in ctx [:query-params :property])
         parent (get-record parent-type parent-id)]
-    (if (runnable/can-design-org-id user (get-in parent [:organization :id]))
+    (if (roles/can-design-org-id? user (get-in parent [:organization :id]))
       (let [body (:body-params ctx)
             resp (services/add-text-i18n parent-type parent-id property body)]
         (if (services/service-error? resp)
@@ -54,7 +54,7 @@
         property (get-in ctx [:query-params :property])
         text-i18n-id (get-in ctx [:query-params :text-i18n])
         parent (get-record parent-type parent-id)]
-    (if (and (runnable/can-design-org-id user (get-in parent [:organization :id])) 
+    (if (and (roles/can-design-org-id? user (get-in parent [:organization :id])) 
              (auth-on-text? parent text-i18n-id property))
       (let [body (:body-params ctx)
             resp (services/update-text-i18n parent-type parent-id property text-i18n-id body)]
@@ -74,7 +74,7 @@
         property (get-in ctx [:query-params :property])
         text-i18n-id (get-in ctx [:query-params :text-i18n])
         parent (get-record parent-type parent-id)]
-    (if (and (runnable/can-design-org-id user (get-in parent [:organization :id])) 
+    (if (and (roles/can-design-org-id? user (get-in parent [:organization :id])) 
              (auth-on-text? parent text-i18n-id property))
       (let [resp (services/delete-text-i18n parent-type parent-id property text-i18n-id)]
         (if (services/service-error? resp)

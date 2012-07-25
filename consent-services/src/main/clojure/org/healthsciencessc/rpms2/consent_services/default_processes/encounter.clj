@@ -1,121 +1,91 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.encounter
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
-            [org.healthsciencessc.rpms2.consent-services.data :as data])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(def encounter-roles
-  [roles/admin?
-   roles/superadmin?
-   roles/consent-manager?
-   roles/consent-collector?
-   roles/system?])
 
-(defn- allowed?
-  [u & constraints]
-  (apply (apply some-fn encounter-roles) u constraints))
+(defprocess get-encounters
+  [ctx]
+  (let [location-id (get-in ctx [:query-params :location])
+        type (if location-id types/location types/organization)
+        record (if location-id (vouch/collects-or-manages-location ctx) (vouch/collects-or-manages ctx))]
+    (if record
+      (data/find-children type (:id record) types/encounter)
+      (respond/forbidden))))
 
-(def encounter-processes
-  [{:name "get-consent-encounters"
-    :runnable-fn (fn [{{user :current-user} :session}]
-                   (or (roles/admin? user)
-                       (roles/superadmin? user)
-                       (roles/consent-manager? user)
-                       (roles/system? user)))
-    :run-fn (fn [params]
-              (let [user (get-in params [:session :current-user])
-                    user-org-id (get-in user [:organization :id])]
-                (cond
-                 (roles/superadmin? user)
-                 (data/find-all "encounter")
-                 (allowed? user :organization {:id user-org-id})
-                 (data/find-children "organization" user-org-id "encounter"))))
-    :run-if-false forbidden-fn}
+(as-method get-encounters endpoint/endpoints "get-consent-encounters")
 
-   {:name "get-consent-encounter"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         org-id (get-in user [:organization :id])
-                         enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user :organization {:id org-id})
-                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
-    :run-fn (fn [params]
-              (let [encounter-id (get-in params [:query-params :encounter])]
-                (data/find-record "encounter" encounter-id)))
-    :run-if-false forbidden-fn}
 
-   {:name "get-consent-encounter-consents"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         org-id (get-in user [:organization :id])
-                         enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user :organization {:id org-id})
-                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
-    :run-fn (fn [params]
-              (let [encounter-id (get-in params [:query-params :encounter])]
-                (data/find-children "encounter" encounter-id "consent")))
-    :run-if-false forbidden-fn}
+(defprocess get-encounter
+  [ctx]
+  (let [encounter (vouch/collects-or-manages-encounter ctx)]
+    (if encounter
+      encounter
+      (respond/forbidden))))
 
-   {:name "get-consent-encounter-consent-endorsements"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         org-id (get-in user [:organization :id])
-                         enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user :organization {:id org-id})
-                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
-    :run-fn (fn [params]
-              (let [encounter-id (get-in params [:query-params :encounter])]
-                (data/find-children "encounter" encounter-id "consent-endorsement")))
-    :run-if-false forbidden-fn}
+(as-method get-encounter endpoint/endpoints "get-consent-encounter")
 
-   {:name "get-consent-encounter-consent-meta-items"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         org-id (get-in user [:organization :id])
-                         enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user :organization {:id org-id})
-                          (data/belongs-to? "encounter" enc-id "organization" org-id))))
-    :run-fn (fn [params]
-              (let [encounter-id (get-in params [:query-params :encounter])]
-                (data/find-children "encounter" encounter-id "consent-meta-item")))
-    :run-if-false forbidden-fn}
 
-   {:name "put-consent-encounter"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org (:organization user)]
-                     (allowed? user :organization user-org)))
-    :run-fn (fn [params]
-              (let [enc (:body-params params)]
-                (data/create "encounter" (assoc enc
-                                           :organization
-                                           (get-in params [:session :current-user :organization])))))
-    :run-if-false forbidden-fn}
+(defprocess get-encounter-consents
+  [ctx]
+  (let [encounter (vouch/collects-or-manages-encounter ctx)]
+    (if encounter
+      (data/find-children types/encounter (:id encounter) types/consent)
+      (respond/forbidden))))
 
-   {:name "post-consent-encounter"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         org-id (get-in user [:organization :id])
-                         enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user :organization {:id org-id})
-                          (data/belongs-to? "encounter" enc-id "organization" org-id false))))
-    :run-fn (fn [params]
-              (let [enc-id (get-in params [:query-params :encounter])
-                    enc-data (:body-params params)]
-                (data/update "encounter" enc-id enc-data)))
-    :run-if-false forbidden-fn}
+(as-method get-encounter-consents endpoint/endpoints "get-consent-encounter-consents")
 
-   {:name "delete-consent-encounter"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         org-id (get-in user [:organization :id])
-                         enc-id (get-in params [:query-params :encounter])]
-                     (and (allowed? user :organization {:id org-id})
-                          (data/belongs-to? "encounter" enc-id "organization" org-id false))))
-    :run-fn (fn [params]
-              (let [enc-id (get-in params [:query-params :encounter])]
-                (data/delete "encounter" enc-id)))
-    :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) encounter-processes))
+(defprocess get-encounter-endorsements
+  [ctx]
+  (let [encounter (vouch/collects-or-manages-encounter ctx)]
+    (if encounter
+      (data/find-children types/encounter (:id encounter) types/consent-endorsement)
+      (respond/forbidden))))
+
+(as-method get-encounter-endorsements endpoint/endpoints "get-consent-encounter-consent-endorsements")
+
+
+(defprocess get-encounter-meta-items
+  [ctx]
+  (let [encounter (vouch/collects-or-manages-encounter ctx)]
+    (if encounter
+      (data/find-children types/encounter (:id encounter) types/consent-meta-item)
+      (respond/forbidden))))
+
+(as-method get-encounter-meta-items endpoint/endpoints "get-consent-encounter-consent-meta-items")
+
+(defprocess add-encounter
+  [ctx]
+  (let [location (vouch/collects-location ctx)]
+    (if location
+      (let [org (:organization location)
+            data (assoc (:body-params ctx) :organization org :location location)]
+        (data/create types/encounter data))
+      (respond/forbidden))))
+
+(as-method add-encounter endpoint/endpoints "put-consent-encounter")
+
+
+(defprocess update-encounter
+  [ctx]
+  (let [encounter (vouch/collects-encounter ctx)]
+    (if encounter
+      (data/update types/encounter (:id encounter) (:body-params ctx))
+      (respond/forbidden))))
+
+(as-method update-encounter endpoint/endpoints "post-consent-encounter")
+
+
+(defprocess delete-encounter
+  [ctx]
+  (let [encounter (vouch/collects-encounter ctx)]
+    (if encounter
+      (data/delete types/encounter (:id encounter))
+      (respond/forbidden))))
+
+(as-method delete-encounter endpoint/endpoints "delete-consent-encounter")
+

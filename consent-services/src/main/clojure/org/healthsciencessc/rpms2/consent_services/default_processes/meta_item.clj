@@ -1,43 +1,69 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.meta-item
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(defn- authorize-read-node
+
+(defn designs-meta-item
   [ctx]
-  (let [user (utils/current-user ctx)]
-    (and (roles/protocol-designer? user)
-         (utils/record-belongs-to-user-org ctx types/meta-item))))
+  (vouch/designs-type ctx types/meta-item (get-in ctx [:query-params :meta-item])))
 
-(def meta-item-processes
-  [{:name "get-library-meta-items"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user utils/lookup-organization)
-    :run-fn (utils/gen-type-records-by-org types/meta-item)
-    :run-if-false forbidden-fn}
+(defn views-meta-item
+  [ctx]
+  (vouch/views-type-as-designer ctx types/meta-item (get-in ctx [:query-params :meta-item])))
 
-   {:name "get-library-meta-item"
-    :runnable-fn authorize-read-node
-    :run-fn utils/get-meta-item-record
-    :run-if-false forbidden-fn}
 
-   {:name "put-library-meta-item"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user lookup/get-organization-in-body)
-    :run-fn (utils/gen-type-create types/meta-item)
-    :run-if-false forbidden-fn}
+(defprocess get-meta-items
+  [ctx]
+  (let [user (session/current-user ctx)]
+    (if (roles/protocol-designer? user)
+      (data/find-children types/organization (session/current-org-id ctx) types/meta-item)
+      (respond/forbidden))))
 
-   {:name "post-library-meta-item"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-meta-item-record)
-    :run-fn (utils/gen-type-update types/meta-item lookup/get-meta-item-in-query)
-    :run-if-false forbidden-fn}
+(as-method get-meta-items endpoint/endpoints "get-library-meta-items")
 
-   {:name "delete-library-meta-item"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-meta-item-record)
-    :run-fn (utils/gen-type-delete types/meta-item lookup/get-meta-item-in-query)
-    :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) meta-item-processes))
+(defprocess get-meta-item
+  [ctx]
+  (let [meta-item (views-meta-item ctx)]
+    (if meta-item
+      meta-item
+      (respond/forbidden))))
+
+(as-method get-meta-item endpoint/endpoints "get-library-meta-item")
+
+
+(defprocess add-meta-item
+  [ctx]
+  (if (vouch/designs-org? ctx)
+    (let [org-id (get-in ctx [:query-params :organization])
+          data (assoc (:body-params ctx) :organization {:id org-id})]
+      (data/create types/meta-item data))
+    (respond/forbidden)))
+
+(as-method add-meta-item endpoint/endpoints "put-library-meta-item")
+
+
+(defprocess update-meta-item
+  [ctx]
+  (let [meta-item (designs-meta-item ctx)]
+    (if meta-item
+      (data/update types/meta-item (:id meta-item) (:body-params ctx))
+      (respond/forbidden))))
+
+(as-method update-meta-item endpoint/endpoints "post-library-meta-item")
+
+
+(defprocess delete-meta-item
+  [ctx]
+  (let [meta-item (designs-meta-item ctx)]
+    (if meta-item
+      (data/delete types/meta-item (:id meta-item))
+      (respond/forbidden))))
+
+(as-method delete-meta-item endpoint/endpoints "delete-library-meta-item")

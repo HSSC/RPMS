@@ -12,7 +12,7 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
             [ring.util.response :as rutil]
@@ -41,7 +41,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [nodes (services/get-users org-id)]
         (if (meta nodes)
           (rutil/not-found (:message (meta nodes)))
@@ -66,7 +66,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (layout/render ctx "Create User"
                      (container/scrollbox 
                        (form/dataform 
@@ -85,7 +85,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (layout/render ctx "Create Admin"
                      (container/scrollbox 
                        (form/dataform 
@@ -103,7 +103,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (if-let [node-id (lookup/get-user-in-query ctx)]
         (let [n (services/get-user node-id)
               editable (common/owned-by-user-org n)]
@@ -135,9 +135,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-user body)]
+            resp (services/add-user org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -151,7 +151,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (lookup/get-organization-in-query ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
             resp (services/add-admin body)]
         (if (services/service-error? resp)
@@ -166,7 +166,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [body (:body-params ctx)
             user-id (lookup/get-user-in-query ctx)
             resp (services/update-user user-id body)]
@@ -182,7 +182,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-admin-org-id user org-id)
+    (if (roles/can-admin-org-id? user org-id)
       (let [user-id (lookup/get-user-in-query ctx)
             resp (services/delete-user user-id)]
         (if (services/service-error? resp)

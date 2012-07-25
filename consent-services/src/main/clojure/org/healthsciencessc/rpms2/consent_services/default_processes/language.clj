@@ -1,47 +1,70 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.language
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(defn- authorize-read-node
+
+(defn designs-language
   [ctx]
-  (let [user (utils/current-user ctx)]
-    (and (roles/protocol-designer? user)
-         (utils/record-belongs-to-user-org ctx types/language))))
+  (vouch/designs-type ctx types/language (get-in ctx [:query-params :language])))
 
-(def language-processes
-  [{:name "get-library-languages"
-    :runnable-fn (constantly true) ;; Allow any role to read the list of languages.
-    :run-fn (fn [params]
-              (let [user (get-in params [:session :current-user])
-                    org-id (or (lookup/get-organization-in-query params) (get-in user [:organization :id]))]
-                (data/find-children "organization" org-id "language")))
-    :run-if-false forbidden-fn}
+(defn views-language
+  [ctx]
+  (vouch/views-type-as-designer ctx types/language (get-in ctx [:query-params :language])))
 
-   {:name "get-library-language"
-    :runnable-fn authorize-read-node
-    :run-fn utils/get-language-record
-    :run-if-false forbidden-fn}
 
-   {:name "put-library-language"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user lookup/get-organization-in-body)
-    :run-fn (utils/gen-type-create types/language)
-    :run-if-false forbidden-fn}
+;; Anyone Can View Their Orgs Languages
+(defprocess get-languages
+  [ctx]
+  (let [user (session/current-user ctx)]
+    (if user
+      (data/find-children types/organization (session/current-org-id ctx) types/language)
+      (respond/forbidden))))
 
-   {:name "post-library-language"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-language-record)
-    :run-fn (utils/gen-type-update types/language lookup/get-language-in-query)
-    :run-if-false forbidden-fn}
+(as-method get-languages endpoint/endpoints "get-library-languages")
 
-   {:name "delete-library-language"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-language-record)
-    :run-fn (utils/gen-type-delete types/language lookup/get-language-in-query)
-    :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) language-processes))
+(defprocess get-language
+  [ctx]
+  (let [language (views-language ctx)]
+    (if language
+      language
+      (respond/forbidden))))
+
+(as-method get-language endpoint/endpoints "get-library-language")
+
+
+(defprocess add-language
+  [ctx]
+  (if (vouch/designs-org? ctx)
+    (let [org-id (get-in ctx [:query-params :organization])
+          data (assoc (:body-params ctx) :organization {:id org-id})]
+      (data/create types/language data))
+    (respond/forbidden)))
+
+(as-method add-language endpoint/endpoints "put-library-language")
+
+
+(defprocess update-language
+  [ctx]
+  (let [language (designs-language ctx)]
+    (if language
+      (data/update types/language (:id language) (:body-params ctx))
+      (respond/forbidden))))
+
+(as-method update-language endpoint/endpoints "post-library-language")
+
+
+(defprocess delete-language
+  [ctx]
+  (let [language (designs-language ctx)]
+    (if language
+      (data/delete types/language (:id language))
+      (respond/forbidden))))
+
+(as-method delete-language endpoint/endpoints "delete-library-language")

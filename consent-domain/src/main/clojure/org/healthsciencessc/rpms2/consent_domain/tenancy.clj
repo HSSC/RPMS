@@ -8,10 +8,25 @@
   (let [org-id (get-in user [:organization :id])]
     (filter #(= org-id (get-in % [:organization :id])) coll)))
 
+(defn only-my-org?
+  "Returns true if all the items in the collection belong only to the users organization."
+  [user coll]
+  (= (count coll) (count (only-my-org user coll))))
+
 (defn only-base-org
   "Returns only items in the collection that belong to the base organization."
   [coll]
   (filter #(= types/code-base-org (get-in % [:organization :code])) coll))
+
+(defn only-base-org?
+  "Returns true if all the items in the collection belong to the base organization."
+  [coll]
+  (= (count coll) (count (only-base-org coll))))
+
+(defn belongs-to-base?
+  "Checks if a data map represents a type that is owned by the base organization."
+  [data]
+  (= types/code-base-org (get-in data [:organization :code])))
 
 (defn label-for
   "Looks for the first valid value within the organization and location for a specific label."

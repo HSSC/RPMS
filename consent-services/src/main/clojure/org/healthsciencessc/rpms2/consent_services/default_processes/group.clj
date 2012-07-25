@@ -1,84 +1,74 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.group
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(def group-processes
-  [{:name "get-security-groups"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         org-id (get-in params [:query-params :organization])
-                         loc-id (get-in params [:query-params :location])]
-                     (or (super-admin? user)
-                         (and (admin? user)
-                              (cond
-                               org-id (data/belongs-to? "user" (:id user) "organization" org-id)
-                               loc-id (data/belongs-to? "location" loc-id "organization" user-org-id)
-                              :else true)))))
-    :run-fn (fn [params]
-              (let [user (get-in params [:session :current-user])
-                    user-org-id (get-in user [:organization :id])
-                    org-id (get-in params [:query-params :organization])
-                    loc-id (get-in params [:query-params :location])]
-                (cond
-                 org-id (data/find-children "organization" org-id "group")
-                 loc-id (data/find-related-records "location" loc-id (list "role-mapping" "group"))
-                 :else (cond
-                        (super-admin? user) (data/find-all "group")
-                        (admin? user) (data/find-children "organization" user-org-id "group")))))
-    :run-if-false forbidden-fn}
+(defn admins-group?
+  [ctx]
+  (let [user (session/current-user ctx)
+        user-org-id (get-in user [:organization :id])
+        group-id (get-in ctx [:query-params :group])]
+    (or (roles/superadmin? user)
+        (and (roles/admin? user) 
+             (data/belongs-to? types/group group-id types/organization user-org-id false)))))
 
-   {:name "get-security-group"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         group-id (get-in params [:query-params :group])]
-                     (or
-                      (super-admin? user)
-                      (and (admin? user) (data/belongs-to? "group" group-id "organization" user-org-id)))))
-    :run-fn (fn [params]
-              (let [group-id (get-in params [:query-params :group])]
-                (data/find-record "group" group-id)))
-    :run-if-false forbidden-fn}
+(defprocess get-groups
+  [ctx]
+  (let [user (session/current-user ctx)
+        org-id (get-in ctx [:query-params :organization])]
+    (cond
+      (roles/superadmin? user)
+        (data/find-children types/organization (or org-id (session/current-org-id ctx)) types/group)
+      (roles/admin? user)
+        (data/find-children types/organization (session/current-org-id ctx) types/group)
+      :else
+        (respond/forbidden))))
 
-   {:name "put-security-group"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         group (:body-params params)
-                         user-org-id (get-in user [:organization :id])
-                         group-org-id (get-in group [:organization :id])]
-                     (or (super-admin? user)
-                         (and (admin? user) (= user-org-id group-org-id)))))
-    :run-fn (fn [params]
-              (let [group (:body-params params)]
-                (data/create "group" group)))
-    :run-if-false forbidden-fn}
+(as-method get-groups endpoint/endpoints "get-security-groups")
 
-   {:name "post-security-group"
-    :runnable-fn (fn [params]
-                   (let [group-id (get-in params [:query-params :group])
-                         user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])]
-                     (or (super-admin? user)
-                         (and (admin? user) (data/belongs-to? "group" group-id "organization" user-org-id false)))))
-    :run-fn (fn [params]
-              (let [group-id (get-in params [:query-params :group])
-                    group (:body-params params)]
-                (data/update "group" group-id group)))
-    :run-if-false forbidden-fn}
+(defprocess get-group
+  [ctx]
+  (if (admins-group? ctx)
+    (let [group-id (get-in ctx [:query-params :group])]
+      (data/find-record types/group group-id))
+    (respond/forbidden)))
 
-   {:name "delete-security-group"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         group-id (get-in params [:query-params :group])]
-                     (or (super-admin? user)
-                         (and (admin? user) (data/belongs-to? "group" group-id "organization" user-org-id false)))))
-    :run-fn (fn [params]
-              (let [group-id (get-in params [:query-params :group])]
-                (data/delete "group" group-id)))
-    :run-if-false forbidden-fn}])
+(as-method get-group endpoint/endpoints "get-security-group")
 
-(process/register-processes (map #(DefaultProcess/create %) group-processes))
+
+(defprocess add-group
+  [ctx]
+  (if (vouch/admins-org? ctx)
+    (let [data (:body-params ctx)
+          org-id (get-in ctx [:query-params :organization])]
+      (data/create types/group (assoc data :organization {:id org-id})))
+    (respond/forbidden)))
+
+(as-method add-group endpoint/endpoints "put-security-group")
+
+
+(defprocess update-group
+  [ctx]
+  (if (admins-group? ctx)
+    (let [group-id (get-in ctx [:query-params :group])
+          group-data (:body-params ctx)]
+      (data/update types/group group-id group-data))
+    (respond/forbidden)))
+
+(as-method update-group endpoint/endpoints "post-security-group")
+
+
+(defprocess delete-group
+  [ctx]
+  (if (admins-group? ctx)
+    (let [group-id (get-in ctx [:query-params :group])]
+      (data/delete types/group group-id))
+    (respond/forbidden)))
+
+(as-method delete-group endpoint/endpoints "delete-security-group")
+

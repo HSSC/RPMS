@@ -1,6 +1,7 @@
 ;; Provides the configuration of the protocol managemant UIs.
 (ns org.healthsciencessc.rpms2.consent-admin.process.endorsement-type
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.error :as error]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
@@ -12,10 +13,9 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [ring.util.response :as rutil]
             [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
@@ -33,12 +33,12 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
         (let [nodes (services/get-endorsement-types org-id)
               endorsement-id (lookup/get-endorsement-in-query ctx)
               endorsement-type-id (lookup/get-endorsement-type-in-query ctx)]
           (if (meta nodes)
-            (rutil/not-found (:message (meta nodes)))
+            (error/view-service-error nodes)
             (layout/render ctx (str type-label "s")
                            (container/scrollbox 
                              (list/selectlist {:action :.detail-action}
@@ -68,12 +68,12 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (if-let [node-id (lookup/get-endorsement-type-in-query ctx)]
         (let [n (services/get-endorsement-type node-id)
               editable (= (get-in n [:organization :id]) (security/current-org-id))]
           (if (meta n)
-            (rutil/not-found (:message (meta n)))
+            (error/view-service-error n)
             (layout/render ctx (str type-label ": " (:name n))
                            (container/scrollbox 
                              (form/dataform (form/render-fields {:editable editable} fields n)))
@@ -96,7 +96,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (layout/render ctx (str "Create " type-label)
                      (container/scrollbox (form/dataform (form/render-fields {} fields )))
                      (actions/actions 
@@ -112,7 +112,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [endorsement-id (lookup/get-endorsement-in-query ctx)
             new-type-id (get-in ctx [:query-params :assign-type])
             endorsement-type-id (lookup/get-endorsement-type-in-query ctx)
@@ -129,9 +129,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-endorsement-type body)]
+            resp (services/add-endorsement-type org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -144,7 +144,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (:body-params ctx)
             endorsement-type-id (lookup/get-endorsement-type-in-query ctx)
             resp (services/update-endorsement-type endorsement-type-id body)]
@@ -160,7 +160,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [endorsement-type-id (lookup/get-endorsement-type-in-query ctx)
             resp (services/delete-endorsement-type endorsement-type-id)]
         (if (services/service-error? resp)

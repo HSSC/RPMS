@@ -1,145 +1,12 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.protocol-version
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [clojure.walk :as walk]
-            [ring.util.response :as rutil]
-            [borneo.core :as neo]
-            [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.roles :as role]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
-            [org.healthsciencessc.rpms2.consent-services.default-processes.protocol :as protocol])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
-
-(defn- assign-language
-  [ctx]
-  (let [language-id (get-in ctx [:query-params :language])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/relate-records types/protocol-version protocol-version-id types/language language-id)))
-
-(defn- assign-endorsement
-  [ctx]
-  (let [endorsement-id (get-in ctx [:query-params :endorsement])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/relate-records types/protocol-version protocol-version-id types/endorsement endorsement-id)))
-
-(defn- assign-meta-item
-  [ctx]
-  (let [meta-item-id (get-in ctx [:query-params :meta-item])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/relate-records types/protocol-version protocol-version-id types/meta-item meta-item-id)))
-
-(defn- assign-policy
-  [ctx]
-  (let [policy-id (get-in ctx [:query-params :policy])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/relate-records types/protocol-version protocol-version-id types/policy policy-id)))
-
-(defn- remove-language
-  [ctx]
-  (let [language-id (get-in ctx [:query-params :language])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/unrelate-records types/protocol-version protocol-version-id types/language language-id)))
-
-(defn- remove-endorsement
-  [ctx]
-  (let [endorsement-id (get-in ctx [:query-params :endorsement])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/unrelate-records types/protocol-version protocol-version-id types/endorsement endorsement-id)))
-
-(defn- remove-meta-item
-  [ctx]
-  (let [meta-item-id (get-in ctx [:query-params :meta-item])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/unrelate-records types/protocol-version protocol-version-id types/meta-item meta-item-id)))
-
-(defn- remove-policy
-  [ctx]
-  (let [policy-id (get-in ctx [:query-params :policy])
-        protocol-version-id (get-in ctx [:query-params :protocol-version])]
-    (data/unrelate-records types/protocol-version protocol-version-id types/policy policy-id)))
-
-(defn auth-designer-for-protocol
-  [ctx]
-  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
-        protocol-version (data/find-record types/protocol-version protocol-version-id)
-        protocol-id (get-in protocol-version [:protocol :id])
-        user (get-in ctx [:session :current-user])]
-    (if (protocol/user-is-designer-for-protocol user protocol-id)
-      protocol-version
-      false)))
-
-(defn auth-designer-for-protocol-draft
-  [ctx]
-  (let [protocol-version (auth-designer-for-protocol ctx)]
-    (and protocol-version (types/draft? protocol-version))))
-
-
-(defn auth-designer-for-protocol-submitted
-  [ctx]
-  (let [protocol-version (auth-designer-for-protocol ctx)]
-    (and protocol-version (types/submitted? protocol-version))))
-
-
-(defn auth-designer-for-protocol-published
-  [ctx]
-  (let [protocol-version (auth-designer-for-protocol ctx)]
-    (and protocol-version (types/published? protocol-version))))
-
-(def reformatted-types
-  [:policies :endorsements :meta-items :form])
-
-(defn get-lang-value
-  [text-coll lang-map]
-  (let [lang-id (:id (:lang lang-map))
-        default-lang-id (:id (:default-lang lang-map))]
-    (:value (or (first (filter (fn [text] (= lang-id (get-in text [:language :id]))) text-coll))
-                (first (filter (fn [text] (= default-lang-id (get-in text [:language :id]))) text-coll))))))
-
-(defn map-by-id
-  [coll value-fn]
-  (into {}
-        (for [elem coll]
-          [(:id elem) (value-fn elem)])))
-
-(defmulti reformat-type
-  (fn [type data lang-map]
-    type))
-
-(defmethod reformat-type :policies
-  [type policies lang-map]
-  (map-by-id policies
-             (fn [policy]
-               {:title (get-lang-value (:titles policy) lang-map)
-                :text (get-lang-value (:texts policy) lang-map)})))
-
-(defmethod reformat-type :meta-items
-  [type meta-items lang-map]
-  (map-by-id meta-items
-             (fn [meta-item]
-               {:label (get-lang-value (:labels meta-item) lang-map)})))
-
-(defmethod reformat-type :endorsements
-  [type endorsements lang-map]
-  (map-by-id endorsements
-             (fn [endorsement]
-               {:label (get-lang-value (:labels endorsement) lang-map)
-                :endorsement-type (:endorsement-type endorsement)})))
-
-(defmethod reformat-type :form
-  [type form lang-map]
-  (assoc (select-keys form [:contains :collect-start :review-start])
-    :title (get-lang-value (:titles form) lang-map)))
-
-(defn reformat-version-data
-  [version-id lang-map]
-  (let [protocol-version (data/find-record types/protocol-version version-id)]
-    (assoc (into {}
-                 (for [type reformatted-types]
-                   [type (reformat-type type (type protocol-version) lang-map)]))
-      :id version-id)))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]
+            [clojure.walk :as walk]
+            [borneo.core :as neo]))
 
 
 (defn next-version
@@ -190,20 +57,79 @@
       (data/relate-records types/protocol-version (:id record) types/policy (:id policy)))
     record))
 
-(defn clone-version
+
+
+(defprocess get-protocol-versions
   [ctx]
-  (let [protocol-version-id (get-in ctx [:query-params :protocol-version])
-        protocol-version (data/find-record types/protocol-version protocol-version-id)]
-    (cond
-      (nonpublished? protocol-version)
-        (rutil/status 
-          (rutil/response 
-            {:message "Protocol Version must be published to clone."}) 403)
-      (has-nonpublished-siblings? protocol-version)
-        (rutil/status 
-          (rutil/response 
-            {:message "Protocol must not have any versions in draft or submitted status to perform clone."}) 403)
-      :else
+  (let [protocol (vouch/designs-protocol ctx)]
+    (if protocol
+      (data/find-children types/protocol (:id protocol) types/protocol-version)
+      (respond/forbidden))))
+
+(as-method get-protocol-versions endpoint/endpoints "get-protocol-versions")
+
+
+(defprocess get-protocol-version
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      protocol-version
+      (respond/forbidden))))
+
+(as-method get-protocol-version endpoint/endpoints "get-protocol-version")
+
+
+(defprocess add-protocol-version
+  [ctx]
+  (let [protocol (vouch/designs-protocol ctx)]
+    (if protocol
+      (if (has-nonpublished-siblings? {:protocol protocol})
+        (respond/forbidden "Protocol must not have any versions in draft or submitted status in order to create new version.")
+        (let [org (:organization protocol)
+              data (assoc (:body-params ctx) 
+                          :organization org 
+                          :protocol protocol 
+                          :status types/status-draft)]
+          (data/create types/protocol-version data)))
+      (respond/forbidden))))
+
+(as-method add-protocol-version endpoint/endpoints "put-protocol-version")
+
+
+(defprocess update-protocol-version
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (if (types/draft? protocol-version)
+        (data/update types/protocol-version (:id protocol-version) (:body-params ctx))
+        (respond/forbidden "Protocol must must be in draft in order to change."))
+      (respond/forbidden))))
+
+(as-method update-protocol-version endpoint/endpoints "post-protocol-version")
+
+
+(defprocess delete-protocol-version
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (if (nonpublished? protocol-version)
+        (data/delete types/protocol-version (:id protocol-version))
+        (respond/forbidden "Protocol must must be non-published in order to delete."))
+      (respond/forbidden))))
+
+(as-method delete-protocol-version endpoint/endpoints "delete-protocol-version")
+
+
+(defprocess clone-protocol-version
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (cond
+        (nonpublished? protocol-version)
+          (respond/forbidden "Protocol Version must be published to clone.")
+        (has-nonpublished-siblings? protocol-version)
+          (respond/forbidden "Protocol must not have any versions in draft or submitted status to perform clone.")
+        :else
         (let [form (clean-form protocol-version)
               widgets (:contains form)
               naked-form (dissoc form :contains)]
@@ -213,159 +139,150 @@
               (doseq [widget widgets]
                 (let [w (data/create-records types/widget (dissoc widget :form))]
                   (data/relate-records types/widget (:id w) types/form (:id new-form))))
-              version))))))
+              version))))
+      (respond/forbidden))))
 
-(def protocol-version-processes
-  [{:name "get-protocol-versions"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         protocol-id (get-in params [:query-params :protocol])]
-                     (protocol/user-is-designer-for-protocol user protocol-id)))
-    :run-fn (fn [params]
-              (let [protocol (get-in params [:query-params :protocol])]
-                (data/find-children types/protocol protocol types/protocol-version)))
-    :run-if-false forbidden-fn}
+(as-method clone-protocol-version endpoint/endpoints "post-protocol-version-clone")
 
-   {:name "get-protocol-version"
-    :runnable-fn auth-designer-for-protocol
-    :run-fn (fn [params]
-              (let [protocol-version-id (get-in params [:query-params :protocol-version])]
-                (data/find-record types/protocol-version protocol-version-id)))
-    :run-if-false forbidden-fn}
 
-   {:name "get-protocol-versions-published-form"
-    :runnable-fn (fn [params]
-                   (let [q-params (get-in params [:query-params :protocol-version])
-                         protocol-version-ids (if (coll? q-params) q-params (list q-params))
-                         protocol-versions (map (partial data/find-record types/protocol-version) protocol-version-ids)
-                         locations (map #(get-in % [:protocol :location]) protocol-versions)]
-                     (or (every? #(runnable/can-design-protocol-version (utils/current-user params) %) protocol-versions)
-                         (every? #(runnable/can-collect-location (utils/current-user params) %) locations))))
-    :run-fn (fn [params]
-              (let [q-params (get-in params [:query-params :protocol-version])
-                    protocol-version-ids (if (coll? q-params) q-params (list q-params))
-                    default-lang (:language (utils/current-org params))
-                    lang-id (get-in params [:query-params :language])
-                    requested-lang (if lang-id (data/find-record types/language lang-id) default-lang)]
-                (map #(reformat-version-data % {:lang requested-lang :default-lang default-lang})
-                     protocol-version-ids)))
-    :run-if-false forbidden-fn}
+(defprocess publish
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (if (types/submitted? protocol-version)
+        (let [protocol-id (get-in protocol-version [:protocol :id])
+              versions (data/find-children types/protocol protocol-id types/protocol-version)
+              published-versions (filter types/published? versions)]
+          (neo/with-tx
+            (doseq [published-version published-versions]
+              (data/update types/protocol-version (:id published-version) {:status types/status-retired}))
+            (data/update types/protocol-version (:id protocol-version) (assoc protocol-version :status types/status-published))))
+        (respond/forbidden "A protocol version must be in a submitted status in order to be published."))
+      (respond/forbidden))))
 
-   {:name "put-protocol-version"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         protocol-id (get-in params [:body-params :protocol :id])]
-                     (protocol/user-is-designer-for-protocol user protocol-id)))
-    :run-fn (fn [params]
-              (let [protocol-version (:body-params params)]
-                (data/create types/protocol-version (assoc protocol-version :status types/status-draft))))
-    :run-if-false forbidden-fn}
+(as-method publish endpoint/endpoints "post-protocol-version-publish")
 
-   {:name "post-protocol-version"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn (fn [params]
-              (let [protocol-version-id (get-in params [:query-params :protocol-version])
-                    protocol-version (:body-params params)]
-                (data/update types/protocol-version protocol-version-id protocol-version)))
-    :run-if-false forbidden-fn}
 
-   {:name "delete-protocol-version"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn (fn [params]
-              (let [protocol-version-id (get-in params [:query-params :protocol-version])]
-                (data/delete types/protocol-version protocol-version-id)))
-    :run-if-false forbidden-fn}
-   
-   {:name "post-protocol-version-clone"
-    :runnable-fn auth-designer-for-protocol-published
-    :run-fn clone-version
-    :run-if-false forbidden-fn}
+(defprocess retire
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (if (types/published? protocol-version)
+        (data/update types/protocol-version (:id protocol-version) {:status types/status-retired})
+        (respond/forbidden "Only published versions can be retired."))
+      (respond/forbidden))))
 
-   {:name "post-protocol-publish"
-    :runnable-fn auth-designer-for-protocol-submitted
-    :run-fn (fn [params]
-              (let [protocol-version-id (get-in params [:query-params :protocol-version])
-                    protocol-version (data/find-record "protocol-version" protocol-version-id)
-                    protocol-id (get-in protocol-version [:protocol :id])
-                    versions (data/find-children "protocol" protocol-id "protocol-version")
-                    published-versions (filter types/published? versions)]
-                (doseq [published-version published-versions]
-                  (data/update types/protocol-version (:id published-version) {:status types/status-retired}))
-                (data/update types/protocol-version protocol-version-id (assoc protocol-version :status types/status-published))))
-    :run-if-false forbidden-fn}
+(as-method retire endpoint/endpoints "post-protocol-version-retire")
 
-   {:name "post-protocol-retire"
-    :runnable-fn auth-designer-for-protocol-published
-    :run-fn (fn [params]
-              (let [protocol-version-id (get-in params [:query-params :protocol-version])
-                    protocol-version (data/find-record types/protocol-version protocol-version-id)]
-                (data/update types/protocol-version protocol-version-id (assoc protocol-version :status types/status-retired))))
-    :run-if-false forbidden-fn}
 
-   {:name "post-protocol-draft"
-    :runnable-fn auth-designer-for-protocol-submitted
-    :run-fn (fn [params]
-              (let [protocol-version-id (get-in params [:query-params :protocol-version])
-                    protocol-version (data/find-record types/protocol-version protocol-version-id)]
-                (data/update types/protocol-version protocol-version-id (assoc protocol-version :status types/status-draft))))
-    :run-if-false forbidden-fn}
+(defprocess draft
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (if (types/submitted? protocol-version)
+        (data/update types/protocol-version (:id protocol-version) {:status types/status-draft})
+        (respond/forbidden "Only submitted versions can be reverted to a draft status."))
+      (respond/forbidden))))
 
-   {:name "put-protocol-version-language"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn assign-language
-    :run-if-false forbidden-fn}
+(as-method draft endpoint/endpoints "post-protocol-version-draft")
 
-   {:name "put-protocol-version-endorsement"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn assign-endorsement
-    :run-if-false forbidden-fn}
 
-   {:name "put-protocol-version-meta-item"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn assign-meta-item
-    :run-if-false forbidden-fn}
+(defprocess submit
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)]
+    (if protocol-version
+      (if (types/draft? protocol-version)
+        (data/update types/protocol-version (:id protocol-version) {:status types/status-submitted})
+        (respond/forbidden "Only submitted versions can be reverted to a draft status."))
+      (respond/forbidden))))
 
-   {:name "put-protocol-version-policy"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn assign-policy
-    :run-if-false forbidden-fn}
+(as-method submit endpoint/endpoints "post-protocol-version-submit")
 
-   {:name "delete-protocol-version-language"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn remove-language
-    :run-if-false forbidden-fn}
 
-   {:name "delete-protocol-version-endorsement"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn remove-endorsement
-    :run-if-false forbidden-fn}
+(defprocess assign-language
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        language-id (get-in ctx [:query-params :language])]
+    (if protocol-version
+      (data/relate-records types/protocol-version (:id protocol-version) types/language language-id)
+      (respond/forbidden))))
 
-   {:name "delete-protocol-version-meta-item"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn remove-meta-item
-    :run-if-false forbidden-fn}
+(as-method assign-language endpoint/endpoints "put-protocol-version-language")
 
-   {:name "delete-protocol-version-policy"
-    :runnable-fn auth-designer-for-protocol-draft
-    :run-fn remove-policy
-    :run-if-false forbidden-fn}
 
-   {:name "get-protocol-versions-published"
-    :runnable-fn (runnable/gen-collector-location-check utils/current-user lookup/get-location-in-query)
-    :run-fn (fn [params]
-              (let [loc (get-in params [:query-params :location])
-                    protocols (data/find-children types/location loc types/protocol)]
-                (flatten (for [p protocols]
-                           (filter types/published? (data/find-children types/protocol (:id p) types/protocol-version))))))
-    :run-if-false forbidden-fn}
+(defprocess assign-endorsement
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        endorsement-id (get-in ctx [:query-params :endorsement])]
+    (if protocol-version
+      (data/relate-records types/protocol-version (:id protocol-version) types/endorsement endorsement-id)
+      (respond/forbidden))))
 
-   {:name "get-protocol-versions-published-meta"
-    :runnable-fn (runnable/gen-collector-check utils/current-user)
-    :run-fn (fn [params]
-              (let [ids (get-in params [:query-params :protocol-version])]
-                (distinct (if (coll? ids)
-                            (apply concat (map #(data/find-related-records "protocol-version" % (list "meta-item")) ids))
-                            (data/find-related-records "protocol-version" ids (list "meta-item"))))))
-    :run-if-false forbidden-fn}])
+(as-method assign-endorsement endpoint/endpoints "put-protocol-version-endorsement")
 
-(process/register-processes (map #(DefaultProcess/create %) protocol-version-processes))
+
+(defprocess assign-meta-item
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        meta-item-id (get-in ctx [:query-params :meta-item])]
+    (if protocol-version
+      (data/relate-records types/protocol-version (:id protocol-version) types/meta-item meta-item-id)
+      (respond/forbidden))))
+
+(as-method assign-meta-item endpoint/endpoints "put-protocol-version-meta-item")
+
+
+(defprocess assign-policy
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        policy-id (get-in ctx [:query-params :policy])]
+    (if protocol-version
+      (data/relate-records types/protocol-version (:id protocol-version) types/policy policy-id)
+      (respond/forbidden))))
+
+(as-method assign-policy endpoint/endpoints "put-protocol-version-policy")
+
+
+(defprocess unassign-language
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        language-id (get-in ctx [:query-params :language])]
+    (if protocol-version
+      (data/unrelate-records types/protocol-version (:id protocol-version) types/language language-id)
+      (respond/forbidden))))
+
+(as-method unassign-language endpoint/endpoints "delete-protocol-version-language")
+
+
+(defprocess unassign-endorsement
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        endorsement-id (get-in ctx [:query-params :endorsement])]
+    (if protocol-version
+      (data/unrelate-records types/protocol-version (:id protocol-version) types/endorsement endorsement-id)
+      (respond/forbidden))))
+
+(as-method unassign-endorsement endpoint/endpoints "delete-protocol-version-endorsement")
+
+
+(defprocess unassign-meta-item
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        meta-item-id (get-in ctx [:query-params :meta-item])]
+    (if protocol-version
+      (data/unrelate-records types/protocol-version (:id protocol-version) types/meta-item meta-item-id)
+      (respond/forbidden))))
+
+(as-method unassign-meta-item endpoint/endpoints "delete-protocol-version-meta-item")
+
+
+(defprocess unassign-policy
+  [ctx]
+  (let [protocol-version (vouch/designs-protocol-version ctx)
+        policy-id (get-in ctx [:query-params :policy])]
+    (if protocol-version
+      (data/unrelate-records types/protocol-version (:id protocol-version) types/policy policy-id)
+      (respond/forbidden))))
+
+(as-method unassign-policy endpoint/endpoints "delete-protocol-version-policy")
+

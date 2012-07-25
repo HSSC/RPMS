@@ -236,7 +236,8 @@
 				},
 				created: function(control){return []},
 				updated: function(control){return []},
-				deleted: function(control){return []}
+				deleted: function(control){return []},
+				validate: function(control){return null}
 		};
 		editors.register = function(id, edit){
 			editors.editors[id] = $.extend({}, editors.base, edit);
@@ -1159,6 +1160,13 @@
 			var nameField = dataPane.children().first().children().first().children("input");
 			
 			var fields = dataPane.data("fields");
+			for(var i = 0; i < fields.length; i++){
+				var response = fields[i].editor.validate(fields[i].control)
+				if(response != null){
+					Dialog.inform({title: "Validation Error", message: response});
+					return;
+				}
+			}
 			var data = dataPane.data("data");
 			var operation = dataPane.data("operation");
 			var parentData = dataPane.data("parentData");

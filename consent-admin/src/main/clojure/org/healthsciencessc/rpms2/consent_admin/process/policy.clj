@@ -1,6 +1,7 @@
 ;; Provides the configuration of policy management.
 (ns org.healthsciencessc.rpms2.consent-admin.process.policy
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
+            [org.healthsciencessc.rpms2.consent-admin.error :as error]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.consent-admin.services :as services]
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
@@ -12,10 +13,9 @@
             [org.healthsciencessc.rpms2.consent-admin.ui.list :as list]
             
             [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             
-            [ring.util.response :as rutil]
             [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
@@ -46,13 +46,13 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
-      (let [nodes (services/get-policys)
+    (if (roles/can-design-org-id? user org-id)
+      (let [nodes (services/get-policies org-id)
             protocol-version-id (lookup/get-protocol-version-in-query ctx)
             prot-props (if protocol-version-id {:protocol-version protocol-version-id} {})
             params (merge {:organization org-id} prot-props)]
         (if (meta nodes)
-          (rutil/not-found (:message (meta nodes)))
+          (error/view-service-error nodes)
           (layout/render ctx "Policies"
                          (container/scrollbox 
                            (list/selectlist {:action :.detail-action}
@@ -81,14 +81,14 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (if-let [node-id (lookup/get-policy-in-query ctx)]
         (let [n (services/get-policy node-id)
               org-id (get-in n [:organization :id])
               policy-definition (get-in n [:policy-definition :id])
               langs (services/get-languages org-id)]
           (if (meta n)
-            (rutil/not-found (:message (meta n)))
+            (error/view-service-error n)
             (layout/render ctx (str type-label ": " (:name n))
                            (container/scrollbox 
                              (form/dataform 
@@ -129,7 +129,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [org-id (common/lookup-organization ctx)
             org (services/get-organization org-id)
             langs (services/get-languages org-id)]
@@ -155,7 +155,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [policy-id (lookup/get-policy-in-query ctx)
             protocol-version-id (lookup/get-protocol-version-in-query ctx)
             resp (services/assign-policy-to-protocol-version policy-id protocol-version-id)]
@@ -171,9 +171,9 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-policy body)]
+            resp (services/add-policy org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -186,7 +186,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [body (:body-params ctx)
             policy-id (lookup/get-policy-in-query ctx)
             resp (services/update-policy policy-id body)]
@@ -202,7 +202,7 @@
   [ctx]
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
-    (if (runnable/can-design-org-id user org-id)
+    (if (roles/can-design-org-id? user org-id)
       (let [policy-id (lookup/get-policy-in-query ctx)
             resp (services/delete-policy policy-id)]
         (if (services/service-error? resp)

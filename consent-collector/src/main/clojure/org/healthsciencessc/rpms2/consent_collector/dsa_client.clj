@@ -75,24 +75,24 @@
       (finally "after request " r )))
 
 (defn dsa-call
-  [process-name arguments]
-  (let [[_ method path-dashes] 
-        (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
-        method (keyword method),
+  [process-name arguments & {:as params}]
+  (let [[_ method path-dashes] (re-matches #"(get|post|put|delete)-(.+)" (name process-name))
+        method (keyword method)
         path (s/replace path-dashes "-" "/")
-        maybe-parse-json
-        (fn [{:keys [content-type status body headers] :as resp}]
-          (if (= nil body) 
-              (assoc resp :json {})
-              (assoc resp :json body) )
-          ) ]
+        maybe-parse-json (fn [{:keys [content-type status body headers] :as resp}]
+                           (if (= nil body) 
+                             (assoc resp :json {})
+                             (assoc resp :json body) )
+                           )]
     
     (-> (if (= :get method)
           (if (empty? arguments)
             {}
             {:query-params arguments})
           ;;{:body (json-str arguments) })
-          {:body (pr-str arguments) })
+          (if (empty? params)
+            {:body (pr-str arguments)}
+            {:body (pr-str arguments) :query-params params}))
         (assoc :request-method method
                :basic-auth *dsa-auth* 
                :as :clojure
@@ -132,8 +132,9 @@
 
   [params]
   (let [org-id (get-in (session-get :user) [:organization :id])
-        m (remove-blank-vals (select-keys params consenter-search-fields))]
-      (dsa-call :get-consent-consenters  m)))
+        m (remove-blank-vals (select-keys params consenter-search-fields))
+        morg (assoc m :organization org-id)]
+      (dsa-call :get-consent-consenters  morg)))
 
 (defn dsa-create-encounter 
   [e]
@@ -141,7 +142,7 @@
         consenter (session-get :consenter)
         encounter (merge e {:location location}
                          {:consenter consenter})
-        resp (dsa-call :put-consent-encounter encounter)]
+        resp (dsa-call :put-consent-encounter encounter :location (:id (session-get :org-location)))]
     (debug "dsa-create-encounter" e location consenter)
     (debug "dsa-create-encounter-resp" resp)
     (condp = (:status resp)
@@ -158,7 +159,7 @@
               {:status 409 :body 
                (i18n :create-consenter-form-validation-failed) })
           (do (debug "dsa-create-consenter P = " p  " count " (count p))
-              (dsa-call :put-consent-consenter p) ))))
+              (dsa-call :put-consent-consenter p :location (:id (session-get :org-location))) ))))
       
 
 (defn- id

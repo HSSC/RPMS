@@ -1,12 +1,14 @@
 (ns org.healthsciencessc.rpms2.consent-services.auth
-  (:use ring.middleware.session)
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [clojure.data.codec.base64 :as b64])
+  (:use ring.middleware.session
+        org.healthsciencessc.rpms2.consent-services.session
+        [pliant.process :only [defprocess]])
+  (:require [clojure.data.codec.base64 :as b64]
+            [org.healthsciencessc.rpms2.consent-services.data :as data])
   (:import org.mindrot.jbcrypt.BCrypt))
 
 (def ^:private hash-times 11)
 
-(def ^:dynamic *current-user*)
+;;(def ^:dynamic *current-user*)
 
 ;; Using bcrypt for hashing
 ;; http://codahale.com/how-to-safely-store-a-password/
@@ -40,7 +42,14 @@
   [cred]
   (-> cred .getBytes b64/decode String.))
 
-(defn authenticate
+(defprocess authenticate
+  [username password]
+  (if-let [user-node (first (filter #(= username (:username %))
+                                    (data/get-raw-nodes "user")))]
+    (if (and password user-node (good-password? password (:password user-node)))
+      (first (data/find-records-by-attrs "user" {:username username})))))
+
+#_(defn authenticate
   [username password]
   (process/dispatch "authenticate" {:username username :password password}))
 

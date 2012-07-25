@@ -1,85 +1,76 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.role
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (admin? super-admin? some-kind-of-admin? forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.data :as data])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
+            [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
+            [org.healthsciencessc.rpms2.consent-domain.tenancy :as tenancy]
+            [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(def role-processes
-  [{:name "get-security-roles"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         org-id (get-in params [:query-params :organization])
-                         loc-id (get-in params [:query-params :location])]
-                     (or (super-admin? user)
-                         (and (admin? user)
-                              (cond
-                               org-id (data/belongs-to? "user" (:id user) "organization" org-id)
-                               loc-id (data/belongs-to? "location" loc-id "organization" org-id)
-                              :else true)))))
-    :run-fn (fn [params]
-              (let [user (get-in params [:session :current-user])
-                    user-org-id (get-in user [:organization :id])
-                    org-id (get-in params [:query-params :organization])
-                    loc-id (get-in params [:query-params :location])]
-                (cond
-                 org-id (data/find-children "organization" org-id "role")
-                 loc-id (data/find-related-records "location" loc-id (list "role-mapping" "role"))
-                 :else (cond
-                        (super-admin? user) (data/find-all "role")
-                        (admin? user) (data/find-children "organization" user-org-id "role")))))
-    :run-if-false forbidden-fn}
+(defn admins-role?
+  [ctx]
+  (let [user (session/current-user ctx)
+        user-org-id (get-in user [:organization :id])
+        role-id (get-in ctx [:query-params :role])]
+    (or (roles/superadmin? user)
+        (and (roles/admin? user) 
+             (data/belongs-to? types/role role-id types/organization user-org-id false)))))
 
-   {:name "get-security-role"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         role-id (get-in params [:query-params :role])]
-                     (or
-                      (super-admin? user)
-                      (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id)))))
-    :run-fn (fn [params]
-              (let [role-id (get-in params [:query-params :role])]
-                (data/find-record "role" role-id)))
-    :run-if-false forbidden-fn}
+(defprocess get-roles
+  [ctx]
+  (let [user (session/current-user ctx)
+        org-id (get-in ctx [:query-params :organization])]
+    (cond
+      (roles/superadmin? user)
+        (data/find-children types/organization (or org-id (session/current-org-id ctx)) types/group)
+      (roles/admin? user)
+        (data/find-children types/organization (session/current-org-id ctx) types/role)
+      :else
+        (respond/forbidden))))
 
-   {:name "put-security-role"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         role (:body-params params)
-                         user-org-id (get-in user [:organization :id])
-                         role-org-id (get-in role [:organization :id])]
-                     (or (super-admin? user)
-                         (and (admin? user) (= user-org-id role-org-id)))))
-    :run-fn (fn [params]
-              (let [role (:body-params params)]
-                (data/create "role" role)))
-    :run-if-false forbidden-fn}
+(as-method get-roles endpoint/endpoints "get-security-roles")
 
-   {:name "post-security-role"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         role-id (get-in params [:query-params :role])
-                         role (:body-params params)]
-                     (or (super-admin? user)
-                         (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id false)))))
-    :run-fn (fn [params]
-              (let [role-id (get-in params [:query-params :role])
-                    role (:body-params params)]
-                (data/update "role" role-id role)))
-    :run-if-false forbidden-fn}
+(defprocess get-role
+  [ctx]
+  (let [role-id (get-in ctx [:query-params :role])
+        role (data/find-record types/role role-id)]
+    (if (or (admins-role? ctx) (tenancy/belongs-to-base? role))
+      role
+      (respond/forbidden))))
 
-   {:name "delete-security-role"
-    :runnable-fn (fn [params]
-                   (let [user (get-in params [:session :current-user])
-                         user-org-id (get-in user [:organization :id])
-                         role-id (get-in params [:query-params :role])]
-                     (or (super-admin? user)
-                         (and (admin? user) (data/belongs-to? "role" role-id "organization" user-org-id false)))))
-    :run-fn (fn [params]
-              (let [role-id (get-in params [:query-params :role])]
-                (data/delete "role" role-id)))
-    :run-if-false forbidden-fn}])
+(as-method get-role endpoint/endpoints "get-security-role")
 
-(process/register-processes (map #(DefaultProcess/create %) role-processes))
+
+(defprocess add-role
+  [ctx]
+  (if (vouch/admins-org? ctx)
+    (let [data (:body-params ctx)
+          org-id (get-in ctx [:query-params :organization])]
+      (data/create types/role (assoc data :organization {:id org-id})))
+    (respond/forbidden)))
+
+(as-method add-role endpoint/endpoints "put-security-role")
+
+
+(defprocess update-role
+  [ctx]
+  (if (admins-role? ctx)
+    (let [role-id (get-in ctx [:query-params :role])
+          role-data (:body-params ctx)]
+      (data/update types/role role-id role-data))
+    (respond/forbidden)))
+
+(as-method update-role endpoint/endpoints "post-security-role")
+
+
+(defprocess delete-role
+  [ctx]
+  (if (admins-role? ctx)
+    (let [role-id (get-in ctx [:query-params :role])]
+      (data/delete types/role role-id))
+    (respond/forbidden)))
+
+(as-method delete-role endpoint/endpoints "delete-security-role")
+

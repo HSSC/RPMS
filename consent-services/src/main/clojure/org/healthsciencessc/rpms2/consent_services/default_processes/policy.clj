@@ -1,43 +1,68 @@
 (ns org.healthsciencessc.rpms2.consent-services.default-processes.policy
-  (:use [org.healthsciencessc.rpms2.consent-services.domain-utils :only (forbidden-fn)])
-  (:require [org.healthsciencessc.rpms2.process-engine.core :as process]
-            [org.healthsciencessc.rpms2.consent-services.utils :as utils]
-            [org.healthsciencessc.rpms2.consent-domain.lookup :as lookup]
+  (:use     [pliant.process :only [defprocess as-method]])
+  (:require [org.healthsciencessc.rpms2.consent-services.data :as data]
+            [org.healthsciencessc.rpms2.consent-services.respond :as respond]
+            [org.healthsciencessc.rpms2.consent-services.session :as session]
+            [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.consent-domain.runnable :as runnable])
-  (:import [org.healthsciencessc.rpms2.process_engine.core DefaultProcess]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 
-(defn- authorize-read-node
+(defn designs-policy
   [ctx]
-  (let [user (utils/current-user ctx)]
-    (and (roles/protocol-designer? user)
-         (utils/record-belongs-to-user-org ctx types/policy))))
+  (vouch/designs-type ctx types/policy (get-in ctx [:query-params :policy])))
 
-(def policy-processes
-  [{:name "get-library-policies"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user utils/lookup-organization)
-    :run-fn (utils/gen-type-records-by-org types/policy)
-    :run-if-false forbidden-fn}
+(defn views-policy
+  [ctx]
+  (vouch/views-type-as-designer ctx types/policy (get-in ctx [:query-params :policy])))
 
-   {:name "get-library-policy"
-    :runnable-fn authorize-read-node
-    :run-fn utils/get-policy-record
-    :run-if-false forbidden-fn}
 
-   {:name "put-library-policy"
-    :runnable-fn (runnable/gen-designer-org-check utils/current-user lookup/get-organization-in-body)
-    :run-fn (utils/gen-type-create types/policy)
-    :run-if-false forbidden-fn}
+(defprocess get-policies
+  [ctx]
+  (let [user (session/current-user ctx)]
+    (if (roles/protocol-designer? user)
+      (data/find-children types/organization (session/current-org-id ctx) types/policy)
+      (respond/forbidden))))
 
-   {:name "post-library-policy"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-policy-record)
-    :run-fn (utils/gen-type-update types/policy lookup/get-policy-in-query)
-    :run-if-false forbidden-fn}
+(as-method get-policies endpoint/endpoints "get-library-policies")
 
-   {:name "delete-library-policy"
-    :runnable-fn (runnable/gen-designer-record-check utils/current-user utils/get-policy-record)
-    :run-fn (utils/gen-type-delete types/policy lookup/get-policy-in-query)
-    :run-if-false forbidden-fn}])
 
-(process/register-processes (map #(DefaultProcess/create %) policy-processes))
+(defprocess get-policy
+  [ctx]
+  (let [policy (views-policy ctx)]
+    (if policy
+      policy
+      (respond/forbidden))))
+
+(as-method get-policy endpoint/endpoints "get-library-policy")
+
+
+(defprocess add-policy
+  [ctx]
+  (if (vouch/designs-org? ctx)
+    (let [org-id (get-in ctx [:query-params :organization])
+          data (assoc (:body-params ctx) :organization {:id org-id})]
+      (data/create types/policy data))
+    (respond/forbidden)))
+
+(as-method add-policy endpoint/endpoints "put-library-policy")
+
+
+(defprocess update-policy
+  [ctx]
+  (let [policy (designs-policy ctx)]
+    (if policy
+      (data/update types/policy (:id policy) (:body-params ctx))
+      (respond/forbidden))))
+
+(as-method update-policy endpoint/endpoints "post-library-policy")
+
+
+(defprocess delete-policy
+  [ctx]
+  (let [policy (designs-policy ctx)]
+    (if policy
+      (data/delete types/policy (:id policy))
+      (respond/forbidden))))
+
+(as-method delete-policy endpoint/endpoints "delete-library-policy")

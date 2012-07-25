@@ -2,7 +2,7 @@
   (:use [clojure.set :only (difference)]
         [clojure.string :only (blank? capitalize)]
         [slingshot.slingshot :only (throw+)]
-        [org.healthsciencessc.rpms2.consent-services.auth :only (*current-user*)])
+        [org.healthsciencessc.rpms2.consent-services.session :only (*current-user*)])
   (:require [org.healthsciencessc.rpms2.consent-domain.core :as domain]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             [borneo.core :as neo]
