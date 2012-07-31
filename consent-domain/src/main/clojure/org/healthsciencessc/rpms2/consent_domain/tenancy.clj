@@ -1,6 +1,7 @@
 ;; Provides the reusable functions for dealing with our tenancy.
 (ns org.healthsciencessc.rpms2.consent-domain.tenancy
-  (:require [org.healthsciencessc.rpms2.consent-domain.types :as types]))
+  (:require [org.healthsciencessc.rpms2.consent-domain.types :as types]
+            [clojure.string]))
 
 (defn only-my-org
   "Returns only items in the collection that belong to the users organization."
