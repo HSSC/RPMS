@@ -7,10 +7,10 @@
 (defn init
   "Provides a function placeholder to initialize the application from."
   [event]
-  (core/ws-init))
+  (core/init))
 
 (defn destroy
   "Provides a function placeholder to perform destroy operations whent the servlet is shutdown."
   [event]
-  (core/ws-destroy)
+  (core/destroy)
   (println "Destroying the Consent Services Application."))

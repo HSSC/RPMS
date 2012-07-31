@@ -3,7 +3,7 @@
 
 (defn success-string
   "Function called to return a successful response"
-  [body contentType fileName]
+  [^String body contentType fileName]
   (let [bites (.getBytes body)]
     (-> (java.io.ByteArrayInputStream. bites)
       (response/response)

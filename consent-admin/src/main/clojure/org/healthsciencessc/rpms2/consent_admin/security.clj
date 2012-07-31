@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.rpms2.consent-admin.security
   (:require ;;[org.healthsciencessc.rpms2.consent-admin.security :as security]
             [org.healthsciencessc.rpms2.process-engine.path :as path]
+            [org.healthsciencessc.rpms2.process-engine.util :as util]
             [ring.util.response :as response]
             [sandbar.stateful-session :as sandbar])
   (:use [compojure.core]
@@ -14,12 +15,13 @@
 
 (defn ensure-auth-handler
   [handler]
-  (fn [{:keys [path-info] :as request}]
-    (if (or (is-authenticated?)
-          (= "/login" path-info)
-          (= "/security/login" path-info))
-      (handler request)
-      (response/redirect (path/root-link request "/login")))))
+  (fn [request]
+    (let [path (util/path request)]
+      (if (or (is-authenticated?)
+              (= "/login" path)
+              (= "/security/login" path))
+        (handler request)
+        (response/redirect (path/root-link request "/login"))))))
 
 (defn current-user
   "Method used to get the current user for the request.  Multi interface allows for use in common runnables functions."

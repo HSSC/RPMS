@@ -9,16 +9,16 @@
 
 
 (defmulti endpoints 
-  (fn [{:keys [path-info request-method] :as request}] 
-    (util/uri->process-name (name request-method) path-info)))
+  (fn [{:keys [request-method] :as request}] 
+    (util/uri->process-name (name request-method) (util/path request))))
 
 (defmethod endpoints :default
-  [{:keys [path-info request-method] :as request}]
+  [{:keys [request-method] :as request}]
   (let [contype (or (:content-type request) "")
-        proc-name (util/uri->process-name (name request-method) path-info)
+        proc-name (util/uri->process-name (name request-method) (util/path request))
         message (str "Unable to find a process registered as '" proc-name "'.")]
     (cond
-      (or (util/json-requested? format) (util/clojure-requested? format))
+      (or (util/json-requested? contype) (util/clojure-requested? contype))
         {:status 404 :body message}
       :else
         {:status 404 :body [:html [:body [:h1 "PROCESS NOT FOUND"] [:h3 message]]]})))
@@ -26,13 +26,13 @@
 
 (defmulti respond
   (fn [request body] 
-    (let [format (or (:content-type request) "NA")]
+    (let [contype (or (:content-type request) "NA")]
       (cond 
         (and (ring/response? body) (not (empty? (:headers body))))
           :response
-        (util/json-requested? format) 
+        (util/json-requested? contype) 
           :json
-        (util/clojure-requested? format) 
+        (util/clojure-requested? contype) 
           :clojure
         :else 
           :default))))

@@ -153,7 +153,7 @@
         org-id (lookup/get-organization-in-query ctx)]
     (if (roles/can-admin-org-id? user org-id)
       (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-admin body)]
+            resp (services/add-admin org-id body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))

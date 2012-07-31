@@ -1,51 +1,25 @@
 (ns org.healthsciencessc.rpms2.consent-admin.core
-  (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
+  (:require [org.healthsciencessc.rpms2.process-engine [util :as util]
                                                        [endpoint :as ws]]
-            [ring.util [codec :as codec]
-                       [response :as response]]
             [sandbar.stateful-session :as sandbar]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             [ring.middleware.content-type :as content-type]
-            [org.healthsciencessc.rpms2.consent-admin.process.init :as processes])
-  (:use [compojure.core]
-        [compojure.handler]
-        [hiccup.middleware]
-        [clojure.pprint]
-        [org.healthsciencessc.rpms2.consent-admin.config]))
+            [hiccup.middleware :as hicware]
+            [compojure.handler :as handler]
+            [org.healthsciencessc.rpms2.consent-admin.process.init]))
 
 
-(defn wrap-resource
-  "Middleware that first checks to see whether the request map matches a static
-  resource. If it does, the resource is returned in a response map, otherwise
-  the request map is passed onto the handler. The root-path argument will be
-  added to the beginning of the resource path."
-  [handler root-path]
-  (fn [request]
-    (if-not (= :get (:request-method request))
-      (handler request)
-      (let [path (.substring (codec/url-decode (:path-info request)) 1)]
-        (or (response/resource-response path {:root root-path})
-                        (handler request))))))
 
-(defn wrap-debug
-  "Simple middleware to print out everything.
-  Can be placed in multiple points in the handling."
-  [handler]
-  (fn [request]
-    (pprint request)
-    (handler request)))
-
-;; Enable session handling via sandbar 
-;; Make resources/public items in search path
-(def app (-> (ws/ws-constructor
-               security/ensure-auth-handler
-               sandbar/wrap-stateful-session)
-             (wrap-resource "public")
-             content-type/wrap-content-type
-             wrap-base-url
-           site))
+(def app (-> 
+           (ws/ws-constructor
+             security/ensure-auth-handler
+             sandbar/wrap-stateful-session) ;; Enable session handling via sandbar
+           (util/wrap-resource "public")    ;; Make resources/public items in search path
+           content-type/wrap-content-type   
+           hicware/wrap-base-url
+           handler/site))
 
 (defn init 
   "Initializes the application when it is first started up"
   []
-  (pe/bootstrap-addons "/rpms/admin/bootstrap.clj"))
+  (util/bootstrap-addons "/rpms/admin/bootstrap.clj"))

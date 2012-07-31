@@ -7,7 +7,22 @@
         [slingshot.slingshot :only (try+)]
         [clojure.tools.logging :only (info error)])
   (:require [compojure.handler :as handler]
+            [ring.util [codec :as codec]
+                       [response :as response]]
             [org.healthsciencessc.rpms2.process-engine.core :as process]))
+
+(defn path
+  [request]
+  (or (:path-info request) (:uri request)))
+
+(defn bootstrap-addons
+  "Provides a way to bootstrap all of the resources matching a specific path into the clojure compiler."
+  ([] (bootstrap-addons "/rpms/bootstrap.clj"))
+  ([resource]
+    (let [cl (clojure.lang.RT/baseLoader)
+          resources (enumeration-seq(.getResources cl resource))]
+      (doseq [url resources]
+        (load-reader (java.io.InputStreamReader. (.openStream url)))))))
 
 (defn uri->process-name
   [method uri]
@@ -101,3 +116,18 @@
   (-> request
     clean-request-query-params
     clean-request-body-params))
+
+
+(defn wrap-resource
+  "Middleware for ring that first checks to see whether the request map matches a static
+  resource. If it does, the resource is returned in a response map, otherwise
+  the request map is passed onto the handler. The root-path argument will be
+  added to the beginning of the resource path."
+  [handler root-path]
+  (fn [request]
+    (if-not (= :get (:request-method request))
+      (handler request)
+      (let [uri-path (path request)
+            path (.substring ^String (codec/url-decode uri-path) 1)]
+        (or (response/resource-response path {:root root-path})
+            (handler request))))))

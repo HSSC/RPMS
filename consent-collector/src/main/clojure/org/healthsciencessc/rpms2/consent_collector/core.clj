@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-collector.core
   (:require [org.healthsciencessc.rpms2.process-engine [core :as pe]
+                                                       [util :as util]
                                                        [web-service :as ws]]
             [org.healthsciencessc.rpms2.consent-collector [dsa-client :as dsa]
             						  [helpers :as helper]
@@ -124,7 +125,7 @@
 ;; TODO: move wrap-resource and wrap-context-setter into process-engine
 
 ;; COPIED FROM RING
-(defn wrap-resource
+#_(defn wrap-resource
   "Middleware that first checks to see whether the request map matches a static
   resource. If it does, the resource is returned in a response map, otherwise
   the request map is passed onto the handler. The root-path argument will be
@@ -137,14 +138,14 @@
         (or (response/resource-response path {:root root-path})
                         (handler request))))))
 
-(defn- get-context
+#_(defn- get-context
   [{:keys [uri path-info]}]
   (subs uri 0 (- (count uri) (count path-info))))
 
 (defn wrap-context-setter
   [app]
   (fn [req]
-    (binding [helper/*context* (get-context req)]
+    (binding [helper/*context* (:context req)]
       (app req))))
 
 (defn wrap-dsa-auth
@@ -211,4 +212,4 @@
              (wrap-exceptions)
              (wrap-last-page)
              (sandbar.stateful-session/wrap-stateful-session)
-             (wrap-resource "public")))
+             (util/wrap-resource "public")))

@@ -117,12 +117,6 @@
                         :password password)
                  :invalid))]))
 
-;; Domain utilities
-
-(defn merge-with-curr-org
-  [m]
-  (assoc m :organization 
-         (:organization (sess/session-get :user))))
 
 ;; LOCATIONS
 (defn get-locations
@@ -154,7 +148,7 @@
 ;; USERS
 (defn get-users
   [org-id]
-  (GET "/security/users" {}))
+  (GET "/security/users" {:organization org-id}))
 
 (defn get-user
   [user-id]
@@ -351,21 +345,11 @@
     nil))
 
 (defn add-admin
-  [data]
-  (let [admin-id (-> (filter #(= (:code %)
-                             domain/code-role-admin)
-                             (get-roles))
-                   first
-                   :id)
-        usr-resp (add-user data)]
-    (if (:id usr-resp)
-      (let [role-params {:user (:id usr-resp)
-                         :role admin-id}]
-            (PUT "/security/userrole"
-               role-params
-               nil
-               nil))
-      usr-resp)))  ;; pass this back directly
+  [org-id data]
+  (PUT "/security/user/admin"
+        {:organization org-id}
+        nil
+        (with-out-str (prn data))))
 
 ;; LANGUAGES
 (defn get-languages
@@ -381,7 +365,7 @@
   (PUT "/library/language"
         {:organization org-id}
         nil
-        (with-out-str (prn (merge-with-curr-org data)))))
+        (with-out-str (prn data))))
 
 (defn update-language
   [language-id data]
@@ -443,9 +427,9 @@
 
 (defn add-protocol-version
   "Adds a new protoco version to a protocol."
-  [data]
+  [protocol-id data]
   (PUT "/protocol/version"
-        nil
+        {:protocol protocol-id}
         nil
         (with-out-str (prn data))))
 

@@ -7,7 +7,8 @@
             [org.healthsciencessc.rpms2.consent-services.vouch :as vouch]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
+            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]
+            [borneo.core :as neo]))
 
 (defn admins-user?
   [ctx]
@@ -71,8 +72,18 @@
     (let [user-data (:body-params ctx)
           unhashed-pwd (:password user-data)
           user (assoc user-data :password (auth/hash-password unhashed-pwd))
-          org-id (get-in ctx [:query-params :organization])]
-      (data/create types/user (assoc user :organization {:id org-id})))
+          org-id (get-in ctx [:query-params :organization])
+          admin-id (-> 
+                     (filter #(= (:code %) types/code-role-admin)
+                             (data/find-children types/organization org-id types/role))
+                     first
+                     :id)]
+      (neo/with-tx
+        (let [user (data/create types/user (assoc user :organization {:id org-id}))
+              mapping (data/create types/role-mapping {:organization {:id org-id}
+                                                       :role {:id admin-id}
+                                                       :user user})]
+          user)))
     (respond/forbidden)))
 
 (as-method add-user-admin endpoint/endpoints "put-security-user-admin")

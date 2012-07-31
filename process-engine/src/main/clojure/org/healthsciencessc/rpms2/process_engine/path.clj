@@ -4,7 +4,7 @@
 
 (defn rootify
   "Insures that the URL passed only has a slash at the beginning and not at the end."
-  [url]
+  [^String url]
   (if (empty? url) 
     ""
     (if (= url "/") 
@@ -44,7 +44,7 @@
 ;; starts with a / it will be appended to the ContextPath, else it will be 
 ;; considered relative from the current location.
 (defmethod root-link :map
-  [params link]
+  [params ^String link]
   (if (.startsWith link "/")
     (root-link (:context params) link)
     (let [all [(:context params) (pop-path (:path-info params)) link]

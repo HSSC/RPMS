@@ -17,7 +17,7 @@
 (defroutes service-routes
   (ANY "*" {:keys [uri context path-info request-method query-params form-params session] :as req}
        (logging/info "REQUEST: " req)
-       (let [process-name (util/uri->process-name (name request-method) path-info)
+       (let [process-name (util/uri->process-name (name request-method) (util/path req))
              body-params (util/resolve-body req)
              params {:query-params (util/keyify-params query-params) :body-params body-params :session session :context context :path-info path-info}]
          (logging/info "PROCESS NAME: " process-name)

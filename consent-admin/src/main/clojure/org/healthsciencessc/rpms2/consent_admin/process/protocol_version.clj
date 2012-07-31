@@ -336,7 +336,7 @@
                            :form {:name (str (:name protocol) " Layout")
                                   :organization (:organization protocol);; TODO - Change When create-records is fixed.
                                   :titles [{:value [(:name protocol)] :language lang}]}}
-                  resp (services/add-protocol-version version)]
+                  resp (services/add-protocol-version protocol-id version)]
               ;; Handle Error or Success
               (if (services/service-error? resp)
                 (ajax/save-failed (meta resp))

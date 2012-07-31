@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.ui.layout
   (:require [org.healthsciencessc.rpms2.consent-admin.ui.navigation :as nav]
+            [org.healthsciencessc.rpms2.process-engine.util :as request]
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             [sandbar.stateful-session :as sess]
@@ -60,7 +61,7 @@
   "Creates the default layout that is used for the application"
   [ctx elements]
   [:body 
-    (if (not-any? #(= (:path-info ctx) %) ["/view/home" "/security/login" "/login"])
+    (if (not-any? #(= (request/path ctx) %) ["/view/home" "/security/login" "/login"])
       [:script (str "PaneManager.triggerOnInit(\"" (:path-info ctx) "\", {},{});")])
     [:div#page.page
                (header)
