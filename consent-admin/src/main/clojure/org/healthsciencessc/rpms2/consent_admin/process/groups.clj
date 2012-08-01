@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.groups
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
-            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-client.core :as services]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
             
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]

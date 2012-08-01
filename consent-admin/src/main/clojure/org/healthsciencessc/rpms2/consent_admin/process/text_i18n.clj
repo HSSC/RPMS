@@ -2,7 +2,7 @@
 (ns org.healthsciencessc.rpms2.consent-admin.process.text-i18n
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-client.core :as services]
             [org.healthsciencessc.rpms2.consent-domain.roles :as roles]
             [org.healthsciencessc.rpms2.consent-domain.types :as types]
             

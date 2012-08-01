@@ -3,7 +3,7 @@
   (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
             [org.healthsciencessc.rpms2.consent-admin.ui.layout :as layout]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-client.core :as services]
             [org.healthsciencessc.rpms2.consent-admin.ui.login :as ui]
             [sandbar.stateful-session :as sess]
             

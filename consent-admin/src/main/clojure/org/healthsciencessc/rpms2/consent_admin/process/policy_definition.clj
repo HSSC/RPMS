@@ -3,7 +3,7 @@
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
             [org.healthsciencessc.rpms2.consent-admin.error :as error]
             [org.healthsciencessc.rpms2.consent-admin.security :as security]
-            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-client.core :as services]
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             
             [org.healthsciencessc.rpms2.consent-admin.ui.actions :as actions]

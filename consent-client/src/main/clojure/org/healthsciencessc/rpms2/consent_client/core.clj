@@ -1,19 +1,17 @@
-(ns org.healthsciencessc.rpms2.consent-admin.services
+(ns org.healthsciencessc.rpms2.consent-client.core
   (:require [clj-http.client :as client]
-            [sandbar.stateful-session :as sess]
-            [org.healthsciencessc.rpms2.consent-domain.types :as domain]
-            [clojure.pprint :as pp]
-            [clojure.set :as set]
             [clojure.string :as str]
-            [clojure.stacktrace :as st]
-            [clojure.java.io :as io]
             [hiccup.util :as hutil]
+            [sandbar.stateful-session :as sess]
             [clojure.tools.logging :as logging])
-  (:use [org.healthsciencessc.rpms2.consent-admin.config]
-        [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]))
+  (:use [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]
+        [org.healthsciencessc.rpms2.consent-domain.props :only [slurp-config]]
+        [org.healthsciencessc.rpms2.consent-domain.sniff :only [sniff]]))
+
+;; Configuration
+(def config (slurp-config "consent-client.props" (sniff "RPMSPKEY")))
 
 ;; Request And Response Support
-
 (defn service-error?
   "Any response that isn't HTTP 200 from consent-services will
   assoc the response as metadata."
@@ -69,7 +67,7 @@
     (handle-response (method url settings) handlers)
     (catch Exception e
       ;; Handle Some What The Fudge Situations
-      (st/print-stack-trace e)
+      (logging/error e)
       nil)))
 
 (defn- GET
@@ -106,6 +104,7 @@
 
 ;; Define Public Specific Integration Functions.
 
+;; AUTHENTICATION
 (defn authenticate
   "Calls the authentication process within the consent services."
   [username password]
@@ -116,6 +115,39 @@
                  (assoc (:body r)
                         :password password)
                  :invalid))]))
+
+
+;; ORGANIZATIONS
+(defn delete-organization
+  [organization-id]
+  (DELETE "/security/organization" {:organization organization-id} nil nil))
+
+(defn get-organizations
+  [_]
+  (GET "/security/organizations" {}))
+
+(defn add-organization
+  [data]
+  (PUT "/security/organization"
+       nil
+       nil
+       (with-out-str (prn data))))
+
+(defn update-organization
+  [organization-id data]
+  (POST "/security/organization"
+        {:organization organization-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn get-organization
+  [organization-id]
+  (GET "/security/organization" {:organization organization-id}))
+
+(defn assign-language-to-organization
+  [language-id organization-id]
+  (PUT "/security/organization/language" 
+       {:language language-id :organization organization-id} nil nil))
 
 
 ;; LOCATIONS
@@ -174,38 +206,6 @@
           {:user user-id}
           nil
           (with-out-str (prn user)))))
-
-;; ORGANIZATIONS
-(defn delete-organization
-  [organization-id]
-  (DELETE "/security/organization" {:organization organization-id} nil nil))
-
-(defn get-organizations
-  [_]
-  (GET "/security/organizations" {}))
-
-(defn add-organization
-  [data]
-  (PUT "/security/organization"
-       nil
-       nil
-       (with-out-str (prn data))))
-
-(defn update-organization
-  [organization-id data]
-  (POST "/security/organization"
-        {:organization organization-id}
-        nil
-        (with-out-str (prn data))))
-
-(defn get-organization
-  [organization-id]
-  (GET "/security/organization" {:organization organization-id}))
-
-(defn assign-language-to-organization
-  [language-id organization-id]
-  (PUT "/security/organization/language" 
-       {:language language-id :organization organization-id} nil nil))
 
 ;; ROLES
 (defn get-roles

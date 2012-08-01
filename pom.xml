@@ -24,6 +24,7 @@
 	<modules>
 		<module>process-engine</module>
 		<module>consent-domain</module>
+		<module>consent-client</module>
 		<module>consent-services</module>
 		<module>consent-collector</module>
 		<module>consent-admin</module>

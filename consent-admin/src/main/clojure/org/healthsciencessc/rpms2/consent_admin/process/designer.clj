@@ -1,7 +1,7 @@
 ;; Provides the configuration of the protocol managemant UIs.
 (ns org.healthsciencessc.rpms2.consent-admin.process.designer
   (:require [org.healthsciencessc.rpms2.consent-admin.ajax :as ajax]
-            [org.healthsciencessc.rpms2.consent-admin.services :as services]
+            [org.healthsciencessc.rpms2.consent-client.core :as services]
             
             [org.healthsciencessc.rpms2.consent-admin.process.common :as common]
             [org.healthsciencessc.rpms2.consent-admin.process.protocol-version :as prot]

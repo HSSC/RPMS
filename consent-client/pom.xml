@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>org.healthsciencessc.clj</groupId>
+		<artifactId>root</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	
+	<groupId>org.healthsciencessc.rpms2</groupId>
+	<artifactId>consent-client</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	
+	<name>RPMS2 Consent Client Application</name>
+	<description>Provides a simple reusable client interface for calling the consent services.</description>
+	
+	<packaging>clojure</packaging>
+	
+	<dependencies>
+		<!-- RPMS2 Dependencies -->
+		<dependency>
+			<groupId>org.healthsciencessc.rpms2</groupId>
+			<artifactId>consent-domain</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		
+		<!-- Basic Clojure/Web -->
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>clj-http</groupId>
+			<artifactId>clj-http</artifactId>
+			<version>0.4.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>hiccup</groupId>
+			<artifactId>hiccup</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>sandbar</groupId>
+			<artifactId>sandbar</artifactId>
+			<version>0.4.0-SNAPSHOT</version>
+		</dependency>
+		
+		<!-- Logging Dependencies -->
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>tools.logging</artifactId>
+			<version>0.2.3</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.16</version>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.theoryinpractise</groupId>
+				<artifactId>clojure-maven-plugin</artifactId>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
