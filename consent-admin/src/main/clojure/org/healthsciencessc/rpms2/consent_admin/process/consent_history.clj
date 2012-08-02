@@ -100,7 +100,7 @@
         org-id (common/lookup-organization ctx)]
     (if (roles/can-manage-org-id? user org-id)
       (let [consenter-id (get-in ctx [:query-params :consenter])
-            consents (services/get-consenter-consents consenter-id)]
+            consents (services/get-consents consenter-id)]
         (if (meta consents)
           (rutil/not-found (:message (meta consents)))
           (layout/render ctx "Consent History - Consents"

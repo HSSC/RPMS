@@ -734,6 +734,75 @@
   [params]
   (GET "/consent/consenters" params))
 
-(defn get-consenter-consents
+(defn find-consenters-by-location
+  [location-id criteria]
+  (GET "/consent/consenters" (assoc criteria :location location-id)))
+
+(defn get-consenter
+  [consenter-id]
+  (GET "/consent/consenter" {:consenter consenter-id}))
+
+(defn add-consenter
+  [location-id data]
+  (PUT "/consent/consenter"
+       {:location location-id}
+       nil
+       (with-out-str (prn data))))
+
+;; Consents
+(defn get-consents
   [consenter-id]
   (GET "/consents" {:consenter consenter-id}))
+
+(defn add-consents
+  [encounter-id data]
+  (PUT "/consents"
+       {:encounter encounter-id}
+       nil
+       (with-out-str (prn data))))
+
+;; Encounter
+(defn get-encounters
+  [org-id]
+  (GET "/consent/encounters" {:organization org-id}))
+
+(defn get-encounters-by-location
+  [location-id]
+  (GET "/consent/encounters" {:location location-id}))
+
+(defn get-encounter
+  [encounter-id]
+  (GET "/consent/encounter" {:encounter encounter-id}))
+
+
+(defn add-encounter
+  [location-id consenter-id data]
+  (PUT "/consent/encounter"
+       {:location location-id :consenter consenter-id}
+       nil
+       (with-out-str (prn data))))
+
+(defn update-encounter
+  [encounter-id data]
+  (POST "/consent/encounter"
+        {:encounter encounter-id}
+        nil
+        (with-out-str (prn data))))
+
+(defn delete-encounter
+  [encounter-id]
+  (DELETE "/consent/encounter" 
+          {:encounter encounter-id} nil nil))
+
+(defn get-encounter-consents
+  [encounter-id]
+  (GET "/consent/encounter/consents" {:encounter encounter-id}))
+
+(defn get-encounter-consent-endorsements
+  [encounter-id]
+  (GET "/consent/encounter/consent/endorsements" {:encounter encounter-id}))
+
+(defn get-encounter-consent-meta-items
+  [encounter-id]
+  (GET "/consent/encounter/consent/meta-items" {:encounter encounter-id}))
+

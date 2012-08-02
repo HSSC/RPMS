@@ -111,6 +111,7 @@
       (respond/forbidden))))
 
 (as-method add-consents endpoint/endpoints "put-consent-collect")
+(as-method add-consents endpoint/endpoints "put-consents")
 
 (defprocess get-consents
   [ctx]
