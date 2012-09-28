@@ -534,6 +534,18 @@
   (DELETE "/protocol/version/policy" 
           {:policy policy-id :protocol-version protocol-version-id} nil nil))
 
+(defn get-published-protocol-versions
+  [location-id]
+  (GET "/protocol/versions/published" {:location location-id}))
+
+(defn get-published-protocol-versions-meta
+  [protocol-version-ids]
+  (GET "/protocol/versions/published/meta" {:protocol-version protocol-version-ids}))
+
+(defn get-published-protocol-versions-form
+  [protocol-version-ids language-id]
+  (GET "/protocol/versions/published/form" {:protocol-version protocol-version-ids :language language-id}))
+
 ;; Endorsement Types
 (defn get-endorsement-types
   [org-id]

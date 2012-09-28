@@ -11,6 +11,11 @@
                        [response :as response]]
             [org.healthsciencessc.rpms2.process-engine.core :as process]))
 
+(def mime-json "application/json")
+(def mime-clojure "application/clojure")
+(def mime-clojure-text "text/clojure")
+(def mime-urlencoded "application/x-www-form-urlencoded")
+
 (defn path
   [request]
   (or (:path-info request) (:uri request)))
@@ -60,32 +65,32 @@
         data (:form-params request)
         body (:body request)]
     (cond
-     (.startsWith content-type "application/json") (get-json-params body)
-     (.startsWith content-type "application/clojure") (read-clojure body)
-     (.startsWith content-type "application/x-www-form-urlencoded") (keyify-params data)
+     (.startsWith content-type mime-json) (get-json-params body)
+     (.startsWith content-type mime-clojure) (read-clojure body)
+     (.startsWith content-type mime-urlencoded) (keyify-params data)
      (< 0 (count data)) (keyify-params data)
      :else {})))
 
 (defn json-requested?
   [content-type]
-  (.startsWith content-type "application/json"))
+  (.startsWith content-type mime-json))
 
 (defn clojure-requested?
   [content-type]
-  (or (.startsWith content-type "text/clojure")
-      (.startsWith content-type "application/clojure")))
+  (or (.startsWith content-type mime-clojure-text)
+      (.startsWith content-type mime-clojure)))
 
 (defn respond-with-json
   [body request]
   (if (response? body)
-       (content-type (update-in body [:body] (fn [b] (with-out-str (pprint-json b)))) "application/json")
-       (content-type (response (with-out-str (pprint-json body))) "application/json")))
+       (content-type (update-in body [:body] (fn [b] (with-out-str (pprint-json b)))) mime-json)
+       (content-type (response (with-out-str (pprint-json body))) mime-json)))
 
 (defn respond-with-clojure
   [body request]
   (if (response? body)
-       (content-type (update-in body [:body] (fn [b] (with-out-str (prn b)))) "application/clojure")
-       (content-type (response (with-out-str (prn body))) "application/clojure")))
+       (content-type (update-in body [:body] (fn [b] (with-out-str (prn b)))) mime-clojure)
+       (content-type (response (with-out-str (prn body))) mime-clojure)))
 
 (defn format-response-body
   [body request]
@@ -99,8 +104,8 @@
        (content-type (response (with-out-str (pprint-json body))) requested-content-type))
      (or (map? body) (clojure-requested? requested-content-type))
      (if (response? body)
-       (content-type (update-in body [:body] (fn [b] (with-out-str (prn b)))) "application/clojure")
-       (content-type (response (with-out-str (prn body))) "application/clojure"))
+       (content-type (update-in body [:body] (fn [b] (with-out-str (prn b)))) mime-clojure)
+       (content-type (response (with-out-str (prn body))) mime-clojure))
      :else body)))
 
 (defn clean-request-body-params

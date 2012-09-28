@@ -21,7 +21,8 @@
       (or (util/json-requested? contype) (util/clojure-requested? contype))
         {:status 404 :body message}
       :else
-        {:status 404 :body [:html [:body [:h1 "PROCESS NOT FOUND"] [:h3 message]]]})))
+        {:status 404 :body (str "<html><head><title>Process Not Found</title></head><body><h1>Process Not Found</h1><h3>" 
+                                message "</h3></body></html>") })))
 
 
 (defmulti respond
