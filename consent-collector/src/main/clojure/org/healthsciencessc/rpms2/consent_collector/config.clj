@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-collector.config
-    (:use [org.healthsciencessc.rpms2.consent-domain.props]
-        [org.healthsciencessc.rpms2.consent-domain.sniff]))
+  (:use [pliant.configure.props]
+        [pliant.configure.sniff]))
 
 (def config
     "See http://wiki.healthsciencessc.org/display/Projects/Application+Configuration"

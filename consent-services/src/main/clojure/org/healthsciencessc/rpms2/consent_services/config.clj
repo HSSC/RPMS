@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.rpms2.consent-services.config
-  (:use [org.healthsciencessc.rpms2.consent-domain.props :only [slurp-config]]
-        [org.healthsciencessc.rpms2.consent-domain.sniff :only [sniff]])
+  (:use [pliant.configure.props :only [slurp-config]]
+        [pliant.configure.sniff :only [sniff]])
   (:require [org.healthsciencessc.rpms2.process-engine.util :as util]
             [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
 

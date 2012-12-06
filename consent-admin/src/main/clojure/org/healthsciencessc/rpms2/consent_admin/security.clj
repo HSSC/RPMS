@@ -4,9 +4,7 @@
             [org.healthsciencessc.rpms2.process-engine.util :as util]
             [ring.util.response :as response]
             [sandbar.stateful-session :as sandbar])
-  (:use [compojure.core]
-        [clojure.pprint]
-        [org.healthsciencessc.rpms2.consent-admin.config]))
+  (:use [compojure.core]))
 
 (defn is-authenticated?
   []

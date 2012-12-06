@@ -5,8 +5,8 @@
             [sandbar.stateful-session :as sess]
             [clojure.tools.logging :as logging])
   (:use [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]
-        [org.healthsciencessc.rpms2.consent-domain.props :only [slurp-config]]
-        [org.healthsciencessc.rpms2.consent-domain.sniff :only [sniff]]))
+        [pliant.configure.props :only [slurp-config]]
+        [pliant.configure.sniff :only [sniff]]))
 
 ;; Configuration
 (def config (slurp-config "consent-client.props" (sniff "RPMSPKEY")))

@@ -46,6 +46,12 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>pliant</groupId>
+			<artifactId>configure</artifactId>
+			<version>0.1.0</version>
+		</dependency>	
+		
+		<dependency>
 			<groupId>clj-time</groupId>
 			<artifactId>clj-time</artifactId>
 			<version>0.4.3</version>
