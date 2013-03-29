@@ -24,6 +24,7 @@
              {:name :protocol-label :label "Protocol Label"}
              {:name :location-label :label "Location Label"}
              {:name :consenter-label :label "Consenter Label"}
+             {:name :encounter-label :label "Encounter Label"}
              {:name :language :label "Default Language" :type :singleselect :required true :blank true :parser :id}])
 
 (def type-name types/organization)

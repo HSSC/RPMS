@@ -126,8 +126,8 @@
 			var pages = Consent.Utils.getOrderedPages(operation, value);
 			if(pages != null){
 				$.each(pages, function(i,p){
-					var option = {value: p.name, label:p.name, data: p};
-					if(value == p.name){
+					var option = {value: p.refid, label:p.name, data: p};
+					if(value == p.refid){
 						option.selected = true;
 						none.selected = false;
 					}
@@ -192,7 +192,23 @@
 				return 1;
 			}
 			return 0;
-		}
+		};
+		
+		utils.LastRefID = 0;
+		utils.nextRefID = function(){
+			return utils.LastRefID = (utils.LastRefID + 1);
+		};
+		
+		utils.accountForRefIDs = function(container){
+			if(container.refid != null && container.refid > utils.LastRefID){
+				utils.LastRefID = container.refid;
+			}
+			if($.isArray(container.contains)){
+				$.each(container.contains, function(i, c){
+					utils.accountForRefIDs(c);
+				});
+			}
+		};
 	}
 	
 	var widgets = consent.Widgets;
@@ -756,6 +772,8 @@
 			var editable = Utils.DataSet.getBoolean(container, "data-editable");
 			designer.editable = editable;
 
+			utils.accountForRefIDs(designer.protocol.form);
+
 			designer.formUrl = "/api/protocol/version/designer/form";
 			designer.formParams = {"protocol-version": protocol.id};
 
@@ -770,7 +788,7 @@
 			
 			// Create Sections
 			main.select = ui.createSelector(designer.container);
-			main.content = ui.createContent(designer.container)
+			main.content = ui.createContent(designer.container);
 			
 			// Create Expand Button
 			main.resizer = $("<img class='consent-designer-resize' src='" + Utils.Url.render("/image/expand.png") + "'/>");
@@ -812,6 +830,15 @@
 				
 				makePageControl("collect-start", "Collect Start Page", keys.collect);
 				makePageControl("review-start", "Review Start Page", keys.review);
+				
+				var makeWitnessControl = function(property, label){
+					var values = form[property];
+					var control = ui.createControl(fields, designer.editable);
+					var options = Consent.Utils.createOptions(Consent.Designer.protocol.endorsements, values);
+					ui.createLabel(control, property, label);
+					ui.createMultiSelect(control, designer.editable, property, values, options);
+				}
+				makeWitnessControl("witness-signatures", "Witness Signatures");
 				
 				designer.main.formPane = pane;
 				designer.main.panes.push(pane);
@@ -889,6 +916,12 @@
 			var selector = ui.createSelector(pane);
 			var content = ui.createContent(pane);
 			pane.data("menuitem", li);
+			
+			// Check For RefID
+			if(data && data.refid == null){
+				data.refid = utils.nextRefID();
+				data.hiddenMod = true;
+			}
 			
 			// Create header
 			var header = ui.createHeader(selector, label);
@@ -994,7 +1027,7 @@
 			
 			var reveal = function(widget){
 				var name = widgets.generateName(widget);
-				menuitem.data = {name: name, type: widget.type, order: count};
+				menuitem.data = {name: name, type: widget.type, order: count, refid: utils.nextRefID()};
 				menuitem.label = name;
 				var li = ui.createMenuItem(list, menuitem);
 				menuitem.options.namelink = [li];
@@ -1129,9 +1162,9 @@
 			selects.each(function(i,s){
 				if(s.name != null){
 					var val = form[s.name];
-					var opts = $(s).children("option:selected");
-					if(opts.length > 0 && val != opts[0].value){
-						formUpdates[s.name] = opts[0].value;
+					var newVal = Utils.Element.getSelectValue(s);
+					if(val != newVal){
+						formUpdates[s.name] = newVal;
 						body.update.form = formUpdates;
 					}
 				}
@@ -1180,7 +1213,7 @@
 			var method = "POST";
 			var action = "UPDATE";
 			var body = null;
-			var crudData = {name: nameField.val(), type: data.type, order: data.order};
+			var crudData = {name: nameField.val(), type: data.type, order: data.order, refid: data.refid};
 			if(data.id == null){
 				action = "CREATE";
 				method = "PUT";
@@ -1197,8 +1230,9 @@
 						update:{property:[]},
 						delete:{property:[]}
 				};
-				if(crudData.name != data.name){
+				if(crudData.name != data.name || data.hiddenMod == true){
 					body.update.widget = crudData;
+					data.hiddenMod = null;
 				}
 				$.each(fields, function(i,f){
 					body.create.property.addAll(f.editor.created(f.control));

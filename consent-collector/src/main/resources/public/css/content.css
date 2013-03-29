@@ -1,0 +1,107 @@
+.header {
+	height: 2.9em;
+}
+
+.content {
+	/*position: absolute;
+	padding-top: 3.9em;
+	padding-bottom: 3em;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;*/
+}
+
+.footer {
+	height: 2.9em;
+}
+
+.clientuigenerator {
+	/*padding-top: 3em;*/
+}
+
+.left-block{
+	text-align: left;
+}
+
+.center-block{
+	text-align: center;
+}
+
+.right-block{
+	text-align: right;
+}
+
+/* Block Text Content */
+.blocktext{
+	padding-left: 0.2em;
+	padding-right: 0.2em;
+}
+.blocktext-1-1{
+	margin-top: 0.75em;
+}
+.blocktext-1-2{
+	margin-top: 0.25em;
+}
+.blocktext-2-2{
+	margin-top: 0.1em;
+}
+.blocktextsmall{
+	font-size: 0.7em;
+	padding-left: 0.2em;
+	padding-right: 0.2em;
+}
+.blocktextsmall-1-1{
+	margin-top: 1.35em;
+}
+.blocktextsmall-1-2{
+	margin-top: 0.8em;
+}
+.blocktextsmall-2-2{
+	margin-top: 0.1em;
+}
+.blocktextsmall-1-3{
+	margin-top: 0.2em;
+}
+.blocktextsmall-2-3{
+	margin-top: 0.1em;
+}
+.blocktextsmall-3-3{
+	margin-top: 0.1em;
+}
+
+/* Data List View Content */
+div.datalistview {
+	height: 100%;
+}
+
+div.datalistview .datalist{
+	width: 30%;
+	height: 100%;
+	background-color: #eee;
+	margin: -15px;
+	padding: 15px;
+}
+
+div.datalistview .datadetail{
+	width: 60%;
+	float: right;
+}
+
+div.datalistview .label{
+	font-size: 1em;
+}
+
+div.datalistview .sublabel{
+	font-size: .8em;
+}
+
+.datalistitem-selected {
+	background-color: white;
+}
+
+
+/* Popup styles */
+div.popup{
+	max-width: 50em;
+}

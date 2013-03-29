@@ -52,7 +52,7 @@
 
 (defmethod reformat-type :form
   [type form lang-map]
-  (assoc (select-keys form [:contains :collect-start :review-start])
+  (assoc (select-keys form [:contains :collect-start :review-start :witness-signatures])
     :title (get-lang-value (:titles form) lang-map)))
 
 (defn reformat-version-data
@@ -79,7 +79,8 @@
   [ctx]
   (let [protocol-versions (vouch/collects-or-designs-protocol-versions ctx)]
     (if protocol-versions
-      (distinct (apply concat (map :meta-items protocol-versions)))
+      (let [ids (map :id protocol-versions)]
+        (distinct (apply concat (map #(data/find-related-records types/protocol-version % (list types/meta-item)) ids))))
       (respond/forbidden))))
 
 (as-method get-published-protocol-versions-meta endpoint/endpoints "get-protocol-versions-published-meta")

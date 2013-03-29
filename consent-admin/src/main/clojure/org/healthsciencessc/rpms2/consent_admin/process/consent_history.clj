@@ -36,12 +36,14 @@
   [resp]
   (= (:status (meta resp)) 404))
 
+;; Former True Values #{"true" "true-label" "selected" "on"}
 (defn- consented
   [consent]
-  (let [true-vals #{"true" "true-label" "selected" "on"}]
-    (if (true-vals (:consented consent))
-      "Yes" 
-      "No")))
+  (cond
+    (true? (:consented consent)) "Agree"
+    (false? (:consented consent)) "Disagree"
+    (nil? (:consented consent)) "Unanswered"
+    :else (:consented consent)))
 
 ;; Register View Consent History Process
 (defprocess view-consent-history

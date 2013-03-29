@@ -19,10 +19,10 @@
         message (str "Unable to find a process registered as '" proc-name "'.")]
     (cond
       (or (util/json-requested? contype) (util/clojure-requested? contype))
-        {:status 404 :body message}
+        (ring/not-found {:message message})
       :else
-        {:status 404 :body (str "<html><head><title>Process Not Found</title></head><body><h1>Process Not Found</h1><h3>" 
-                                message "</h3></body></html>") })))
+        (ring/not-found (str "<html><head><title>Process Not Found</title></head><body><h1>Process Not Found</h1><h3>" 
+                                message "</h3></body></html>")))))
 
 
 (defmulti respond

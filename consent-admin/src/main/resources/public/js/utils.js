@@ -31,13 +31,28 @@ Utils.Url = {
 	}
 };
 
-// Array Prototype Changes
+//Array Prototype Changes
+Array.prototype.get = function(index){
+	if(this.length > 0 && index >= 0 && index < this.length){
+		return this[index];
+	}
+	return null;
+};
+
+Array.prototype.first = function(){
+	if(this.length > 0){
+		return this[0];
+	}
+	return null;
+};
+
 Array.prototype.last = function(){
 	if(this.length > 0){
 		return this[this.length - 1];
 	}
 	return null;
 };
+
 Array.prototype.clear = function(){
 	return this.splice(0, this.length);
 };
@@ -264,6 +279,18 @@ Utils.DataSet = {
 	}
 };
 Utils.Element = {
+	getSelectValue: function(select){
+		var s = $(select)
+		var options = s.children("option:selected");
+		var values = [];
+		options.each(function(i, o){values.push(o.value)});
+		if(s.attr("multiple") == "multiple"){
+			return values;
+		}
+		else{
+			return values.first();
+		}
+	},
 	getAttribute: function(target, attribute, defaultValue){
 		var value = null;
 		if(target.getAttribute){

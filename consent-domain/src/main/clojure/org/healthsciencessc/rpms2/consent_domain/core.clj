@@ -20,7 +20,8 @@
                          :code {:persisted true :unique true}
                          :location-label {:persisted true}
                          :protocol-label {:persisted true}
-                         :consenter-label {:persisted true}})
+                         :consenter-label {:persisted true}
+                         :encounter-label {:persisted true}})
                  :relations [{:type :belongs-to :related-to language :relationship :has-language :name :language :omit-rels true}]}
 
 
@@ -77,9 +78,18 @@
                           {:type :has-many :related-to consent}
                           {:type :has-many :related-to consent-endorsement}
                           {:type :has-many :related-to consent-meta-item}]}
+   session {:attributes (merge base
+                               {:started-on {:persisted true}
+                                :completed-on {:persisted true}})
+            :relations [{:type :belongs-to :related-to organization :relationship :has-organization :required true :deletable-by-parent true}
+                        {:type :belongs-to :related-to location :relationship :has-location :required true :deletable-by-parent true}
+                        {:type :belongs-to :related-to consenter :relationship :has-consenter :required true :deletable-by-parent true}
+                        {:type :belongs-to :related-to encounter :relationship :has-encounter :required false :omit-rels true}]}
 
    consent {:attributes (merge base
-                               {:consented {:persisted true}})
+                               {:consented {:persisted true}
+                                :effective-on {:persisted true}
+                                :expires-on {:persisted true}})
             :relations [{:type :belongs-to :related-to organization :relationship :has-organization :required true :deletable-by-parent true}
                         {:type :belongs-to :related-to encounter :relationship :has-encounter :required true :omit-rels true}
                         {:type :belongs-to :related-to policy :relationship :has-policy :required true}
@@ -114,7 +124,9 @@
                                :description {:persisted true}
                                :uri {:persisted true}
                                :code {:persisted true}
-                               :status {:persisted true}})
+                               :status {:persisted true}
+                               :effective-on {:persisted true}
+                               :expires-on {:persisted true}})
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                        {:type :belongs-to :related-to policy-definition :relationship :has-definition :required true :deletable-by-parent true}
                        {:type :many-to-many :related-to text-i18n :relationship :has-title :name :titles :can-create-parent true}
@@ -132,6 +144,7 @@
                              :code {:persisted true}
                              :collect-start {:persisted true}
                              :review-start {:persisted true}
+                             :witness-signatures {:persisted true}
                              :status {:persisted true}})
          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                      {:type :has-many :related-to widget :name :contains}
@@ -141,7 +154,8 @@
                               {:name {:persisted true}
                                :type {:persisted true}
                                :order {:persisted true}
-                               :status {:persisted true}})
+                               :status {:persisted true}
+                               :refid {:persisted true}}) ;; refid is used to reference a widget in ui editors.  Using id to reference messes up when cloned.
            :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                        {:type :belongs-to :related-to form :relationship :in-form :omit-rels true}
                        {:type :belongs-to :related-to widget :relationship :contained-in :name :contained-in :omit-rels true}
@@ -188,7 +202,9 @@
 
    protocol-version {:attributes (merge base
                                         {:status {:persisted true}
-                                         :version {:persisted true}})
+                                         :version {:persisted true}
+                                         :effective-on {:persisted true}
+                                         :expires-on {:persisted true}})
                      :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to protocol :relationship :version-of :required true :deletable-by-parent true}
                                  {:type :belongs-to :related-to form :relationship :described-by :can-create-parent true}

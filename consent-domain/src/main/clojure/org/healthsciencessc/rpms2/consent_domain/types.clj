@@ -27,6 +27,7 @@
   widget
   widget-property
   encounter
+  session
   consent
   consent-meta-item
   consent-endorsement

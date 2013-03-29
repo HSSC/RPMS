@@ -23,7 +23,8 @@
 (def fields [{:name :name :label "Name"}
              {:name :code :label "Code"}
              {:name :protocol-label :label "Protocol Label"}
-             {:name :consenter-label :label "Consenter Label"}])
+             {:name :consenter-label :label "Consenter Label"}
+             {:name :encounter-label :label "Encounter Label"}])
 
 (def type-name types/location)
 (def type-label "Location")

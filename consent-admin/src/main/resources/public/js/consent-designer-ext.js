@@ -13,8 +13,7 @@ Consent.Widgets.registerPage({
 		label: "Page",
 		type: "page",
 		properties: [{label: "Title", name: "title", editor: "texti18n", required: true},
-			         {label: "Next", name: "next", editor: "pagelist", required: false},
-			         {label: "Previous", name: "previous", editor: "pagelist", required: false}],
+			         {label: "Next", name: "next", editor: "pagelist", required: false}],
 		operation: null});
 
 // Generic Section
@@ -28,7 +27,8 @@ Consent.Widgets.registerSection({
 Consent.Widgets.registerControl({
 		label: "Data Change Control",
 		type: "data-change",
-		properties: [{label: "Meta Items", name: "meta-items", editor: "metaitems", required: true}],
+		properties: [{label: "Title", name: "title", editor: "texti18n", required: true},
+		             {label: "Meta Items", name: "meta-items", editor: "metaitems", required: true}],
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
@@ -43,7 +43,8 @@ Consent.Widgets.registerControl({
 		type: "policy-button",
 		properties: [{label: "Label", name: "label", editor: "texti18n", required: true},
 			         {label: "Policies", name: "policy", editor: "policies", required: true},
-        			 {label: "Action Value", name: "action-value", editor: "boolean-picker", required: true}],
+        			 {label: "Action Value", name: "action-value", editor: "boolean-picker", required: true},
+        			 {label: "Initialize As", name: "initialize-as", editor: "boolean-picker"}],
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
@@ -54,7 +55,8 @@ Consent.Widgets.registerControl({
 			         {label: "Checked Value", name: "checked-value", editor: "boolean-picker", 
 			        	 required: true, defaultValue: true},
 			         {label: "Unchecked Value", name: "unchecked-value", editor: "boolean-picker", 
-			        		 required: true, defaultValue: false}],
+			        		 required: true, defaultValue: false},
+		        	 {label: "Initialize As", name: "initialize-as", editor: "boolean-picker"}],
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
@@ -62,7 +64,8 @@ Consent.Widgets.registerControl({
 		type: "policy-choice-buttons",
 		properties: [{label: "Policies", name: "policy", editor: "policies", required: true},
 		             {label: "True Label", name: "true-label", editor: "texti18n", required: true},
-		             {label: "False Label", name: "false-label", editor: "texti18n", required: true}],
+		             {label: "False Label", name: "false-label", editor: "texti18n", required: true},
+        			 {label: "Initialize As", name: "initialize-as", editor: "boolean-picker"}],
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
@@ -77,8 +80,7 @@ Consent.Widgets.registerControl({
 Consent.Widgets.registerControl({
 		label: "Signature",
 		type: "signature",
-		properties: [{label: "Endorsement", name: "endorsement", editor: "endorsement", required: true},
-			         {label: "Clear Label", name: "clear-label", editor: "texti18n", required: true}],
+		properties: [{label: "Endorsement", name: "endorsement", editor: "endorsement", required: true}],
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
@@ -89,13 +91,15 @@ Consent.Widgets.registerControl({
 		operation: Consent.Keys.collect});
 
 Consent.Widgets.registerControl({
-		label: "Review Endorsement",
-		type: "review-endorsement",
+		label: "Review Signature",
+		type: "review-signature",
 		properties: [{label: "Title", name: "title", editor: "texti18n", required: false},
 			         {label: "Endorsement", name: "endorsement", editor: "endorsement", required: true},
 			         {label: "Return Button Label", name: "label", editor: "texti18n", required: true},
 			         {label: "Return Page", name: "returnpage", editor: "pagelist",
-			        	 required: true, operation: Consent.Keys.collect}],
+			        	 required: true, operation: Consent.Keys.collect},
+				     {label: "Thru Page", name: "thrupage", editor: "pagelist", 
+				         required: false, operation: Consent.Keys.collect}],
 		operation: Consent.Keys.review});
 
 Consent.Widgets.registerControl({
@@ -113,7 +117,9 @@ Consent.Widgets.registerControl({
 			         {label: "Policy", name: "policy", editor: "policy", required: true},
 			         {label: "Return Button Label", name: "label", editor: "texti18n", required: true},
 			         {label: "Return Page", name: "returnpage", editor: "pagelist", 
-			        	 required: true, operation: Consent.Keys.collect}],
+			        	 required: true, operation: Consent.Keys.collect},
+				     {label: "Thru Page", name: "thrupage", editor: "pagelist", 
+			             required: false, operation: Consent.Keys.collect}],
 		operation: Consent.Keys.review});
 
 Consent.Editors.common.selectCreated = function(control){

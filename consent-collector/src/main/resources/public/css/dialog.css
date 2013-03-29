@@ -1,0 +1,57 @@
+.dialog-underlay {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	opacity: .5;
+	z-index: 10000;
+	background-color: #222;
+}
+
+.dialog-control {
+	z-index: 10001;
+}
+
+.dialog-title {
+	margin-top: 0;
+}
+
+.dialog-endorsement{
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	max-width: 100%;
+}
+
+.dialog-canvasbox {
+	width: 100%;
+}
+
+.dialog-canvas {
+	border: solid 1px gray;
+	position: fixed;
+	left: 50%;
+}
+
+.dialog-horizontal-buttons {
+	margin-left: -5%;
+	margin-top: -15px;
+	margin-bottom: 1.5em;
+	width: 110%;
+	height: 5em;
+}
+
+.dialog-horizontal-buttons>div {
+	width: 100%;
+}
+
+.dialog-horizontal-buttons a{
+	height: 5em;
+}
+
+.dialog-horizontal-buttons a>span{
+	padding-top: 1.8em;
+}

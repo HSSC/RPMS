@@ -1,15 +1,10 @@
 (ns org.healthsciencessc.rpms2.consent-client.core
   (:require [clj-http.client :as client]
-            [clojure.string :as str]
-            [hiccup.util :as hutil]
             [sandbar.stateful-session :as sess]
             [clojure.tools.logging :as logging])
-  (:use [org.healthsciencessc.rpms2.consent-domain.roles :only (has-role?)]
-        [pliant.configure.props :only [slurp-config]]
-        [pliant.configure.sniff :only [sniff]]))
-
-;; Configuration
-(def config (slurp-config "consent-client.props" (sniff "RPMSPKEY")))
+  (:use [clojure.string :only [blank?]]
+        [org.healthsciencessc.rpms2.consent-domain.roles :only [has-role?]]
+        [org.healthsciencessc.rpms2.consent-client.url :only [url]]))
 
 ;; Request And Response Support
 (defn service-error?
@@ -17,11 +12,6 @@
   assoc the response as metadata."
   [m]
   (not (nil? (meta m))))
-
-(defn- full-url
-  "Creates the absolute URL to the services using the configured path to services."
-  [url params]
-  (.toString (hutil/url (:services.url config) url params)))
 
 (defn- credentials
   "Creats a map of all the header items needed for basic authentication."
@@ -72,33 +62,33 @@
 
 (defn- GET
   "Makes a get request to the server"
-  [url params & handlers]
+  [path params & handlers]
   (DO client/get
-      (full-url url params)
+      (url path params)
       (merge (credentials) (defaults))
       handlers))
 
 (defn- POST
   "Makes a post request to the server"
-  [url params form body & handlers]
+  [path params form body & handlers]
   (DO client/post
-      (full-url url params)
+      (url path params)
       (merge {:body body :form-params form} (credentials) (defaults))
       handlers))
 
 (defn- PUT
   "Makes a put request to the server"
-  [url params form body & handlers]
+  [path params form body & handlers]
   (DO client/put
-      (full-url url params)
+      (url path params)
       (merge {:body body :form-params form} (credentials) (defaults))
       handlers))
 
 (defn- DELETE
   "Makes a delete request to the server"
-  [url params form body & handlers]
+  [path params form body & handlers]
   (DO client/delete
-      (full-url url params)
+      (url path params)
       (merge {:body body :form-params form} (credentials) (defaults))
       handlers))
 
@@ -109,7 +99,7 @@
   "Calls the authentication process within the consent services."
   [username password]
   (DO client/get
-      (full-url "/security/authenticate" {})
+      (url "/security/authenticate" {})
       (merge (credentials {:username username :password password}) (defaults))
       [(fn [r] (if (= 200 (:status r))
                  (assoc (:body r)
@@ -200,7 +190,7 @@
 (defn update-user
   [user-id data]
   (let [password (:password data)
-        user (if (or (nil? password) (str/blank? password))
+        user (if (or (nil? password) (blank? password))
                (dissoc data :password))]
     (POST "/security/user"
           {:user user-id}
@@ -490,7 +480,7 @@
   "Gets the protocol version XML rendition."
   [protocol-version-id]
   (DO client/get
-      (full-url "/protocol/version/export" {:protocol-version protocol-version-id})
+      (url "/protocol/version/export" {:protocol-version protocol-version-id})
       (merge (credentials) {:content-type "application/xml" :throw-exceptions false})
       []))
 

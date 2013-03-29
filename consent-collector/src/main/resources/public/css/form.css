@@ -1,0 +1,155 @@
+.form-page {
+	width: 100%;
+	height: 100%;
+	/* position: relative; */
+}
+
+.form-page-content {}
+
+.form-section {
+	width: 100%;
+	margin-bottom: 1em;
+}
+
+.form-data-change{
+	width: 100%;
+}
+
+.form-data-change table tbody tr td:nth-child(1){
+	padding-top: 0.9em;
+}
+
+.form-data-change table tbody tr td:nth-child(2){
+	width: 25%;
+	padding-top: 0.9em;
+}
+
+.form-data-change table tbody tr td:nth-child(3){
+	width: 8em;
+	line-height: 0.8em;
+}
+
+.form-data-change table tbody tr td:nth-child(3)>div{
+	width: 8em;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.form-media {
+	width: 100%;
+}
+
+.form-policy-button {
+	width: 100%;
+}
+
+.form-policy-checkbox {
+	width: 100%;
+}
+
+.form-policy-choice-buttons {
+	width: 100%;
+}
+
+.form-policy-text {
+	width: 100%;
+}
+
+.form-policy-text h4{
+	margin-top: 0;
+}
+
+.form-signature {
+	width: 732px;
+}
+
+.form-signature div{
+	height: 22px;
+}
+.form-signature div h4{
+	margin-top: 3px;
+}
+
+.form-signature div a{
+	position: absolute;
+	right: 0;
+	top: 0;
+	margin-right: 2px;
+	margin-top: 2px;
+}
+
+.form-signature img{
+	border: solid 1px gray;
+	width: 730px;
+	height: 258px;
+	display: block;
+}
+
+.form-signature h6{
+	margin-top: 0;
+}
+
+.form-signature-left{
+	border: solid 1px yellow;
+	height: 100%;
+}
+.form-signature-right{
+	border: solid 1px green;
+	width: 66.7%;
+	height: 100%;
+}
+.form-signature-canvas{
+	border: solid 2px purple;
+}
+
+.form-text {
+	width: 100%;
+}
+
+.form-review-endorsement {}
+
+.form-review-metaitem {
+	width: 100%;
+	margin-bottom: 1em;
+}
+
+.form-review-metaitem table tbody tr td:nth-child(1){
+	padding-top: 0.9em;
+}
+
+.form-review-metaitem table tbody tr td:nth-child(2){
+	width: 10em;
+	padding-top: 0.9em;
+}
+
+.form-review-metaitem table tbody tr td:nth-child(3){
+	width: 8em;
+	line-height: 0.8em;
+}
+
+.form-review-metaitem table tbody tr td:nth-child(3) a{
+	width: 6em;
+}
+
+.form-review-policy {
+	width: 100%;
+	margin-bottom: 1em;
+}
+
+.form-review-policy table tbody tr td:nth-child(1){
+	padding-top: 0.9em;
+}
+
+.form-review-policy table tbody tr td:nth-child(2){
+	width: 10em;
+	padding-top: 0.9em;
+}
+
+.form-review-policy table tbody tr td:nth-child(3){
+	width: 8em;
+	line-height: 0.8em;
+}
+
+.form-review-policy table tbody tr td:nth-child(3) a{
+	width: 6em;
+}

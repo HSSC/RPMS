@@ -52,3 +52,8 @@
   "Shortcut that looks for the Consenter label within a location and organization.  Defaults to 'Consenter'"
   [location organization]
   (label-for :consenter-label location organization "Consenter"))
+
+(defn label-for-encounter
+  "Shortcut that looks for the Encounter label within a location and organization.  Defaults to 'Encounter'"
+  [location organization]
+  (label-for :encounter-label location organization "Encounter"))
