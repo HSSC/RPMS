@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.clj.war.bootstrap
-  (:require [org.healthsciencessc.rpms2.consent-collector.core :as core]))
+  (:require [org.healthsciencessc.consent.collector.core :as core]))
 
 ;; Bootrap a pointer to the real routes.
 (def app core/app)

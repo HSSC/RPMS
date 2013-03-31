@@ -12,8 +12,8 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<groupId>org.healthsciencessc.rpms2</groupId>
-	<artifactId>consent-domain</artifactId>
+	<groupId>org.healthsciencessc.consent</groupId>
+	<artifactId>domain</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	
 	<packaging>clojure</packaging>
@@ -25,28 +25,6 @@
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>clojure</artifactId>
-		</dependency>
-		
-		<dependency>
-			<groupId>slingshot</groupId>
-			<artifactId>slingshot</artifactId>
-			<version>0.10.2</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>1.6</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>jline</groupId>
-			<artifactId>jline</artifactId>
-		</dependency>
-		
-		<dependency>
-			<groupId>swank-clojure</groupId>
-			<artifactId>swank-clojure</artifactId>
 		</dependency>
 	</dependencies>
   

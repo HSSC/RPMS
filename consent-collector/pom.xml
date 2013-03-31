@@ -12,8 +12,8 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	
-	<groupId>org.healthsciencessc.rpms2</groupId>
-	<artifactId>consent-collect</artifactId>
+	<groupId>org.healthsciencessc.consent</groupId>
+	<artifactId>collector</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	
 	<name>RPMS2 Consent Collect Application</name>
@@ -34,14 +34,14 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>org.healthsciencessc.rpms2</groupId>
-			<artifactId>consent-domain</artifactId>
+			<groupId>org.healthsciencessc.consent</groupId>
+			<artifactId>domain</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>org.healthsciencessc.rpms2</groupId>
-			<artifactId>consent-client</artifactId>
+			<groupId>org.healthsciencessc.consent</groupId>
+			<artifactId>client</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		
@@ -68,12 +68,6 @@
 			<groupId>pliant</groupId>
 			<artifactId>configure</artifactId>
 			<version>0.1.0</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.clojure</groupId>
-			<artifactId>data.json</artifactId>
-			<version>0.1.2</version>
 		</dependency>
 
 		<dependency>
@@ -116,13 +110,6 @@
 			<version>0.4.0-SNAPSHOT</version>
 		</dependency>
 		
-		<!--  -->
-		<dependency>
-			<groupId>j18n</groupId>
-			<artifactId>j18n</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		
 		<!-- Data Dependencies -->
 		<dependency>
 			<groupId>org.clojure</groupId>
@@ -141,16 +128,6 @@
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.16</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>jline</groupId>
-			<artifactId>jline</artifactId>
-		</dependency>
-                
-		<dependency>
-			<groupId>swank-clojure</groupId>
-			<artifactId>swank-clojure</artifactId>
 		</dependency>
 	</dependencies>
 	
