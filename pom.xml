@@ -14,7 +14,7 @@
 	
 	<packaging>pom</packaging>
 	
-	<groupId>org.healthsciencessc.rpms2</groupId>
+	<groupId>org.healthsciencessc.consent</groupId>
 	<artifactId>parent</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	
@@ -23,10 +23,10 @@
 	
 	<modules>
 		<module>process-engine</module>
-		<module>consent-domain</module>
-		<module>consent-client</module>
-		<module>consent-services</module>
-		<module>consent-collector</module>
-		<module>consent-admin</module>
+		<module>domain</module>
+		<module>client</module>
+		<module>services</module>
+		<module>collector</module>
+		<module>manager</module>
 	</modules>
 </project>
