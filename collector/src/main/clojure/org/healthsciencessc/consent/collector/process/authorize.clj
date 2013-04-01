@@ -3,9 +3,7 @@
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.client.core :as services]
             [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.process-engine.util :as util]
-            
+            [pliant.webpoint.common :as common]
             [ring.util.response :as response])
   (:use     [pliant.process :only [defprocess]]))
 
@@ -39,7 +37,7 @@
 (defn ensure-auth-handler
   [handler]
   (fn [request]
-    (let [path (util/path request)]
+    (let [path (common/path request)]
       (if (or (is-authenticated?)
               (= "/login" path)
               (= "/security/login" path))

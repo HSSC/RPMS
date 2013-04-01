@@ -16,7 +16,7 @@
             [org.healthsciencessc.consent.domain.roles :as roles]
             [org.healthsciencessc.consent.domain.types :as types]
             
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+            [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
 (def fields [{:name :name :label "Name" :required true}

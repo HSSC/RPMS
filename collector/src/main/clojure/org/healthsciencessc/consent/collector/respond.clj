@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.collector.respond
   (:require [ring.util.response :as ring]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]))
+            [pliant.webpoint.url :as url]))
 
 ;; Success(200) Responses
 (defn with-xml
@@ -22,7 +22,7 @@
 ;; Redirect(300) Responses
 (defn redirect
   [ctx url]
-  (ring/redirect (path/root-link ctx url)))
+  (ring/redirect (url/root-link ctx url)))
 
 ;; Error(400) Responses
 (defn not-found

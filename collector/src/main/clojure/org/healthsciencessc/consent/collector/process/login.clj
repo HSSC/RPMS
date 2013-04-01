@@ -7,11 +7,8 @@
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            
             [org.healthsciencessc.consent.client.core :as services]
-            
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+            [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
 

@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.collector.lock
   (:require [org.healthsciencessc.consent.collector.respond :as respond]
-            [org.healthsciencessc.rpms2.process-engine.util :as util]
+            [pliant.webpoint.common :as common]
             [sandbar.stateful-session :as sandbar]))
 
 ;; Request Target Lock Control
@@ -40,6 +40,6 @@
   [handler]
   (fn [request]
     (let [lock (:locked (locker))]
-      (if (or (nil? lock) (contains? (:allowed lock) (util/path request)))
+      (if (or (nil? lock) (contains? (:allowed lock) (common/path request)))
         (handler request)
         (handler (merge request {:path-info (:redirect lock) :uri (str (:context-path request) (:redirect lock))}))))))

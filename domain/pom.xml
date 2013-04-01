@@ -18,7 +18,7 @@
 	
 	<packaging>clojure</packaging>
 	
-	<name>RPMS2 Consent Domain</name>
+	<name>RPMS2 Consent Domain Library</name>
 	<description>Domain Project for common data structures and functions</description>
 
 	<dependencies>

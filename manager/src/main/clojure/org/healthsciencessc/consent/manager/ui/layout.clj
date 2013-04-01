@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.manager.ui.layout
   (:require [org.healthsciencessc.consent.manager.ui.navigation :as nav]
-            [org.healthsciencessc.rpms2.process-engine.util :as request]
+            [pliant.webpoint.common :as common]
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             [sandbar.stateful-session :as sess]
@@ -61,7 +61,7 @@
   "Creates the default layout that is used for the application"
   [ctx elements]
   [:body 
-    (if (not-any? #(= (request/path ctx) %) ["/view/home" "/security/login" "/login"])
+    (if (not-any? #(= (common/path ctx) %) ["/view/home" "/security/login" "/login"])
       [:script (str "PaneManager.triggerOnInit(\"" (:path-info ctx) "\", {},{});")])
     [:div#page.page
                (header)

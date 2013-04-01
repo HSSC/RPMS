@@ -1,7 +1,6 @@
 (ns org.healthsciencessc.consent.manager.security
-  (:require ;;[org.healthsciencessc.consent.manager.security :as security]
-            [org.healthsciencessc.rpms2.process-engine.path :as path]
-            [org.healthsciencessc.rpms2.process-engine.util :as util]
+  (:require [pliant.webpoint.common :as common]
+            [pliant.webpoint.url :as url]
             [ring.util.response :as response]
             [sandbar.stateful-session :as sandbar])
   (:use [compojure.core]))
@@ -14,12 +13,12 @@
 (defn ensure-auth-handler
   [handler]
   (fn [request]
-    (let [path (util/path request)]
+    (let [path (common/path request)]
       (if (or (is-authenticated?)
               (= "/login" path)
               (= "/security/login" path))
         (handler request)
-        (response/redirect (path/root-link request "/login"))))))
+        (response/redirect (url/root-link request "/login"))))))
 
 (defn current-user
   "Method used to get the current user for the request.  Multi interface allows for use in common runnables functions."

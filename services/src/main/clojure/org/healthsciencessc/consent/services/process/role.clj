@@ -7,7 +7,7 @@
             [org.healthsciencessc.consent.domain.roles :as roles]
             [org.healthsciencessc.consent.domain.tenancy :as tenancy]
             [org.healthsciencessc.consent.domain.types :as types]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
+            [pliant.webpoint.request :as endpoint]))
 
 (defn admins-role?
   [ctx]

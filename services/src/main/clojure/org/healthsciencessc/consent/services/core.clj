@@ -3,19 +3,19 @@
             [org.healthsciencessc.consent.services.config :as config]
             [org.healthsciencessc.consent.services.data :as data]
             [org.healthsciencessc.consent.services.seed :as seed]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]
-            [org.healthsciencessc.rpms2.process-engine.util :as util]
+            [pliant.configure.runtime :as runtime]
+            [pliant.webpoint.middleware :as webware]
             [org.healthsciencessc.consent.services.process.init]))
 
 (defn init
   []
   (data/connect! (config/conf "neo4j-db-path"))
   (seed/seed)
-  (util/bootstrap-addons))
+  (runtime/load-resources "consent/services-bootstrap.clj"))
 
 (defn destroy
   []
   (data/shutdown!))
 
 (def app
-  (endpoint/ws-constructor (fn [handler] (auth/wrap-authentication handler auth/authenticate))))
+  (webware/inject-routes (fn [handler] (auth/wrap-authentication handler auth/authenticate))))

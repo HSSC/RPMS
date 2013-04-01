@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.manager.process.login
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.rpms2.process-engine.path :as path]
+  (:require [pliant.webpoint.url :as url]
             [org.healthsciencessc.consent.manager.ui.layout :as layout]
             [org.healthsciencessc.consent.manager.security :as security]
             [org.healthsciencessc.consent.client.core :as services]
@@ -8,7 +8,7 @@
             [sandbar.stateful-session :as sess]
             
             [ring.util.response :as rutil]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+            [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
 ;; Provide An Overridable Authentication Process
@@ -23,7 +23,7 @@
 (defprocess redirect-root
   "Redirects the request to the get-login process."
   [ctx]
-  (rutil/redirect (path/root-link ctx "/login")))
+  (rutil/redirect (url/root-link ctx "/login")))
 
 (as-method redirect-root endpoint/endpoints "get")
 
@@ -31,7 +31,7 @@
 (defprocess redirect-login
   "Redirects the request to the get-security-login process."
   [ctx]
-  (rutil/redirect (path/root-link ctx "/security/login")))
+  (rutil/redirect (url/root-link ctx "/security/login")))
 
 (as-method redirect-login endpoint/endpoints "get-login")
 
@@ -40,7 +40,7 @@
   "Redirects the request to the get-security-login process."
   [ctx]
   (if (security/is-authenticated?)
-    (rutil/redirect (path/root-link ctx "/view/home"))
+    (rutil/redirect (url/root-link ctx "/view/home"))
     (layout/render ctx "Login" (ui/ui-login-form ctx))))
 
 (as-method view-login endpoint/endpoints "get-security-login")
@@ -53,7 +53,7 @@
   (authenticate ctx (get-in ctx [:body-params :username])
                     (get-in ctx [:body-params :password]))
   (if (security/is-authenticated?)
-    (rutil/redirect (path/root-link ctx "/view/home"))
+    (rutil/redirect (url/root-link ctx "/view/home"))
     (view-login (assoc ctx :error {:message "The username or password provided wasn't correct."}))))
 
 (as-method do-login endpoint/endpoints "post-security-login")

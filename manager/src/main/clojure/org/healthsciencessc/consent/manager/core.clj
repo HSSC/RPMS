@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.manager.core
-  (:require [org.healthsciencessc.rpms2.process-engine [util :as util]
-                                                       [endpoint :as ws]]
+  (:require [pliant.configure.runtime :as runtime]
+            [pliant.webpoint.middleware :as webware]
             [sandbar.stateful-session :as sandbar]
             [org.healthsciencessc.consent.manager.security :as security]
             [ring.middleware.content-type :as content-type]
@@ -11,10 +11,10 @@
 
 
 (def app (-> 
-           (ws/ws-constructor
+           (webware/inject-routes
              security/ensure-auth-handler
              sandbar/wrap-stateful-session) ;; Enable session handling via sandbar
-           (util/wrap-resource "public")    ;; Make resources/public items in search path
+           (webware/wrap-resource "public")    ;; Make resources/public items in search path
            content-type/wrap-content-type   
            hicware/wrap-base-url
            handler/site))
@@ -22,4 +22,4 @@
 (defn init 
   "Initializes the application when it is first started up"
   []
-  (util/bootstrap-addons "/rpms/admin/bootstrap.clj"))
+  (runtime/load-resources "consent/manager-bootstrap.clj"))

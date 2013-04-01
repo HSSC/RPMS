@@ -7,7 +7,6 @@
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.content :as uicontent]
             
-            [org.healthsciencessc.rpms2.process-engine.util :as request]
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             

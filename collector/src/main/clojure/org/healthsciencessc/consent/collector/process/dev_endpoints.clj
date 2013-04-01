@@ -7,15 +7,13 @@
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            
             [hiccup.page :as page]
-            
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+            [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
 
 ;; Register The Select Lockcode View
-(defprocess view-session
+#_(defprocess view-session
   "Creates a view of what is in the server session."
   [ctx]
   (if (auth/is-authenticated?)
@@ -29,4 +27,4 @@
                   [:tr [:td k][:td (with-out-str (prn v))]])]]))
     (respond/forbidden-view ctx)))
 
-(as-method view-session endpoint/endpoints "get-dev-session")
+#_(as-method view-session endpoint/endpoints "get-dev-session")

@@ -7,7 +7,7 @@
             [org.healthsciencessc.consent.domain.types :as types]
             
             [ring.util.response :as rutil]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+            [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
 (defn get-record

@@ -35,12 +35,7 @@
 		</repository>	
 	</repositories>
 	<dependencies>
-		<dependency>
-			<groupId>org.healthsciencessc.rpms2</groupId>
-			<artifactId>process-engine</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-		
+		<!-- RPMS Dependencies -->
 		<dependency>
 			<groupId>org.healthsciencessc.consent</groupId>
 			<artifactId>domain</artifactId>
@@ -54,17 +49,7 @@
 			<type>war</type>
 		</dependency>
 		
-		<dependency>
-			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j</artifactId>
-			<version>1.6.1</version>
-		</dependency>
-		 
-		<dependency>
-			<groupId>org.clojure</groupId>
-			<artifactId>clojure</artifactId>
-		</dependency>
-		
+		<!-- Pliant Dependencies -->
 		<dependency>
 			<groupId>pliant</groupId>
 			<artifactId>process</artifactId>
@@ -74,8 +59,27 @@
 		<dependency>
 			<groupId>pliant</groupId>
 			<artifactId>configure</artifactId>
+			<version>0.1.1</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>pliant</groupId>
+			<artifactId>webpoint</artifactId>
 			<version>0.1.0</version>
-		</dependency>	
+		</dependency>
+		
+		<!-- Neo4j/Data Dependencies -->
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j</artifactId>
+			<version>1.6.1</version>
+		</dependency>
+		 
+		<!-- Clojure Dependencies -->
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure</artifactId>
+		</dependency>
 		
 		<dependency>
 			<groupId>javax.servlet</groupId>

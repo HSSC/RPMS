@@ -5,7 +5,7 @@
             [org.healthsciencessc.consent.services.process.group :as group]
             [org.healthsciencessc.consent.services.respond :as respond]
             [org.healthsciencessc.consent.domain.types :as types]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
+            [pliant.webpoint.request :as endpoint]))
 
 
 (defprocess group-members

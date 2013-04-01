@@ -8,10 +8,8 @@
             [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
             [org.healthsciencessc.consent.collector.ui.content :as uicontent]
-            
             [org.healthsciencessc.consent.client.core :as services]
-            
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint])
+            [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]
             [clojure.string :only [join]]))
 

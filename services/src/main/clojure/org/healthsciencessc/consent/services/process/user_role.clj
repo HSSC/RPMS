@@ -4,7 +4,7 @@
             [org.healthsciencessc.consent.services.process.user :as user]
             [org.healthsciencessc.consent.services.respond :as respond]
             [org.healthsciencessc.consent.domain.types :as types]
-            [org.healthsciencessc.rpms2.process-engine.endpoint :as endpoint]))
+            [pliant.webpoint.request :as endpoint]))
 
 (defprocess add-userrole
   [ctx]

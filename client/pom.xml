@@ -16,7 +16,7 @@
 	<artifactId>client</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	
-	<name>RPMS2 Consent Client Application</name>
+	<name>RPMS2 Consent Client Library</name>
 	<description>Provides a simple reusable client interface for calling the consent services.</description>
 	
 	<packaging>clojure</packaging>

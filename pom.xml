@@ -22,7 +22,6 @@
 	<description>RPMS2 Module Builder</description>
 	
 	<modules>
-		<module>process-engine</module>
 		<module>domain</module>
 		<module>client</module>
 		<module>services</module>
