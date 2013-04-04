@@ -10,6 +10,10 @@
     "true"
     nil))
 
+(defn wrapper
+  [& actions]
+  [:div.action-wrapper actions])
+
 (defprocess form-submit
   "Creates an HTML rendering of a button which will submit the data on the form within which the button lives.  The data 
    is culled from the form inputs into a map which is submitted as the body.  The URL and method of the request are culled

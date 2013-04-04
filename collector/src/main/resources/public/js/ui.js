@@ -294,7 +294,7 @@
 		else if(state.tangent != null){
 			if(state.tangent.page != null){
 				var next = ui.Form.propertyValue(state.tangent.page, "next");
-				if(state.tangent.endPage == state.tangent.page.id || next == null || next == "{none}"){
+				if(state.tangent.endPage == state.tangent.page.refid || next == null || next == "{none}"){
 					return ui.Form.regress(state);
 				}
 				else{
@@ -310,7 +310,7 @@
 			pageId = form[state.startPageKey];
 		}
 		if(pageId != null && pageId != "{none}"){
-			var page = form.contains.filter(function(entry){return (entry.id == pageId || entry.refid == pageId)}).first();
+			var page = form.contains.filter(function(entry){return (entry.refid == pageId)}).first();
 			if(page != null){
 				if(state.tangent != null){
 					state.tangent.page = page;
@@ -535,7 +535,7 @@
 					}
 					else{
 						var message = "The witness signatures have not been completed.  Selecting OK will save the forms without any witness signatures attached.";
-						var options = {actions:[{label: "Cancel"}, {label: "Seriously, Cancel"}, {label: "OK", callback: save}]};
+						var options = {actions:[{label: "Cancel"}, {label: "Seriously, No"}, {label: "OK", callback: save}]};
 						Consent.Dialog.error("Warning", message, options);
 					}
 				});

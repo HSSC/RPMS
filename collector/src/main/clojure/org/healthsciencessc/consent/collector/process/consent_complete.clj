@@ -16,8 +16,9 @@
   (if (auth/is-authenticated?)
     (layout/render-page ctx {:title (text/text :consent.complete.title) :pageid "ConsentComplete"} 
                    [:p (text/text :consent.complete.message)]
-                   (action/post-data {:label (text/text :consent.complete.label)
-                                      :url "/api/cancel/consent"}))
+                   (action/wrapper
+                     (action/post-data {:label (text/text :consent.complete.label)
+                                        :url "/api/cancel/consent"})))
     (respond/forbidden-view ctx)))
 
 (as-method view-consent-complete endpoint/endpoints "get-view-consent-complete")

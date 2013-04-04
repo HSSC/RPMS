@@ -43,7 +43,8 @@
     (layout/render-page ctx {:title (text/text :login.title) :pageid "Login"} 
                    (form/dataform options 
                                   (form/render-fields {} fields (dissoc (:body-params ctx) :password))
-                                  (action/form-submit {:label (text/text :login.submit.label)})))))
+                                  (action/wrapper
+                                    (action/form-submit {:label (text/text :login.submit.label)}))))))
 
 (as-method view-security-login endpoint/endpoints "get-security-login")
 

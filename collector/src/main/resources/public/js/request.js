@@ -14,6 +14,7 @@
 	};
 	
 	request.changePage = function(url, method, data, options){
+		Consent.Dialog.loading();
 		var pageRequest = {pageRequest: true};
 		method = (method || "get")
 		if(method == "get"){
@@ -121,6 +122,7 @@
 	};
 	
 	request.api = function(method, url, body, options){
+		Consent.Dialog.loading();
 		if(method == "get"){
 			url = Utils.Url.render(url, body);
 			body = null;

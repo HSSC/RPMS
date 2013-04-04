@@ -24,7 +24,8 @@
     (layout/render-page ctx {:title (text/text :select.lockcode.title) :pageid "SelectLockcode"} 
                    (form/dataform form-options 
                                   (form/render-fields {} fields {})
-                                  (action/form-submit {:label (text/text :action.select.label)})))
+                                  (action/wrapper
+                                    (action/form-submit {:label (text/text :action.select.label)}))))
     (respond/forbidden-view ctx)))
 
 (as-method view-select-lockcode endpoint/endpoints "get-view-select-lockcode")

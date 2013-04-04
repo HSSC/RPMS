@@ -14,12 +14,12 @@
   (:use     [pliant.process :only [defprocess as-method]]))
 
 
-(def fields [{:name :id :type :hidden}
-             {:name :first-name :type :text :label (text/text :person.firstname.label)}
-             {:name :last-name :type :text :label (text/text :person.lastname.label)}
-             {:name :consenter-id :type :text :label (text/text :consenter.id.label)}
-             {:name :dob :type :date :label (text/text :person.dob.label)}
-             {:name :zipcode :type :text :label (text/text :person.zipcode.label)}])
+(def fields [{:name :id :type :hidden :disabled true}
+             {:name :first-name :type :text :label (text/text :person.firstname.label) :disabled true}
+             {:name :last-name :type :text :label (text/text :person.lastname.label) :disabled true}
+             {:name :consenter-id :type :text :label (text/text :consenter.id.label) :disabled true}
+             {:name :dob :type :date :label (text/text :person.dob.label) :disabled true}
+             {:name :zipcode :type :text :label (text/text :person.zipcode.label) :disabled true}])
 
 
 ;; Register The Select Consenter View

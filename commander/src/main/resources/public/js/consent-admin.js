@@ -372,14 +372,24 @@ var RPMS = {
 			var origValue = Utils.DataSet.get(e, "value");
 			var value = null;
 			var tag = e.tagName.toLowerCase();
-			if(tag == "input" && e.type.toLowerCase() == "checkbox"){
-				var checkVal = Utils.DataSet.get(e, "checked-value", true);
-				var uncheckVal = Utils.DataSet.get(e, "unchecked-value", false);
-				if(e.checked){
-					value = checkVal;
+			if(tag == "input"){
+				var type = e.type.toLowerCase();
+				if(type == "checkbox"){
+					var checkVal = Utils.DataSet.get(e, "checked-value", true);
+					var uncheckVal = Utils.DataSet.get(e, "unchecked-value", false);
+					if(e.checked){
+						value = checkVal;
+					}
+					else{
+						value = uncheckVal;
+					}
+				}
+				else if(type == "number"){
+					var val = $(e).val();
+					value = isNaN(val) ? val : eval(val);
 				}
 				else{
-					value = uncheckVal;
+					value = $(e).val();
 				}
 			}
 			else if(tag == "select"){

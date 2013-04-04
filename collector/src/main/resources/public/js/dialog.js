@@ -35,7 +35,8 @@
 		okLabel: "OK",
 		layout: {
 			horizontal: "horizontal",
-			cgClasses : "dialog-horizontal-buttons  ui-corner-all ui-controlgroup ui-controlgroup-horizontal",
+			topClasses : "dialog-horizontal-buttons dialog-horizontal-top-buttons ui-corner-all ui-controlgroup ui-controlgroup-horizontal",
+			bottomClasses : "dialog-horizontal-buttons dialog-horizontal-bottom-buttons ui-corner-all ui-controlgroup ui-controlgroup-horizontal",
 			cgcClasses: "ui-controlgroup-controls"
 		}
 	};
@@ -90,7 +91,8 @@
 	
 	dialog.createActionGroup = function(state, parent, actions, options){
 		if(options.layout == dialog.options.layout.horizontal){
-			state.actionsroot = $("<div class='" + dialog.options.layout.cgClasses + "' />");
+			var classes = options.position == "bottom" ? dialog.options.layout.bottomClasses : dialog.options.layout.topClasses;
+			state.actionsroot = $("<div class='" + classes + "' />");
 			state.actionsroot.appendTo(parent);
 			state.actions = $("<div class='" + dialog.options.layout.cgcClasses + "' />");
 			state.actions.appendTo(state.actionsroot);
@@ -120,11 +122,23 @@
 			state.container.hide();
 		}
 	};
+	
+	dialog.loading = function(){
+		dialog.enableUnderlay(true);
+		$.mobile.loading("show");
+	};
+	
+	dialog.unloading = function(){
+		dialog.enableUnderlay(false);
+		$.mobile.loading("hide");
+	};
 
 	dialog.state = {};
 
 	dialog._create = function(stateId, header, title, message, actions, theme, overlayTheme){
 		dialog.enableUnderlay(true);
+		var buttonOptions = {theme: theme, buttonStyle: {width: "" + (99/actions.length) + "%"}, 
+				layout: dialog.options.layout.horizontal, position: "bottom"};
 		var state = dialog.state[stateId];
 		if(state == null){
 			state = dialog.state[stateId] = {};
@@ -144,14 +158,15 @@
 				state.control.hide();
 				dialog.enableUnderlay(false);
 			};
-			dialog.createActionGroup(state, state.content, actions, {theme: theme});
+			dialog.createActionGroup(state, state.content, actions, buttonOptions);
 			state.actions.trigger("create");
 		}
 		else{
 			state.headerTitle.text(header);
 			state.title.text(title);
 			state.text.text(message);
-			dialog.createButtons(state, actions, {theme: theme});
+			buttonOptions.width = "" + (99/actions.length) + "%"; 
+			dialog.createButtons(state, actions, buttonOptions);
 			state.actions.trigger("create");
 		}
 		state.control.show();
@@ -379,3 +394,9 @@
 		state.content.trigger("create");
 	};
 })( window );
+//$( document ).on( "pagebeforeload", function( event, data ) {
+//	Consent.Dialog.enableUnderlay(true);
+//});
+$( document ).on( "pageload", function( event, data ) {
+	Consent.Dialog.unloading();
+});

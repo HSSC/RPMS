@@ -22,6 +22,7 @@
 
 (def fields [{:name :name :label "Name"}
              {:name :code :label "Code"}
+             {:name :order :label "Order" :type :number}
              {:name :protocol-label :label "Protocol Label"}
              {:name :consenter-label :label "Consenter Label"}
              {:name :encounter-label :label "Encounter Label"}])

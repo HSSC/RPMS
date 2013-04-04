@@ -18,8 +18,8 @@
 
 
 (def fields [{:name :id :type :hidden}
-             {:name :encounter-id :type :text :label (text/text :encounter.id.label)}
-             {:name :date :type :date :label (text/text :encounter.date.label)}])
+             {:name :encounter-id :type :text :label (text/text :encounter.id.label) :disabled true}
+             {:name :date :type :date :label (text/text :encounter.date.label) :disabled true}])
 
 
 ;; Register The Select Consenter View

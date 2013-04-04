@@ -31,7 +31,8 @@
                                   (form/render-fields {:fields {:encounter-id {:label (text/encounter-text :encounter.id.label)}
                                                                 :date {:label (text/encounter-text :encounter.date.label)}}} 
                                                       fields {})
-                                  (action/form-submit {:label (text/text :action.create.label)})))
+                                  (action/wrapper
+                                    (action/form-submit {:label (text/text :action.create.label)}))))
     (respond/forbidden-view ctx)))
 
 (as-method view-create-encounter endpoint/endpoints "get-view-create-encounter")
@@ -51,7 +52,7 @@
               consenter-id (:id (state/get-consenter))
               encounter (services/add-encounter location-id consenter-id data)]
           (state/set-encounter encounter)
-          (respond/with-actions {:encounter encounter :view-url "/view/select/protocols" :reset false} "setEncounter" "changeView"))))
+          (respond/with-actions {:encounter encounter :view-url "/view/select/protocol" :reset false} "setEncounter" "changeView"))))
     (respond/forbidden-view ctx)))
 
 (as-method api-create-encounter endpoint/endpoints "put-api-encounter")

@@ -16,8 +16,9 @@
   (if (auth/is-authenticated?)
     (layout/render-page ctx {:title (text/text :locked.unauthorized.title) :pageid "LockedRequest"} 
                    [:p (text/text :locked.unauthorized.message)]
-                   (action/post-data {:label (text/text :locked.unauthorized.ok.label)
-                                            :url "/api/cancel/consent"}))
+                   (action/wrapper
+                     (action/post-data {:label (text/text :locked.unauthorized.ok.label)
+                                            :url "/api/cancel/consent"})))
     (respond/forbidden-view ctx)))
 
 (as-method view-locked-request endpoint/endpoints "get-view-locked-request")

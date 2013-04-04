@@ -40,7 +40,8 @@
                    (form/dataform form-options 
                                   (form/render-fields {:fields {:consenter-id {:label (text/consenter-text :consenter.id.label)}}}
                                                       fields {})
-                                  (action/form-submit {:label (text/text :action.create.label)})))
+                                  (action/wrapper
+                                    (action/form-submit {:label (text/text :action.create.label)}))))
     (respond/forbidden-view ctx)))
 
 (as-method view-create-consenter endpoint/endpoints "get-view-create-consenter")
@@ -55,7 +56,7 @@
       (cond
         (string/blank? first-name) (respond/with-error (text/text :create.consenter.firstname.required))
         (string/blank? last-name) (respond/with-error (text/text :create.consenter.lastname.required))
-        (string/blank? consenter-id) (respond/with-error (text/text :create.consenter.consenterid.required))
+        (string/blank? consenter-id) (respond/with-error (text/consenter-text :create.consenter.consenterid.required))
         (string/blank? gender) (respond/with-error (text/text :create.consenter.gender.required))
         (string/blank? dob) (respond/with-error (text/text :create.consenter.dob.required))
         (string/blank? zipcode) (respond/with-error (text/text :create.consenter.zipcode.required))

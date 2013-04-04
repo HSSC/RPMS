@@ -40,6 +40,15 @@
      [(tag-class :label.text classes) {:for name} label]
      [(tag-class :input.text classes) props]]))
 
+(defn input-number
+  "Generates a text input."
+  [{:keys [value label classes pattern]
+    :as field}]
+  (let [props (merge {:type :number :value value :pattern pattern} (get-common-props field))]
+    [(tag-class :div.form-control-wrapper.form-text classes)
+     [(tag-class :label.text classes) {:for name} label]
+     [(tag-class :input.text classes) props]]))
+
 (defn date-picker
   "Generates a text input with a calendar attached."
   [{:keys [value label classes] 
@@ -158,6 +167,10 @@
 (defmethod edit-field :date
   [field]
   (date-picker field))
+
+(defmethod edit-field :number
+  [field]
+  (input-number field))
 
 (defmethod edit-field :password
   [field]

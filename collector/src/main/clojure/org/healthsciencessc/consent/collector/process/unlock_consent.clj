@@ -22,11 +22,13 @@
   "Creates a view to accept the lock code for unlocking the application."
   [ctx]
   (if (auth/is-authenticated?)
-    (layout/render-page ctx {:title (text/text :unlock.consent.title) :pageid "UnlockConsent"}
+    (layout/render-page ctx {:title (text/text :unlock.consent.title) :pageid "UnlockConsent"
+                             :header-left "" :header-right ""}
                         (cont/paragraph (text/text :unlock.consent.message))
                         (form/dataform form-options 
                                        (form/render-fields {} fields {})
-                                       (action/form-submit {:label (text/text :action.unlock.label)})))
+                                       (action/wrapper
+                                         (action/form-submit {:label (text/text :action.unlock.label)}))))
     (respond/forbidden-view ctx)))
 
 (as-method view-unlock-consent endpoint/endpoints "get-view-unlock-consent")

@@ -100,8 +100,8 @@ div.datalistview .sublabel{
 	background-color: white;
 }
 
-
-/* Popup styles */
-div.popup{
-	max-width: 50em;
+/* Actions */
+.action-wrapper {
+	width: 100%;
+	margin-top: 1em;
 }

@@ -14,7 +14,7 @@
   (:use     [pliant.process :only [defprocess as-method]]))
 
 
-(def fields [{:name :location :type :radio :label "Location" :autofocus true}])
+(def fields [{:name :location :type :radio :label "Location" :autofocus false}])
 
 (def form-options {:method :post
                    :url "/api/select/location"})
@@ -27,15 +27,22 @@
     (let [user (state/get-user)
           location (state/get-location)
           mappings (roles/consent-collector-mappings user)
-          items (distinct (for [mapping mappings] 
-                            {:value (get-in mapping [:location :id]) :label (get-in mapping [:location :name])}))
+          items (sort #(compare (vec (map val %1)) (vec (map val %2)))
+                      (distinct (for [mapping mappings] 
+                            {:order (#(cond (nil? %) 1000 
+                                            (and (string? %) (empty? %)) 1000 
+                                            (string? %) (.parseInt java.lang.Integer 1000) 
+                                            :else %) (get-in mapping [:location :order]))
+                             :label (get-in mapping [:location :name])
+                             :value (get-in mapping [:location :id]) })))
           data {:location (:id location)}]
       (layout/render-page ctx {:title (text/location-text :select.location.title) :pageid "SelectLocation"} 
                    (form/dataform form-options 
                                   (form/render-fields {:fields {:location {:label (text/location-text :select.location.locations.label)
                                                                            :items items}}} 
                                                       fields data)
-                                  (action/form-submit {:label (text/text :action.select.label)}))))
+                                  (action/wrapper
+                                    (action/form-submit {:label (text/text :action.select.label)})))))
     (respond/forbidden-view ctx)))
 
 (as-method view-select-location endpoint/endpoints "get-view-select-location")

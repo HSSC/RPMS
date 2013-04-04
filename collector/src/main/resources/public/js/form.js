@@ -297,7 +297,14 @@
 				if(Consent.Form.types.checkbox.isA(element)){
 					Consent.Form.types.checkbox.disable(element);
 				}
+				else{
+					$(element).attr('readonly', 'readonly');
+				}
 			}
+		});
+		var selects = $(form).find("select");
+		selects.each(function(index, element){
+			$(element).attr('readonly', 'readonly');
 		});
 	};
 })( window );

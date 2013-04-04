@@ -52,7 +52,8 @@
                          (form/dataform form-options 
                                         (form/render-fields {:fields {:protocols {:items (sort protocol-sorter protocol-items)}
                                                                       :language {:items language-items}}} fields data)
-                                        (action/form-submit {:label (text/consenter-text :select.protocol.ok.label)}))))
+                                        (action/wrapper
+                                          (action/form-submit {:label (text/consenter-text :select.protocol.ok.label)})))))
         (respond/redirect ctx "/view/select/protocol/none")))
     (respond/forbidden-view ctx)))
 

@@ -46,7 +46,8 @@
     (input-wrapper 
       field 
       (if label [:label {:for id} label])
-      [:input {:id id :name name :value value :type "password" :placeholder placeholder :autofocus autofocus}])))
+      [:input (input-disabled 
+                {:id id :name name :value value :type "password" :placeholder placeholder :autofocus autofocus} field)])))
 
 (defn input-username
   "Generates a text input for the user name."
@@ -55,7 +56,8 @@
     (input-wrapper 
       field  
       (if label [:label {:for id} label])
-      [:input {:id id :name name :value value :type "text" :placeholder placeholder :autofocus autofocus}])))
+      [:input (input-disabled 
+                {:id id :name name :value value :type "text" :placeholder placeholder :autofocus autofocus} field)])))
 
 (defn input-text
   "Generates a text input."
@@ -64,7 +66,8 @@
     (input-wrapper 
       field  
       (if label [:label {:for id} label])
-      [:input {:id id :name name :value value :type "text" :placeholder placeholder :autofocus autofocus}])))
+      [:input (input-disabled 
+                {:id id :name name :value value :type "text" :placeholder placeholder :autofocus autofocus} field)])))
 
 (defn input-date
   "Generates a text input with date helper."
@@ -73,7 +76,8 @@
     (input-wrapper 
       field  
       (if label [:label {:for id} label])
-      [:input {:id id :name name :value value :type "date" :placeholder placeholder :autofocus autofocus}])))
+      [:input (input-disabled 
+                {:id id :name name :value value :type "date" :placeholder placeholder :autofocus autofocus} field)])))
 
 (defn input-number
   "Generates a text input that only accepts numbers."
@@ -82,7 +86,8 @@
     (input-wrapper 
       field  
       (if label [:label {:for id} label])
-      [:input {:id id :name name :value value :type "number" :pattern "[0-9]*" :placeholder placeholder :autofocus autofocus}])))
+      [:input (input-disabled 
+                {:id id :name name :value value :type "number" :pattern "[0-9]*" :placeholder placeholder :autofocus autofocus} field)])))
 
 (defn radio-checked
   [field value attributes]
@@ -99,9 +104,11 @@
                   (doall 
                     (map-indexed 
                       (fn [idx {:keys [value label] :as item}]
-                        (let [id (input-id field name idx)]
+                        (let [id (input-id field name idx)
+                              attributes (input-disabled 
+                                           {:id id :name name :value value :type "radio" :autofocus autofocus} field)]
                           (list
-                            [:input (radio-checked field value {:id id :name name :value value :type "radio" :autofocus autofocus})]
+                            [:input (radio-checked field value attributes)]
                             [:label {:for id} label]))) items))]))
 
 (defn checkbox-checked
@@ -151,7 +158,8 @@
     (input-wrapper 
       field 
       [:label.select {:for id} label]
-      [:select {:id id :name name :value value :type "number" :pattern "[0-9]*" :autofocus autofocus}
+      [:select (input-disabled 
+                  {:id id :name name :value value :type "number" :pattern "[0-9]*" :autofocus autofocus} field)
        (if blank [:option (selected field nil {:value ""}) ""])
        (for [{:keys [value label] :as item} items]
          [:option (selected field value {:value value}) label])])))

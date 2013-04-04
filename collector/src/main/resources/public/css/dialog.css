@@ -10,7 +10,10 @@
 }
 
 .dialog-control {
+	position: fixed;
 	z-index: 10001;
+	left: 50%;
+	margin-left: -250px;
 }
 
 .dialog-title {
@@ -24,6 +27,7 @@
 	right: 0;
 	width: 100%;
 	max-width: 100%;
+	margin-left: 0;
 }
 
 .dialog-canvasbox {
@@ -36,10 +40,18 @@
 	left: 50%;
 }
 
-.dialog-horizontal-buttons {
-	margin-left: -5%;
+.dialog-horizontal-top-buttons{
 	margin-top: -15px;
 	margin-bottom: 1.5em;
+}
+
+.dialog-horizontal-bottom-buttons{
+	margin-top: 2.5em;
+	margin-bottom: -13px;
+}
+
+.dialog-horizontal-buttons {
+	margin-left: -5%;
 	width: 110%;
 	height: 5em;
 }
