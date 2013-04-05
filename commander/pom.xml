@@ -13,7 +13,7 @@
 	</parent>
 	
 	<groupId>org.healthsciencessc.consent</groupId>
-	<artifactId>manager</artifactId>
+	<artifactId>commander</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	
 	<name>RPMS2 Consent Admin Application</name>
