@@ -1,16 +1,21 @@
 (ns org.healthsciencessc.consent.services.test.auth
   (:use [org.healthsciencessc.consent.services.auth]
+        [org.healthsciencessc.consent.domain.credentials]
         [clojure.test])
   (:require [clojure.data.codec.base64 :as b64]))
 
-(def test-authenticate
-  (fn [username password]
-    (when (and (= username "foo") (= password "foobar"))
+(defn test-authenticate
+  ([{:keys [username password realm]}] 
+    (test-authenticate username password realm))
+  ([username password] 
+    (test-authenticate username password "local"))
+  ([username password realm]
+    (when (and (= username "foo") (= password "foobar") (= realm "local"))
       {:username "foo" :password "foobar" :organization {:name "MUSC"}})))
 
 (defn encode-creds
   [username password]
-  (str "Basic " (String. (b64/encode (.getBytes (str username ":" password))))))
+  (str "Basic " (String. (b64/encode (.getBytes (str (wrap-username username) ":" (wrap-password password)))))))
 
 (deftest decodes-base64-string
   (is (= "foobar" (decode-cred "Zm9vYmFy"))))

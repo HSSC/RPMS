@@ -1,7 +1,8 @@
 (ns org.healthsciencessc.consent.collector.process.select-encounter
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.common :as common]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.common :as common]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
@@ -10,7 +11,6 @@
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.grid :as grid]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.client.core :as services]
             [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
@@ -26,7 +26,7 @@
 (defprocess view-select-encounter
   "Creates a view of the search results to select a encounter from."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [consenter-id (:id (state/get-consenter))
           consenter (services/get-consenter consenter-id)
           encounters (:encounters consenter)]
@@ -62,7 +62,7 @@
 (defprocess api-select-encounter
   "Selects the consenter to be working with."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [encounter (:body-params ctx)]
       (state/set-encounter encounter)
       (respond/with-actions {:encounter encounter :view-url "/view/select/protocol" :reset false} "setEncounter" "changeView"))

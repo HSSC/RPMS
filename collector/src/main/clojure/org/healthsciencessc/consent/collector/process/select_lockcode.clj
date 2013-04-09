@@ -1,9 +1,9 @@
 (ns org.healthsciencessc.consent.collector.process.select-lockcode
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.lock :as lock]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
@@ -20,7 +20,7 @@
 (defprocess view-select-lockcode
   "Creates a view of to set the lockcode"
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (layout/render-page ctx {:title (text/text :select.lockcode.title) :pageid "SelectLockcode"} 
                    (form/dataform form-options 
                                   (form/render-fields {} fields {})
@@ -39,7 +39,7 @@
 (defprocess api-select-lockcode
   "Sets the lock code and redirects to the next view"
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (if-let [lockcode (get-in ctx [:body-params :lockcode])]
       (if (valid-lockcode? lockcode)
           (do 

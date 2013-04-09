@@ -1,7 +1,7 @@
 (ns org.healthsciencessc.consent.collector.process.select-consenter
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.common :as common]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.common :as common]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
@@ -26,7 +26,7 @@
 (defprocess view-select-consenter
   "Creates a view of the search results to select a consenter from."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [search (state/flash-get :consenter-search)
           consenters (:results search)
           criteria (:criteria search)
@@ -55,7 +55,7 @@
 (defprocess api-select-consenter
   "Selects the consenter to be working with."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [consenter (:body-params ctx)
           url (if (seq (:encounters consenter)) "/view/select/encounter"  "/view/create/encounter")]
       (state/set-consenter consenter)

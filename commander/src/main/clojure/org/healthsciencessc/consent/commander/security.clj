@@ -1,20 +1,17 @@
 (ns org.healthsciencessc.consent.commander.security
-  (:require [pliant.webpoint.common :as common]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [pliant.webpoint.common :as common]
             [pliant.webpoint.url :as url]
             [ring.util.response :as response]
             [sandbar.stateful-session :as sandbar])
   (:use [compojure.core]))
 
-(defn is-authenticated?
-  []
-  (let [{:keys [username password]} (sandbar/session-get :user)]
-    (and username password)))
 
 (defn ensure-auth-handler
   [handler]
   (fn [request]
     (let [path (common/path request)]
-      (if (or (is-authenticated?)
+      (if (or (whoami/identified?)
               (= "/login" path)
               (= "/security/login" path))
         (handler request)

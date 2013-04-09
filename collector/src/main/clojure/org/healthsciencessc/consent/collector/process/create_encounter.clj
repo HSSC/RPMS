@@ -1,13 +1,13 @@
 (ns org.healthsciencessc.consent.collector.process.create-encounter
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.client.core :as services]
             [org.healthsciencessc.consent.domain.roles :as roles]
             [org.healthsciencessc.consent.domain.tenancy :as tenancy]
             [pliant.webpoint.request :as endpoint]
@@ -25,7 +25,7 @@
 (defprocess view-create-encounter
   "Creates a view for addings an encounter."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (layout/render-page ctx {:title (text/encounter-text :create.encounter.title) :pageid "CreateEncounter"} 
                    (form/dataform form-options 
                                   (form/render-fields {:fields {:encounter-id {:label (text/encounter-text :encounter.id.label)}
@@ -42,7 +42,7 @@
 (defprocess api-create-encounter
   "Performs the encounter search "
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [{:keys [encounter-id date] :as data} (:body-params ctx)]
       (cond
         (string/blank? encounter-id) (respond/with-error (text/encounter-text :create.encounter.id.required))

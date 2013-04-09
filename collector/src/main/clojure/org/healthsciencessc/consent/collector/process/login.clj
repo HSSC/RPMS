@@ -1,13 +1,14 @@
 (ns org.healthsciencessc.consent.collector.process.login
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.process.authorize :as auth]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.client.core :as services]
             [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))
 
@@ -38,7 +39,7 @@
 (defprocess view-security-login
   "Redirects the request to the get-view-location."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (respond/redirect ctx "/view/select/location")
     (layout/render-page ctx {:title (text/text :login.title) :pageid "Login"} 
                    (form/dataform options 

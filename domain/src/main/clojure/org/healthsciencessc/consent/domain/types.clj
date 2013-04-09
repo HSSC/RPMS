@@ -12,6 +12,7 @@
 (def-them-all 
   organization
   user
+  user-identity
   role
   language
   location
@@ -33,7 +34,8 @@
   consent-endorsement
   protocol
   protocol-version
-  text-i18n)
+  text-i18n
+  system)
 
 ;; COMMON CODES USED THROUGHOUT THE APPLICATION.  IDENTIFIES UNIQUENESS WITHIN METADATA.
 

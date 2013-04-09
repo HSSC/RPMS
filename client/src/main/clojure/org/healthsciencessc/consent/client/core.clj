@@ -1,7 +1,8 @@
 (ns org.healthsciencessc.consent.client.core
   (:require [clj-http.client :as client]
-            [sandbar.stateful-session :as sess]
-            [clojure.tools.logging :as logging])
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [clojure.tools.logging :as logging]
+            [org.healthsciencessc.consent.domain.credentials :as credentials])
   (:use [clojure.string :only [blank?]]
         [org.healthsciencessc.consent.domain.roles :only [has-role?]]
         [org.healthsciencessc.consent.client.url :only [url]]))
@@ -15,10 +16,8 @@
 
 (defn- credentials
   "Creats a map of all the header items needed for basic authentication."
-  ([] (credentials
-        (select-keys (sess/session-get :user)
-                     [:username :password])))
-  ([user] {:basic-auth [(:username user) (:password user)]}))
+  ([] (credentials (whoami/get-identity)))
+  ([id] {:basic-auth [(credentials/wrap-username id) (credentials/wrap-password id)]}))
 
 (defn- defaults
   "Defines any defaults that will be placed on all requests."
@@ -97,14 +96,18 @@
 ;; AUTHENTICATION
 (defn authenticate
   "Calls the authentication process within the consent services."
-  [username password]
-  (DO client/get
-      (url "/security/authenticate" {})
-      (merge (credentials {:username username :password password}) (defaults))
-      [(fn [r] (if (= 200 (:status r))
-                 (assoc (:body r)
-                        :password password)
-                 :invalid))]))
+  ([username password] (authenticate username password "local"))
+  ([username password realm]
+    (DO client/get
+        (url "/security/authenticate" {})
+        (merge (credentials {:username username :password password :realm realm}) (defaults))
+        [(fn [r] 
+           (if (= 200 (:status r))
+             (let [user (:body r)
+                   id (:identity user)]
+               (whoami/put-identity! (assoc id :password password))
+               (dissoc user :identity))
+             :invalid))])))
 
 
 ;; ORGANIZATIONS

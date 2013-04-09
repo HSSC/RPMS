@@ -1,14 +1,14 @@
 (ns org.healthsciencessc.consent.collector.process.collect-consent
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.common :as common]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.common :as common]
             [org.healthsciencessc.consent.collector.lock :as locker]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
             [org.healthsciencessc.consent.collector.ui.content :as uicontent]
-            [org.healthsciencessc.consent.client.core :as services]
             [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]
             [clojure.string :only [join]]))
@@ -27,7 +27,7 @@
 (defprocess view-collect-consent
   "Creates a view for collecting metaitmes"
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (do
       (lock-session)
       (layout/render-page ctx {:title (text/consenter-text :collect.consent.title) :pageid "CollectConsent"
@@ -44,7 +44,7 @@
 (defprocess api-collect-consent
   "Processes the values collected by the consent process and forwards on to the review process."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [body (:body-params ctx)]
       (respond/with-actions {:view-url "/view/unlock/consent" :reset false} "changeView"))
     (respond/forbidden-view ctx)))

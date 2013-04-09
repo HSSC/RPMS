@@ -118,7 +118,7 @@
   "Relation is a string"
   (neo/create-rel! from type to))
 
-(defn- get-node-by-index [type id]
+(defn get-node-by-index [type id]
   (if id
     (-> (neo-index type :nodes)
         (.get "id" id)

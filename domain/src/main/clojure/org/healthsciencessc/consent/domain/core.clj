@@ -13,7 +13,10 @@
    :suffix {:persisted true}})
 
 (def default-data-defs
-  {organization {:attributes
+  {system {:attributes {:key {:required true :unique true :persisted true}
+                        :value {:persisted true}}}
+
+   organization {:attributes
                  (merge base
                         {:name {:required true :persisted true}
                          :code {:persisted true :unique true}
@@ -22,8 +25,7 @@
                          :consenter-label {:persisted true}
                          :encounter-label {:persisted true}})
                  :relations [{:type :belongs-to :related-to language :relationship :has-language :name :language :omit-rels true}]}
-
-
+   
    user {:attributes (merge base
                             person
                             {:username {:persisted true :required true :unique true}
@@ -32,6 +34,12 @@
                      {:type :belongs-to :related-to group :relationship :in-group}
                      {:type :has-many :related-to role-mapping}
                      {:type :has-many-through :related-to role-mapping :relation-path [group]}]}
+   
+   ;; Provides a facility to allow a user multiple identities to log in with.
+   user-identity {:attributes {:username {:persisted true :required true :unique true}
+                               :realm {:persisted true :required true}
+                               :password {:omit true :persisted true :required false}}
+                  :relations [{:type :belongs-to :related-to user :relationship :owned-by :required true :deletable-by-parent true}]}
 
    role {:attributes (merge base
                             {:name {:persisted true :required true}

@@ -1,13 +1,13 @@
 (ns org.healthsciencessc.consent.collector.process.create-consenter
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.client.core :as services]
             [org.healthsciencessc.consent.domain.roles :as roles]
             [org.healthsciencessc.consent.domain.tenancy :as tenancy]
             [pliant.webpoint.request :as endpoint]
@@ -35,7 +35,7 @@
 (defprocess view-create-consenter
   "Creates a view of locations to be selected."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (layout/render-page ctx {:title (text/consenter-text :create.consenter.title) :pageid "CreateConsenter"} 
                    (form/dataform form-options 
                                   (form/render-fields {:fields {:consenter-id {:label (text/consenter-text :consenter.id.label)}}}
@@ -51,7 +51,7 @@
 (defprocess api-create-consenter
   "Performs the consenter search "
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [{:keys [first-name last-name consenter-id gender dob zipcode] :as data} (:body-params ctx)]
       (cond
         (string/blank? first-name) (respond/with-error (text/text :create.consenter.firstname.required))

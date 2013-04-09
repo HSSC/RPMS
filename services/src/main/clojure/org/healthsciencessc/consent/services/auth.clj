@@ -3,12 +3,12 @@
         org.healthsciencessc.consent.services.session
         [pliant.process :only [defprocess]])
   (:require [clojure.data.codec.base64 :as b64]
-            [org.healthsciencessc.consent.services.data :as data])
+            [org.healthsciencessc.consent.services.data :as data]
+            [org.healthsciencessc.consent.domain.credentials :as credentials]
+            [org.healthsciencessc.consent.domain.types :as types])
   (:import org.mindrot.jbcrypt.BCrypt))
 
 (def ^:private hash-times 11)
-
-;;(def ^:dynamic *current-user*)
 
 ;; Using bcrypt for hashing
 ;; http://codahale.com/how-to-safely-store-a-password/
@@ -43,15 +43,15 @@
   (-> cred .getBytes b64/decode String.))
 
 (defprocess authenticate
-  [username password]
-  (if-let [user-node (first (filter #(= username (:username %))
-                                    (data/get-raw-nodes "user")))]
-    (if (and password user-node (good-password? password (:password user-node)))
-      (first (data/find-records-by-attrs "user" {:username username})))))
-
-#_(defn authenticate
-  [username password]
-  (process/dispatch "authenticate" {:username username :password password}))
+  ([{:keys [username password realm]}] (authenticate username password realm))
+  ([username password] (authenticate username password "local"))
+  ([username password realm]
+    (if-let [identity-node (first (filter #(and (= username (:username %)) (= realm (:realm %)))
+                                          (data/get-raw-nodes types/user-identity)))]
+      (if (and password identity-node (good-password? password (:password identity-node)))
+        (let [user-identity (data/find-record types/user-identity (:id identity-node))
+              user (:user user-identity)]
+          (assoc user :identity (dissoc user-identity :user)))))))
 
 (defn wrap-authentication
   [handler authenticate]
@@ -61,14 +61,9 @@
                     (decode-cred
                       (last
                         (re-find #"^Basic (.*)$" auth))))
-          user (and cred
-                    (last
-                     (re-find #"^(.*):" cred)))
-          pass (and cred
-                    (last
-                     (re-find #":(.*)$" cred)))]
-      (if (and user pass)
-          (if-let [auth-user (authenticate user pass)]
+          id (credentials/unwrap-credentials cred)]
+      (if (credentials/valid? id)
+          (if-let [auth-user (authenticate id)]
             (binding [*current-user* auth-user]
               (handler (add-user-to-session request auth-user)))
             unauthorized-response)

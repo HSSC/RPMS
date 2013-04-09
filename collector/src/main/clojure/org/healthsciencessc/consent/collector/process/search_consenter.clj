@@ -1,7 +1,7 @@
 (ns org.healthsciencessc.consent.collector.process.search-consenter
   (:refer-clojure :exclude [root])
   (:require [org.healthsciencessc.consent.client.core :as services]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
@@ -26,7 +26,7 @@
   "Creates a view for setting search criteria for consenters."
   [ctx]
   (state/reset-consent-session)
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (layout/render-page ctx {:title (text/consenter-text :search.consenter.title) :pageid "SearchConsenter"
                         :header-left (action/next-view {:label (text/location-text :action.change-location.label) 
                                                         :url "/view/select/location" :inline true})} 
@@ -45,7 +45,7 @@
 (defprocess api-search-consenter
   "Performs the consenter search "
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [parms (:body-params ctx)
           valid-parms (into {} (filter (fn [[k v]] (not (string/blank? v))) parms))]
       (if (> (count valid-parms) 0)

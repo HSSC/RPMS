@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.collector.ui.layout
-  (:require [org.healthsciencessc.consent.collector.common :as common]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.common :as common]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
             [org.healthsciencessc.consent.collector.version :as version]
@@ -207,7 +207,7 @@
 (deflayer render-page render-page-no-session
   "Renders into a layout specific for responses that are outside of an authenticated session."
   [ctx options & elements]
-  (if (not (auth/is-authenticated?))
+  (if (not (whoami/identified?))
     (page-layout-no-session ctx options elements)
     (continue)))
 

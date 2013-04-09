@@ -1,14 +1,14 @@
 (ns org.healthsciencessc.consent.collector.process.review-consent
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.common :as common]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.common :as common]
             [org.healthsciencessc.consent.collector.lock :as locker]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
             [org.healthsciencessc.consent.collector.ui.content :as uicontent]
-            [org.healthsciencessc.consent.client.core :as services]
             [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]
             [clojure.string :only [join]]))
@@ -18,7 +18,7 @@
 (defprocess view-review-consent
   "Creates a view for reviewing metaitmes"
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [data {}
           location-name (:name (state/get-location))
           consenter-name (common/formal-name (state/get-consenter))
@@ -37,7 +37,7 @@
 (defprocess api-review-consent
   "Processes the values reviewed by the consent process and forwards on to the review process."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [body (:body-params ctx)]
       (respond/with-actions {:view-url "/view/witness/signatures" :reset false} "changeView"))
     (respond/forbidden-view ctx)))

@@ -1,13 +1,13 @@
 (ns org.healthsciencessc.consent.collector.process.select-protocol
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.client.core :as services]
             [org.healthsciencessc.consent.domain.roles :as roles]
             [org.healthsciencessc.consent.domain.tenancy :as tenancy]
             [pliant.webpoint.request :as endpoint]
@@ -36,7 +36,7 @@
 (defprocess view-select-protocol
   "Creates a view of protocols to be selected."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [location (state/get-location)
           location-id (:id location)
           protocol-versions (services/get-published-protocol-versions location-id)]
@@ -72,7 +72,7 @@
 (defprocess api-select-protocol
   "Processes the protocols selected."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [protocol-ids (get-in ctx [:body-params :protocols])
           language-id (get-in ctx [:body-params :language])]
       (cond

@@ -1,13 +1,13 @@
 (ns org.healthsciencessc.consent.collector.process.select-location
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.client.core :as services]
             [org.healthsciencessc.consent.domain.roles :as roles]
             [org.healthsciencessc.consent.domain.tenancy :as tenancy]
             [pliant.webpoint.request :as endpoint])
@@ -23,7 +23,7 @@
 (defprocess view-select-location
   "Creates a view of locations to be selected."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [user (state/get-user)
           location (state/get-location)
           mappings (roles/consent-collector-mappings user)
@@ -51,7 +51,7 @@
 (defprocess api-select-location
   "Performs the login "
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (if-let [location-id (get-in ctx [:body-params :location])]
       (let [current-location (state/get-location)
             location (services/get-location location-id)

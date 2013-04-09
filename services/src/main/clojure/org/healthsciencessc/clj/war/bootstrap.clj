@@ -7,6 +7,7 @@
 (defn init
   "Provides a function placeholder to initialize the application from."
   [event]
+  (println "Initializing the Consent Services Application.")
   (core/init))
 
 (defn destroy

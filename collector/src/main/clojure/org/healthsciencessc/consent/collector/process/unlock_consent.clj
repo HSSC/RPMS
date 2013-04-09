@@ -1,9 +1,9 @@
 (ns org.healthsciencessc.consent.collector.process.unlock-consent
   (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.collector.respond :as respond]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.lock :as lock]
             [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.content :as cont]
             [org.healthsciencessc.consent.collector.ui.form :as form]
@@ -21,7 +21,7 @@
 (defprocess view-unlock-consent
   "Creates a view to accept the lock code for unlocking the application."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (layout/render-page ctx {:title (text/text :unlock.consent.title) :pageid "UnlockConsent"
                              :header-left "" :header-right ""}
                         (cont/paragraph (text/text :unlock.consent.message))
@@ -38,7 +38,7 @@
 (defprocess api-unlock-consent
   "Attempts to unlock the application and redirect to the review process."
   [ctx]
-  (if (auth/is-authenticated?)
+  (if (whoami/identified?)
     (let [lockcode (get-in ctx [:body-params :lockcode])]
       (if (lock/is-code? lockcode)
         (do 
