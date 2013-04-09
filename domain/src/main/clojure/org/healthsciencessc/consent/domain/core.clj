@@ -57,7 +57,8 @@
                                  :code {:persisted true}
                                  :order {:persisted true}
                                  :protocol-label {:persisted true}
-                                 :consenter-label {:persisted true}})
+                                 :consenter-label {:persisted true}
+                                 :encounter-label {:persisted true}})
              :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                          {:type :belongs-to :related-to language :relationship :has-language :omit-rels true}]}
 
