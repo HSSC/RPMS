@@ -1,5 +1,5 @@
 ;; Provides the reusable functions for dealing with our tenancy.
-(ns org.healthsciencessc.consent.domain.credentials
+(ns org.healthsciencessc.consent.common.credentials
   (:require [clojure.string]))
 
 (defn wrap-username

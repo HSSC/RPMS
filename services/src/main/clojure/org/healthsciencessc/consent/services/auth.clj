@@ -4,8 +4,8 @@
         [pliant.process :only [defprocess]])
   (:require [clojure.data.codec.base64 :as b64]
             [org.healthsciencessc.consent.services.data :as data]
-            [org.healthsciencessc.consent.domain.credentials :as credentials]
-            [org.healthsciencessc.consent.domain.types :as types])
+            [org.healthsciencessc.consent.common.credentials :as credentials]
+            [org.healthsciencessc.consent.common.types :as types])
   (:import org.mindrot.jbcrypt.BCrypt))
 
 (def ^:private hash-times 11)

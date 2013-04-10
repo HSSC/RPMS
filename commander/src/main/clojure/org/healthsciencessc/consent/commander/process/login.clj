@@ -71,7 +71,7 @@
 (defprocess do-logout
   "Redirects the request to the get-security-login process."
   [ctx]
-  (sess/session-delete-key! :user)
+  (sess/destroy-session!)
   (redirect-login ctx))
 
 (as-method do-logout endpoint/endpoints "get-logout")

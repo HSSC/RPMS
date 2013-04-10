@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.consent.domain.test.core
-  (:use [org.healthsciencessc.consent.domain.core])
+(ns org.healthsciencessc.consent.common.test.core
+  (:use [org.healthsciencessc.consent.common.core])
   (:use [clojure.test]))
 
 

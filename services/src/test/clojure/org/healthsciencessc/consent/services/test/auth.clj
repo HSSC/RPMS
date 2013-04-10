@@ -1,6 +1,6 @@
 (ns org.healthsciencessc.consent.services.test.auth
   (:use [org.healthsciencessc.consent.services.auth]
-        [org.healthsciencessc.consent.domain.credentials]
+        [org.healthsciencessc.consent.common.credentials]
         [clojure.test])
   (:require [clojure.data.codec.base64 :as b64]))
 

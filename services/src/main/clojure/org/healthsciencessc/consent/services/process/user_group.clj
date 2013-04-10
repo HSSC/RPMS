@@ -4,7 +4,7 @@
             [org.healthsciencessc.consent.services.data :as data]
             [org.healthsciencessc.consent.services.process.group :as group]
             [org.healthsciencessc.consent.services.respond :as respond]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.types :as types]
             [pliant.webpoint.request :as endpoint]))
 
 

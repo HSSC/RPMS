@@ -3,9 +3,9 @@
 (ns org.healthsciencessc.consent.services.vouch
   (:require [org.healthsciencessc.consent.services.data :as data]
             [org.healthsciencessc.consent.services.session :as session]
-            [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.consent.domain.tenancy :as tenancy]
-            [org.healthsciencessc.consent.domain.types :as types]))
+            [org.healthsciencessc.consent.common.roles :as roles]
+            [org.healthsciencessc.consent.common.tenancy :as tenancy]
+            [org.healthsciencessc.consent.common.types :as types]))
 
 ;; Vouching that returns true or false
 (defn admins-org?

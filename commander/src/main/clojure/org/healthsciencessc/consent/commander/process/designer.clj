@@ -9,8 +9,8 @@
             [org.healthsciencessc.consent.commander.ui.container :as container]
             [org.healthsciencessc.consent.commander.ui.layout :as layout]
             
-            [org.healthsciencessc.consent.domain.lookup :as lookup]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.lookup :as lookup]
+            [org.healthsciencessc.consent.common.types :as types]
             
             [ring.util.response :as rutil]
             [pliant.webpoint.request :as endpoint])

@@ -3,8 +3,8 @@
         [clojure.string :only (blank? capitalize)]
         [slingshot.slingshot :only (throw+)]
         [org.healthsciencessc.consent.services.session :only (*current-user*)])
-  (:require [org.healthsciencessc.consent.domain.core :as domain]
-            [org.healthsciencessc.consent.domain.types :as types]
+  (:require [org.healthsciencessc.consent.common.core :as domain]
+            [org.healthsciencessc.consent.common.types :as types]
             [borneo.core :as neo]
             [clojure.zip :as zip])
   (:import [org.neo4j.graphdb.index IndexManager

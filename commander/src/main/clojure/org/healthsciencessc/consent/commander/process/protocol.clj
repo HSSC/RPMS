@@ -13,9 +13,9 @@
             [org.healthsciencessc.consent.commander.ui.layout :as layout]
             [org.healthsciencessc.consent.commander.ui.list :as list]
             
-            [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.consent.domain.lookup :as lookup]
-            [org.healthsciencessc.consent.domain.tenancy :as tenancy]
+            [org.healthsciencessc.consent.common.roles :as roles]
+            [org.healthsciencessc.consent.common.lookup :as lookup]
+            [org.healthsciencessc.consent.common.tenancy :as tenancy]
             
             [ring.util.response :as rutil]
             [pliant.webpoint.request :as endpoint])

@@ -3,7 +3,7 @@
   (:require [org.healthsciencessc.consent.commander.ajax :as ajax]
             [org.healthsciencessc.consent.commander.security :as security]
             [org.healthsciencessc.consent.client.core :as services]
-            [org.healthsciencessc.consent.domain.lookup :as lookup]))
+            [org.healthsciencessc.consent.common.lookup :as lookup]))
 
 (def lookup-organization (lookup/gen-organization-lookup-in-query security/current-org-id))
 

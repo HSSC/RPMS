@@ -1,7 +1,7 @@
 (ns org.healthsciencessc.consent.services.upgrade
   "Provides an entry point for updating the database with schema changes."
   (:require [org.healthsciencessc.consent.services.data :as data]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.types :as types]
             [borneo.core :as neo]))
 
 

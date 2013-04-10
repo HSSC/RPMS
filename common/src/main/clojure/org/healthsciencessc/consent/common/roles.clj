@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.consent.domain.roles
-  (:use [org.healthsciencessc.consent.domain types]))
+(ns org.healthsciencessc.consent.common.roles
+  (:use [org.healthsciencessc.consent.common types]))
 
 (defn- submap-of?
   [smallmap bigmap]

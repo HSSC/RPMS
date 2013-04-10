@@ -1,6 +1,6 @@
-\;; Provides a singular location by which the names of types and type instance identifiers can be 
+;; Provides a singular location by which the names of types and type instance identifiers can be 
 ;; defined for the base release.
-(ns org.healthsciencessc.consent.domain.types)
+(ns org.healthsciencessc.consent.common.types)
 
 ;; TYPES THAT ARE AVAILABLE IN THE BASE APPLICATION
 

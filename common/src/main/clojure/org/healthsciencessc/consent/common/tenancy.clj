@@ -1,6 +1,6 @@
 ;; Provides the reusable functions for dealing with our tenancy.
-(ns org.healthsciencessc.consent.domain.tenancy
-  (:require [org.healthsciencessc.consent.domain.types :as types]
+(ns org.healthsciencessc.consent.common.tenancy
+  (:require [org.healthsciencessc.consent.common.types :as types]
             [clojure.string]))
 
 (defn only-my-org

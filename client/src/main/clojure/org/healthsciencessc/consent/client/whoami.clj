@@ -15,3 +15,7 @@
 (defprocess identified?
   []
   (not (nil? (get-identity))))
+
+(defprocess deidentify!
+  []
+  (sess/session-delete-key! :identity))

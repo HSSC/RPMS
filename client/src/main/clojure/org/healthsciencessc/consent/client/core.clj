@@ -2,9 +2,9 @@
   (:require [clj-http.client :as client]
             [org.healthsciencessc.consent.client.whoami :as whoami]
             [clojure.tools.logging :as logging]
-            [org.healthsciencessc.consent.domain.credentials :as credentials])
+            [org.healthsciencessc.consent.common.credentials :as credentials])
   (:use [clojure.string :only [blank?]]
-        [org.healthsciencessc.consent.domain.roles :only [has-role?]]
+        [org.healthsciencessc.consent.common.roles :only [has-role?]]
         [org.healthsciencessc.consent.client.url :only [url]]))
 
 ;; Request And Response Support

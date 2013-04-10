@@ -1,6 +1,6 @@
-(ns org.healthsciencessc.consent.domain.test.roles
-  (:use [org.healthsciencessc.consent.domain.roles]
-        [org.healthsciencessc.consent.domain.types]
+(ns org.healthsciencessc.consent.common.test.roles
+  (:use [org.healthsciencessc.consent.common.roles]
+        [org.healthsciencessc.consent.common.types]
         [clojure.test]))
 
 (defn- UUID

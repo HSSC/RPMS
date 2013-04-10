@@ -3,8 +3,8 @@
   (:require [org.healthsciencessc.consent.commander.ajax :as ajax]
             [org.healthsciencessc.consent.commander.security :as security]
             [org.healthsciencessc.consent.client.core :as services]
-            [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.roles :as roles]
+            [org.healthsciencessc.consent.common.types :as types]
             
             [ring.util.response :as rutil]
             [pliant.webpoint.request :as endpoint])

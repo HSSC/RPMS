@@ -1,6 +1,6 @@
 ;; Provides the reusable runnable? functions that work off the domain functions.
-(ns org.healthsciencessc.consent.domain.runnable
-  (:require [org.healthsciencessc.consent.domain.roles :as roles]))
+(ns org.healthsciencessc.consent.common.runnable
+  (:require [org.healthsciencessc.consent.common.roles :as roles]))
 
 ;; Helper functions to check if a location is accessible for a user.
 (defn can-collect-location-id

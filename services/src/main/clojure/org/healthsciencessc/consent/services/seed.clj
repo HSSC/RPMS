@@ -1,9 +1,9 @@
 (ns org.healthsciencessc.consent.services.seed
   (:require [org.healthsciencessc.consent.services.data :as data]
             [org.healthsciencessc.consent.services.auth :as auth]
-            [org.healthsciencessc.consent.domain.core :as domain]
-            [org.healthsciencessc.consent.domain.match :as match]
-            [org.healthsciencessc.consent.domain.types :as types]))
+            [org.healthsciencessc.consent.common.core :as domain]
+            [org.healthsciencessc.consent.common.match :as match]
+            [org.healthsciencessc.consent.common.types :as types]))
 
 (defn setup-default-schema!
   []

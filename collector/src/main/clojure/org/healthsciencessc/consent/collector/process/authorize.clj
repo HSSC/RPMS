@@ -3,7 +3,7 @@
             [org.healthsciencessc.consent.client.whoami :as whoami]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
-            [org.healthsciencessc.consent.domain.roles :as roles]
+            [org.healthsciencessc.consent.common.roles :as roles]
             [pliant.webpoint.common :as common]
             [ring.util.response :as response])
   (:use     [pliant.process :only [defprocess]]))

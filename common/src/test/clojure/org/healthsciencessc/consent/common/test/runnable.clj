@@ -1,7 +1,7 @@
-(ns org.healthsciencessc.consent.domain.test.runnable
-  (:require [org.healthsciencessc.consent.domain.test.roles :as roles])
-  (:use [org.healthsciencessc.consent.domain.runnable]
-        [org.healthsciencessc.consent.domain.lookup]
+(ns org.healthsciencessc.consent.common.test.runnable
+  (:require [org.healthsciencessc.consent.common.test.roles :as roles])
+  (:use [org.healthsciencessc.consent.common.runnable]
+        [org.healthsciencessc.consent.common.lookup]
         [clojure.test]))
 
 (defn get-test-super

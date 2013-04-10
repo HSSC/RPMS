@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.consent.domain.core
-  (:use [org.healthsciencessc.consent.domain types]))
+(ns org.healthsciencessc.consent.common.core
+  (:use [org.healthsciencessc.consent.common types]))
 
 (def base
   {:id {:persisted false}

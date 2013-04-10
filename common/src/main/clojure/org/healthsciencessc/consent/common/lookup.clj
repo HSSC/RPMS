@@ -1,5 +1,5 @@
 ;; Provides common lookup functions and generation functions for working with data in the request context.
-(ns org.healthsciencessc.consent.domain.lookup)
+(ns org.healthsciencessc.consent.common.lookup)
 
 ;; Generates Common Functions For Looking Up Data In Request Contexts
 (defn gen-request-lookup

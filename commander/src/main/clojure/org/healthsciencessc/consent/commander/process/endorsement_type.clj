@@ -12,9 +12,9 @@
             [org.healthsciencessc.consent.commander.ui.layout :as layout]
             [org.healthsciencessc.consent.commander.ui.list :as list]
             
-            [org.healthsciencessc.consent.domain.lookup :as lookup]
-            [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.lookup :as lookup]
+            [org.healthsciencessc.consent.common.roles :as roles]
+            [org.healthsciencessc.consent.common.types :as types]
             
             [pliant.webpoint.request :as endpoint])
   (:use     [pliant.process :only [defprocess as-method]]))

@@ -1,8 +1,8 @@
 (ns org.healthsciencessc.consent.commander.ui.navigation
   (:require [sandbar.stateful-session :as sess]
             [org.healthsciencessc.consent.commander.security :as security]
-            [org.healthsciencessc.consent.domain.tenancy :as tenancy]
-            [org.healthsciencessc.consent.domain.roles :as roles]))
+            [org.healthsciencessc.consent.common.tenancy :as tenancy]
+            [org.healthsciencessc.consent.common.roles :as roles]))
 
 (defn- use?
   "Checks to see if a structure can be rendered into a navigation group or item."

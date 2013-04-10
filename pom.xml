@@ -22,7 +22,7 @@
 	<description>RPMS2 Module Builder</description>
 	
 	<modules>
-		<module>domain</module>
+		<module>common</module>
 		<module>client</module>
 		<module>services</module>
 		<module>collector</module>

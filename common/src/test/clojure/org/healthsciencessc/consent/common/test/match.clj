@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.consent.domain.test.match
-  (:use [org.healthsciencessc.consent.domain.match]
+(ns org.healthsciencessc.consent.common.test.match
+  (:use [org.healthsciencessc.consent.common.match]
         [clojure.test]))
 
 (def test-code1-org1-dup

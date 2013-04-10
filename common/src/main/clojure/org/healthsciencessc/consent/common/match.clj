@@ -1,5 +1,5 @@
 ;;Provides predicates that help determin if two of the same type match based on non identity metadata.
-(ns org.healthsciencessc.consent.domain.match)
+(ns org.healthsciencessc.consent.common.match)
 
 (defn keys-exists?
   "Ensures that all of the keys exist in all of the maps."

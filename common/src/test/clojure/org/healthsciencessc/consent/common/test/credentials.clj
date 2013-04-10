@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.consent.domain.test.credentials
-  (:use [org.healthsciencessc.consent.domain.credentials]
+(ns org.healthsciencessc.consent.common.test.credentials
+  (:use [org.healthsciencessc.consent.common.credentials]
         [clojure.test]))
 
 

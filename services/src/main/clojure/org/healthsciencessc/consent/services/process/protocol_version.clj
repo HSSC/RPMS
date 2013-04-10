@@ -3,7 +3,7 @@
   (:require [org.healthsciencessc.consent.services.data :as data]
             [org.healthsciencessc.consent.services.respond :as respond]
             [org.healthsciencessc.consent.services.vouch :as vouch]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.types :as types]
             [pliant.webpoint.request :as endpoint]
             [clojure.walk :as walk]
             [borneo.core :as neo]))

@@ -4,9 +4,9 @@
             [org.healthsciencessc.consent.services.respond :as respond]
             [org.healthsciencessc.consent.services.session :as session]
             [org.healthsciencessc.consent.services.vouch :as vouch]
-            [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.consent.domain.tenancy :as tenancy]
-            [org.healthsciencessc.consent.domain.types :as types]
+            [org.healthsciencessc.consent.common.roles :as roles]
+            [org.healthsciencessc.consent.common.tenancy :as tenancy]
+            [org.healthsciencessc.consent.common.types :as types]
             [pliant.webpoint.request :as endpoint]))
 
 (defn admins-role?

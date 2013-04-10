@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.consent.collector.text
-  (:require [org.healthsciencessc.consent.domain.tenancy :as tenancy]
+  (:require [org.healthsciencessc.consent.common.tenancy :as tenancy]
             [org.healthsciencessc.consent.collector.state :as state])
   (:use     [pliant.process :only [defprocess]]))
 

@@ -8,8 +8,8 @@
             [org.healthsciencessc.consent.collector.ui.action :as action]
             [org.healthsciencessc.consent.collector.ui.form :as form]
             [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [org.healthsciencessc.consent.domain.roles :as roles]
-            [org.healthsciencessc.consent.domain.tenancy :as tenancy]
+            [org.healthsciencessc.consent.common.roles :as roles]
+            [org.healthsciencessc.consent.common.tenancy :as tenancy]
             [pliant.webpoint.request :as endpoint]
             [clojure.string :as string])
   (:use     [pliant.process :only [defprocess as-method]]))

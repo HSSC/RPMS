@@ -1,5 +1,5 @@
-(ns org.healthsciencessc.consent.domain.test.lookup
-  (:use [org.healthsciencessc.consent.domain.lookup])
+(ns org.healthsciencessc.consent.common.test.lookup
+  (:use [org.healthsciencessc.consent.common.lookup])
   (:use [clojure.test]))
 
 
