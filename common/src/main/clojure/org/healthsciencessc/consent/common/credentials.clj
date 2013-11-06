@@ -20,11 +20,14 @@
 (defn unwrap-credentials
   "Returns a map containing the realm"
   [credentials]
-  {:realm (last (or (re-find #"@\[(.*)\]:" credentials) 
-                    "local"))
-   :username (last (or (re-find #"^\[(.*)\]@" credentials)
-                       (re-find #"^\[(.*)\]:" credentials)))
-   :password (last (re-find #":\[(.*)\]$" credentials))})
+  (when credentials 
+    {:realm (or (last (re-find #"@\[(.*)\]:" credentials))
+                "local")
+     :username (last (or (re-find #"^\[(.*)\]@" credentials)
+                         (re-find #"^\[(.*)\]:" credentials)
+                         (re-find #"^(.*):" credentials)))
+     :password (last (or (re-find #":\[(.*)\]$" credentials)
+                         (re-find #":(.*)$" credentials)))}))
 
 (defn valid?
   "Returns a map containing the realm"

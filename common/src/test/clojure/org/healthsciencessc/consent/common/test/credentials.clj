@@ -59,3 +59,9 @@
     (is (= password (:password decoded)))
     (is (= realm (:realm decoded)))))
 
+(deftest test-credentials-basic-auth
+  (let [decoded (unwrap-credentials "myuserid:mypassword")]
+    (is (= "myuserid" (:username decoded)))
+    (is (= "mypassword" (:password decoded)))
+    (is (= "local" (:realm decoded)))))
+
