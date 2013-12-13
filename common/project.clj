@@ -7,10 +7,7 @@
   ;; Keep java source and project definition out of the artifact
   :jar-exclusions [#"^\." #"^*\/\." #"\.java$" #"project\.clj"]
 
-  :plugins [[lein-package "0.1.1"]]
-  
-  :hooks [leiningen.package.hooks.deploy 
-          leiningen.package.hooks.install]
+  :plugins [[lein-package "2.1.1"]]
   
   :package {:autobuild false :reuse false}
   

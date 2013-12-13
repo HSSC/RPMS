@@ -8,13 +8,11 @@
   ;; Keep java source and project definition out of the artifact
   :jar-exclusions [#"^\." #"^*\/\." #"\.java$" #"project\.clj"]
 
-  :plugins [[lein-package "0.1.1"]
+  :plugins [[lein-package "2.1.1"]
             [lein-ring "0.8.8"]]
   
-  :hooks [leiningen.package.hooks.deploy 
-          leiningen.package.hooks.install]
-  
-  :package {:autobuild false :reuse false}
+  :package {:autobuild false :reuse false :skipjar true
+            :artifacts [{:build "ring uberwar" :extension "war" :classifier "standalone"}]}
   
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.healthsciencessc.consent/common "1.0.0-SNAPSHOT"]
@@ -33,7 +31,6 @@
                  [ring/ring-servlet "1.2.1"]
                  [javax.servlet/servlet-api "2.5"]
                  
-                 #_[org.clojure/tools.logging "0.2.6"]
                  [log4j "1.2.16"]]
   
   :ring {:handler org.healthsciencessc.consent.services.core/app
