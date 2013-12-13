@@ -8,15 +8,15 @@
 
 (defn with-actions
   [data & actions]
-  (ring/response (merge data {:actions actions})))
+  (merge data {:actions actions}))
 
 (defn add-view
-  ([url]
-    (ring/response {:action "changeView" :view-url url :reset false})))
+  [url]
+  {:action "changeView" :view-url url :reset false})
 
 (defn reset-view
-  ([url]
-    (ring/response {:action "changeView" :view-url url :reset true})))
+  [url]
+  {:action "changeView" :view-url url :reset true})
 
 
 ;; Redirect(300) Responses

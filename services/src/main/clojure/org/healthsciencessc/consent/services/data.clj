@@ -1,7 +1,6 @@
 (ns org.healthsciencessc.consent.services.data
   (:use [clojure.set :only (difference)]
         [clojure.string :only (blank? capitalize)]
-        [slingshot.slingshot :only (throw+)]
         [org.healthsciencessc.consent.services.session :only (*current-user*)])
   (:require [org.healthsciencessc.consent.common.core :as domain]
             [org.healthsciencessc.consent.common.types :as types]
@@ -393,7 +392,7 @@
                  (validate-record type record))]
     (if (empty? errors)
       (execfn)
-      (throw+ {:type ::invalid-record :errors errors :data record}))))
+      (throw (ex-info {:type ::invalid-record :errors errors :data record})))))
 
 ;; Public API
 (defn find-all
@@ -404,7 +403,7 @@
   [type id]
   (if-let [node (get-node-by-index type id)]
     (node->record node type)
-    (throw+ {:type ::record-not-found :record-type type :id id})))
+    (throw (ex-info {:type ::record-not-found :record-type type :id id}))))
 
 (defn find-records-by-attrs
   [type attr-map]
@@ -419,7 +418,7 @@
      (if-let [start-node (get-node-by-index start-type start-id)]
        (let [nodes (walk-types-path start-node relation-path (if include-defaults directed-default-rel))]
          (filter identity (map #(node->record % (last relation-path)) nodes)))
-       (throw+ {:type ::record-not-found :record-type start-type :id start-id}))))
+       (throw (ex-info {:type ::record-not-found :record-type start-type :id start-id})))))
 
 (defn find-children
   ([parent-type parent-id child-type]
@@ -428,7 +427,7 @@
      (if-let [parent-node (get-node-by-index parent-type parent-id)]
        (filter identity (map #(node->record % child-type)
                              (children-nodes-by-type parent-node child-type (if include-defaults directed-default-rel))))
-       (throw+ {:type ::record-not-found :record-type parent-type :id parent-id}))))
+       (throw (ex-info {:type ::record-not-found :record-type parent-type :id parent-id})))))
 
 (defn belongs-to?
   ([child-type child-id parent-type parent-id]

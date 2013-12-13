@@ -63,7 +63,8 @@
   (let [location (vouch/collects-location ctx)]
     (if location
       (let [org (:organization location)
-            data (assoc (:body-params ctx) :organization org :location location)]
+            consenter {:id (get-in ctx [:params :consenter])}
+            data (assoc (:body-params ctx) :organization org :location location :consenter consenter)]
         (data/create types/encounter data))
       (respond/forbidden))))
 

@@ -1,17 +1,29 @@
 (ns org.healthsciencessc.consent.collector.state
   (:require [sandbar.stateful-session :as sandbar]
-            [org.healthsciencessc.consent.client.core :as services])
+            [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.whoami :as whoami])
   (:use     [pliant.process :only [defprocess]]))
 
 ;; Flash Functions - State That Lives For One Request
 
+(defn- flash
+  []
+  (or (sandbar/session-get :_app-flash) {}))
+
+(defn- flash!
+  [m]
+  (sandbar/session-put! :_app-flash m))
+
 (defprocess flash-put!
   [k v]
-  (sandbar/flash-put! k v))
+  (flash! (assoc (flash) k v)))
 
 (defprocess flash-get
   [k]
-  (sandbar/flash-get k))
+  (let [m (flash)
+        v (m k)]
+    (flash! (dissoc m k))
+    v))
 
 ;; Reset Functions
 (defprocess reset
@@ -87,6 +99,7 @@
 ;; Session State Reporting - For Debugging Purposes
 (defprocess all
   []
-  {:user (get-user)
+  {:identity (whoami/get-identity)
+   :user (get-user)
    :location (get-location)
    :consent-session (get-consent-session)})

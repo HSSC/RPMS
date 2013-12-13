@@ -136,8 +136,11 @@
   (let [user (security/current-user ctx)
         org-id (common/lookup-organization ctx)]
     (if (roles/can-admin-org-id? user org-id)
-      (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-user org-id body)]
+      (let [body (:body-params ctx)
+            id (select-keys body [:username :password :realm])
+            clean-body (dissoc (assoc (:body-params ctx) :organization {:id org-id} :identity id)
+                               :username :password :realm)
+            resp (services/add-user org-id clean-body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))
@@ -152,8 +155,11 @@
   (let [user (security/current-user ctx)
         org-id (lookup/get-organization-in-query ctx)]
     (if (roles/can-admin-org-id? user org-id)
-      (let [body (assoc (:body-params ctx) :organization {:id org-id})
-            resp (services/add-admin org-id body)]
+      (let [body (:body-params ctx)
+            id (select-keys body [:username :password :realm])
+            clean-body (dissoc (assoc (:body-params ctx) :organization {:id org-id} :identity id)
+                               :username :password :realm)
+            resp (services/add-admin org-id clean-body)]
         (if (services/service-error? resp)
           (ajax/save-failed (meta resp))
           (ajax/success resp)))

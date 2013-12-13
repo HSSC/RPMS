@@ -5,7 +5,8 @@
             [org.healthsciencessc.consent.collector.state :as state]
             [org.healthsciencessc.consent.common.roles :as roles]
             [pliant.webpoint.common :as common]
-            [ring.util.response :as response])
+            [ring.util.response :as response]
+            [clojure.tools.logging :as logging])
   (:use     [pliant.process :only [defprocess]]))
 
 
@@ -39,4 +40,6 @@
               (= "/login" path)
               (= "/security/login" path))
         (handler request)
-        (respond/redirect request "/login")))))
+        (do
+          (logging/info "Not authenticated for path: " path)
+          (respond/redirect request "/login"))))))

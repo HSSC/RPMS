@@ -137,7 +137,8 @@
 
 	dialog._create = function(stateId, header, title, message, actions, theme, overlayTheme){
 		dialog.enableUnderlay(true);
-		var buttonOptions = {theme: theme, buttonStyle: {width: "" + (99/actions.length) + "%"}, 
+		var width = (actions == null ? 99 : 99/actions.length);
+		var buttonOptions = {theme: theme, buttonStyle: {width: "" + width + "%"}, 
 				layout: dialog.options.layout.horizontal, position: "bottom"};
 		var state = dialog.state[stateId];
 		if(state == null){
@@ -165,11 +166,12 @@
 			state.headerTitle.text(header);
 			state.title.text(title);
 			state.text.text(message);
-			buttonOptions.width = "" + (99/actions.length) + "%"; 
+			buttonOptions.width = "" + width + "%"; 
 			dialog.createButtons(state, actions, buttonOptions);
 			state.actions.trigger("create");
 		}
 		state.control.show();
+		$.mobile.loading("hide");
 	};
 
 	dialog.inform = function(title, message, options){

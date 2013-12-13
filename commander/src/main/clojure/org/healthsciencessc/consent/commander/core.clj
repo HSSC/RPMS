@@ -1,23 +1,48 @@
 (ns org.healthsciencessc.consent.commander.core
   (:require [pliant.configure.runtime :as runtime]
-            [pliant.webpoint.middleware :as webware]
+            [pliant.webpoint.request :as request]
+            
             [sandbar.stateful-session :as sandbar]
             [org.healthsciencessc.consent.commander.security :as security]
             [ring.middleware.content-type :as content-type]
             [hiccup.middleware :as hicware]
-            [compojure.handler :as handler]
-            [org.healthsciencessc.consent.commander.process.init]))
+            [org.healthsciencessc.consent.commander.process.init]
+            
+            [ring.middleware [params :refer [wrap-params]]
+                             [keyword-params :refer [wrap-keyword-params]]
+                             [nested-params :refer [wrap-nested-params]]
+                             [session :refer [wrap-session]]
+                             [flash :refer [wrap-flash]]]
+            
+            [pliant.webpoint [middleware :refer [wrap-keyify-params 
+                                                 wrap-log-request 
+                                                 wrap-resolve-body 
+                                                 wrap-resource]]]))
 
 
+#_(def app (-> 
+            (webware/inject-routes
+              security/ensure-auth-handler
+              sandbar/wrap-stateful-session) ;; Enable session handling via sandbar
+            (webware/wrap-resource "public")    ;; Make resources/public items in search path
+            content-type/wrap-content-type   
+            hicware/wrap-base-url
+            handler/site))
 
-(def app (-> 
-           (webware/inject-routes
+(def app (-> request/route
+             wrap-log-request
+             wrap-resolve-body
+             (wrap-keyify-params :query-params)
              security/ensure-auth-handler
-             sandbar/wrap-stateful-session) ;; Enable session handling via sandbar
-           (webware/wrap-resource "public")    ;; Make resources/public items in search path
-           content-type/wrap-content-type   
-           hicware/wrap-base-url
-           handler/site))
+             hicware/wrap-base-url
+             wrap-keyword-params
+             wrap-nested-params
+             wrap-params
+             sandbar/wrap-stateful-session
+             wrap-flash
+             wrap-session
+             (wrap-resource "public")
+             content-type/wrap-content-type))
 
 (defn init 
   "Initializes the application when it is first started up"

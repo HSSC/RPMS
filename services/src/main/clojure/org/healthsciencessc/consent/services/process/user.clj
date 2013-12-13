@@ -8,6 +8,7 @@
             [org.healthsciencessc.consent.common.roles :as roles]
             [org.healthsciencessc.consent.common.types :as types]
             [pliant.webpoint.request :as endpoint]
+            [clojure.tools.logging :as logging]
             [borneo.core :as neo]))
 
 (defn admins-user?
@@ -51,15 +52,28 @@
 
 (as-method get-user endpoint/endpoints "get-security-user")
 
+
+(defprocess create-user
+  "Process used to create"
+  [organization-id raw-user & roles]
+  (let [org {:id organization-id}
+        raw-identity (:identity raw-user)
+        rare-user (assoc (dissoc raw-user :identity) :organization org)
+        rare-identity (assoc raw-identity 
+                             :password (auth/hash-password (:password raw-identity))
+                             :realm (or (:realm raw-identity) "local"))]
+    (neo/with-tx
+        (let [well-user (data/create types/user rare-user)
+              well-identity (data/create types/user-identity (assoc rare-identity :user well-user))]
+          (doseq [role roles]
+            (data/create types/role-mapping {:organization org :role role :user well-user}))
+          (assoc well-user :identity well-identity)))))
+
 ;; curl -i -X PUT -d "{:first-name  \"MUSC FOOBAR\"}" http://user:password@localhost:8080/security/user?user=<ID>
 (defprocess add-user
   [ctx]
   (if (vouch/admins-org? ctx)
-    (let [user-data (:body-params ctx)
-          unhashed-pwd (:password user-data)
-          user (assoc user-data :password (auth/hash-password unhashed-pwd))
-          org-id (get-in ctx [:query-params :organization])]
-      (data/create types/user (assoc user :organization {:id org-id})))
+    (create-user (get-in ctx [:query-params :organization]) (:body-params ctx))
     (respond/forbidden)))
 
 (as-method add-user endpoint/endpoints "put-security-user")

@@ -9,13 +9,13 @@
   (slurp-config "consent-services.props" (sniff "RPMSPKEY")))
 
 ;; Change the handling of requests to endpoints that are not registered.
-(defmethod request/endpoints :default
-  [{:keys [path-info request-method] :as request}]
-  (let [proc-name (common/uri->process-name (name request-method) path-info)]
-    {:status 404 :body (str "Unable to find a process registered as '" proc-name "'.")}))
+#_(defmethod request/endpoints :default
+   [{:keys [path-info uri request-method] :as request}]
+   (let [proc-name (common/uri->process-name (name request-method) (or path-info uri))]
+     {:status 404 :body (str "Unable to find a process registered as '" proc-name "'.")}))
 
 ;; Change the handling of formatting the response.  Will only return clojure, unless specifically 
 ;; requesting JSON.
-(defmethod response/respond :default
-  [request body]
-  (response/respond-with-clojure body request))
+#_(defmethod response/respond :default
+   [request body]
+   (response/respond-with-clojure body request))

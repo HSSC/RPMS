@@ -3,7 +3,8 @@
             [org.healthsciencessc.consent.services.auth :as auth]
             [org.healthsciencessc.consent.common.core :as domain]
             [org.healthsciencessc.consent.common.match :as match]
-            [org.healthsciencessc.consent.common.types :as types]))
+            [org.healthsciencessc.consent.common.types :as types]
+            [clojure.tools.logging :as logging]))
 
 (defn setup-default-schema!
   []
@@ -264,12 +265,3 @@
   (setup-default-schema!)
   (seed-base-org!)
   (seed-example-org!))
-
-(defn reset-dev-db!
-  []
-  (do
-    (println "Deleting all data...")
-    (data/delete-all-nodes!)
-    (println "Seeding...")
-    (seed)
-    "Done!"))

@@ -1,7 +1,9 @@
 (ns org.healthsciencessc.consent.services.upgrade
   "Provides an entry point for updating the database with schema changes."
   (:require [org.healthsciencessc.consent.services.data :as data]
+            [org.healthsciencessc.consent.services.seed :as seed]
             [org.healthsciencessc.consent.common.types :as types]
+            [clojure.tools.logging :as logging]
             [borneo.core :as neo]))
 
 
@@ -16,15 +18,16 @@
                        {:realm "local" :user user :password (:password user) 
                         :username (:username user)}))))))
 
-(def updates [{:version 1 :fn update-credentials-to-user-identities}])
+(def updates [{:version 0 :fn seed/seed}
+              {:version 1 :fn update-credentials-to-user-identities}])
 
 (defn check-version
   []
-  (let [system-prop (first (data/find-records-by-attrs types/system {:key "version"}))
-        version (or (:value system-prop) 0)
+  (let [system-prop (first (filter #(= "version" (:key %1)) (data/find-all types/system)))
+        version (or (:value system-prop) -1)
         sorted-updates (seq (sort-by :version (filter #(> (:version %) version) updates)))]
-    (println (str "Current Version: " version))
-    (println (str "Available Updates: " (count sorted-updates)))
+    (logging/info "Current Version: " version)
+    (logging/info "Available Updates: " (count sorted-updates))
     (if sorted-updates
       (neo/with-tx 
         (loop [updates sorted-updates

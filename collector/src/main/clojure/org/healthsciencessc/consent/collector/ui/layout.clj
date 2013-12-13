@@ -11,9 +11,10 @@
             [hiccup.core :as hcup]
             
             [sandbar.stateful-session :as sess]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [pliant.webpoint.response :as response])
   
-  (:use     [pliant.process :only [defprocess deflayer continue before]]))
+  (:use     [pliant.process :only [defprocess deflayer continue]]))
 
 (defprocess scripts
   "Generates a list of URLs that are injected into the head section of the layout as script files(javascript)."
@@ -201,14 +202,14 @@
   "Decides how markup should be wrapped in a container.  This provides 
    the ability to add additional containers later based on how the 
    request was made.  IE - make into a portlet."
-  [ctx options & elements]
-  (page-layout ctx options elements))
+  [request options & elements]
+  (response/respond-with-html (page-layout request options elements) request))
 
 (deflayer render-page render-page-no-session
   "Renders into a layout specific for responses that are outside of an authenticated session."
-  [ctx options & elements]
+  [request options & elements]
   (if (not (whoami/identified?))
-    (page-layout-no-session ctx options elements)
+    (response/respond-with-html (page-layout-no-session request options elements) request)
     (continue)))
 
 (defn dialog-div
@@ -217,22 +218,23 @@
 
 (defprocess dialog
   "Creates the default page layout that is used for the application when not in an authenticated session."
-  [ctx options elements]
+  [request options elements]
   [(dialog-div options)
      {:data-role "dialog" :data-theme "a"}
      [:div.header {:data-role "header"} 
       [:h1 {:data-role "heading"} (:title options)]]
-     (content ctx options elements)])
+     (content request options elements)])
 
 (defprocess render-dialog
   "Decides how markup should be wrapped in a dialog container.  This provides 
    the ability to add additional containers later based on how the 
    request was made.  IE - make into a portlet."
-  [ctx options & elements]
-  (page/html5
-    [:head [:title (:title options)]
-         [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]]
-    [:body (dialog ctx options elements)]))
+  [request options & elements]
+  (response/respond-with-html 
+    (page/html5
+      [:head [:title (:title options)]
+           [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]]
+      [:body (dialog request options elements)]) request))
 
 (defn- error-html
   [error]
@@ -246,11 +248,11 @@
    :body (json/json-str (or (:body error) {:message (or (:message error) "Requested process failed to complete.")}))})           
 
 (defn render-error
-  [ctx error]
+  [request error]
   (cond
     (not (sess/session-get :user))
       (page-layout-no-session (error-html error))
-    (= (get-in ctx [:query-params :view-mode]) "pane")
+    (= (get-in request [:query-params :view-mode]) "pane")
       (pane-error error)
     :else
       (page-layout (error-html error))))

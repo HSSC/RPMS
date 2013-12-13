@@ -139,6 +139,7 @@
 				type: method,
 				dataType: "text",
 				processData: false, 
+				accept: "application/json",
 				contentType: "application/json",
 				success: request.onsuccess,
 				error: request.onfailure

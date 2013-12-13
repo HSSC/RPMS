@@ -23,7 +23,8 @@
   "Defines any defaults that will be placed on all requests."
   []
   {:as :clojure ;; this tells clj-http to read-string on the body
-   :content-type "application/clojure" ;; tells our services to serve the Right Stuff
+   :accept "application/clojure" ;; tells our services to serve clojure/edn
+   :content-type "application/clojure" ;; tells our services to the request is in clojure/edn
    :throw-exceptions false})
 
 (defn- meta-failure-handler

@@ -1,11 +1,12 @@
 (ns org.healthsciencessc.consent.commander.ui.layout
   (:require [org.healthsciencessc.consent.commander.ui.navigation :as nav]
             [pliant.webpoint.common :as common]
+            [pliant.webpoint.response :as response]
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             [sandbar.stateful-session :as sess]
             [clojure.data.json :as json])
-  (:use     [pliant.process :only [defprocess deflayer continue before]]))
+  (:use     [pliant.process :only [defprocess deflayer continue do-before]]))
 
 
 (defprocess scripts
@@ -112,24 +113,24 @@
   "Decides how markup should be wrapped in a container.  This provides 
    the ability to add additional containers later based on how the 
    request was made.  IE - make into a portlet."
-  [ctx title & elements]
-  (layout ctx elements))
+  [request title & elements]
+  (response/respond-with-html (layout request elements) request))
 
 (deflayer render render-no-session
   "Renders into a layout specific for responses that are outside of an authenticated session."
-  [ctx title & elements]
+  [request title & elements]
   (if (not (sess/session-get :user))
-    (layout-no-session ctx elements)
+    (response/respond-with-html (layout-no-session request elements) request)
     (continue)))
 
 (deflayer render render-pane
   "Renders into a layout specific for a pane that is dynamically injected into the DOM on the client side."
-  [ctx title & elements]
-  (if (= (get-in ctx [:query-params :view-mode]) "pane")
-    (pane ctx title elements)
+  [request title & elements]
+  (if (= (get-in request [:query-params :view-mode]) "pane")
+    (response/respond-with-html (pane request title elements) request)
     (continue)))
 
-(before render render-no-session render-pane)
+(do-before render render-no-session render-pane)
 
 (defn- error-html
   [error]

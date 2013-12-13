@@ -17,4 +17,4 @@
             [org.healthsciencessc.consent.collector.process.review-consent]
             [org.healthsciencessc.consent.collector.process.witness]
             [org.healthsciencessc.consent.collector.process.consent-complete]
-            #_[org.healthsciencessc.consent.collector.process.dev-endpoints]))
+            [org.healthsciencessc.consent.collector.process.dev-endpoints]))
