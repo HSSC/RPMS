@@ -13,7 +13,6 @@
 */bin
 
 # Development Ignores
-*/src/main/clojure/*.props
 */local
 
 # OS Ignores

@@ -16,7 +16,7 @@
   
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.healthsciencessc.consent/common "1.0.0-SNAPSHOT"]
-                 [pliant/process "0.1.1"]
+                 [pliant/process "0.1.2"]
                  [pliant/configure "0.1.2"]
                  [pliant/webpoint "0.1.1"]
                  
