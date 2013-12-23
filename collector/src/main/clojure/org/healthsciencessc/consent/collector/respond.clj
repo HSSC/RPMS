@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.consent.collector.respond
-  (:require [ring.util.response :as ring]
+  (:require [org.healthsciencessc.consent.collector.ui.layout :as layout]
+            [ring.util.response :as ring]
             [pliant.webpoint.response :as response]
             [pliant.webpoint.url :as url]))
 
@@ -26,10 +27,6 @@
   (ring/redirect (url/root-link request url)))
 
 ;; Error(400) Responses
-(defn not-found
-  ([] (not-found "The requested resource was not found."))
-  ([message] (ring/not-found {:message message})))
-
 (defn forbidden-api
   ([request] (forbidden-api request "You do not have the authority to execute the requested process."))
   ([request message]
@@ -39,7 +36,7 @@
 (defn forbidden-view
   ([request] (forbidden-view request "You do not have the authority to execute the requested view."))
   ([request message]
-    (ring/status (response/respond-with-html {:message message} request) 403)))
+    (ring/status (layout/render-error request message) 403)))
 
 
 (defn with-error
