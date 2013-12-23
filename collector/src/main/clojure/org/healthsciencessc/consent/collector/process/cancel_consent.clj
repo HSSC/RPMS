@@ -34,6 +34,6 @@
       (lock/unlock)
       (state/reset-consent-session)
       (respond/with-actions {:view-url "/view/search/consenter" :reset false} "resetSession" "changeView"))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-consent-cancel endpoint/endpoints "post-api-cancel-consent")

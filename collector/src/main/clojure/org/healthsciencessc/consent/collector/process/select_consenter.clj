@@ -60,6 +60,6 @@
           url (if (seq (:encounters consenter)) "/view/select/encounter"  "/view/create/encounter")]
       (state/set-consenter consenter)
       (respond/with-actions {:consenter consenter :view-url url :reset false} "setConsenter" "changeView"))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-select-consenter endpoint/endpoints "post-api-select-consenter")

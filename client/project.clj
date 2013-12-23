@@ -14,6 +14,7 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.healthsciencessc.consent/common "1.0.0-SNAPSHOT"]
                  [pliant/configure "0.1.2"]
+                 [pliant/process "0.1.2"]
                  [clj-http "0.4.0"]
                  [sandbar "0.4.0-SNAPSHOT"]
                  [org.clojure/tools.logging "0.2.6"]])

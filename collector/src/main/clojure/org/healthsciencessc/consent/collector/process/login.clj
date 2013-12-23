@@ -57,10 +57,10 @@
         password (get-in ctx [:body-params :password])
         user (auth/authenticate username password)]
     (cond
-      (= :invalid-user user)
-        (respond/with-error (text/text :login.message.noauth))
-      (= :invalid-role user)
-        (respond/with-error (text/text :login.message.norole))
+      (= :invalid user)
+        (respond/with-error ctx (text/text :login.message.noauth))
+      (= :invalid-authorization user)
+        (respond/with-error ctx (text/text :login.message.norole))
       :else
         (respond/reset-view "/view/select/location"))))
 

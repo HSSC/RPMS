@@ -56,8 +56,8 @@
             (do
               (state/flash-put! :consenter-search {:results results :criteria valid-parms})
               (respond/reset-view "/view/select/consenter"))))
-        (respond/with-error (text/consenter-text :search.consenter.message.notvalid))))
-    (respond/forbidden-view ctx)))
+        (respond/with-error ctx (text/consenter-text :search.consenter.message.notvalid))))
+    (respond/forbidden-api ctx)))
 
 (as-method api-search-consenter endpoint/endpoints "post-api-search-consenter")
 

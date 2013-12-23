@@ -66,6 +66,6 @@
     (let [encounter (:body-params ctx)]
       (state/set-encounter encounter)
       (respond/with-actions {:encounter encounter :view-url "/view/select/protocol" :reset false} "setEncounter" "changeView"))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-select-encounter endpoint/endpoints "post-api-select-encounter")

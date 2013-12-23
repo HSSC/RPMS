@@ -40,7 +40,7 @@
   (if (whoami/identified?)
     (let [body (:body-params ctx)]
       (respond/with-actions {:view-url "/view/witness/signatures" :reset false} "changeView"))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-review-consent endpoint/endpoints "post-api-review-consent")
 

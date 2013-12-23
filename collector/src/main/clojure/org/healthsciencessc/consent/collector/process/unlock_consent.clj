@@ -44,8 +44,8 @@
         (do 
           (lock/unlock)
           (respond/reset-view "/view/review/consent"))
-        (respond/with-error (text/format-text :unlock.consent.message.nomatch {:args [lockcode]}))))
-    (respond/forbidden-view ctx)))
+        (respond/with-error ctx (text/format-text :unlock.consent.message.nomatch {:args [lockcode]}))))
+    (respond/forbidden-api ctx)))
 
 (as-method api-unlock-consent endpoint/endpoints "post-api-unlock-consent")
 

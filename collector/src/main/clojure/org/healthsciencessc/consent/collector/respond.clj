@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.consent.collector.respond
   (:require [ring.util.response :as ring]
+            [pliant.webpoint.response :as response]
             [pliant.webpoint.url :as url]))
 
 ;; Success(200) Responses
@@ -21,28 +22,28 @@
 
 ;; Redirect(300) Responses
 (defn redirect
-  [ctx url]
-  (ring/redirect (url/root-link ctx url)))
+  [request url]
+  (ring/redirect (url/root-link request url)))
 
 ;; Error(400) Responses
 (defn not-found
   ([] (not-found "The requested resource was not found."))
   ([message] (ring/not-found {:message message})))
 
-(defn forbidden
-  ([] (forbidden "You do not have the authority to execute the requested process."))
-  ([message]
-    (ring/status (ring/response {:message message}) 403)))
+(defn forbidden-api
+  ([request] (forbidden-api request "You do not have the authority to execute the requested process."))
+  ([request message]
+    (ring/status (response/respond-with-data {:message message} request) 403)))
 
 
 (defn forbidden-view
-  ([] (forbidden "You do not have the authority to execute the requested view."))
-  ([message]
-    (ring/status (ring/response {:message message}) 403)))
+  ([request] (forbidden-view request "You do not have the authority to execute the requested view."))
+  ([request message]
+    (ring/status (response/respond-with-html {:message message} request) 403)))
 
 
 (defn with-error
-  ([] (with-error "Unable to process the request"))
-  ([message]
-    (ring/status (ring/response {:message message}) 400)))
+  ([request] (with-error request "Unable to process the request"))
+  ([request message]
+    (ring/status (response/respond-with-data {:message message} request) 400)))
 

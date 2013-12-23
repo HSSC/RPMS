@@ -1,5 +1,5 @@
 (ns org.healthsciencessc.consent.commander.ui.navigation
-  (:require [sandbar.stateful-session :as sess]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
             [org.healthsciencessc.consent.commander.security :as security]
             [org.healthsciencessc.consent.common.tenancy :as tenancy]
             [org.healthsciencessc.consent.common.roles :as roles]))
@@ -14,29 +14,29 @@
 (defn- admin-or-super?
   "Checks if the current user is an administrator or super administrator."
   []
-  (if-let [user (sess/session-get :user)]
+  (if-let [user (whoami/get-user)]
     (or (roles/superadmin? user)(roles/admin? user))
     false))
   
 (defn- admin?
   "Checks if the current user is an administrator."
   []
-  (roles/admin? (sess/session-get :user)))
+  (roles/admin? (whoami/get-user)))
 
 (defn- super?
   "Checks if the current user is a super administrator."
   []
-  (roles/superadmin? (sess/session-get :user)))
+  (roles/superadmin? (whoami/get-user)))
 
 (defn- designer?
   "Checks if the current user is an administrator or super administrator."
   []
-  (roles/protocol-designer? (sess/session-get :user)))
+  (roles/protocol-designer? (whoami/get-user)))
 
 (defn- manager?
   "Checks if the current user is an administrator or super administrator."
   []
-  (roles/consent-manager? (sess/session-get :user)))
+  (roles/consent-manager? (whoami/get-user)))
 
 (defn- default-item-generator
   "Checks if the current user is an administrator or super administrator."
@@ -60,7 +60,7 @@
 (defn- protocol-location-item-generator
   "Checks if the current user is an administrator or super administrator."
   [item]
-  (for [mapping (roles/protocol-designer-mappings (sess/session-get :user))]
+  (for [mapping (roles/protocol-designer-mappings (whoami/get-user))]
     (let [loc (:location mapping)
           label (:name loc)
           id (:id loc)]

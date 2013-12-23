@@ -36,13 +36,13 @@
 
 
 ;; Application State Methods
-(defprocess set-user
-  [user]
-  (sandbar/session-put! :user user))
+#_(defprocess set-user
+   [user]
+   (sandbar/session-put! :user user))
 
-(defprocess get-user
-  []
-  (sandbar/session-get :user))
+#_(defprocess get-user
+   []
+   (sandbar/session-get :user))
 
 (defprocess get-organization
   []
@@ -100,6 +100,6 @@
 (defprocess all
   []
   {:identity (whoami/get-identity)
-   :user (get-user)
+   :user (whoami/get-user)
    :location (get-location)
    :consent-session (get-consent-session)})

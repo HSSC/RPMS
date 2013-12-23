@@ -10,7 +10,6 @@
             [hiccup.page :as page]
             [hiccup.core :as hcup]
             
-            [sandbar.stateful-session :as sess]
             [clojure.data.json :as json]
             [pliant.webpoint.response :as response])
   
@@ -250,7 +249,7 @@
 (defn render-error
   [request error]
   (cond
-    (not (sess/session-get :user))
+    (not (whoami/identified?))
       (page-layout-no-session (error-html error))
     (= (get-in request [:query-params :view-mode]) "pane")
       (pane-error error)

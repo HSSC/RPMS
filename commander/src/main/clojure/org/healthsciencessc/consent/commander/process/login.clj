@@ -16,9 +16,7 @@
 (defprocess authenticate
   "Authenticates a username password combination with the consent services applicaiton."
   [ctx username password]
-  (if-let [user (services/authenticate username password)]
-    (if-not (= :invalid user)
-      (sess/session-put! :user user))))
+  (services/authenticate username password))
 
 ;; Register The Root Redirection
 (defprocess redirect-root
@@ -50,7 +48,7 @@
 (defprocess do-login
   "Performs the login "
   [ctx]
-  (sess/session-delete-key! :user)
+  (whoami/deidentify!)
   (authenticate ctx (get-in ctx [:body-params :username])
                     (get-in ctx [:body-params :password]))
   (if (whoami/identified?)

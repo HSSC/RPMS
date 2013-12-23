@@ -2,8 +2,7 @@
   (:require [org.healthsciencessc.consent.client.whoami :as whoami]
             [pliant.webpoint.common :as common]
             [pliant.webpoint.url :as url]
-            [ring.util.response :as response]
-            [sandbar.stateful-session :as sandbar])
+            [ring.util.response :as response])
   (:use [compojure.core]))
 
 
@@ -19,7 +18,7 @@
 
 (defn current-user
   "Method used to get the current user for the request.  Multi interface allows for use in common runnables functions."
-  ([& ignore] (sandbar/session-get :user)))
+  ([& ignore] (whoami/get-user)))
 
 (defn current-org
   "Obtains the organization from the current user.  If out of session returns nil."

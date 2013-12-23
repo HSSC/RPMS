@@ -45,14 +45,14 @@
   (if (whoami/identified?)
     (let [{:keys [encounter-id date] :as data} (:body-params ctx)]
       (cond
-        (string/blank? encounter-id) (respond/with-error (text/encounter-text :create.encounter.id.required))
-        (string/blank? date) (respond/with-error (text/encounter-text :create.encounter.date.required))
+        (string/blank? encounter-id) (respond/with-error ctx (text/encounter-text :create.encounter.id.required))
+        (string/blank? date) (respond/with-error ctx (text/encounter-text :create.encounter.date.required))
         :else
         (let [location-id (:id (state/get-location))
               consenter-id (:id (state/get-consenter))
               encounter (services/add-encounter location-id consenter-id data)]
           (state/set-encounter encounter)
           (respond/with-actions {:encounter encounter :view-url "/view/select/protocol" :reset false} "setEncounter" "changeView"))))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-create-encounter endpoint/endpoints "put-api-encounter")

@@ -54,17 +54,17 @@
   (if (whoami/identified?)
     (let [{:keys [first-name last-name consenter-id gender dob zipcode] :as data} (:body-params ctx)]
       (cond
-        (string/blank? first-name) (respond/with-error (text/text :create.consenter.firstname.required))
-        (string/blank? last-name) (respond/with-error (text/text :create.consenter.lastname.required))
-        (string/blank? consenter-id) (respond/with-error (text/consenter-text :create.consenter.consenterid.required))
-        (string/blank? gender) (respond/with-error (text/text :create.consenter.gender.required))
-        (string/blank? dob) (respond/with-error (text/text :create.consenter.dob.required))
-        (string/blank? zipcode) (respond/with-error (text/text :create.consenter.zipcode.required))
+        (string/blank? first-name) (respond/with-error ctx (text/text :create.consenter.firstname.required))
+        (string/blank? last-name) (respond/with-error ctx (text/text :create.consenter.lastname.required))
+        (string/blank? consenter-id) (respond/with-error ctx (text/consenter-text :create.consenter.consenterid.required))
+        (string/blank? gender) (respond/with-error ctx (text/text :create.consenter.gender.required))
+        (string/blank? dob) (respond/with-error ctx (text/text :create.consenter.dob.required))
+        (string/blank? zipcode) (respond/with-error ctx (text/text :create.consenter.zipcode.required))
         :else
         (let [location-id (:id (state/get-location))
               consenter (services/add-consenter location-id data)]
           (state/set-consenter consenter)
           (respond/with-actions {:consenter consenter :view-url "/view/create/encounter" :reset false} "setConsenter" "changeView"))))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-create-consenter endpoint/endpoints "put-api-consenter")

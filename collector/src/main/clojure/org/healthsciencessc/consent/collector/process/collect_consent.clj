@@ -47,7 +47,7 @@
   (if (whoami/identified?)
     (let [body (:body-params ctx)]
       (respond/with-actions {:view-url "/view/unlock/consent" :reset false} "changeView"))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-collect-consent endpoint/endpoints "post-api-collect-consent")
 

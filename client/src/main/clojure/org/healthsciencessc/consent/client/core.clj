@@ -97,17 +97,24 @@
 ;; AUTHENTICATION
 (defn authenticate
   "Calls the authentication process within the consent services."
-  ([username password] (authenticate username password "local"))
-  ([username password realm]
+  ([username password] (authenticate username password "local" identity))
+  ([username password realm-or-fn] (if (fn? realm-or-fn)
+                                     (authenticate username password "local" realm-or-fn)
+                                     (authenticate username password realm-or-fn identity)))
+  ([username password realm authorization-fn]
     (DO client/get
         (url "/security/authenticate" {})
         (merge (credentials {:username username :password password :realm realm}) (defaults))
         [(fn [r] 
            (if (= 200 (:status r))
-             (let [user (:body r)
-                   id (:identity user)]
-               (whoami/put-identity! (assoc id :password password))
-               (dissoc user :identity))
+             (let [id (get-in r [:body :identity])
+                   user (dissoc (:body r) :identity)]
+               (if (authorization-fn user)
+                 (do
+                   (whoami/put-identity! (assoc id :password password))
+                   (whoami/put-user! user)
+                   user)
+                 :invalid-authorization))
              :invalid))])))
 
 

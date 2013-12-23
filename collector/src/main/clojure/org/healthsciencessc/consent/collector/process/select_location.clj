@@ -24,7 +24,7 @@
   "Creates a view of locations to be selected."
   [ctx]
   (if (whoami/identified?)
-    (let [user (state/get-user)
+    (let [user (whoami/get-user)
           location (state/get-location)
           mappings (roles/consent-collector-mappings user)
           items (sort #(compare (vec (map val %1)) (vec (map val %2)))
@@ -60,8 +60,8 @@
           (do 
             (state/set-location location)
             (respond/with-actions {:location location :view-url url :reset false} "setLocation" "changeView"))
-          (respond/with-error (text/location-text :select.location.message.notvalid))))
-          (respond/with-error (text/location-text :select.location.message.notvalid)))
-    (respond/forbidden-view ctx)))
+          (respond/with-error ctx (text/location-text :select.location.message.notvalid))))
+          (respond/with-error ctx (text/location-text :select.location.message.notvalid)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-select-location endpoint/endpoints "post-api-select-location")

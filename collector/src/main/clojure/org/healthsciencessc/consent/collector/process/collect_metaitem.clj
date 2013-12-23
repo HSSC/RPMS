@@ -33,6 +33,6 @@
       (respond/with-actions {:protocols protocols 
                              :view-url "/view/collect/consent" :reset false}
                              "setProtocols" "changeView"))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-collect-metaitem endpoint/endpoints "post-api-collect-metaitem")

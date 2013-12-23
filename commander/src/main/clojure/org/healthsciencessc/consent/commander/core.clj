@@ -20,15 +20,6 @@
                                                  wrap-resource]]]))
 
 
-#_(def app (-> 
-            (webware/inject-routes
-              security/ensure-auth-handler
-              sandbar/wrap-stateful-session) ;; Enable session handling via sandbar
-            (webware/wrap-resource "public")    ;; Make resources/public items in search path
-            content-type/wrap-content-type   
-            hicware/wrap-base-url
-            handler/site))
-
 (def app (-> request/route
              wrap-log-request
              wrap-resolve-body

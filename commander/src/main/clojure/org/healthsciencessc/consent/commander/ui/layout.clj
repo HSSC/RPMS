@@ -1,10 +1,10 @@
 (ns org.healthsciencessc.consent.commander.ui.layout
-  (:require [org.healthsciencessc.consent.commander.ui.navigation :as nav]
+  (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.commander.ui.navigation :as nav]
             [pliant.webpoint.common :as common]
             [pliant.webpoint.response :as response]
             [hiccup.page :as page]
             [hiccup.core :as hcup]
-            [sandbar.stateful-session :as sess]
             [clojure.data.json :as json])
   (:use     [pliant.process :only [defprocess deflayer continue do-before]]))
 
@@ -37,7 +37,7 @@
     [:div#header.header
       [:h3#headertitle "Consent Management - Administration"]
       [:ul#loginstat.headerlist
-        [:li#current-user.first [:span {:onclick "PaneManager.stack(\"/view/profile\", {}, {})"} (get (sess/session-get :user) :username)]]
+        [:li#current-user.first [:span {:onclick "PaneManager.stack(\"/view/profile\", {}, {})"} (get (whoami/get-identity) :username)]]
         [:li#logout [:span {:onclick "PaneManager.logout();"} "Logout"]]]])
 
 (defn- header-no-session
@@ -119,7 +119,7 @@
 (deflayer render render-no-session
   "Renders into a layout specific for responses that are outside of an authenticated session."
   [request title & elements]
-  (if (not (sess/session-get :user))
+  (if (not (whoami/identified?))
     (response/respond-with-html (layout-no-session request elements) request)
     (continue)))
 
@@ -146,7 +146,7 @@
 (defn render-error
   [ctx error]
   (cond
-    (not (sess/session-get :user))
+    (not (whoami/identified?))
       (layout-no-session (error-html error))
     (= (get-in ctx [:query-params :view-mode]) "pane")
       (pane-error error)

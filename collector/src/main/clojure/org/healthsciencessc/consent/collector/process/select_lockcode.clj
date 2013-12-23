@@ -45,7 +45,7 @@
           (do 
             (lock/set-code lockcode)
             (respond/reset-view "/view/search/consenter"))
-          (respond/with-error (text/format-text :select.lockcode.message.notvalid {:args [lockcode]}))))
-    (respond/forbidden-view ctx)))
+          (respond/with-error ctx (text/format-text :select.lockcode.message.notvalid {:args [lockcode]}))))
+    (respond/forbidden-api ctx)))
 
 (as-method api-select-lockcode endpoint/endpoints "post-api-select-lockcode")

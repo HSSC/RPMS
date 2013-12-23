@@ -15,20 +15,11 @@
   ([username password] (authenticate username password "local"))
   ([username password realm]
     (state/reset)
-    (if-let [user (services/authenticate username password realm)]
-      (cond
-        (= :invalid user) 
-          :invalid-user
-        (roles/consent-collector? user)
-          (do
-            (state/set-user user)
-            user)
-        :else 
-          :invalid-role))))
+    (services/authenticate username password realm roles/consent-collector?)))
 
 (defprocess is-authorized?
   []
-  (let [user (state/get-user)
+  (let [user (whoami/get-user)
         location (state/get-location)]
    (and (whoami/identified?) (roles/consent-collector? user :location {:id (:id location)}))))
 

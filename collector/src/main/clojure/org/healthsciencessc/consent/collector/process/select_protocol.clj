@@ -76,8 +76,8 @@
     (let [protocol-ids (get-in ctx [:body-params :protocols])
           language-id (get-in ctx [:body-params :language])]
       (cond
-        (nil? (seq protocol-ids)) (respond/with-error (text/location-text :select.protocol.message.notvalid))
-        (nil? (seq language-id)) (respond/with-error (text/location-text :select.protocol.message.notvalid))
+        (nil? (seq protocol-ids)) (respond/with-error ctx (text/location-text :select.protocol.message.notvalid))
+        (nil? (seq language-id)) (respond/with-error ctx (text/location-text :select.protocol.message.notvalid))
         :else
         (let [language (services/get-language language-id)
               meta-items (services/get-published-protocol-versions-meta protocol-ids)]
@@ -85,6 +85,6 @@
           (respond/with-actions {:language language :protocol-ids protocol-ids :meta-items meta-items
                                  :view-url "/view/collect/metaitem" :reset false}
                                 "setProtocolIds" "setLanguage" "setMetaItems" "changeView"))))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-select-protocol endpoint/endpoints "post-api-select-protocol")

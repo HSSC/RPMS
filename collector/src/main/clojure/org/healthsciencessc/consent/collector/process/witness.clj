@@ -33,8 +33,8 @@
     (let [body (:body-params ctx)
           resp (services/add-consents (:id (state/get-encounter)) body)]
       (if (meta resp)
-        (respond/with-error (text/text :witness.submit.error.message))
+        (respond/with-error ctx (text/text :witness.submit.error.message))
         (respond/with-actions {:view-url "/view/consent/complete" :reset false} "changeView")))
-    (respond/forbidden-view ctx)))
+    (respond/forbidden-api ctx)))
 
 (as-method api-witness-signatures endpoint/endpoints "post-api-witness-signatures")

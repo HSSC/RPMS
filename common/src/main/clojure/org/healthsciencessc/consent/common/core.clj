@@ -27,9 +27,7 @@
                  :relations [{:type :belongs-to :related-to language :relationship :has-language :name :language :omit-rels true}]}
    
    user {:attributes (merge base
-                            person
-                            {:username {:persisted true :required true :unique true}
-                             :password {:omit true :persisted true :required true :validation (fn [password] (if (> 5 (count password)) "Password must be longer than 5 characters."))}})
+                            person)
          :relations [{:type :belongs-to :related-to organization :relationship :owned-by :required true :deletable-by-parent true}
                      {:type :belongs-to :related-to group :relationship :in-group}
                      {:type :has-many :related-to role-mapping}
