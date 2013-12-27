@@ -1,105 +1,81 @@
 (ns org.healthsciencessc.consent.collector.state
-  (:require [sandbar.stateful-session :as sandbar]
+  (:require [org.healthsciencessc.consent.client.session :as sess]
             [org.healthsciencessc.consent.client.core :as services]
             [org.healthsciencessc.consent.client.whoami :as whoami])
   (:use     [pliant.process :only [defprocess]]))
 
-;; Flash Functions - State That Lives For One Request
-
-(defn- flash
-  []
-  (or (sandbar/session-get :_app-flash) {}))
-
-(defn- flash!
-  [m]
-  (sandbar/session-put! :_app-flash m))
-
-(defprocess flash-put!
-  [k v]
-  (flash! (assoc (flash) k v)))
-
-(defprocess flash-get
-  [k]
-  (let [m (flash)
-        v (m k)]
-    (flash! (dissoc m k))
-    v))
-
-;; Reset Functions
-(defprocess reset
-  []
-  (sandbar/destroy-session!))
 
 (defprocess reset-consent-session
   []
-  (sandbar/session-delete-key! :consent-session))
+  (sess/dissoc-from-session! :consent-session))
 
-
-;; Application State Methods
-#_(defprocess set-user
-   [user]
-   (sandbar/session-put! :user user))
-
-#_(defprocess get-user
-   []
-   (sandbar/session-get :user))
 
 (defprocess get-organization
   []
-  (:organization (sandbar/session-get :user)))
+  (:organization (whoami/get-user)))
+
 
 (defprocess set-location
   [location]
   (if (:id location)
-    (sandbar/session-put! :location location)
-    (sandbar/session-put! :location (services/get-location location)))
-  (reset-consent-session))
+    (sess/assoc-to-session! :location location)
+    (sess/assoc-to-session! :location (services/get-location location)))
+  (sess/dissoc-from-session! :consent-session))
 
 (defprocess get-location
   []
-  (sandbar/session-get :location))
+  (sess/get-in-session :location))
 
 ;; Consent Session
 (defprocess get-consent-session
   []
-  (sandbar/session-get :consent-session))
+  (sess/get-in-session :consent-session))
 
 (defprocess in-session?
   []
   (if (get-consent-session) true false))
 
 (defprocess set-consenter
+  "Sets the ID of the consenter consents are being collected against."
   [consenter]
-  (sandbar/session-put! :consent-session {:consenter consenter}))
+  (sess/assoc-in-session! [:consent-session :consenter] consenter))
 
 (defprocess get-consenter
+  "Gets the ID of the consenter consents are being collected against."
   []
-  (:consenter (get-consent-session)))
+  (sess/get-in-session :consent-session :consenter))
 
 (defprocess set-encounter
+  "Sets the ID of the encounter consents are being collected against."
   [encounter]
-  (sandbar/session-put! :consent-session (merge (get-consent-session) {:encounter encounter})))
+  (sess/assoc-in-session! [:consent-session :encounter] encounter))
 
 (defprocess get-encounter
+  "Gets the ID of the encounter consents are being collected against."
   []
-  (:encounter (get-consent-session)))
+  (sess/get-in-session :consent-session :encounter))
 
 (defprocess set-protocols
+  "Puts the IDs of the protocols and language chosen in the consenting process to make available for 
+   downstream processing.  Small footprint."
   [protocols language]
-  (sandbar/session-put! :consent-session (merge (get-consent-session) {:protocols protocols
-                                                                       :language language})))
+  (sess/assoc-in-session! [:consent-session :protocols] protocols)
+  (sess/assoc-in-session! [:consent-session :language] language))
+
 (defprocess get-protocols
+  "Gets the IDs of the protocols chosen."
   []
-  (:protocols (get-consent-session)))
+  (sess/get-in-session :consent-session :protocols))
 
 (defprocess get-protocol-language
+  "Gets the ID of the language chosen."
   []
-  (:language (get-consent-session)))
+  (sess/get-in-session :consent-session :language))
 
 ;; Session State Reporting - For Debugging Purposes
-(defprocess all
-  []
-  {:identity (whoami/get-identity)
-   :user (whoami/get-user)
-   :location (get-location)
-   :consent-session (get-consent-session)})
+#_(defprocess all
+   []
+   {:identity (whoami/get-identity)
+    :user (whoami/get-user)
+    :location (get-location)
+    :consent-session (get-consent-session)})

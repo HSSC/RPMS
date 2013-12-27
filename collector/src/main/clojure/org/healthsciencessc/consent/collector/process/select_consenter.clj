@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.consent.collector.process.select-consenter
   (:refer-clojure :exclude [root])
   (:require [org.healthsciencessc.consent.client.whoami :as whoami]
+            [org.healthsciencessc.consent.client.session :as sess]
             [org.healthsciencessc.consent.collector.common :as common]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
@@ -27,7 +28,7 @@
   "Creates a view of the search results to select a consenter from."
   [ctx]
   (if (whoami/identified?)
-    (let [search (state/flash-get :consenter-search)
+    (let [search (sess/flash-get :consenter-search)
           consenters (:results search)
           criteria (:criteria search)
           ziplabel (text/text :person.zipcode.label)

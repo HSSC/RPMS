@@ -1,5 +1,6 @@
 (ns org.healthsciencessc.consent.collector.process.authorize
   (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.session :as sess]
             [org.healthsciencessc.consent.client.whoami :as whoami]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
@@ -14,7 +15,7 @@
   "Generates a view of the form designer for a single protocol version"
   ([username password] (authenticate username password "local"))
   ([username password realm]
-    (state/reset)
+    (sess/destroy-session!)
     (services/authenticate username password realm roles/consent-collector?)))
 
 (defprocess is-authorized?

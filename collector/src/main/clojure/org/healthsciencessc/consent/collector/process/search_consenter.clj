@@ -1,6 +1,7 @@
 (ns org.healthsciencessc.consent.collector.process.search-consenter
   (:refer-clojure :exclude [root])
   (:require [org.healthsciencessc.consent.client.core :as services]
+            [org.healthsciencessc.consent.client.session :as sess]
             [org.healthsciencessc.consent.client.whoami :as whoami]
             [org.healthsciencessc.consent.collector.respond :as respond]
             [org.healthsciencessc.consent.collector.state :as state]
@@ -54,7 +55,7 @@
             (respond/with-actions {:title (text/consenter-text :search.consenter.notfound.title)
                                    :message (text/consenter-text :search.consenter.notfound.message)} "inform")
             (do
-              (state/flash-put! :consenter-search {:results results :criteria valid-parms})
+              (sess/flash-put! :consenter-search {:results results :criteria valid-parms})
               (respond/reset-view "/view/select/consenter"))))
         (respond/with-error ctx (text/consenter-text :search.consenter.message.notvalid))))
     (respond/forbidden-api ctx)))

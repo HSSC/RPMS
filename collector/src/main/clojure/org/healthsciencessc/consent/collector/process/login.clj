@@ -1,16 +1,16 @@
 (ns org.healthsciencessc.consent.collector.process.login
-  (:refer-clojure :exclude [root])
-  (:require [org.healthsciencessc.consent.client.core :as services]
-            [org.healthsciencessc.consent.client.whoami :as whoami]
-            [org.healthsciencessc.consent.collector.process.authorize :as auth]
-            [org.healthsciencessc.consent.collector.respond :as respond]
-            [org.healthsciencessc.consent.collector.state :as state]
-            [org.healthsciencessc.consent.collector.text :as text]
-            [org.healthsciencessc.consent.collector.ui.action :as action]
-            [org.healthsciencessc.consent.collector.ui.form :as form]
-            [org.healthsciencessc.consent.collector.ui.layout :as layout]
-            [pliant.webpoint.request :as endpoint])
-  (:use     [pliant.process :only [defprocess as-method]]))
+ (:refer-clojure :exclude [root])
+ (:require [org.healthsciencessc.consent.client.core :as services]
+           [org.healthsciencessc.consent.client.session :as sess]
+           [org.healthsciencessc.consent.client.whoami :as whoami]
+           [org.healthsciencessc.consent.collector.process.authorize :as auth]
+           [org.healthsciencessc.consent.collector.respond :as respond]
+           [org.healthsciencessc.consent.collector.text :as text]
+           [org.healthsciencessc.consent.collector.ui.action :as action]
+           [org.healthsciencessc.consent.collector.ui.form :as form]
+           [org.healthsciencessc.consent.collector.ui.layout :as layout]
+           [pliant.webpoint.request :as endpoint])
+ (:use     [pliant.process :only [defprocess as-method]]))
 
 
 (def fields [{:name :username :type :username :label (text/text :login.username.label) :contain true :autofocus true}
@@ -71,7 +71,7 @@
 (defprocess api-logout
   "Kills the session and redirects to the root."
   [ctx]
-  (state/reset)
+  (sess/destroy-session!)
   (respond/with-actions {}  "toRoot"))
 
 (as-method api-logout endpoint/endpoints "get-logout")
