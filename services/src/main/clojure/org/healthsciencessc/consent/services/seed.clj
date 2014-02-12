@@ -4,6 +4,7 @@
             [org.healthsciencessc.consent.common.core :as domain]
             [org.healthsciencessc.consent.common.match :as match]
             [org.healthsciencessc.consent.common.types :as types]
+            [org.healthsciencessc.consent.services.process.user :as user]
             [clojure.tools.logging :as logging]))
 
 (defn setup-default-schema!
@@ -65,6 +66,16 @@
       (let [record (data/create type props)]
         (update-cache type record)
         record))))
+
+(defn create-user
+  "Makes or finds a user in the database.  Allows for the seeding of data on startup without the risk of duplication."
+  ([org props & roles]
+    (if-let [record (exists-in-db? types/user-identity (:identity props) match/users-match?)]
+      (let [identity (data/find-record types/user-identity (:id record))]
+        (assoc (:user identity) :identity (dissoc identity :user)))
+      (let [user (apply user/create-user (:id org) props roles)]
+        (update-cache types/user user)
+        user))))
 
 (defn create-role-mapping
   [type mapping]
@@ -186,13 +197,9 @@
         sadmin-role (create types/role 
                             {:name "Super Administrator" :code types/code-role-superadmin :organization org :requires-location false} 
                             match/roles-match?)
-        sadmin (create types/user 
-                       {:first-name "Super" :last-name "Administrator" :organization org
-                        :username "admin" :password (auth/hash-password "root")} 
-                       match/users-match?)
+        sadmin (create-user org {:first-name "Super" :last-name "Administrator"
+                            :identity {:username "admin" :password "root"}} sadmin-role)
         lang (create-default-lang org)]
-    
-    (create-role-mapping :user {:organization org :role sadmin-role :user sadmin})
     (create-roles org)
     (create-langs org)
     (create-policy-definitions org)
@@ -212,28 +219,25 @@
         out-loc (create types/location {:name "Out Patient" :code "outpatient" :organization org} match/locations-match?)
         sur-loc (create types/location {:name "Surgery" :code "surgery" :organization org} match/locations-match?)
         
-        clerk (create types/user {:username "ex-collector" :password (auth/hash-password "password") :organization org 
-                              :first-name "Example" :last-name "Clerk"} match/users-match?)
-        sclerk (create types/user {:username "ex-scollector" :password (auth/hash-password "password") :organization org
-                                :first-name "Example" :last-name "SuperClerk"} match/users-match?)
-        admin (create types/user {:username "ex-admin" :password (auth/hash-password "password") :organization org
-                               :first-name "Example" :last-name "Admin"} match/users-match?)
-        designer (create types/user {:username "ex-designer" :password (auth/hash-password "password") :organization org
-                                  :first-name "Example" :last-name "Designer"} match/users-match?)
-        theman (create types/user {:username "ex-theman" :password (auth/hash-password "password") :organization org
-                                :first-name "Example" :last-name "TheMan"} match/users-match?)
-        
-        admin-grp (create types/group {:name "Example Admin Group" :organization org} match/groups-match?)
-        theman-grp (create types/group {:name "Example The Man Group" :organization org} match/groups-match?)
-        
         sadmin-role (get-role-by-code types/code-role-superadmin)
         admin-role (get-role-by-code types/code-role-admin)
         clerk-role (get-role-by-code types/code-role-collector)
         manager-role (get-role-by-code types/code-role-consentmanager)
-        designer-role (get-role-by-code types/code-role-designer)]
-    
-    ;; Create Admin Role Mappings
-    (create-role-mapping :user {:organization org :user admin :role admin-role})
+        designer-role (get-role-by-code types/code-role-designer)
+        
+        clerk (create-user org {:identity {:username "ex-collector" :password "password"}
+                                :first-name "Example" :last-name "Clerk"})
+        sclerk (create-user org {:identity {:username "ex-scollector" :password "password"}
+                                :first-name "Example" :last-name "SuperClerk"})
+        admin (create-user org {:identity {:username "ex-admin" :password "password"}
+                                :first-name "Example" :last-name "Admin"} admin-role)
+        designer (create-user org {:identity {:username "ex-designer" :password "password"}
+                   :first-name "Example" :last-name "Designer"})
+        theman (create-user org {:identity {:username "ex-theman" :password "password"}
+                                :first-name "Example" :last-name "TheMan"})
+        
+        admin-grp (create types/group {:name "Example Admin Group" :organization org} match/groups-match?)
+        theman-grp (create types/group {:name "Example The Man Group" :organization org} match/groups-match?)]
     
     ;; Create Clerk Role Mappings
     (create-role-mapping :user {:organization org :user clerk :role clerk-role :location in-loc})

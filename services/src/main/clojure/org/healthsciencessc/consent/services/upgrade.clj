@@ -13,7 +13,7 @@
     (if (nil? (seq uids))
       (let [users (data/get-raw-nodes types/user)]
         (doseq [user users]
-          (println "Updating User To Identity: " (:username user))
+          (logging/info "Updating User To Identity: " user)
           (data/create types/user-identity 
                        {:realm "local" :user user :password (:password user) 
                         :username (:username user)}))))))
