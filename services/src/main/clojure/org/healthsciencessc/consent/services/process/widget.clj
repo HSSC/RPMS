@@ -8,13 +8,19 @@
             [pliant.webpoint.request :as endpoint]
             [borneo.core :as neo]))
 
+(defn dissoc-empty
+  [m k]
+  (if (empty? (m k))
+    (dissoc m k)
+    m))
+
 (defprocess update-designer-form
   [ctx]
   (let [protocol-version (vouch/designs-protocol-version ctx)]
     (if (and protocol-version (types/draft? protocol-version))
       (let [body (:body-params ctx)
             form-id (get-in ctx [:query-params :form])
-            form (get-in body[:update :form])]
+            form (dissoc-empty (get-in body[:update :form]) :witness-signatures)]
         (neo/with-tx
           (if form (data/update types/form form-id form))
           (doseq [text (get-in body[:create :title])] 
